@@ -190,37 +190,24 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
 
 
 #### ###############################
-#### ###############################
-#  Set wavelength array using Header cards
-def setwave(hdr):
-
-    # DEPRECATED
-    xdb.set_trace()
-    # Initialize
-    SCL = 1.
-    
-    # Parse the header
-    npix = hdr['NAXIS1'] 
-    crpix1 = hdr['CRPIX1'] if 'CRPIX1' in hdr else 1.
-    crval1 = hdr['CRVAL1'] if 'CRVAL1' in hdr else 1.
-    cdelt1 = hdr['CDELT1'] if 'CDELT1' in hdr else 1.
-    ctype1 = hdr['CTYPE1'] if 'CTYPE1' in hdr else None
-    dcflag = hdr['DC-FLAG'] if 'DC-FLAG' in hdr else None
-
-    # Generate
-    if (dcflag == 1) or (cdelt1 < 1e-4):
-        wave = SCL * 10.**(crval1 + ( cdelt1 * np.arange(npix) + 1. - crpix1) ) # Log
-    xdb.set_trace()
-
-    # Return
-    return wave
-
-#### ###############################
-#### ###############################
 #  Grab values from the Binary FITS Table or Table
 def get_table_column(tags, hdulist):
+    '''Simple script to return values from a FITS table
+    Function used to return flux/error/wave values from 
+    a binary FITS table from a list of tags
+
+    Parameters:
+    -----------
+    tags: list
+     List of string tag names
+
+    Returns:
+    -----------
+    dat: float array
+      Data values corresponding to the first tag found
+      Returns None if no match
+    '''
     dat = None
-    ii = 0
     # Use Table
     if type(hdulist[1]) is BinTableHDU:
         tab = Table(hdulist[1].data)
@@ -233,15 +220,6 @@ def get_table_column(tags, hdulist):
             dat = tab[tag]
             break  # Break with first hit
 
-    '''
-    For BinTableHDU (deprecated)
-    while(ii < len(tags)):
-        if tags[ii] in hdulist[1].columns.names: 
-            dat = hdulist[1].data[tags[ii]]
-            break  # Break with first hit
-        else:
-            ii = ii + 1
-    '''
     # Return
     if dat is not None:
         return dat.flatten(), tag
@@ -253,13 +231,33 @@ def get_table_column(tags, hdulist):
 # Deal with .gz extensions, usually on FITS files
 #   See if filenm exists, if so pass it back
 #
-def chk_for_gz(filenm,chk=None):
+def chk_for_gz(filenm):
+    '''Checks for .gz extension to an input filename and returns file
+
+    Parameters:
+    -----------
+    filenm: string
+     Filename to query
+
+    Returns:
+    -----------
+    filenm+XX: string
+      Returns in this order:
+        i. Input filename if it exists
+        ii. Input filename if it has .gz extension already
+        iii. Input filename.gz if that exists
+        iv. Input filename.gz if that exists
+    chk: bool or int
+      True if file exists
+      0 if No check was performed
+      False if no file exists 
+    '''
 
     import os, pdb
 
     # File exist?
     if os.path.lexists(filenm): 
-        chk=1
+        chk=True
         return filenm, chk
 
     # .gz already
@@ -269,38 +267,8 @@ def chk_for_gz(filenm,chk=None):
 
     # Add .gz
     if os.path.lexists(filenm+'.gz'): 
-        chk=1
+        chk=True
         return filenm+'.gz', chk
     else:
-        chk=0
-        return filenm, chk
-
-
-
-
-
-
-
-#### ###############################
-# Testing
-if __name__ == '__main__':
-    flg_test = 0
-    flg_test += 1 # MagE
-    flg_test += 2**1 # LRIS LowRedux
-
-    # Standard log-linear read (MagE)
-    if (flg_test % 2**1) >= 2**0:
-        fil = '~/PROGETTI/LLSZ3/data/normalize/UM669_nF.fits'
-        #fil = '/Users/xavier/Dropbox/QSOPairs/data/MAGE_redux/SDSSJ085357.49-001106.1_F.fits.gz'
-        #efil = '~ers/xavier/PROGETTI/LLSZ3/data/normalize/UM669_nE.fits'
-        myspec = readspec(fil)
-        #xdb.xplot(myspec.dispersion, myspec.flux)
-        myspec.plot()
-        #xdb.xplot(myspec.dispersion, myspec.flux, myspec.uncertainty.array)
-
-    # LowRedux
-    if (flg_test % 2**2) >= 2**1:
-        fil = '/Users/xavier/Dropbox/QSOPairs/data/LRIS_redux/SDSSJ231254.65-025403.1_b400_F.fits.gz'
-        myspec = readspec(fil)
-        xdb.xplot(myspec.dispersion, myspec.flux, myspec.uncertainty.array)
-        #xdb.set_trace()
+        chk=False
+        return None, chk
