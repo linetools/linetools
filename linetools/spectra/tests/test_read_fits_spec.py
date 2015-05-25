@@ -1,3 +1,4 @@
+# Module to run tests on spectra.io
 import os
 import pytest
 import astropy.io.ascii as ascii

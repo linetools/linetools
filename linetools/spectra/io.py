@@ -18,7 +18,7 @@ from astropy.io.fits.hdu.table import BinTableHDU
 
 from specutils.io import read_fits as spec_read_fits
 
-from xastropy.xutils import xdebug as xdb
+#from xastropy.xutils import xdebug as xdb
 from linetools.spectra.utils import XSpectrum1D
 
 #### ###############################
@@ -76,7 +76,6 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         if flux_tags is None:
             flux_tags = ['SPEC', 'FLUX','FLAM','FX', 'FLUXSTIS', 'FLUX_OPT', 'fl']
         fx, fx_tag = get_table_column(flux_tags, hdulist)
-        #xdb.set_trace()
         if fx is None:
             print('spec.readwrite: Binary FITS Table but no Flux tag')
             return
