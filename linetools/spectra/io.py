@@ -232,6 +232,7 @@ def get_table_column(tags, hdulist):
 #
 def chk_for_gz(filenm):
     '''Checks for .gz extension to an input filename and returns file
+    Also parses the ~ if given
 
     Parameters:
     -----------
@@ -251,8 +252,9 @@ def chk_for_gz(filenm):
       0 if No check was performed
       False if no file exists 
     '''
-
     import os, pdb
+    from os.path import expanduser
+    filenm = expanduser(filenm)
 
     # File exist?
     if os.path.lexists(filenm): 

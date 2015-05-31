@@ -11,8 +11,10 @@ import astropy as apy
 from astropy import units as u
 from astropy import constants as const
 from astropy.io import fits
+from astropy.nddata import StdDevUncertainty
 
 from specutils import Spectrum1D
+from specutils.wcs.specwcs import Spectrum1DPolynomialWCS, Spectrum1DLookupWCS
 
 #from xastropy.xutils import xdebug as xdb
 
@@ -291,7 +293,7 @@ class XSpectrum1D(Spectrum1D):
         if hasattr(self,'head'):
             hdukeys = prihdu.header.keys()
             # Append ones to avoid
-            hdukeys = hdukeys +ZZ ['BUNIT','COMMENT','', 'NAXIS2', 'HISTORY']
+            hdukeys = hdukeys + ['BUNIT','COMMENT','', 'NAXIS2', 'HISTORY']
             for key in self.head.keys():
                 # Use new ones
                 if key in hdukeys:
@@ -303,11 +305,54 @@ class XSpectrum1D(Spectrum1D):
                     raise ValueError('l.spectra.utils: Bad header key card')
             # History
             if 'HISTORY' in self.head.keys():
-                prihdu.header.add_history(str(self.head['HISTORY']))
+                # Strip \n
+                tmp = str(self.head['HISTORY']).replace('\n',' ')
+                try:
+                    prihdu.header.add_history(str(tmp))
+                except ValueError:
+                    import pdb
+                    pdb.set_trace()
 
         # Write
         hdu.writeto(outfil, clobber=clobber)
         print('Wrote spectrum to {:s}'.format(outfil))
+
+    # Splice two spectra together
+    def splice(self, spec2, wvmx=None):
+        ''' Combine two spectra
+        It is assumed that the internal spectrum is *bluer* than
+        the input spectrum.
+
+        Parameters
+        ----------
+        spec2: Spectrum1D
+          Second spectrum
+        wvmx: Quantity
+          Wavelength to begin splicing *after*
+
+        Returns:
+        ----------
+        spec3: Spectrum1D
+          Spliced spectrum
+        '''
+        # Begin splicing after the end of the internal spectrum
+        if wvmx is None:
+            wvmx = np.max(self.dispersion)
+        # 
+        gdp = np.where(spec2.dispersion > wvmx)[0]
+        # Concatenate
+        new_wv = np.concatenate( (self.dispersion.value, 
+            spec2.dispersion.value[gdp]) )
+        uwave = u.Quantity(new_wv, unit=self.wcs.unit)
+        new_fx = np.concatenate( (self.flux.value, 
+            spec2.flux.value[gdp]) )
+        if self.sig is not None:
+            new_sig = np.concatenate( (self.sig, spec2.sig[gdp]) )
+        # Generate
+        spec3 = XSpectrum1D.from_array(uwave, u.Quantity(new_fx),
+                                         uncertainty=StdDevUncertainty(new_sig))
+        # Return
+        return spec3
 
 
 # ################
@@ -317,7 +362,8 @@ if __name__ == "__main__":
     #flg_test += 2**0  # Test write (simple)
     #flg_test += 2**1  # Test write with 3 arrays
     #flg_test += 2**2  # Test boxcar
-    flg_test += 2**3  # Test rebin
+    #flg_test += 2**3  # Test rebin
+    flg_test += 2**4  # Test splice
 
     from linetools.spectra import io as lsi
 
@@ -364,3 +410,15 @@ if __name__ == "__main__":
             EW1,EW2,wvmnx[0],wvmnx[1]))
         print('Percent diff = {:0.2f}%'.format(100*(EW2-EW1)/EW1))
 
+    if (flg_test % 2**5) >= 2**4: # Splice two spectra
+        # Read blue
+        bfil = '~/LCO/data/MIKE/RedData/PKS2000-330/Data/Sep_2_2004/Q2000-330a_b_F.fits'
+        bspec = lsi.readspec(bfil)
+        # Read red
+        rfil = '~/LCO/data/MIKE/RedData/PKS2000-330/Data/Sep_2_2004/Q2000-330a_r_F.fits'
+        rspec = lsi.readspec(rfil)
+        # Splice
+        import pdb
+        pdb.set_trace()
+        tspec = bspec.splice(rspec)
+        tspec.plot()
