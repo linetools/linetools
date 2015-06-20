@@ -14,6 +14,8 @@ from astropy.table import QTable, Table, vstack
 
 from xastropy.xutils import xdebug as xdb
 
+from linetools.lists import parse as lilp
+
 #
 class LineList(object):
     '''Class to over-load Spectrum1D for new functionality not yet in specutils
@@ -56,19 +58,23 @@ class LineList(object):
         ''' Grab the data for the lines of interest
         '''
         # Import
-        from linetools.lists import parse as lilp
         reload(lilp)
 
         # Define datasets
         dataset = {
-            'ism': [None], 
+            'ism': [lilp.parse_morton03], # Morton 2003 
             'molecules': [lilp.read_H2]   # H2 
             }
 
         # Loop on lists
+        sets = []
         for llist in self.lists:
             if llist == 'H2':
-                sets = ['molecules']
+                sets.append('molecules')
+            elif llist == 'ISM':
+                sets.append('ism')
+            elif llist == 'Strong':
+                sets.append('ism')
             else:
                 raise ValueError('Not ready for this group')
 
@@ -93,17 +99,49 @@ class LineList(object):
         self._fulltable = QTable(full_table)
 
     #####
-    def set_lines(self):
+    def set_lines(self, verbose=True):
         ''' Parse the lines of interest
         '''
         # Loop on lines
         indices = []
+        set_flags = []
         for llist in self.lists:
             if llist == 'H2':
                 gdi = np.where(self._fulltable['mol'] == 'H2')[0]
                 if len(gdi) == 0:
-                    raise IndexError('set_lines: Found no H2 molecules! Read more data')
+                    raise IndexError(
+                        'set_lines: Found no H2 molecules! Read more data')
                 indices.append(gdi)
+            elif llist == 'ISM':
+                set_flags.append('fISM')
+            elif llist == 'Strong':
+                set_flags.append('fSI')
+            else:
+                raise ValueError('set_lines: Not ready for this')
+
+        # Deal with Defined sets
+        if len(set_flags) > 0:
+            # Read standard file
+            set_data = lilp.read_sets()
+            # Speed up
+            wrest = self._fulltable['wrest'].value # Assuming Anstroms
+            for sflag in set_flags:
+                gdset = np.where(set_data[sflag] == 1)[0]
+                # Match to wavelengths
+                for igd in gdset:
+                    mt = np.where( 
+                        np.abs(set_data[igd]['wrest']-wrest) < 1e-3 )[0]
+                    if len(mt) > 0:
+                        for imt in mt:
+                            # Over-ride name!
+                            self._fulltable[imt]['name'] = set_data[igd]['name']
+                            #if set_data[igd]['name'] == 'DI 1215':
+                            #    xdb.set_trace()
+                        indices.append(mt)
+                    else:
+                        if verbose:
+                            print('set_lines: Did not find {:s} in data Tables'.format(
+                                set_data[igd]['name']))
 
         # Collate (should grab unique ones!)
         all_idx = np.concatenate( [np.array(itt) for itt in indices] )
@@ -131,7 +169,9 @@ class LineList(object):
         ----------
         Astropy Row from the data table
         '''
-        if type(k) in [float,Quantity]: # Wavelength
+        if type(k) in [float]: # Wavelength, assuming Ang
+            mt = np.where( np.abs(k*u.AA-self.wrest) < tol)[0]
+        elif type(k) in [Quantity]: # Wavelength
             mt = np.where( np.abs(k-self.wrest) < tol)[0]
         elif type(k) in [str]: # Name
             mt = np.where( k == self.name )[0]
@@ -145,7 +185,8 @@ class LineList(object):
         elif len(mt) == 1:
             return self._data[mt][0]  # Pass back as a Row not a Table
         else:
-            raise ValueError('Multiple lines in the list')
+            raise ValueError(
+                '{:s}: Multiple lines in the list'.format(self.__class__))
 
 
     # Printing
