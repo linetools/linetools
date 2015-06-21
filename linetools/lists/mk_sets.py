@@ -19,7 +19,7 @@ lt_path = imp.find_module('linetools')[1]
 xa_path = imp.find_module('xastropy')[1]
 
 #
-def mk_ism(outfil=None, clobber=False):
+def mk_ism(outfil=None, overwrite=False):
     ''' Make the ISM list from grb.lst in xastropy
     SHOULD BE DEPRECATED AFTER v0.0
     Parameters:
@@ -36,7 +36,7 @@ def mk_ism(outfil=None, clobber=False):
     if outfil is None:
         outfil = lt_path+'/lists/sets/llist_v0.0.ascii'
     chkf = glob.glob(outfil)
-    if (len(chkf) > 0) & (not clobber):
+    if (len(chkf) > 0) & (not overwrite):
         print('Not over-writing {:s}'.format(outfil))
         return
 

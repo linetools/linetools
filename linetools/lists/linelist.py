@@ -42,11 +42,11 @@ class LineList(object):
     def __init__(self, llst_keys, gd_lines=None, verbose=True):
 
         # Error catching
-        if type(llst_keys) not in [str,list,unicode]:
+        if not isinstance(llst_keys,(str,list,unicode)):
             raise TypeError('LineList__init__: Wrong type for LineList input')
 
         # Save
-        if type(llst_keys) in [str,unicode]:
+        if isinstance(llst_keys, basestring):
             self.lists = [llst_keys]
         else:
             self.lists = llst_keys
@@ -101,8 +101,8 @@ class LineList(object):
                         wrest = full_table['wrest']
                         newi = []
                         for jj,row in enumerate(QTable(table)): # QTable for units
-                            mt = np.where(np.abs(row['wrest']-wrest) < tol)[0]
-                            if len(mt) == 0:
+                            mt = np.abs(row['wrest']-wrest) < tol
+                            if mt.sum() == 0:
                                 newi.append(jj)
                         # Append new ones (can't stack QTables yet)
                         full_table = vstack([full_table, table[newi]])
@@ -187,7 +187,7 @@ class LineList(object):
         '''
         # Deal with QTable
         colm = self._data[k]
-        if type(colm[0]) is Quantity:
+        if isinstance(colm[0], Quantity):
             return self._data[k]
         else:
             return np.array(self._data[k])
@@ -205,14 +205,14 @@ class LineList(object):
         ----------
         Astropy Row from the data table
         '''
-        if type(k) in [float]: # Wavelength, assuming Ang
+        if isinstance(k,float): # Wavelength, assuming Ang
             mt = np.where( np.abs(k*u.AA-self.wrest) < tol)[0]
-        elif type(k) in [Quantity]: # Wavelength
+        elif isinstance(k, Quantity): # Wavelength
             mt = np.where( np.abs(k-self.wrest) < tol)[0]
-        elif type(k) in [str,unicode]: # Name
+        elif isinstance(k, basestring): # Name
             mt = np.where( str(k) == self.name )[0]
         else:
-            raise ValueError('Not prepare for this type')
+            raise ValueError('Not prepared for this type')
 
         # Matches
         if len(mt) == 0:

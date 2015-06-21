@@ -29,6 +29,7 @@ lt_path = imp.find_module('linetools')[1]
 # Ingest Galaxy lines
 # Ingest AGN lines
 
+
 #
 def line_data(nrows=1):
     ''' Defines the dict (and/or Table) for spectral line Data
@@ -174,13 +175,13 @@ def read_verner94():
     return data
 
 #
-def parse_morton03():
+def parse_morton03(orig=False):
     '''Parse tables from Morton 2003, ApJS, 149, 205 
     '''
     # Look for VOT
     votf = lt_path + '/data/lines/morton03_table2.vot'
     morton03_tab2 = glob.glob(votf)
-    if len(morton03_tab2) > 0:
+    if (len(morton03_tab2) > 0) & (not orig):
         print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
             morton03_tab2[0]))
         vot = vo_parse(morton03_tab2[0])
@@ -320,6 +321,7 @@ def mkvot_morton03(do_this=False, outfil=None):
     m03.write(outfil, format='votable')
 
 
+#
 def roman_to_number(val):
     '''Convert simple Roman numerals to Arabic
 
@@ -331,23 +333,11 @@ def roman_to_number(val):
     ------------
     Number
     '''
-    if val.strip() == 'I':
-        return 1
-    elif val.strip() == 'II':
-        return 2
-    elif val.strip() == 'III':
-        return 3
-    elif val.strip() == 'IV':
-        return 4
-    elif val.strip() == 'V':
-        return 5
-    elif val.strip() == 'VI':
-        return 6
-    elif val.strip() == 'VII':
-        return 7
-    elif val.strip() == 'VIII':
-        return 8
-    else:
-        raise ValueError('Not setup for {:s}'.format(val)) 
+    r_to_n = dict(I=0, II=1, III=2, IV=3, V=4, VI=5, 
+        VII=6, VIII=7, IX=8, X=9)
+
+    return r_to_n[val.strip()]
+
+
 
 ###########################################
