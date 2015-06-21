@@ -1,4 +1,6 @@
 # Module to run tests on Generating a LineList
+#   Also tests some simple functionality
+
 # TEST_UNICODE_LITERALS
 
 import os
