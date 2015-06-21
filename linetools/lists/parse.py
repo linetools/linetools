@@ -12,15 +12,22 @@ from astropy.units.quantity import Quantity
 from astropy import constants as const
 from astropy.io import fits, ascii
 from astropy.table import QTable, Column, Table
+from astropy.io.votable import parse as vo_parse
 
-#from xastropy.xutils import xdebug as xdb
 lt_path = imp.find_module('linetools')[1]
 
 # def line_data
 # def read_sets
 # def read_H2
+# def read_verner94
 # def parse_morton03
+# def mkvot_morton03
 # def roman_to_number
+
+# TODO
+# Ingest CO data
+# Ingest Galaxy lines
+# Ingest AGN lines
 
 #
 def line_data(nrows=1):
@@ -133,122 +140,184 @@ def read_H2():
     return data
 
 #
-def parse_morton03():
-    '''Parse tables from Morton 2003, ApJS, 149, 205 
-    '''
-    ## Read Table 2
-    morton03_tab2 = lt_path + '/data/lines/morton03_table2.dat'
-    print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(morton03_tab2))
-    f = open(morton03_tab2, 'r')
-    lines = f.readlines()
-    f.close()
+def read_verner94():
+    # Read
+    verner94 = lt_path + '/data/lines/verner94_tables.vot'
+    print(
+        'linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
+            verner94))
+    vot = vo_parse(verner94)
+    # Table
+    tbl_6 = vot.get_table_by_index(5).to_table(use_names_over_ids=True)
 
-    ## Find Elements and Ions
-    elmi = []
-    elmZ = []
-    elmc = []
-    ioni = []
-    ionv = []
-    for kk,line in enumerate(lines):
-        if 'Z = ' in line:
-            # Grab Z
-            ipos = line.find('Z = ')
-            elmZ.append(int(line[ipos+4:ipos+7]))
-            ipos2 = line.find('= ')
-            elmc.append(line[ipos2+2:ipos].strip())
-            #xdb.set_trace()
-            # Line index
-            elmi.append(kk)
-        if 'IP = ' in line:
-            # Grab Z
-            ipos = line.find(' ')
-            ipos2 = line[ipos+1:].find(' ')
-            ionv.append(line[ipos+1:ipos+ipos2+1].strip())
-            # Line index
-            ioni.append(kk)
+    # My table
+    ldict, data = line_data(nrows=len(tbl_6))
 
-    ## Initialize table
-    ldict, tbl = line_data(nrows=len(lines))
+    # Fill
+    data['wrest'] = tbl_6['lambda']
+    data['f'] = tbl_6['Fik']
+    data['gj'] = tbl_6['Gi']
+    data['gk'] = tbl_6['Gk']
+    data['ion'] = tbl_6['Z'] - tbl_6['N'] + 1
+    for ii,row in enumerate(tbl_6):
+        data[ii]['name'] = (
+            row['Species'][0:2].strip() + row['Species'][2:].strip() + 
+            ' {:d}'.format(int(row['lambda'])))
+        #xdb.set_trace()
 
-    ## Parse lines with UV rest wavelength
-    count = 0
-    for kk,line in enumerate(lines):
-        try:
-            tmp = line[23] == '.'
-        except IndexError:
-            pass
-        else:
-            if tmp: # UV wavelength?
-                # Parse
-                # Wavelength
-                tbl[count]['wrest'] = float(line[19:28]) #* u.AA
-                # Z
-                gdZ = np.where( (kk > np.array(elmi)) & (kk < np.roll(np.array(elmi),-1)))[0]
-                if len(gdZ) != 1:
-                    if kk > np.max(elmi):
-                        gdZ = len(elmi)-1
-                    else:
-                        #xdb.set_trace()
-                        raise ValueError('Uh oh elm')
-                tbl[count]['Z'] = elmZ[gdZ]
-                # ion
-                gdi = np.where( (kk > np.array(ioni)) & (kk < np.roll(np.array(ioni),-1)))[0]
-                if len(gdi) != 1:
-                    xdb.set_trace()
-                    raise ValueError('Uh oh ion')
-                tbl[count]['ion'] = roman_to_number(ionv[gdi])
-                # Name
-                tbl[count]['name'] = elmc[gdZ]+ionv[gdi]+' {:d}'.format(
-                    int(tbl[count]['wrest']))
-                #xdb.set_trace()
-                # f
-                try:
-                    tbl[count]['f'] = float(line[79:89])
-                except ValueError:
-                    continue # Skip ones without f-value
-                # Ej, Ek
-                tbl[count]['Ej'] = float(line[29:38]) #/ u.cm
-                tbl[count]['Ek'] = float(line[40:50]) #/ u.cm
-                # A
-                try:
-                    tbl[count]['A'] = float(line[59:68]) #/ u.s
-                except ValueError:
-                    pass
-                # gamma
-                try:
-                    tbl[count]['gamma'] = float(line[69:79]) #/ u.s
-                except ValueError:
-                    pass
-                # gl, gu
-                tbl[count]['gj'] = int(line[52:54])
-                tbl[count]['gk'] = int(line[56:58])           
-                # Ex
-                #all_dict[count]['Ex'] = 0.  # Zero out units (for Table)
-
-                # Check
-                #print(tbl[count])
-                #xdb.set_trace()
-
-                # Increment
-                count += 1
-    # Trim
-    data = tbl[0:count]
-
-    # Finish up
-    #data['A'].unit = 1/u.s
-    #data['gamma'].unit = 1/u.s
-    #data['wrest'].unit = u.AA
-    #data['Ex'].unit = 1/u.cm
-    #data['Ej'].unit = 1/u.cm
-    #data['Ek'].unit = 1/u.cm
-
-    # Last
+    #  Finish
     data['group'] = 1
-    data['Ref'] = 'Morton2003'
+    data['Ref'] = 'Verner1994'
     data['mol'] = ''
 
     # Return
     return data
+
+#
+def parse_morton03():
+    '''Parse tables from Morton 2003, ApJS, 149, 205 
+    '''
+    # Look for VOT
+    votf = lt_path + '/data/lines/morton03_table2.vot'
+    morton03_tab2 = glob.glob(votf)
+    if len(morton03_tab2) > 0:
+        print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
+            morton03_tab2[0]))
+        vot = vo_parse(morton03_tab2[0])
+        data = vot.get_first_table().to_table(use_names_over_ids=True)
+    else:
+
+        ## Read Table 2
+        morton03_tab2 = lt_path + '/data/lines/morton03_table2.dat'
+        print(
+            'linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
+                morton03_tab2))
+        f = open(morton03_tab2, 'r')
+        lines = f.readlines()
+        f.close()
+
+        ## Find Elements and Ions
+        elmi = []
+        elmZ = []
+        elmc = []
+        ioni = []
+        ionv = []
+        for kk,line in enumerate(lines):
+            if 'Z = ' in line:
+                # Grab Z
+                ipos = line.find('Z = ')
+                elmZ.append(int(line[ipos+4:ipos+7]))
+                ipos2 = line.find('= ')
+                elmc.append(line[ipos2+2:ipos].strip())
+                #xdb.set_trace()
+                # Line index
+                elmi.append(kk)
+            if 'IP = ' in line:
+                # Grab Z
+                ipos = line.find(' ')
+                ipos2 = line[ipos+1:].find(' ')
+                ionv.append(line[ipos+1:ipos+ipos2+1].strip())
+                # Line index
+                ioni.append(kk)
+
+        ## Initialize table
+        ldict, tbl = line_data(nrows=len(lines))
+
+        ## Parse lines with UV rest wavelength
+        count = 0
+        for kk,line in enumerate(lines):
+            try:
+                tmp = line[23] == '.'
+            except IndexError:
+                pass
+            else:
+                if tmp: # UV wavelength?
+                    # Parse
+                    # Wavelength
+                    tbl[count]['wrest'] = float(line[19:28]) #* u.AA
+                    # Z
+                    gdZ = np.where( (kk > np.array(elmi)) & (kk < np.roll(np.array(elmi),-1)))[0]
+                    if len(gdZ) != 1:
+                        if kk > np.max(elmi):
+                            gdZ = len(elmi)-1
+                        else:
+                            #xdb.set_trace()
+                            raise ValueError('Uh oh elm')
+                    tbl[count]['Z'] = elmZ[gdZ]
+                    # ion
+                    gdi = np.where( (kk > np.array(ioni)) & (kk < np.roll(np.array(ioni),-1)))[0]
+                    if len(gdi) != 1:
+                        xdb.set_trace()
+                        raise ValueError('Uh oh ion')
+                    tbl[count]['ion'] = roman_to_number(ionv[gdi])
+                    # Name
+                    tbl[count]['name'] = elmc[gdZ]+ionv[gdi]+' {:d}'.format(
+                        int(tbl[count]['wrest']))
+                    #xdb.set_trace()
+                    # f
+                    try:
+                        tbl[count]['f'] = float(line[79:89])
+                    except ValueError:
+                        continue # Skip ones without f-value
+                    # Ej, Ek
+                    tbl[count]['Ej'] = float(line[29:38]) #/ u.cm
+                    tbl[count]['Ek'] = float(line[40:50]) #/ u.cm
+                    # A
+                    try:
+                        tbl[count]['A'] = float(line[59:68]) #/ u.s
+                    except ValueError:
+                        pass
+                    # gamma
+                    try:
+                        tbl[count]['gamma'] = float(line[69:79]) #/ u.s
+                    except ValueError:
+                        pass
+                    # gl, gu
+                    tbl[count]['gj'] = int(line[52:54])
+                    tbl[count]['gk'] = int(line[56:58])           
+                    # Ex
+                    #all_dict[count]['Ex'] = 0.  # Zero out units (for Table)
+
+                    # Check
+                    #print(tbl[count])
+                    #xdb.set_trace()
+
+                    # Increment
+                    count += 1
+        # Trim
+        data = tbl[0:count]
+
+        # Finish up
+        #data['A'].unit = 1/u.s
+        #data['gamma'].unit = 1/u.s
+        #data['wrest'].unit = u.AA
+        #data['Ex'].unit = 1/u.cm
+        #data['Ej'].unit = 1/u.cm
+        #data['Ek'].unit = 1/u.cm
+
+        # Last
+        data['group'] = 1
+        data['Ref'] = 'Morton2003'
+        data['mol'] = ''
+
+    # Return
+    return data
+
+def mkvot_morton03(do_this=False, outfil=None):
+    '''Used to generate a VO Table for the Morton2003 paper
+    Only intended for builder usage (1.5Mb file; gzip FITS is 119kb)
+    '''
+    if not do_this:
+        print('mkvot_morton03: It is very unlikely you want to do this')
+        print('mkvot_morton03: Returning...')
+        return
+    # Read Morton2003
+    m03 = parse_morton03()
+
+    # Write
+    if outfil is None:
+        outfil = lt_path + '/data/lines/morton03_table2.vot'
+    m03.write(outfil, format='votable')
 
 
 def roman_to_number(val):

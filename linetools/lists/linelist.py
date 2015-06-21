@@ -12,7 +12,7 @@ from astropy import constants as const
 from astropy.io import fits
 from astropy.table import QTable, Table, vstack
 
-from xastropy.xutils import xdebug as xdb
+#from xastropy.xutils import xdebug as xdb
 
 from linetools.lists import parse as lilp
 
@@ -33,16 +33,18 @@ class LineList(object):
        'Gal_E'   :: Galaxy emission lines (HII)
        'Gal_A'   :: Galaxy absorption lines (stellar)
        'AGN'     :: Key AGN lines
+    gd_lines: list, optional
+      List of wrest for lines to use (drawn from input linelist)
     '''
     # Init
-    def __init__(self, llst_keys):
+    def __init__(self, llst_keys, gd_lines=None):
 
         # Error catching
-        if type(llst_keys) not in [str,list]:
+        if type(llst_keys) not in [str,list,unicode]:
             raise TypeError('LineList__init__: Wrong type for LineList input')
 
         # Save
-        if type(llst_keys) in [str]:
+        if type(llst_keys) in [str,unicode]:
             self.lists = [llst_keys]
         else:
             self.lists = llst_keys
@@ -51,32 +53,34 @@ class LineList(object):
         self.load_data()
 
         # Set lines for use
-        self.set_lines()
+        self.set_lines(gd_lines=gd_lines)
 
     # 
-    def load_data(self):
+    def load_data(self, tol=1e-3*u.AA):
         ''' Grab the data for the lines of interest
         '''
         # Import
         reload(lilp)
 
-        # Define datasets
+        # Define datasets: In order of Priority
         dataset = {
-            'ism': [lilp.parse_morton03], # Morton 2003 
+            'ism': [lilp.parse_morton03,lilp.read_verner94], # Verner 1994, Morton 2003 
             'molecules': [lilp.read_H2]   # H2 
             }
 
         # Loop on lists
         sets = []
         for llist in self.lists:
-            if llist == 'H2':
+            if str(llist) == 'H2':
                 sets.append('molecules')
-            elif llist == 'ISM':
+            elif str(llist) == 'ISM':
                 sets.append('ism')
-            elif llist == 'Strong':
+            elif str(llist) == 'Strong':
                 sets.append('ism')
             else:
-                raise ValueError('Not ready for this group')
+                import pdb
+                pdb.set_trace()
+                raise ValueError('load_data: Not ready for this: {:s}'.format(llist))
 
         full_table = None
         all_func = []
@@ -91,7 +95,15 @@ class LineList(object):
                     if full_table is None:
                         full_table = table
                     else:
-                        full_table = vstack([full_table, table])
+                        # Unique values
+                        wrest = full_table['wrest']
+                        newi = []
+                        for jj,row in enumerate(QTable(table)): # QTable for units
+                            mt = np.where(np.abs(row['wrest']-wrest) < tol)[0]
+                            if len(mt) == 0:
+                                newi.append(jj)
+                        # Append new ones (can't stack QTables yet)
+                        full_table = vstack([full_table, table[newi]])
                     # Save to avoid repeating
                     all_func.append(func)
 
@@ -99,25 +111,42 @@ class LineList(object):
         self._fulltable = QTable(full_table)
 
     #####
-    def set_lines(self, verbose=True):
+    def set_lines(self, verbose=True, gd_lines=None):
         ''' Parse the lines of interest
+        Parameters:
+        -------------
+        gd_lines: list, optional
+          List of wrest for lines to use (drawn from input linelist)
+          Should be unitless, i.e. not Quantity
         '''
-        # Loop on lines
+
         indices = []
         set_flags = []
-        for llist in self.lists:
-            if llist == 'H2':
-                gdi = np.where(self._fulltable['mol'] == 'H2')[0]
-                if len(gdi) == 0:
-                    raise IndexError(
-                        'set_lines: Found no H2 molecules! Read more data')
-                indices.append(gdi)
-            elif llist == 'ISM':
-                set_flags.append('fISM')
-            elif llist == 'Strong':
-                set_flags.append('fSI')
-            else:
-                raise ValueError('set_lines: Not ready for this')
+        if gd_lines is None:  # Default list
+            # Loop on lines
+            for llist in self.lists:
+                if llist == 'H2':
+                    gdi = np.where(self._fulltable['mol'] == 'H2')[0]
+                    if len(gdi) == 0:
+                        raise IndexError(
+                            'set_lines: Found no H2 molecules! Read more data')
+                    indices.append(gdi)
+                elif llist == 'ISM':
+                    set_flags.append('fISM')
+                elif llist == 'Strong':
+                    set_flags.append('fSI')
+                else:
+                    raise ValueError('set_lines: Not ready for this: {:s}'.format(llist))
+        else: # Input subset of lines
+            wrest = self._fulltable['wrest'].value # Assuming Anstroms
+            for gdlin in gd_lines:
+                mt = np.where( 
+                    np.abs(gdlin-wrest) < 1e-3 )[0]
+                if len(mt) > 0:
+                    indices.append(mt)
+                else:
+                    if verbose:
+                        print('set_lines: Did not find {:g} in data Tables'.format(gdlin))
 
         # Deal with Defined sets
         if len(set_flags) > 0:
@@ -154,7 +183,12 @@ class LineList(object):
         ''' Passback an array or Column of the data 
         k must be a Column name in the data Table
         '''
-        return self._data[k]
+        # Deal with QTable
+        colm = self._data[k]
+        if type(colm[0]) is Quantity:
+            return self._data[k]
+        else:
+            return np.array(self._data[k])
 
     #####
     def __getitem__(self,k, tol=1e-3*u.AA):
@@ -173,8 +207,8 @@ class LineList(object):
             mt = np.where( np.abs(k*u.AA-self.wrest) < tol)[0]
         elif type(k) in [Quantity]: # Wavelength
             mt = np.where( np.abs(k-self.wrest) < tol)[0]
-        elif type(k) in [str]: # Name
-            mt = np.where( k == self.name )[0]
+        elif type(k) in [str,unicode]: # Name
+            mt = np.where( str(k) == self.name )[0]
         else:
             raise ValueError('Not prepare for this type')
 

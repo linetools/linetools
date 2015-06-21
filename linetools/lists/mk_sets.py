@@ -55,7 +55,7 @@ def mk_ism(outfil=None, clobber=False):
     print('mk_ism: Wrote {:s}'.format(outfil))
 
 def mk_strong(infil=None, outfil=None):
-    ''' Make the ISM list from grb.lst in xastropy
+    ''' Make the Strong ISM list from lls.lst in xastropy
     SHOULD BE DEPRECATED AFTER v0.0
     Parameters:
     -----------
@@ -93,4 +93,33 @@ def mk_strong(infil=None, outfil=None):
     data.write(outfil, format='ascii.fixed_width')
     print('mk_strong: Wrote {:s}'.format(outfil))
 
+def mk_hi(infil=None, outfil=None):
+    ''' Make the HI list ISM + HI
+    Parameters:
+    -----------
+    infil: str, optional
+      Starting file.  Should use latest llist_vX.X.ascii
+    outfil: str, optional
+      Output file.  Default is to use infil
+    '''
+    if infil is None:
+        fils = glob.glob(lt_path+'/lists/sets/llist_v*')
+        infil = fils[-1] # Should grab the lateset
+
+    # Read
+    data = ascii.read(infil, format='fixed_width')
+
+    # Parse on HI
+    idx = []
+    for kk,row in enumerate(data):
+        if row['name'][0:3] == 'HI ':
+            data[kk]['fHI'] = 1
+
+    # Write
+    if outfil is None:
+        outfil = infil
+
+    import pdb
+    pdb.set_trace()
+    data.write(outfil, format='ascii.fixed_width')
 
