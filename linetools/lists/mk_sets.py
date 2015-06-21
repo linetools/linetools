@@ -112,7 +112,7 @@ def mk_hi(infil=None, outfil=None):
     # Parse on HI
     idx = []
     for kk,row in enumerate(data):
-        if row['name'][0:3] == 'HI ':
+        if row['name'][0:3] == 'HI ':  # Necessary to avoid DI
             data[kk]['fHI'] = 1
 
     # Write

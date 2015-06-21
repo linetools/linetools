@@ -35,9 +35,11 @@ class LineList(object):
        'AGN'     :: Key AGN lines
     gd_lines: list, optional
       List of wrest for lines to use (drawn from input linelist)
+    verbose: bool, optional
+      Give info galore if True
     '''
     # Init
-    def __init__(self, llst_keys, gd_lines=None):
+    def __init__(self, llst_keys, gd_lines=None, verbose=True):
 
         # Error catching
         if type(llst_keys) not in [str,list,unicode]:
@@ -53,7 +55,7 @@ class LineList(object):
         self.load_data()
 
         # Set lines for use
-        self.set_lines(gd_lines=gd_lines)
+        self.set_lines(gd_lines=gd_lines, verbose=verbose)
 
     # 
     def load_data(self, tol=1e-3*u.AA):
