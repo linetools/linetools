@@ -35,25 +35,18 @@ class XSpectrum1D(Spectrum1D):
 
     #### ###############################
     #  Normalize
-    def normalize(self, iconti, verbose=False, no_check=False):
+    def normalize(self, conti, verbose=False, no_check=False):
         """
         Normalize the spectrum with an input continuum
 
         Parameters
         ----------
-        conti: numpy array or string
-          Continuum array or file
+        conti: numpy array
+          Continuum
         verbose: bool, optional (False)
         no_check: bool, optional (False)
           Check size of array?
         """
-        # Grab
-        if type(iconti) in [str,unicode]:
-            print('Reading continuum from {:s}'.format(iconti))
-            conti = fits.open(iconti)[0].data
-        else:
-            conti = iconti
-
         # Sanity check
         if (len(conti) != len(self.flux)): 
             if no_check:
@@ -66,17 +59,10 @@ class XSpectrum1D(Spectrum1D):
             else:
                 raise ValueError('normalize: Continuum needs to be same length as flux array')
 
-        # Save
-        self.orig_flux = self.flux
-        self.conti = conti
-
         # Adjust the flux
+        self.flux = self.flux / conti
         if verbose:
             print('spec.utils: Normalizing the spectrum')
-        self.flux = self.flux / conti
-        #import pdb
-        #pdb.set_trace()
-        self.sig[:] = self.sig / conti
 
 
     #### ###############################
@@ -122,8 +108,7 @@ class XSpectrum1D(Spectrum1D):
     #### ###############################
     #  Box car smooth
     def box_smooth(self, nbox, preserve=False):
-        """ Box car 'smooth' spectrum and return a new one
-        More of a rebin than a smooth.
+        """ Box car smooth spectrum and return a new one
         Is a simple wrapper to the rebin routine
 
         Parameters
@@ -249,9 +234,7 @@ class XSpectrum1D(Spectrum1D):
         ---------
         velo: Quantity array (km/s)
         '''
-        velo = (self.dispersion-wv_obs) * const.c.to('km/s')/wv_obs
-        self.velo = velo
-        return velo
+        return  (self.dispersion-wv_obs) * const.c.to('km/s')/wv_obs
 
     # Write to fits
     def write_to_fits(self, outfil, clobber=True, add_wave=False):
