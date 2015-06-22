@@ -21,7 +21,7 @@ lt_path = imp.find_module('linetools')[1]
 # def read_H2
 # def read_verner94
 # def parse_morton03
-# def mkvot_morton03
+# def mktab_morton03
 # def roman_to_number
 
 # TODO
@@ -178,14 +178,14 @@ def read_verner94():
 def parse_morton03(orig=False):
     '''Parse tables from Morton 2003, ApJS, 149, 205 
     '''
-    # Look for VOT
-    votf = lt_path + '/data/lines/morton03_table2.vot'
-    morton03_tab2 = glob.glob(votf)
+    # Look for FITS
+    fitsf = lt_path + '/data/lines/morton03_table2.fits.gz'
+    morton03_tab2 = glob.glob(fitsf)
+
     if (len(morton03_tab2) > 0) & (not orig):
         print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
             morton03_tab2[0]))
-        vot = vo_parse(morton03_tab2[0])
-        data = vot.get_first_table().to_table(use_names_over_ids=True)
+        data = Table.read(morton03_tab2[0])
     else:
 
         ## Read Table 2
@@ -304,21 +304,34 @@ def parse_morton03(orig=False):
     # Return
     return data
 
-def mkvot_morton03(do_this=False, outfil=None):
+def mktab_morton03(do_this=False, outfil=None, fits=True):
     '''Used to generate a VO Table for the Morton2003 paper
     Only intended for builder usage (1.5Mb file; gzip FITS is 119kb)
+    do_this: bool, optional
+      Set to True to actually do this. Default=False
+    outfil: str, optional
+      Name of output file.  Defaults to a given value
+    fits:  bool, optional
+      Generate a FITS file?  Default=True
     '''
     if not do_this:
-        print('mkvot_morton03: It is very unlikely you want to do this')
-        print('mkvot_morton03: Returning...')
+        print('mktab_morton03: It is very unlikely you want to do this')
+        print('mktab_morton03: Returning...')
         return
+
     # Read Morton2003
     m03 = parse_morton03()
 
     # Write
-    if outfil is None:
-        outfil = lt_path + '/data/lines/morton03_table2.vot'
-    m03.write(outfil, format='votable')
+    if fits:
+        if outfil is None:
+            outfil = lt_path + '/data/lines/morton03_table2.fits'
+        m03.write(outfil,overwrite=True)
+    else:
+        if outfil is None:
+            outfil = lt_path + '/data/lines/morton03_table2.vot'
+        m03.write(outfil, format='votable')
+    print('mktab_morton03: Wrote {:s}'.format(outfil))
 
 
 #
