@@ -117,13 +117,38 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
                         efil,chk = chk_for_gz(specfil[0:ipos]+'e.fits')
                 if efil != None:
                     efil=os.path.expanduser(efil)
-            # Generate Spectrum1D
-            spec1d = spec_read_fits.read_fits_spectrum1d(os.path.expanduser(datfil),
-                                                         dispersion_unit='AA',
-                                                         efil=efil)
-            xspec1d = XSpectrum1D.from_spec1d(spec1d)
 
-            #spec1d = spec_read_fits.read_fits_spectrum1d(os.path.expanduser(datfil))
+            # Error file
+            if efil != None:
+                # BZERO -- This has to happen before reading the data!
+                try:
+                    bzero = head0['BZERO']
+                except KeyError:
+                    bzero = 0.
+                sig=fits.getdata(efil) - bzero
+                uncertainty = StdDevUncertainty(sig)
+            else:
+                uncertainty = None
+
+            #Log-Linear?
+            try:
+                dc_flag = head0['DC-FLAG']
+            except KeyError:
+                dc_flag = 0
+ 
+            if dc_flag == 0:
+                # Read FITS file
+                spec1d = spec_read_fits.read_fits_spectrum1d(os.path.expanduser(datfil),
+                                                             dispersion_unit='AA')
+                spec1d.uncertainty = uncertainty
+                xspec1d = XSpectrum1D.from_spec1d(spec1d) # UNTESTED!
+            elif dc_flag == 1: # Generate wavelengths and use array approach
+                fx = hdulist[0].data
+                # Generate wave
+                wave = setwave(head0)
+            else:
+                raise ValueError('DC-FLAG has unusual value {:d}'.format(dc_flag))
+
 
         elif len(hdulist) == 2: # NEW SCHOOL (one file per flux, error)
             spec1d = spec_read_fits.read_fits_spectrum1d(os.path.expanduser(datfil), dispersion_unit='AA')
@@ -225,6 +250,26 @@ def get_table_column(tags, hdulist):
     else: 
         return dat, 'NONE'
 
+#### ###############################
+#  Set wavelength array using Header cards
+def setwave(hdr):
+    ''' Generate wavelength array from header
+    '''
+
+    # Parse the header
+    npix = hdr['NAXIS1'] 
+    crpix1 = hdr['CRPIX1'] if 'CRPIX1' in hdr else 1.
+    crval1 = hdr['CRVAL1'] if 'CRVAL1' in hdr else 1.
+    cdelt1 = hdr['CDELT1'] if 'CDELT1' in hdr else 1.
+    ctype1 = hdr['CTYPE1'] if 'CTYPE1' in hdr else None
+    dcflag = hdr['DC-FLAG'] if 'DC-FLAG' in hdr else None
+
+    # Generate
+    if (dcflag == 1) or (cdelt1 < 1e-4):
+        wave = 10.**(crval1 + ( cdelt1 * np.arange(npix) + 1. - crpix1) ) # Log
+
+    # Return
+    return wave
 
 #### ###############################
 # Deal with .gz extensions, usually on FITS files
