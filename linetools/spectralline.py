@@ -67,8 +67,13 @@ class SpectralLine(object):
 
         # Other
         self.data = {} # Atomic/Moleculare Data (e.g. f-value, A coefficient, Elow)
-        self.analy = {} # Analysis inputs (e.g. spectrum; from .clm file or AbsID)
+        self.analy = {'spec': None, # Analysis inputs (e.g. spectrum; from .clm file or AbsID)
+            'WVMNX': [0., 0.], # Wavelength interval about the line (observed)
+            'VLIM': [0., 0.]*u.km/u.s, # Velocity limit of line, relative to self.attrib['z']
+            'FLG_ANLY': 1 # Analyze
+            }
         self.attrib = {   # Properties (e.g. column, EW, centroid)
+                       'RA': 0.*u.deg, 'DEC': 0.*u.deg,  #  Coords
                        'z': 0., 'zsig': 0.,  #  Redshift
                        'v': 0.*u.km/u.s, 'vsig': 0.*u.km/u.s,  #  Velocity relative to z
                        'EW': 0.*u.AA, 'EWsig': 0.*u.AA, 'flgEW': 0 # EW
@@ -78,44 +83,40 @@ class SpectralLine(object):
         self.fill_data(linelist=linelist)
 
     # EW 
-    def ew(self, **kwargs):
+    def box_ew(self):
         """  EW calculation
         Default is simple boxcar integration
         Observer frame, not rest-frame
           WVMNX must be set!
+          spec must be set!
 
         Parameters
         ----------
-        spec : Spectrum1D (None)
-          1D spectrum.  Required but often read in through the Class (self.spec)
-        conti : np.array (None)
-          Continuum array 
 
         Returns:
           EW, sigEW : EW and error in observer frame
         """
 
-        # Check on WVMNX
+        # Checks
         if np.sum(self.analy['WVMNX']) == 0.:
             raise ValueError('spectralline.ew: Need to set WVMNX!')
-
-        # Grab spectrum
-        spec = self.set_spec(**kwargs)
+        if self.analy['spec'] is None:
+            raise ValueError('spectralline.ew: Need to set spectrum!')
+        if self.analy['spec'].wcs.unit == 1.:
+            raise ValueError('Expecting a unit!')
 
         # Pixels for evaluation
-        pix = spec.pix_minmax(self.analy['WVMNX'])[0]
+        pix = self.analy['spec'].pix_minmax(self.analy['WVMNX'])[0]
 
-        # Normalized + convenience
-        fx, sig = parse_spec(spec, **kwargs)
-        wv = spec.dispersion[pix]
+        # Cut for convenience
+        fx = self.analy['spec'].flux[pix]
+        sig = self.analy['spec'].sig[pix]
+        wv = self.analy['spec'].dispersion[pix]
 
         # dwv
         dwv = wv - np.roll(wv,1)
         dwv[0] = dwv[1]
 
-        # Check for units
-        if spec.wcs.unit == 1.:
-            raise ValueError('Expecting a unit!')
 
         # Simple boxcar
         EW = np.sum( dwv * (1. - fx) ) 
@@ -143,22 +144,6 @@ class SpectralLine(object):
 
         # Return
         return self.attrib['EW'], self.attrib['sigEW'] 
-
-    # Check for a spectrum
-    def set_spec(self, **kwargs):
-        ''' Try to grab a spectrum for analysis
-        '''
-        
-        try: # Internal?
-            spec = self.spec
-        except AttributeError:
-            # Look for it as a keyword
-            try:
-                spec = kwargs['spec']
-            except KeyError:
-                raise IOError('lines_utils: Need a spectrum!')
-        return spec
-
 
     # Output
     def __repr__(self):
@@ -206,13 +191,12 @@ class AbsLine(SpectralLine):
         self.data.update(self.llist[self.wrest])
 
         #
-        self.analy['WVMNX'] = [0., 0.] # Wavelength interval about the line (observed)
-        self.analy['VLIM'] = [0., 0.]*u.km/u.s # Velocity limit of line
-        self.analy['FLG_ANLY'] = 1 # Analyze
-        self.analy['FLG_EYE'] = 0
-        self.analy['FLG_LIMIT'] = 0 # No limit
-        self.analy['DATFIL'] = '' 
-        self.analy['IONNM'] = self.data['name']
+        self.analy.update( {
+            'FLG_EYE': 0,
+            'FLG_LIMIT': 0, # No limit
+            'DATFIL': '', 
+            'IONNM': self.data['name']
+            })
 
         # Additional attributes for Absorption Line
         self.attrib.update({'N': 0., 'Nsig': 0., 'flgN': 0, # Column
