@@ -202,6 +202,29 @@ class XSpectrum1D(Spectrum1D):
         # Return new spectrum
         return XSpectrum1D.from_array(new_wv, new_fx)
 
+
+    # Splice spectrum + Normalize
+    def parse_spec(spec, **kwargs):
+        ''' Splice the spectrum.
+        Normalize too
+        '''
+        fx = spec.flux[spec.sub_pix]
+        sig = spec.sig[spec.sub_pix] 
+
+        # Normalize?
+        try:
+            conti = kwargs['conti']
+        except KeyError:
+            pass
+        else:
+            if len(conti) != len(spec.flux): # Check length
+                raise ValueError('lines_utils.aodm: Continuum length must match input spectrum')
+            fx = fx / conti[spec.sub_pix]
+            sig = sig / conti[spec.sub_pix]
+
+        return fx, sig
+
+
     # Quick plot
     def plot(self):
         ''' Plot the spectrum
