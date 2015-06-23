@@ -82,6 +82,48 @@ class SpectralLine(object):
         # Fill data
         self.fill_data(linelist=linelist)
 
+    # Setup spectrum for analysis
+    def cut_spec(self, normalize=False):
+        '''Splice spectrum.  Normalize too (as desired)
+
+        Parameters:
+        ----------
+        normalize: bool, optional
+          Normalize if true (and continuum exists)
+
+        Returns:
+        ----------
+        fx, sig, wave -- Arrays (numpy or Quantity) of flux, error, wavelength
+        '''
+        # Checks
+        if np.sum(self.analy['WVMNX']) == 0.:
+            raise ValueError('spectralline.cut_spec: Need to set WVMNX!') # Could use VMNX
+        if self.analy['spec'] is None:
+            raise ValueError('spectralline.cut_spec: Need to set spectrum!')
+        if self.analy['spec'].wcs.unit == 1.:
+            raise ValueError('Expecting a unit!')
+
+        # Pixels for evaluation
+        pix = self.analy['spec'].pix_minmax(self.analy['WVMNX'])[0]
+
+        # Cut for analysis
+        fx = self.analy['spec'].flux[pix]
+        sig = self.analy['spec'].sig[pix]
+        wave = self.analy['spec'].dispersion[pix]
+
+        # Normalize
+        if normalize:
+            try:
+                fx = fx / self.analy['spec'].conti[pix]
+            except AttributeError:
+                pass
+            else:
+                sig = sig / self.analy['spec'].conti[pix]
+
+        # Return
+        return fx, sig, wave
+
+
     # EW 
     def box_ew(self):
         """  EW calculation
@@ -96,22 +138,8 @@ class SpectralLine(object):
         Returns:
           EW, sigEW : EW and error in observer frame
         """
-
-        # Checks
-        if np.sum(self.analy['WVMNX']) == 0.:
-            raise ValueError('spectralline.ew: Need to set WVMNX!')
-        if self.analy['spec'] is None:
-            raise ValueError('spectralline.ew: Need to set spectrum!')
-        if self.analy['spec'].wcs.unit == 1.:
-            raise ValueError('Expecting a unit!')
-
-        # Pixels for evaluation
-        pix = self.analy['spec'].pix_minmax(self.analy['WVMNX'])[0]
-
-        # Cut for convenience
-        fx = self.analy['spec'].flux[pix]
-        sig = self.analy['spec'].sig[pix]
-        wv = self.analy['spec'].dispersion[pix]
+        # Cut spectrum
+        fx, sig, wv = self.cut_spec(normalize=True)
 
         # dwv
         dwv = wv - np.roll(wv,1)
@@ -132,15 +160,15 @@ class SpectralLine(object):
         return EW, sigEW
             
     # EW 
-    def restew(self, **kwargs):
+    def restew(self):
         """  Rest EW calculation
-        Return rest-frame.  See "ew" above for details
+        Return rest-frame.  See "box_ew" above for details
         """
         # Standard call
-        EW,sigEW = self.ew(**kwargs)
+        EW,sigEW = self.box_ew()
         # Push to rest-frame
-        self.attrib['EW'] = EW / (self.analy['z']+1)
-        self.attrib['sigEW'] = sigEW / (self.analy['z']+1)
+        self.attrib['EW'] = EW / (self.attrib['z']+1)
+        self.attrib['sigEW'] = sigEW / (self.attrib['z']+1)
 
         # Return
         return self.attrib['EW'], self.attrib['sigEW'] 
