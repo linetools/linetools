@@ -33,6 +33,16 @@ class XSpectrum1D(Spectrum1D):
         return cls(flux=spec1d.flux, wcs=spec1d.wcs, unit=spec1d.unit,
                    uncertainty=spec1d.uncertainty, mask=spec1d.mask, meta=spec1d.meta)
 
+    @property
+    def sig(self):
+        ''' Return a standard 1sigma error array
+        '''
+        if isinstance(self.uncertainty,StdDevUncertainty):
+            return self.uncertainty.array
+        else:
+            return None
+
+
     #### ###############################
     #  Normalize
     def normalize(self, conti, verbose=False, no_check=False):
