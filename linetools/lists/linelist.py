@@ -66,7 +66,7 @@ class LineList(object):
 
         # Define datasets: In order of Priority
         dataset = {
-            'ism': [lilp.parse_morton03,lilp.read_verner94], # Verner 1994, Morton 2003 
+            'ism': [lilp.parse_morton03,lilp.parse_morton00, lilp.read_verner94], # Verner 1994, Morton 2003 
             'molecules': [lilp.read_H2]   # H2 
             }
 
