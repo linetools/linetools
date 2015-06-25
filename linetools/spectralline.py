@@ -230,10 +230,10 @@ class AbsLine(SpectralLine):
 
         #
         self.analy.update( {
-            'FLG_EYE': 0,
-            'FLG_LIMIT': 0, # No limit
-            'DATFIL': '', 
-            'IONNM': self.data['name']
+            'flg_eye': 0,
+            'flg_limit': 0, # No limit
+            'datafile': '', 
+            'name': self.data['name']
             })
 
         # Additional attributes for Absorption Line
