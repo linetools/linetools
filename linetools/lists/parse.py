@@ -5,7 +5,7 @@ Module for parsing Line List data
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import os, imp, glob
+import os, imp, glob, pdb
 
 from astropy import units as u
 from astropy.units.quantity import Quantity
@@ -142,14 +142,16 @@ def read_H2():
 
 #
 def read_verner94():
+    '''
+    Read Verner1994 Table
+    '''
     # Read
-    verner94 = lt_path + '/data/lines/verner94_tables.vot'
+    verner94 = lt_path + '/data/lines/verner94_tab6.fits'
     print(
         'linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
             verner94))
-    vot = vo_parse(verner94)
-    # Table
-    tbl_6 = vot.get_table_by_index(5).to_table(use_names_over_ids=True)
+    tbl_6 = QTable.read(verner94)
+
 
     # My table
     ldict, data = line_data(nrows=len(tbl_6))
@@ -163,7 +165,7 @@ def read_verner94():
     for ii,row in enumerate(tbl_6):
         data[ii]['name'] = (
             row['Species'][0:2].strip() + row['Species'][2:].strip() + 
-            ' {:d}'.format(int(row['lambda'])))
+            ' {:d}'.format(int(row['lambda'].value)))
         #xdb.set_trace()
 
     #  Finish
@@ -174,9 +176,53 @@ def read_verner94():
     # Return
     return data
 
+def parse_morton00(orig=False):
+    '''Parse tables from Morton 2000, ApJS, 130, 403
+
+    Parameters:
+    -----------
+    orig:
+      Use original code to parse the ASCII file
+
+    Returns:
+    -----------
+    data:  Table
+      Atomic data
+    '''
+    # Look for FITS
+    fitsf = lt_path + '/data/lines/morton00_table2.fits.gz'
+    morton00_tab2 = glob.glob(fitsf)
+
+    if (len(morton00_tab2) > 0) & (not orig):
+        print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
+            morton00_tab2[0]))
+        data = Table.read(morton00_tab2[0])
+    else:
+        # File
+        morton00_tab2 = lt_path + '/data/lines/morton00_table2.dat'
+        # Call
+        data = parse_morton03(orig=True, tab_fil=morton00_tab2)
+        # Update
+        data['Ref'] = 'Morton2000'
+
+    # Return
+    return data
+
 #
-def parse_morton03(orig=False):
+def parse_morton03(orig=False, tab_fil=None):
     '''Parse tables from Morton 2003, ApJS, 149, 205 
+
+    Parameters:
+    -----------
+    orig:
+      Use original code to parse the ASCII file
+    tab_fil: str, optional
+      Filename to use.  Default = /data/lines/morton03_table2.dat 
+
+    Returns:
+    -----------
+    data:  Table
+      Atomic data
     '''
     # Look for FITS
     fitsf = lt_path + '/data/lines/morton03_table2.fits.gz'
@@ -189,7 +235,10 @@ def parse_morton03(orig=False):
     else:
 
         ## Read Table 2
-        morton03_tab2 = lt_path + '/data/lines/morton03_table2.dat'
+        if tab_fil is None:
+            morton03_tab2 = lt_path + '/data/lines/morton03_table2.dat'
+        else:
+            morton03_tab2 = tab_fil
         print(
             'linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
                 morton03_tab2))
@@ -204,7 +253,12 @@ def parse_morton03(orig=False):
         ioni = []
         ionv = []
         for kk,line in enumerate(lines):
-            if 'Z = ' in line:
+            #print('kk = {:d}'.format(kk))
+            try:
+                tmp = ('Z = ' in line) & ('A = ' in line)  # Deals with bad Byte in Morton00
+            except UnicodeDecodeError:
+                tmp = False
+            if tmp:
                 # Grab Z
                 ipos = line.find('Z = ')
                 elmZ.append(int(line[ipos+4:ipos+7]))
@@ -213,13 +267,24 @@ def parse_morton03(orig=False):
                 #xdb.set_trace()
                 # Line index
                 elmi.append(kk)
-            if 'IP = ' in line:
-                # Grab Z
-                ipos = line.find(' ')
-                ipos2 = line[ipos+1:].find(' ')
-                ionv.append(line[ipos+1:ipos+ipos2+1].strip())
+            # ION
+            try:
+                tmp2 = 'IP = ' in line[35:]  # Deals with bad Byte in Morton00
+            except UnicodeDecodeError:
+                tmp2 = False
+            if tmp2:
+                # Grab ion
+                ipos = line[0:10].find(' ')
+                if ipos > 4:
+                    iionv = line[2:6].strip()
+                else:
+                    iionv = line[ipos:6].strip()
+                if (len(iionv) == 0) | (iionv == '5s') | (iionv == 'B I'):
+                    pdb.set_trace()
+                ionv.append(iionv)
                 # Line index
                 ioni.append(kk)
+        #pdb.set_trace()
 
         ## Initialize table
         ldict, tbl = line_data(nrows=len(lines))
@@ -246,15 +311,17 @@ def parse_morton03(orig=False):
                             raise ValueError('Uh oh elm')
                     tbl[count]['Z'] = elmZ[gdZ]
                     # ion
-                    gdi = np.where( (kk > np.array(ioni)) & (kk < np.roll(np.array(ioni),-1)))[0]
-                    if len(gdi) != 1:
-                        xdb.set_trace()
-                        raise ValueError('Uh oh ion')
+                    if kk > np.max(ioni):
+                        gdi = len(ioni)-1
+                    else:
+                        gdi = np.where( (kk > np.array(ioni)) & (kk < np.roll(np.array(ioni),-1)))[0]
+                        if len(gdi) != 1:
+                            pdb.set_trace()
+                            raise ValueError('Uh oh ion')
                     tbl[count]['ion'] = roman_to_number(ionv[gdi])
                     # Name
                     tbl[count]['name'] = elmc[gdZ]+ionv[gdi]+' {:d}'.format(
                         int(tbl[count]['wrest']))
-                    #xdb.set_trace()
                     # f
                     try:
                         tbl[count]['f'] = float(line[79:89])
@@ -281,20 +348,11 @@ def parse_morton03(orig=False):
 
                     # Check
                     #print(tbl[count])
-                    #xdb.set_trace()
 
                     # Increment
                     count += 1
         # Trim
         data = tbl[0:count]
-
-        # Finish up
-        #data['A'].unit = 1/u.s
-        #data['gamma'].unit = 1/u.s
-        #data['wrest'].unit = u.AA
-        #data['Ex'].unit = 1/u.cm
-        #data['Ej'].unit = 1/u.cm
-        #data['Ek'].unit = 1/u.cm
 
         # Last
         data['group'] = 1
@@ -305,7 +363,7 @@ def parse_morton03(orig=False):
     return data
 
 def mktab_morton03(do_this=False, outfil=None, fits=True):
-    '''Used to generate a VO Table for the Morton2003 paper
+    '''Used to generate a VO or FITS Table for the Morton2003 paper
     Only intended for builder usage (1.5Mb file; gzip FITS is 119kb)
     do_this: bool, optional
       Set to True to actually do this. Default=False
@@ -333,6 +391,27 @@ def mktab_morton03(do_this=False, outfil=None, fits=True):
         m03.write(outfil, format='votable')
     print('mktab_morton03: Wrote {:s}'.format(outfil))
 
+def mktab_morton00(do_this=False, outfil=None):
+    '''Used to generate a FITS Table for the Morton2000 paper
+    Only intended for builder usage 
+    do_this: bool, optional
+      Set to True to actually do this. Default=False
+    outfil: str, optional
+      Name of output file.  Defaults to a given value
+    '''
+    if not do_this:
+        print('mktab_morton00: It is very unlikely you want to do this')
+        print('mktab_morton00: Returning...')
+        return
+
+    # Read Morton2003
+    m00 = parse_morton00()
+
+    # Write
+    if outfil is None:
+        outfil = lt_path + '/data/lines/morton00_table2.fits'
+    m00.write(outfil,overwrite=True)
+    print('mktab_morton00: Wrote {:s}'.format(outfil))
 
 #
 def roman_to_number(val):
@@ -348,8 +427,13 @@ def roman_to_number(val):
     '''
     r_to_n = dict(I=0, II=1, III=2, IV=3, V=4, VI=5, 
         VII=6, VIII=7, IX=8, X=9)
+    try:
+        num = r_to_n[val.strip()]
+    except KeyError:
+        print(val)
+        pdb.set_trace()
 
-    return r_to_n[val.strip()]
+    return num
 
 
 
