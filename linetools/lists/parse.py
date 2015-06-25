@@ -142,16 +142,10 @@ def read_H2():
 
 #
 def read_verner94():
+    '''
+    Read Verner1994 Table
+    '''
     # Read
-    '''
-    verner94 = lt_path + '/data/lines/verner94_tables.vot'
-    print(
-        'linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
-            verner94))
-    vot = vo_parse(verner94)
-    # Table
-    tbl_6 = vot.get_table_by_index(5).to_table(use_names_over_ids=True)
-    '''
     verner94 = lt_path + '/data/lines/verner94_tab6.fits'
     print(
         'linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
