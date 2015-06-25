@@ -163,7 +163,10 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
                 print('spec.readwrite: No wavelength info but only 2 extensions!')
                 return
             fx = hdulist[0].data.flatten()
-            sig = hdulist[1].data.flatten()
+            try:
+                sig = hdulist[1].data.flatten()
+            except AttributeError:  # Error array is "None"
+                sig = None
             wave = hdulist[2].data.flatten()
             # BOSS/SDSS?
             try:
