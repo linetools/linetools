@@ -23,3 +23,7 @@ def test_mk_absline():
 	# Init CII 1334 with LineList
     abslin2 = AbsLine(1334.5323*u.AA, linelist='Strong')
     np.testing.assert_allclose(abslin2.data['Ek'], 74932.62 / u.cm)
+
+	# Init CII 1334 by name
+    abslin3 = AbsLine('CII 1334')
+    np.testing.assert_allclose(abslin3.data['wrest'], 1334.5323*u.AA)
