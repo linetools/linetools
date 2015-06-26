@@ -39,7 +39,7 @@ class LineList(object):
       Give info galore if True
     '''
     # Init
-    def __init__(self, llst_keys, gd_lines=None, verbose=True):
+    def __init__(self, llst_keys, gd_lines=None, verbose=False):
 
         # Error catching
         if not isinstance(llst_keys,(str,list,unicode)):
@@ -200,8 +200,9 @@ class LineList(object):
 
     #####
     def __getitem__(self,k, tol=1e-3*u.AA):
-        ''' Passback a row of data on the input line
-        Paramaters:
+        ''' Passback data as a dict (from the table) for the input line
+
+        Parameters:
         ----------
         k: overloaded
           float,Quantity -- Wavelength
@@ -209,7 +210,7 @@ class LineList(object):
 
         Returns:
         ----------
-        Astropy Row from the data table
+        Dict (from row in the data table)
         '''
         if isinstance(k,float): # Wavelength, assuming Ang
             mt = np.where( np.abs(k*u.AA-self.wrest) < tol)[0]
@@ -225,7 +226,8 @@ class LineList(object):
             print('No such line in the list')
             return None
         elif len(mt) == 1:
-            return self._data[mt][0]  # Pass back as a Row not a Table
+            return dict(zip(self._data.dtype.names,self._data[mt][0]))  # Pass back as dict
+            #return self._data[mt][0]  # Pass back as a Row not a Table
         else:
             raise ValueError(
                 '{:s}: Multiple lines in the list'.format(self.__class__))
