@@ -22,6 +22,7 @@ lt_path = imp.find_module('linetools')[1]
 # def read_verner94
 # def parse_morton03
 # def mktab_morton03
+# def update_fval
 # def roman_to_number
 
 # TODO
@@ -412,6 +413,46 @@ def mktab_morton00(do_this=False, outfil=None):
         outfil = lt_path + '/data/lines/morton00_table2.fits'
     m00.write(outfil,overwrite=True)
     print('mktab_morton00: Wrote {:s}'.format(outfil))
+
+def update_fval(table, verbose=True):
+    '''Update f-values only
+    Parameters:
+    -----------
+    table: QTable
+      Data to be updated
+    '''
+    # Howk 2000
+    howk00_fil = lt_path + '/data/lines/howk00_table1.ascii'
+    howk00 = ascii.read(howk00_fil)
+
+    # Dress up
+    howk00['wrest'].unit = u.AA
+
+    fval = []
+    fsig = []
+    for row in howk00:
+        ipos1 = row['fval_sig'].find('(')
+        ipos2 = row['fval_sig'].find(')')
+        # 
+        fval.append(float(row['fval_sig'][0:ipos1]))
+        fsig.append(float(row['fval_sig'][ipos1+1:ipos2]))
+    # Add columns
+    howk00.add_column(Column(np.array(fval), name='f'))
+    howk00.add_column(Column(np.array(fsig), name='fsig')) # Error in last decimal
+
+    # Now, finally, update
+    for row in howk00:
+        mt = np.where( (np.abs(table['wrest']-row['wrest']) < 1e-3*u.AA) & 
+            (table['Z'] == 26) & (table['ion'] == 2))[0]
+        if len(mt) == 0:
+            if verbose:
+                print('update_fval: Line {:g} not in your table.'.format(row['wrest']))
+        elif len(mt) == 1:
+            table[mt]['f'] = row['f']
+        else:
+            raise ValueError('Uh oh')
+    # Check
+    pdb.set_trace()
 
 #
 def roman_to_number(val):

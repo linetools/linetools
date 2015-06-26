@@ -66,8 +66,9 @@ class LineList(object):
 
         # Define datasets: In order of Priority
         dataset = {
-            'ism': [lilp.parse_morton03,lilp.parse_morton00, lilp.read_verner94], # Verner 1994, Morton 2003 
-            'molecules': [lilp.read_H2]   # H2 
+            'ism': [lilp.parse_morton03,lilp.parse_morton00, 
+                lilp.read_verner94], # Morton 2003, Morton 00, Verner 94 
+            'molecules': [lilp.read_H2]   # H2 (Abrigail)
             }
 
         # Loop on lists
@@ -112,6 +113,9 @@ class LineList(object):
         # Save as QTable
         self._fulltable = QTable(full_table)
 
+        # Update f-values
+        #lilp.update_fval(self._fulltable)
+
     #####
     def set_lines(self, verbose=True, gd_lines=None):
         ''' Parse the lines of interest
@@ -124,7 +128,9 @@ class LineList(object):
 
         indices = []
         set_flags = []
-        if gd_lines is None:  # Default list
+
+        # Default list
+        if gd_lines is None:  
             # Loop on lines
             for llist in self.lists:
                 if llist == 'H2':

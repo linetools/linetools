@@ -20,6 +20,12 @@ def test_ism():
 	# 
 	np.testing.assert_allclose(ism['HI 1215']['wrest'], 1215.6700*u.AA, rtol=1e-7)
 
+# Test update_fval
+def test_updfval():
+	ism = LineList('ISM')
+	# 
+	np.testing.assert_allclose(ism['FeII 1144']['f'], 0.106)
+
 # H2 LineList
 def test_h2():
 	h2 = LineList('H2')
