@@ -26,6 +26,19 @@ def test_updfval():
 	# 
 	np.testing.assert_allclose(ism['FeII 1144']['f'], 0.106)
 
+# Strong ISM LineList
+def test_strong():
+	strng = LineList('Strong')
+	# 
+	assert len(strng._data) < 200
+
+# HI LineList
+def test_h1():
+	HI = LineList('HI')
+	# 
+	for name in HI.name:
+		assert name[0:2] == 'HI'
+
 # H2 LineList
 def test_h2():
 	h2 = LineList('H2')

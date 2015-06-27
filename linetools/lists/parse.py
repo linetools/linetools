@@ -6,6 +6,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import os, imp, glob, pdb
+import subprocess
 
 from astropy import units as u
 from astropy.units.quantity import Quantity
@@ -73,9 +74,10 @@ def line_data(nrows=1):
         'Jk': 0.,             # Tot ang mom (z projection) of upper state (or rotation level)
         'el': 0,              # Electronic transition (2=Lyman (B-X), 3=Werner (C-X)) 
         'Z': 0,               # Atomic number (for atoms)
-        'ion': 0,             # Ionic state
-        'mol': ' '*10,            # Molecular name (H2, HD, CO, C13O)
-        'Ref': ' '*50,            # Referencs
+        'Am': 0,              # Mass number (often written as "A"; only used for D)
+        'ion': 0,             # Ionic state (1=Neutral)
+        'mol': ' '*10,        # Molecular name (H2, HD, CO, C13O)
+        'Ref': ' '*50,        # References
         'group': 0            # Flag for grouping
         }
 
@@ -162,6 +164,7 @@ def read_verner94():
     data['f'] = tbl_6['Fik']
     data['gj'] = tbl_6['Gi']
     data['gk'] = tbl_6['Gk']
+    data['Z'] = tbl_6['Z']
     data['ion'] = tbl_6['Z'] - tbl_6['N'] + 1
     for ii,row in enumerate(tbl_6):
         data[ii]['name'] = (
@@ -210,7 +213,7 @@ def parse_morton00(orig=False):
     return data
 
 #
-def parse_morton03(orig=False, tab_fil=None):
+def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
     '''Parse tables from Morton 2003, ApJS, 149, 205 
 
     Parameters:
@@ -219,6 +222,8 @@ def parse_morton03(orig=False, tab_fil=None):
       Use original code to parse the ASCII file
     tab_fil: str, optional
       Filename to use.  Default = /data/lines/morton03_table2.dat 
+    HIcombine: bool, optional
+      Combine doublet for HI [True]
 
     Returns:
     -----------
@@ -252,6 +257,7 @@ def parse_morton03(orig=False, tab_fil=None):
         elmZ = []
         elmc = []
         ioni = []
+        isoi = []
         ionv = []
         for kk,line in enumerate(lines):
             #print('kk = {:d}'.format(kk))
@@ -268,25 +274,38 @@ def parse_morton03(orig=False, tab_fil=None):
                 #xdb.set_trace()
                 # Line index
                 elmi.append(kk)
-            # ION
+
+            # ISOTOPE and ION
             try:
-                tmp2 = 'IP = ' in line[35:]  # Deals with bad Byte in Morton00
+                tmp2 = ( (('I ' in line[0:13]) | ('V ' in line[0:13]))
+                    & (line[0:3] not in ['IOD','VAN']) & (line[0:2] != 'I ') )
             except UnicodeDecodeError:
                 tmp2 = False
             if tmp2:
                 # Grab ion
                 ipos = line[0:10].find(' ')
                 if ipos > 4:
-                    iionv = line[2:6].strip()
+                    ipos3 = line[0:10].find('I')
+                    iionv = line[ipos3:ipos]
                 else:
                     iionv = line[ipos:6].strip()
                 if (len(iionv) == 0) | (iionv == '5s') | (iionv == 'B I'):
                     pdb.set_trace()
                 ionv.append(iionv)
+                if iionv == 'Z =':
+                    pdb.set_trace()
+
                 # Line index
                 ioni.append(kk)
-        #pdb.set_trace()
 
+                # Deal with Isotope
+                if line[0] in ['0','1','2','3','4','5','6','7','8','9']:
+                    isoi.append(kk)
+                # Deuterium
+                if line[0] == 'D':
+                    Dline = kk
+
+        #pdb.set_trace()
         ## Initialize table
         ldict, tbl = line_data(nrows=len(lines))
 
@@ -300,6 +319,23 @@ def parse_morton03(orig=False, tab_fil=None):
             else:
                 if tmp: # UV wavelength?
                     # Parse
+
+                    # Ion/Isotope
+                    if kk > np.max(ioni):
+                        gdi = len(ioni)-1
+                    else:
+                        gdi = np.where( (kk > np.array(ioni)) & (kk < np.roll(np.array(ioni),-1)))[0]
+                        if len(gdi) != 1:
+                            pdb.set_trace()
+                            raise ValueError('Uh oh ion')
+                    if ioni[gdi] in isoi: # Isotope
+                        continue
+                    # Isotope (Atomic number)
+                    if ioni[gdi] == Dline:
+                        tbl[count]['Am'] = 2
+                    # Ion
+                    tbl[count]['ion'] = roman_to_number(ionv[gdi])
+
                     # Wavelength
                     tbl[count]['wrest'] = float(line[19:28]) #* u.AA
                     # Z
@@ -311,15 +347,6 @@ def parse_morton03(orig=False, tab_fil=None):
                             #xdb.set_trace()
                             raise ValueError('Uh oh elm')
                     tbl[count]['Z'] = elmZ[gdZ]
-                    # ion
-                    if kk > np.max(ioni):
-                        gdi = len(ioni)-1
-                    else:
-                        gdi = np.where( (kk > np.array(ioni)) & (kk < np.roll(np.array(ioni),-1)))[0]
-                        if len(gdi) != 1:
-                            pdb.set_trace()
-                            raise ValueError('Uh oh ion')
-                    tbl[count]['ion'] = roman_to_number(ionv[gdi])
                     # Name
                     tbl[count]['name'] = elmc[gdZ]+ionv[gdi]+' {:d}'.format(
                         int(tbl[count]['wrest']))
@@ -344,11 +371,15 @@ def parse_morton03(orig=False, tab_fil=None):
                     # gl, gu
                     tbl[count]['gj'] = int(line[52:54])
                     tbl[count]['gk'] = int(line[56:58])           
+
+                    # Only use combined HI lines
+                    if HIcombine:
+                        if ((tbl[count]['Z'] == 1) & (tbl[count]['ion']==1) 
+                            & (tbl[count]['gk'] != 6)):
+                            #print('Skipping HI line {:g}'.format(tbl[count]['wrest']))
+                            continue 
                     # Ex
                     #all_dict[count]['Ex'] = 0.  # Zero out units (for Table)
-
-                    # Check
-                    #print(tbl[count])
 
                     # Increment
                     count += 1
@@ -378,8 +409,8 @@ def mktab_morton03(do_this=False, outfil=None, fits=True):
         print('mktab_morton03: Returning...')
         return
 
-    # Read Morton2003
-    m03 = parse_morton03()
+    # Read Morton2003 ASCII file
+    m03 = parse_morton03(orig=True)
 
     # Write
     if fits:
@@ -391,6 +422,9 @@ def mktab_morton03(do_this=False, outfil=None, fits=True):
             outfil = lt_path + '/data/lines/morton03_table2.vot'
         m03.write(outfil, format='votable')
     print('mktab_morton03: Wrote {:s}'.format(outfil))
+    #
+    print('mktab_morton03: Now compressing...')
+    subprocess.call(['gzip', '-f', outfil])
 
 def mktab_morton00(do_this=False, outfil=None):
     '''Used to generate a FITS Table for the Morton2000 paper
@@ -406,15 +440,18 @@ def mktab_morton00(do_this=False, outfil=None):
         return
 
     # Read Morton2003
-    m00 = parse_morton00()
+    m00 = parse_morton00(orig=True)
 
     # Write
     if outfil is None:
         outfil = lt_path + '/data/lines/morton00_table2.fits'
     m00.write(outfil,overwrite=True)
     print('mktab_morton00: Wrote {:s}'.format(outfil))
+    #
+    print('mktab_morton03: Now compressing...')
+    subprocess.call(['gzip', '-f', outfil])
 
-def update_fval(table, verbose=True):
+def update_fval(table, verbose=False):
     '''Update f-values only
     Parameters:
     -----------
@@ -442,17 +479,32 @@ def update_fval(table, verbose=True):
 
     # Now, finally, update
     for row in howk00:
-        mt = np.where( (np.abs(table['wrest']-row['wrest']) < 1e-3*u.AA) & 
+        mt = np.where( (np.abs(table['wrest']-row['wrest']*u.AA) < 1e-3*u.AA) & 
             (table['Z'] == 26) & (table['ion'] == 2))[0]
         if len(mt) == 0:
             if verbose:
                 print('update_fval: Line {:g} not in your table.'.format(row['wrest']))
         elif len(mt) == 1:
-            table[mt]['f'] = row['f']
+            table['f'][mt[0]] = row['f']
         else:
             raise ValueError('Uh oh')
-    # Check
-    pdb.set_trace()
+
+def update_wrest(table, verbose=True):
+    '''Update wrest values (and Ej,Ek)
+    Parameters:
+    -----------
+    table: QTable
+      Data to be updated
+    '''
+
+    '''
+    # TiII line (Morton 2003 vs Weise 2001) 
+    # Went back to Morton 2003.  If you go to Weise, you have
+    #  to expunge the Verner94 row
+    mt = np.where( (np.abs(table['wrest']-1910.9538*u.AA) < 1e-3*u.AA))[0] 
+    table['wrest'][mt[0]] = 1910.938 * u.AA
+    table['Ek'][mt[0]] = 52330.33 / u.cm
+    '''
 
 #
 def roman_to_number(val):
@@ -466,8 +518,8 @@ def roman_to_number(val):
     ------------
     Number
     '''
-    r_to_n = dict(I=0, II=1, III=2, IV=3, V=4, VI=5, 
-        VII=6, VIII=7, IX=8, X=9)
+    r_to_n = dict(I=1, II=2, III=3, IV=4, V=5, VI=6, 
+        VII=7, VIII=8, IX=9, X=10)
     try:
         num = r_to_n[val.strip()]
     except KeyError:

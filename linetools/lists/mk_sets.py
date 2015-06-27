@@ -27,6 +27,8 @@ def mk_ism(outfil=None, overwrite=False):
     outfil: str, optional
       Outfil
     '''
+    raise ValueError('BAD IDEA TO RUN THIS AGAIN')
+    raise ValueError('REALLY')
     # Read
     fil = xa_path+'/data/spec_lines/grb.lst'
     data = ascii.read(fil, format='fixed_width_no_header',data_start=1,

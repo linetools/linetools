@@ -73,12 +73,20 @@ class LineList(object):
 
         # Loop on lists
         sets = []
+        flag_fval = False # Update f-values?
+        flag_wrest = False # Update wavelengths?
         for llist in self.lists:
             if str(llist) == 'H2':
                 sets.append('molecules')
             elif str(llist) == 'ISM':
                 sets.append('ism')
+                flag_fval = True
+                flag_wrest = True
             elif str(llist) == 'Strong':
+                sets.append('ism')
+                flag_fval = True
+                flag_wrest = True
+            elif str(llist) == 'HI':
                 sets.append('ism')
             else:
                 import pdb
@@ -113,8 +121,15 @@ class LineList(object):
         # Save as QTable
         self._fulltable = QTable(full_table)
 
-        # Update f-values
-        #lilp.update_fval(self._fulltable)
+        # Update wavelength values
+        if flag_wrest:
+            lilp.update_wrest(self._fulltable)
+
+        # Update f-values (Howk00)
+        if flag_fval:
+            lilp.update_fval(self._fulltable)
+        #import pdb
+        #pdb.set_trace()
 
     #####
     def set_lines(self, verbose=True, gd_lines=None):
@@ -143,15 +158,20 @@ class LineList(object):
                     set_flags.append('fISM')
                 elif llist == 'Strong':
                     set_flags.append('fSI')
+                elif llist == 'HI':
+                    set_flags.append('fHI')
                 else:
                     raise ValueError('set_lines: Not ready for this: {:s}'.format(llist))
         else: # Input subset of lines
             wrest = self._fulltable['wrest'].value # Assuming Anstroms
             for gdlin in gd_lines:
                 mt = np.where( 
-                    np.abs(gdlin-wrest) < 1e-3 )[0]
-                if len(mt) > 0:
+                    np.abs(gdlin-wrest) < 1e-4 )[0]
+                if len(mt) == 1:
                     indices.append(mt)
+                elif len(mt) > 1:
+                    import pdb
+                    pdb.set_trace()
                 else:
                     if verbose:
                         print('set_lines: Did not find {:g} in data Tables'.format(gdlin))
@@ -167,14 +187,18 @@ class LineList(object):
                 # Match to wavelengths
                 for igd in gdset:
                     mt = np.where( 
-                        np.abs(set_data[igd]['wrest']-wrest) < 1e-3 )[0]
-                    if len(mt) > 0:
+                        np.abs(set_data[igd]['wrest']-wrest) < 1e-4 )[0]
+                    if len(mt) == 1:
                         for imt in mt:
                             # Over-ride name!
                             self._fulltable[imt]['name'] = set_data[igd]['name']
                             #if set_data[igd]['name'] == 'DI 1215':
                             #    xdb.set_trace()
                         indices.append(mt)
+                    elif len(mt) > 1:
+                        print('wrest = {:g}'.format(set_data[igd]['wrest']))
+                        import pdb
+                        pdb.set_trace()
                     else:
                         if verbose:
                             print('set_lines: Did not find {:s} in data Tables'.format(
