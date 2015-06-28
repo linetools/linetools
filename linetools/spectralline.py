@@ -198,6 +198,7 @@ class SpectralLine(object):
         txt = txt + ']'
         return (txt)
 
+# ###########################################
 # Class for Generic Absorption Line System
 class AbsLine(SpectralLine):
     """Spectral absorption line
