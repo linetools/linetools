@@ -5,7 +5,7 @@ Module for parsing Line List data
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import os, imp, glob, pdb
+import os, imp, glob, pdb, gzip
 import subprocess
 
 from astropy import units as u
@@ -303,8 +303,8 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
         ionv = []
         for kk,line in enumerate(lines):
             #print('kk = {:d}'.format(kk))
-            try:
-                tmp = ('Z = ' in line) & ('A = ' in line)  # Deals with bad Byte in Morton00
+            try: # Deals with bad Byte in Morton00
+                tmp = ('Z = ' in line) & ('A = ' in line)  
             except UnicodeDecodeError:
                 tmp = False
             if tmp:
@@ -318,7 +318,7 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
                 elmi.append(kk)
 
             # ISOTOPE and ION
-            try:
+            try: # Deals with bad Byte in Morton00
                 tmp2 = ( (('I ' in line[0:13]) | ('V ' in line[0:13]))
                     & (line[0:3] not in ['IOD','VAN']) & (line[0:2] != 'I ') )
             except UnicodeDecodeError:
@@ -464,9 +464,12 @@ def mktab_morton03(do_this=False, outfil=None, fits=True):
             outfil = lt_path + '/data/lines/morton03_table2.vot'
         m03.write(outfil, format='votable')
     print('mktab_morton03: Wrote {:s}'.format(outfil))
-    #
+    # Compress and delete
     print('mktab_morton03: Now compressing...')
-    subprocess.call(['gzip', '-f', outfil])
+    with open(outfil) as src, gzip.open(outfil+'.gz', 'wb') as dst:
+        dst.writelines(src)
+    os.unlink(outfil)
+    #subprocess.call(['gzip', '-f', outfil])
 
 def mktab_morton00(do_this=False, outfil=None):
     '''Used to generate a FITS Table for the Morton2000 paper
@@ -491,10 +494,14 @@ def mktab_morton00(do_this=False, outfil=None):
     print('mktab_morton00: Wrote {:s}'.format(outfil))
     #
     print('mktab_morton03: Now compressing...')
-    subprocess.call(['gzip', '-f', outfil])
+    with open(outfil) as src, gzip.open(outfil+'.gz', 'wb') as dst:
+        dst.writelines(src)
+    os.unlink(outfil)
 
 def update_fval(table, verbose=False):
-    '''Update f-values only
+    '''Update f-values from the literature
+    Primarily for modifying lines in the ISM lists (e.g. Morton2003)
+
     Parameters:
     -----------
     table: QTable
