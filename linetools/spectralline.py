@@ -83,17 +83,20 @@ class SpectralLine(object):
         self.fill_data(trans, linelist=linelist)
 
     # Setup spectrum for analysis
-    def cut_spec(self, normalize=False):
+    def cut_spec(self, normalize=False, relvel=False):
         '''Splice spectrum.  Normalize too (as desired)
 
         Parameters:
         ----------
         normalize: bool, optional
           Normalize if true (and continuum exists)
+        relvel: bool, optional
+          Calculate and return relative velocity [False]
 
         Returns:
         ----------
-        fx, sig, wave -- Arrays (numpy or Quantity) of flux, error, wavelength
+        fx, sig, [wave,velo] -- 
+          Arrays (numpy or Quantity) of flux, error, wavelength/velocity
         '''
         # Checks
         if np.sum(self.analy['wvlim']) == 0.:
@@ -111,6 +114,7 @@ class SpectralLine(object):
         sig = self.analy['spec'].sig[pix]
         wave = self.analy['spec'].dispersion[pix]
 
+
         # Normalize
         if normalize:
             try:
@@ -120,8 +124,18 @@ class SpectralLine(object):
             else:
                 sig = sig / self.analy['spec'].conti[pix]
 
-        # Return
-        return fx, sig, wave
+        # Velocity?
+        if relvel:
+            # Calculate
+            self.analy['spec'].velo = self.analy['spec'].relative_vel(
+                self.wrest*(1+self.attrib['z']))
+            # Cut
+            velo = self.analy['spec'].velo[pix] 
+            # Return
+            return fx, sig, velo
+        else:
+            # Return
+            return fx, sig, wave
 
 
     # EW 
@@ -242,46 +256,31 @@ class AbsLine(SpectralLine):
                        } )
 
     # Perform AODM on the line
-    def aodm(self, **kwargs): 
+    def aodm(self, flg_sat=None):
         """  AODM calculation
 
         Parameters
         ----------
-        spec : Spectrum1D (None)
-          1D spectrum.  Required but often read in through the Class (self.spec)
-        conti : np.array (None)
-          Continuum array 
 
         Returns:
           N, sigN : Column and error in linear space
+          flg_sat:  Set to True if saturated pixels exist
         """
-
-        # Grab Spectrum
-        spec = self.set_spec(**kwargs)
-
-        # Velocity array
-        spec.velo = spec.relative_vel(self.wrest*(1+self.analy['z']))
-
-        # Pixels for evaluation
-        pix = spec.pix_minmax(self.analy['z'], self.wrest,
-                        self.analy['vlim'].to('km/s'))[0]
-                        #self.analy['vlim'].to('km/s').value)[0]
-
-        # For convenience + normalize
-        velo = spec.velo[pix]
-        fx, sig = parse_spec(spec, **kwargs)
+        # Cut spectrum
+        fx, sig, velo = self.cut_spec(normalize=True, relvel=True)
 
         # dv
         delv = velo - np.roll(velo,1)
         delv[0] = delv[1]
 
         # Atomic data
-        assert False #  DEFINE 14.5761 or GENERATE
-        cst = (10.**14.5761)/(self.data['fval']*self.wrest) / (u.km/u.s) / u.cm * (u.AA/u.cm)
+        cst = (const.m_e.cgs*const.c.cgs / (np.pi * 
+            (const.e.esu**2).cgs)).to(u.AA*u.s/(u.km*u.cm**2))
+        cst = cst/(self.data['f']*self.wrest) #/ (u.km/u.s) / u.cm * (u.AA/u.cm)
 
         # Mask
-        mask = (pix == pix) # True = good
-        nndt = Quantity(np.zeros(len(pix)), unit='s/(km cm cm)')
+        mask = (fx == fx) # True = good
+        nndt = Quantity(np.zeros(len(fx)), unit='s/(km cm cm)')
 
         # Saturated?
         satp = np.where( (fx <= sig/5.) | (fx < 0.05) )[0]
@@ -291,8 +290,7 @@ class AbsLine(SpectralLine):
             if len(lim) > 0:
                 sub = np.maximum(0.05, sig[satp[lim]]/5.)
                 nndt[satp[lim]] = np.log(1./sub)*cst
-                flg_sat = len(lim) 
-                raise ValueError('USE FLG_SAT')
+                flg_sat = True
         # AODM
         nndt[mask] = np.log(1./fx[mask])*cst
 
@@ -303,14 +301,16 @@ class AbsLine(SpectralLine):
         # Fill
         self.attrib['N'] = ntot
         self.attrib['sigN'] = np.sqrt(tvar)
-        logN, sig_logN = xsb.lin_to_log(self.attrib['N'].value, self.attrib['sigN'].value)
-        self.attrib['logN'] = logN
-        self.attrib['sig_logN'] = sig_logN
+
+        # Log
+        logN = np.log10( self.attrib['N'].value ) 
+        lgvar = ((1. / (np.log(10.)*self.attrib['N'].value))**2) * self.attrib['sigN'].value**2
+        sig_logN = np.sqrt(lgvar)
+        self.attrib['logN'] = logN # Dimensionless
+        self.attrib['sig_logN'] = sig_logN # Dimensionless
 
         # Return
-        return ntot, np.sqrt(tvar)
-
-
+        return self.attrib['N'], self.attrib['sigN']
 
 
     # Output
@@ -330,33 +330,4 @@ class AbsLine(SpectralLine):
             pass
         txt = txt + ']'
         return (txt)
-
-
-## #################################    
-## #################################    
-## TESTING
-## #################################    
-if __name__ == '__main__':
-
-    flg_test = 0
-    #flg_test += 2**0  # AbsLine
-    flg_test += 2**1  # AODM
-    #flg_test += 2**2  # EW
-
-    # Test AODM
-    if (flg_test % 2**2) >= 2**1:
-        print('------------ AODM -------------')
-        # Spectrum
-        fil = '~/PROGETTI/LLSZ3/data/normalize/UM669_nF.fits'
-        aline = AbsLine(1302.1685*u.AA)
-        aline.spec = lsio.readspec(fil)
-        # Line info
-        aline.analy['z'] = 2.92652
-        aline.analy['vlim'] = const.c.to('km/s') * (
-                    ( np.array([5110.668, 5116.305])*u.AA/(
-                        1+aline.analy['z']) - aline.wrest) / aline.wrest )
-        # Evaluate
-        N,sigN = aline.aodm(conti=np.ones(len(aline.spec.flux)))
-        logN, sig_logN = xsb.lin_to_log(N,sigN)
-        print('logN = {:g}, sig_logN = {:g}'.format(logN, sig_logN))
 
