@@ -20,7 +20,9 @@ lt_path = imp.find_module('linetools')[1]
 # def line_data
 # def read_sets
 # def read_H2
+# def read_CO
 # def read_verner94
+# def parse_morton00
 # def parse_morton03
 # def mktab_morton03
 # def update_fval
@@ -142,6 +144,46 @@ def read_H2():
 
     # Return
     return data
+
+#
+def read_CO():
+    ''' Simple def to read CO UV data
+
+    Returns:
+    --------
+    Table of CO lines
+    '''
+    CO_fil = lt_path + '/data/lines/CO_UV.ascii'
+    print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(CO_fil))
+    data = ascii.read(CO_fil)
+
+    # Units
+
+    # Rename some columns
+    data.rename_column('Jp', 'Jj')
+    data.rename_column('Jpp', 'Jk')
+    data.rename_column('np', 'nj')
+    data.rename_column('npp', 'nk')
+    data.rename_column('iso', 'Am') # Isotope
+    data.rename_column('wave', 'wrest') 
+
+    data['wrest'].unit = u.AA
+
+    # Fvalues
+    data['fv'] = 10.**data['fv']
+    data.rename_column('fv', 'f')
+
+    # Molecule column
+    cmol = Column(['CO']*len(data), name='mol')
+    data.add_column(cmol)
+
+    # Group
+    cgroup = Column(np.ones(len(data),dtype='int')*(2**4), name='group')
+    data.add_column(cgroup)
+
+    # Return
+    return data
+
 
 #
 def read_verner94():

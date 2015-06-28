@@ -45,6 +45,12 @@ def test_h2():
 	# 
 	np.testing.assert_allclose(h2[911.967*u.AA]['f'], 0.001315, rtol=1e-5)
 
+# H2 LineList
+def test_co():
+	CO = LineList('CO')
+	# 
+	np.testing.assert_allclose(CO[1322.133*u.AA]['f'], 0.0006683439, rtol=1e-5)
+
 # Set of Input lines
 def test_gdlines():
 	ism = LineList('ISM', gd_lines=[1215.6700, 1608.4511])

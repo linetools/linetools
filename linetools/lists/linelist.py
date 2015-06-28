@@ -28,7 +28,8 @@ class LineList(object):
        'Strong'  :: Strong ISM lines
        'HI'      :: HI Lyman series
        'H2'      :: H2 (Lyman-Werner)
-       'CO'      :: CO UV band-heads [not yet implemented]
+       'CO'      :: CO UV band-heads
+       ---- NOT IMPLEMENTED YET -----
        'EUV'     :: Key EUV lines (for CASBAH project)
        'Gal_E'   :: Galaxy emission lines (HII)
        'Gal_A'   :: Galaxy absorption lines (stellar)
@@ -68,7 +69,7 @@ class LineList(object):
         dataset = {
             'ism': [lilp.parse_morton03,lilp.parse_morton00, 
                 lilp.read_verner94], # Morton 2003, Morton 00, Verner 94 
-            'molecules': [lilp.read_H2]   # H2 (Abrigail)
+            'molecules': [lilp.read_H2,lilp.read_CO]   # H2 (Abrigail), CO (JXP)
             }
 
         # Loop on lists
@@ -77,6 +78,8 @@ class LineList(object):
         flag_wrest = False # Update wavelengths?
         for llist in self.lists:
             if str(llist) == 'H2':
+                sets.append('molecules')
+            elif str(llist) == 'CO':
                 sets.append('molecules')
             elif str(llist) == 'ISM':
                 sets.append('ism')
@@ -148,11 +151,11 @@ class LineList(object):
         if gd_lines is None:  
             # Loop on lines
             for llist in self.lists:
-                if llist == 'H2':
-                    gdi = np.where(self._fulltable['mol'] == 'H2')[0]
+                if llist in ['H2','CO']:
+                    gdi = np.where(self._fulltable['mol'] == llist)[0]
                     if len(gdi) == 0:
                         raise IndexError(
-                            'set_lines: Found no H2 molecules! Read more data')
+                            'set_lines: Found no {:s} molecules! Read more data'.format(llist))
                     indices.append(gdi)
                 elif llist == 'ISM':
                     set_flags.append('fISM')
