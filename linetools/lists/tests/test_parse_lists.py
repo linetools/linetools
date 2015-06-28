@@ -15,7 +15,7 @@ from linetools.lists import parse
 def test_morton03():
 	m03 = parse.parse_morton03(orig=True)
 	# 
-	np.testing.assert_allclose(m03['wrest'][5], 1025.7218, rtol=1e-7)
+	np.testing.assert_allclose(m03['wrest'][5], 930.7482, rtol=1e-7)
 
 	assert m03['wrest'].unit == u.Angstrom
 
