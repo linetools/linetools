@@ -12,7 +12,6 @@ def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), '../spectra/tests/files')
     return os.path.join(data_dir, filename)
 
-
 def test_aodm_absline():
     # Init CIV 1548
     abslin = AbsLine(1548.195*u.AA)
@@ -38,3 +37,13 @@ def test_boxew_absline():
 
     np.testing.assert_allclose(ew.value, 0.990466303607004)
     assert ew.unit == u.AA
+
+def test_ismatch():
+    # Init CIV 1548
+    abslin = AbsLine(1548.195*u.AA)
+    abslin.attrib['z'] = 1.2322
+
+    abslin2 = AbsLine(1548.195*u.AA)
+    abslin2.attrib['z'] = 1.2322
+
+    assert abslin.ismatch(abslin2)

@@ -82,9 +82,29 @@ class SpectralLine(object):
         # Fill data
         self.fill_data(trans, linelist=linelist)
 
-    # Setup spectrum for analysis
+    def ismatch(self,oline):
+        '''Query whether input line matches
+        Parameters:
+        ----------
+        oline: SpectralLine
+          Other spectral line for comparison
+
+        Returns:
+        -------
+        answer: bool
+          True if a match, else False
+        '''
+        answer = ( np.allclose(self.wrest, oline.wrest) &
+            np.allclose(self.attrib['z'], oline.attrib['z'], rtol=1e-6) &
+            (self.data['Z'] == oline.data['Z']) &
+            (self.data['ion'] == oline.data['ion']) &
+            np.allclose(self.attrib['RA'], oline.attrib['RA']) &
+            np.allclose(self.attrib['Dec'], oline.attrib['Dec']) )
+        # Return
+        return answer
+
     def cut_spec(self, normalize=False, relvel=False):
-        '''Splice spectrum.  Normalize too (as desired)
+        '''Setup spectrum for analysis.  Splice.  Normalize too (as desired)
 
         Parameters:
         ----------
