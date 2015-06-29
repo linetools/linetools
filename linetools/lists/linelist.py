@@ -258,7 +258,7 @@ class LineList(object):
             # Take closest??
             if self.closest and (not isinstance(k, basestring)):
                 mt = [np.argmin(np.abs(inwv-self.wrest))]
-                print('WARNING: Using {:g} for your input {:g}'.format(self.wrest[mt[0]], 
+                print('WARNING: Using {:.4f} for your input {:.4f}'.format(self.wrest[mt[0]], 
                     inwv))
             else:
                 print('No such line in the list')
