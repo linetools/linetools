@@ -42,18 +42,20 @@ class SpectralLine(object):
     __metaclass__ = ABCMeta
 
     # Initialize with wavelength
-    def __init__(self, ltype, trans, linelist=None):
+    def __init__(self, ltype, trans, linelist=None, closest=False):
         """  Initiator
 
         Parameters
         ----------
         ltype : string
-          Type of Spectral line, (Abs
+          Type of Spectral line, 'Abs'
         trans: Quantity or str
           Quantity: Rest wavelength (e.g. 1215.6700*u.AA)
           str: Name of transition (e.g. 'CIV 1548')
         linelist : LineList, optional
           Class of linelist or str setting LineList
+        closest : bool, optional
+          Take the closest line to input wavelength? [False]
         """
 
         # Required
@@ -80,10 +82,10 @@ class SpectralLine(object):
                        }
 
         # Fill data
-        self.fill_data(trans, linelist=linelist)
+        self.fill_data(trans, linelist=linelist, closest=closest)
 
     def ismatch(self,oline):
-        '''Query whether input line matches
+        '''Query whether input line matches on:  z, Z, ion, RA, Dec
         Parameters:
         ----------
         oline: SpectralLine
@@ -227,15 +229,15 @@ class AbsLine(SpectralLine):
       str: Name of transition (e.g. 'CIV 1548')
     """
     # Initialize with a .dat file
-    def __init__(self, trans, linelist=None): 
+    def __init__(self, trans, **kwargs):
         # Generate with type
-        SpectralLine.__init__(self,'Abs', trans, linelist=linelist)
+        SpectralLine.__init__(self,'Abs', trans, **kwargs)
 
     def print_specline_type(self):
         """"Return a string representing the type of vehicle this is."""
         return 'AbsLine'
 
-    def fill_data(self,trans, linelist=None):
+    def fill_data(self,trans, linelist=None, closest=False):
         ''' Fill atomic data and setup analy
         Parameters:
         -----------
@@ -244,6 +246,8 @@ class AbsLine(SpectralLine):
           str: Name of transition (e.g. 'CIV 1548')
         linelist : LineList, optional
           Class of linelist or str setting LineList
+        closest : bool, optional
+          Take the closest line to input wavelength? [False]
         '''
 
         # Deal with LineList
@@ -256,7 +260,11 @@ class AbsLine(SpectralLine):
         else:
             raise ValueError('Bad input for linelist')
 
+        # Closest?
+        self.llist.closest = closest
+
         # Data
+        newlin = self.llist[trans]
         self.data.update(self.llist[trans])
 
         # Update
@@ -276,6 +284,7 @@ class AbsLine(SpectralLine):
                        'b': 0., 'bsig': 0.  # Doppler
                        } )
 
+    '''
     # Perform AODM on the line
     def aodm(self, flg_sat=None):
         """  AODM calculation
@@ -332,6 +341,7 @@ class AbsLine(SpectralLine):
 
         # Return
         return self.attrib['N'], self.attrib['sigN']
+    '''
 
 
     # Output

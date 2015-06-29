@@ -57,7 +57,3 @@ def test_gdlines():
 	# 
 	assert len(ism._data) == 2
 	np.testing.assert_allclose(ism['FeII 1608']['wrest'], 1608.4511*u.AA, rtol=1e-7)
-
-# 
-if __name__ == "__main__":
-	test_gdlines()
