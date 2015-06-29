@@ -117,8 +117,8 @@ class SpectralLine(object):
 
         Returns:
         ----------
-        fx, sig, [wave,velo] -- 
-          Arrays (numpy or Quantity) of flux, error, wavelength/velocity
+        fx, sig, dict(wave,velo) -- 
+          Arrays (numpy or Quantity) of flux, error, and wavelength/velocity
         '''
         # Checks
         if np.sum(self.analy['wvlim']) == 0.:
@@ -146,18 +146,13 @@ class SpectralLine(object):
             else:
                 sig = sig / self.analy['spec'].conti[pix]
 
-        # Velocity?
-        if relvel:
-            # Calculate
-            self.analy['spec'].velo = self.analy['spec'].relative_vel(
-                self.wrest*(1+self.attrib['z']))
-            # Cut
-            velo = self.analy['spec'].velo[pix] 
-            # Return
-            return fx, sig, velo
-        else:
-            # Return
-            return fx, sig, wave
+        # Velocity
+        self.analy['spec'].velo = self.analy['spec'].relative_vel(
+            self.wrest*(1+self.attrib['z']))
+        # Cut
+        velo = self.analy['spec'].velo[pix] 
+        # Return
+        return fx, sig, dict(wave=wave, velo=velo)
 
 
     # EW 
@@ -175,7 +170,8 @@ class SpectralLine(object):
           EW, sigEW : EW and error in observer frame
         """
         # Cut spectrum
-        fx, sig, wv = self.cut_spec(normalize=True)
+        fx, sig, xdict = self.cut_spec(normalize=True)
+        wv = xdict['wave']
 
         # dwv
         dwv = wv - np.roll(wv,1)
