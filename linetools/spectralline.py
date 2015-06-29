@@ -42,18 +42,20 @@ class SpectralLine(object):
     __metaclass__ = ABCMeta
 
     # Initialize with wavelength
-    def __init__(self, ltype, trans, linelist=None):
+    def __init__(self, ltype, trans, linelist=None, closest=False):
         """  Initiator
 
         Parameters
         ----------
         ltype : string
-          Type of Spectral line, (Abs
+          Type of Spectral line, 'Abs'
         trans: Quantity or str
           Quantity: Rest wavelength (e.g. 1215.6700*u.AA)
           str: Name of transition (e.g. 'CIV 1548')
         linelist : LineList, optional
           Class of linelist or str setting LineList
+        closest : bool, optional
+          Take the closest line to input wavelength? [False]
         """
 
         # Required
@@ -80,20 +82,43 @@ class SpectralLine(object):
                        }
 
         # Fill data
-        self.fill_data(trans, linelist=linelist)
+        self.fill_data(trans, linelist=linelist, closest=closest)
 
-    # Setup spectrum for analysis
-    def cut_spec(self, normalize=False):
-        '''Splice spectrum.  Normalize too (as desired)
+    def ismatch(self,oline):
+        '''Query whether input line matches on:  z, Z, ion, RA, Dec
+        Parameters:
+        ----------
+        oline: SpectralLine
+          Other spectral line for comparison
+
+        Returns:
+        -------
+        answer: bool
+          True if a match, else False
+        '''
+        answer = ( np.allclose(self.wrest, oline.wrest) &
+            np.allclose(self.attrib['z'], oline.attrib['z'], rtol=1e-6) &
+            (self.data['Z'] == oline.data['Z']) &
+            (self.data['ion'] == oline.data['ion']) &
+            np.allclose(self.attrib['RA'], oline.attrib['RA']) &
+            np.allclose(self.attrib['Dec'], oline.attrib['Dec']) )
+        # Return
+        return answer
+
+    def cut_spec(self, normalize=False, relvel=False):
+        '''Setup spectrum for analysis.  Splice.  Normalize too (as desired)
 
         Parameters:
         ----------
         normalize: bool, optional
           Normalize if true (and continuum exists)
+        relvel: bool, optional
+          Calculate and return relative velocity [False]
 
         Returns:
         ----------
-        fx, sig, wave -- Arrays (numpy or Quantity) of flux, error, wavelength
+        fx, sig, dict(wave,velo) -- 
+          Arrays (numpy or Quantity) of flux, error, and wavelength/velocity
         '''
         # Checks
         if np.sum(self.analy['wvlim']) == 0.:
@@ -111,6 +136,7 @@ class SpectralLine(object):
         sig = self.analy['spec'].sig[pix]
         wave = self.analy['spec'].dispersion[pix]
 
+
         # Normalize
         if normalize:
             try:
@@ -120,8 +146,13 @@ class SpectralLine(object):
             else:
                 sig = sig / self.analy['spec'].conti[pix]
 
+        # Velocity
+        self.analy['spec'].velo = self.analy['spec'].relative_vel(
+            self.wrest*(1+self.attrib['z']))
+        # Cut
+        velo = self.analy['spec'].velo[pix] 
         # Return
-        return fx, sig, wave
+        return fx, sig, dict(wave=wave, velo=velo)
 
 
     # EW 
@@ -139,7 +170,8 @@ class SpectralLine(object):
           EW, sigEW : EW and error in observer frame
         """
         # Cut spectrum
-        fx, sig, wv = self.cut_spec(normalize=True)
+        fx, sig, xdict = self.cut_spec(normalize=True)
+        wv = xdict['wave']
 
         # dwv
         dwv = wv - np.roll(wv,1)
@@ -184,6 +216,7 @@ class SpectralLine(object):
         txt = txt + ']'
         return (txt)
 
+# ###########################################
 # Class for Generic Absorption Line System
 class AbsLine(SpectralLine):
     """Spectral absorption line
@@ -192,15 +225,15 @@ class AbsLine(SpectralLine):
       str: Name of transition (e.g. 'CIV 1548')
     """
     # Initialize with a .dat file
-    def __init__(self, trans, linelist=None): 
+    def __init__(self, trans, **kwargs):
         # Generate with type
-        SpectralLine.__init__(self,'Abs', trans, linelist=linelist)
+        SpectralLine.__init__(self,'Abs', trans, **kwargs)
 
     def print_specline_type(self):
         """"Return a string representing the type of vehicle this is."""
         return 'AbsLine'
 
-    def fill_data(self,trans, linelist=None):
+    def fill_data(self,trans, linelist=None, closest=False):
         ''' Fill atomic data and setup analy
         Parameters:
         -----------
@@ -209,6 +242,8 @@ class AbsLine(SpectralLine):
           str: Name of transition (e.g. 'CIV 1548')
         linelist : LineList, optional
           Class of linelist or str setting LineList
+        closest : bool, optional
+          Take the closest line to input wavelength? [False]
         '''
 
         # Deal with LineList
@@ -221,7 +256,11 @@ class AbsLine(SpectralLine):
         else:
             raise ValueError('Bad input for linelist')
 
+        # Closest?
+        self.llist.closest = closest
+
         # Data
+        newlin = self.llist[trans]
         self.data.update(self.llist[trans])
 
         # Update
@@ -241,47 +280,33 @@ class AbsLine(SpectralLine):
                        'b': 0., 'bsig': 0.  # Doppler
                        } )
 
+    '''
     # Perform AODM on the line
-    def aodm(self, **kwargs): 
+    def aodm(self, flg_sat=None):
         """  AODM calculation
 
         Parameters
         ----------
-        spec : Spectrum1D (None)
-          1D spectrum.  Required but often read in through the Class (self.spec)
-        conti : np.array (None)
-          Continuum array 
 
         Returns:
           N, sigN : Column and error in linear space
+          flg_sat:  Set to True if saturated pixels exist
         """
-
-        # Grab Spectrum
-        spec = self.set_spec(**kwargs)
-
-        # Velocity array
-        spec.velo = spec.relative_vel(self.wrest*(1+self.analy['z']))
-
-        # Pixels for evaluation
-        pix = spec.pix_minmax(self.analy['z'], self.wrest,
-                        self.analy['vlim'].to('km/s'))[0]
-                        #self.analy['vlim'].to('km/s').value)[0]
-
-        # For convenience + normalize
-        velo = spec.velo[pix]
-        fx, sig = parse_spec(spec, **kwargs)
+        # Cut spectrum
+        fx, sig, velo = self.cut_spec(normalize=True, relvel=True)
 
         # dv
         delv = velo - np.roll(velo,1)
         delv[0] = delv[1]
 
         # Atomic data
-        assert False #  DEFINE 14.5761 or GENERATE
-        cst = (10.**14.5761)/(self.data['fval']*self.wrest) / (u.km/u.s) / u.cm * (u.AA/u.cm)
+        cst = (const.m_e.cgs*const.c.cgs / (np.pi * 
+            (const.e.esu**2).cgs)).to(u.AA*u.s/(u.km*u.cm**2))
+        cst = cst/(self.data['f']*self.wrest) #/ (u.km/u.s) / u.cm * (u.AA/u.cm)
 
         # Mask
-        mask = (pix == pix) # True = good
-        nndt = Quantity(np.zeros(len(pix)), unit='s/(km cm cm)')
+        mask = (fx == fx) # True = good
+        nndt = Quantity(np.zeros(len(fx)), unit='s/(km cm cm)')
 
         # Saturated?
         satp = np.where( (fx <= sig/5.) | (fx < 0.05) )[0]
@@ -291,8 +316,7 @@ class AbsLine(SpectralLine):
             if len(lim) > 0:
                 sub = np.maximum(0.05, sig[satp[lim]]/5.)
                 nndt[satp[lim]] = np.log(1./sub)*cst
-                flg_sat = len(lim) 
-                raise ValueError('USE FLG_SAT')
+                flg_sat = True
         # AODM
         nndt[mask] = np.log(1./fx[mask])*cst
 
@@ -303,14 +327,17 @@ class AbsLine(SpectralLine):
         # Fill
         self.attrib['N'] = ntot
         self.attrib['sigN'] = np.sqrt(tvar)
-        logN, sig_logN = xsb.lin_to_log(self.attrib['N'].value, self.attrib['sigN'].value)
-        self.attrib['logN'] = logN
-        self.attrib['sig_logN'] = sig_logN
+
+        # Log
+        logN = np.log10( self.attrib['N'].value ) 
+        lgvar = ((1. / (np.log(10.)*self.attrib['N'].value))**2) * self.attrib['sigN'].value**2
+        sig_logN = np.sqrt(lgvar)
+        self.attrib['logN'] = logN # Dimensionless
+        self.attrib['sig_logN'] = sig_logN # Dimensionless
 
         # Return
-        return ntot, np.sqrt(tvar)
-
-
+        return self.attrib['N'], self.attrib['sigN']
+    '''
 
 
     # Output
@@ -330,33 +357,4 @@ class AbsLine(SpectralLine):
             pass
         txt = txt + ']'
         return (txt)
-
-
-## #################################    
-## #################################    
-## TESTING
-## #################################    
-if __name__ == '__main__':
-
-    flg_test = 0
-    #flg_test += 2**0  # AbsLine
-    flg_test += 2**1  # AODM
-    #flg_test += 2**2  # EW
-
-    # Test AODM
-    if (flg_test % 2**2) >= 2**1:
-        print('------------ AODM -------------')
-        # Spectrum
-        fil = '~/PROGETTI/LLSZ3/data/normalize/UM669_nF.fits'
-        aline = AbsLine(1302.1685*u.AA)
-        aline.spec = lsio.readspec(fil)
-        # Line info
-        aline.analy['z'] = 2.92652
-        aline.analy['vlim'] = const.c.to('km/s') * (
-                    ( np.array([5110.668, 5116.305])*u.AA/(
-                        1+aline.analy['z']) - aline.wrest) / aline.wrest )
-        # Evaluate
-        N,sigN = aline.aodm(conti=np.ones(len(aline.spec.flux)))
-        logN, sig_logN = xsb.lin_to_log(N,sigN)
-        print('logN = {:g}, sig_logN = {:g}'.format(logN, sig_logN))
 

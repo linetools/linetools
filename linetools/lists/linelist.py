@@ -52,6 +52,9 @@ class LineList(object):
         else:
             self.lists = llst_keys
 
+        # Take closest line?
+        self.closest = False
+
         # Load Data
         self.load_data()
 
@@ -240,10 +243,12 @@ class LineList(object):
         ----------
         dict (from row in the data table) or Table (tuple)
         '''
-        if isinstance(k,float): # Wavelength, assuming Ang
-            mt = np.where( np.abs(k*u.AA-self.wrest) < tol)[0]
-        elif isinstance(k, Quantity): # Wavelength
-            mt = np.where( np.abs(k-self.wrest) < tol)[0]
+        if isinstance(k,(float,Quantity)): # Wavelength
+            if isinstance(k,float): # Assuming Ang
+                inwv = k*u.AA
+            else:
+                inwv = k
+            mt = np.where( np.abs(inwv-self.wrest) < tol)[0]
         elif isinstance(k, basestring): # Name
             mt = np.where(str(k) == self.name)[0] 
         elif isinstance(k, tuple): # Zion
@@ -251,11 +256,19 @@ class LineList(object):
         else:
             raise ValueError('Not prepared for this type')
 
-        # Matches
+        # No Match?
         if len(mt) == 0:
-            print('No such line in the list')
-            return None
-        elif len(mt) == 1:
+            # Take closest??
+            if self.closest and (not isinstance(k, basestring)):
+                mt = [np.argmin(np.abs(inwv-self.wrest))]
+                print('WARNING: Using {:.4f} for your input {:.4f}'.format(self.wrest[mt[0]], 
+                    inwv))
+            else:
+                print('No such line in the list')
+                return None
+
+        # Now we have something
+        if len(mt) == 1:
             return dict(zip(self._data.dtype.names,self._data[mt][0]))  # Pass back as dict
             #return self._data[mt][0]  # Pass back as a Row not a Table
         elif isinstance(k,tuple):

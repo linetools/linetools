@@ -507,6 +507,11 @@ def update_fval(table, verbose=False):
     table: QTable
       Data to be updated
     '''
+    # Shectman et al. 1998, ApJ, 504, 921 
+    #   Morton2003 cites this but uses a different f-value
+    imn = np.argmin(np.abs(table['wrest']-1526.707*u.AA))
+    table['f'][imn] = 0.127
+
     # Howk 2000
     howk00_fil = lt_path + '/data/lines/howk00_table1.ascii'
     howk00 = ascii.read(howk00_fil)
