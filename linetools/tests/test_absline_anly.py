@@ -18,6 +18,6 @@ def test_boxew_absline():
 
     # Set spectrum 
     abslin.analy['spec'] = lsio.readspec(data_path('UM184_nF.fits')) # Fumagalli+13 MagE spectrum
-    abslin.analy['WVMNX'] = [6080.78, 6087.82]*u.AA
+    abslin.analy['wvlim'] = [6080.78, 6087.82]*u.AA
     ew, sigew = abslin.box_ew() 
     np.testing.assert_allclose(ew, 0.990466303607004*u.AA)
