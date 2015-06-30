@@ -57,3 +57,10 @@ def test_gdlines():
 	# 
 	assert len(ism._data) == 2
 	np.testing.assert_allclose(ism['FeII 1608']['wrest'], 1608.4511*u.AA, rtol=1e-7)
+
+# Unknown lines
+def test_unknown():
+	ism = LineList('ISM')
+	unknown = ism.unknown_line()
+	assert unknown['name'] == 'unknown', 'There is a problem in the LineList.unknown_line()'
+	assert unknown['wrest'] == 0.*u.AA, 'There is a problem in the LineList.unknown_line()'

@@ -63,8 +63,8 @@ class LineList(object):
 
     # 
     def load_data(self, tol=1e-3*u.AA):
-        ''' Grab the data for the lines of interest
-        '''
+        """Grab the data for the lines of interest
+        """
         # Import
         reload(lilp)
 
@@ -169,7 +169,7 @@ class LineList(object):
                 else:
                     raise ValueError('set_lines: Not ready for this: {:s}'.format(llist))
         else: # Input subset of lines
-            wrest = self._fulltable['wrest'].value # Assuming Anstroms
+            wrest = self._fulltable['wrest'].value # Assuming Angstroms
             for gdlin in gd_lines:
                 mt = np.where( 
                     np.abs(gdlin-wrest) < 1e-4 )[0]
@@ -187,7 +187,7 @@ class LineList(object):
             # Read standard file
             set_data = lilp.read_sets()
             # Speed up
-            wrest = self._fulltable['wrest'].value # Assuming Anstroms
+            wrest = self._fulltable['wrest'].value # Assuming Angstroms
             for sflag in set_flags:
                 gdset = np.where(set_data[sflag] == 1)[0]
                 # Match to wavelengths
@@ -215,6 +215,13 @@ class LineList(object):
 
         # Parse (consider masking instead)
         self._data = self._fulltable[all_idx]
+
+    def unknown_line(self):
+        """Returns a dictionary of line properties set to an unknown
+        line. Currently using the default value from ."""     
+        ldict, _ = lilp.line_data()
+        ldict['name'] = 'unknown'
+        return ldict
 
     #####
     def __getattr__(self,k):
