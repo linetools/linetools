@@ -55,7 +55,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         inflg = 0
 
     # Check specfil type
-    if type(specfil) is Table:
+    if isinstance(specfil,Table):
         datfil = 'None'
         # Dummy hdulist
         hdulist = [fits.PrimaryHDU(), specfil]
@@ -218,7 +218,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
 
 #### ###############################
 #  Grab values from the Binary FITS Table or Table
-def get_table_column(tags, hdulist):
+def get_table_column(tags, hdulist, idx=1):
     '''Simple script to return values from a FITS table
     Function used to return flux/error/wave values from 
     a binary FITS table from a list of tags
@@ -227,6 +227,8 @@ def get_table_column(tags, hdulist):
     -----------
     tags: list
      List of string tag names
+    idx: int, optional
+     Index of list for Table input [Default: 1]
 
     Returns:
     -----------
@@ -236,10 +238,10 @@ def get_table_column(tags, hdulist):
     '''
     dat = None
     # Use Table
-    if type(hdulist[1]) is BinTableHDU:
-        tab = Table(hdulist[1].data)
+    if isinstance(hdulist[idx],BinTableHDU):
+        tab = Table(hdulist[idx].data)
     else:
-        tab = hdulist[1]
+        tab = hdulist[idx]
 
     # Grab
     for tag in tags:
