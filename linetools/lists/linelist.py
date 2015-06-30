@@ -4,7 +4,7 @@ Module for LineList Class
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import os
+import os, pdb
 
 from astropy import units as u
 from astropy.units.quantity import Quantity
@@ -235,12 +235,13 @@ class LineList(object):
         Parameters:
         ----------
         k: overloaded
-          float,Quantity -- Wavelength
-          str -- Name
+          float,Quantity -- Wavelength (e.g. 1215.6700)
+          str -- Name (e.g. 'CII 1334')
+          tuple -- Zion, e.g. (6,2)
 
         Returns:
         ----------
-        Dict (from row in the data table)
+        dict (from row in the data table) or Table (tuple)
         '''
         if isinstance(k,(float,Quantity)): # Wavelength
             if isinstance(k,float): # Assuming Ang
@@ -249,7 +250,9 @@ class LineList(object):
                 inwv = k
             mt = np.where( np.abs(inwv-self.wrest) < tol)[0]
         elif isinstance(k, basestring): # Name
-            mt = np.where( str(k) == self.name )[0]
+            mt = np.where(str(k) == self.name)[0] 
+        elif isinstance(k, tuple): # Zion
+            mt = (self._data['Z'] == k[0]) & (self._data['ion'] == k[1])
         else:
             raise ValueError('Not prepared for this type')
 
@@ -268,6 +271,8 @@ class LineList(object):
         if len(mt) == 1:
             return dict(zip(self._data.dtype.names,self._data[mt][0]))  # Pass back as dict
             #return self._data[mt][0]  # Pass back as a Row not a Table
+        elif isinstance(k,tuple):
+            return self._data[mt]
         else:
             raise ValueError(
                 '{:s}: Multiple lines in the list'.format(self.__class__))
