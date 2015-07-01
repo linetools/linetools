@@ -225,7 +225,7 @@ class LineList(object):
 
     def all_transition_names_from_line(self,line):  
 
-        """For a given line transition, this function returns a list
+        """For a given line transition, this function returns a list of strings
         with the names of all transitions of the ion containing such line
         in the linelist.
 
