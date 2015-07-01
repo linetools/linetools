@@ -27,3 +27,10 @@ def test_closest():
 	# 
 	line = ism[1250.584*u.AA]
 	np.testing.assert_allclose(line['wrest'], 1250.578*u.AA, rtol=1e-7)
+
+def test_all_transition_names_from_line():
+	ism = LineList('ISM')
+	line = 'OVI'
+	names = ism.all_transition_names_from_line(line)
+	assert len(names == 2), 'Something is wrong in all_transition_names_from_line()'
+	print(names)

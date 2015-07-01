@@ -223,6 +223,58 @@ class LineList(object):
         ldict['name'] = 'unknown'
         return ldict
 
+    def all_transition_names_from_line(self,line):  
+
+        """For a given line transition, this function returns a list
+        with the names of all transitions of the ion containing such line
+        in the linelist.
+
+        Parameters:
+        ----------
+        line: string
+            Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII')
+        
+            [Note: when string contains spaces it only considers the first
+             part of it, so 'HI' and 'HI 1215' and 'HI 1025' are all equivalent]
+            [Note: to retrieve an unknown line use string 'unknown']
+
+        Returns:
+        ----------
+        list of strings with names
+            e.g. ['SiIII 1206', 'SiIII 1892']
+
+        """
+        if isinstance(line, basestring): # Name
+            line = line.split(' ')[0] # keep only the first part of input name
+        else:
+            raise ValueError('Not prepared for this type')
+
+        if line == 'unknown':
+            return ['unknown']
+        else:
+            data = self._data
+            Z = None
+            for row in data: #is this loop avoidable?
+                name = row['name']
+                #keep only the first part of name in linelist too
+                name = name.split(' ')[0]
+                if name == line:
+                    Z = row['Z'] #atomic number
+                    ie = row['ion'] #ionization estate
+                    break
+        if Z is not None:
+            names = self.__getitem__((Z,ie))['name']
+            names = np.array(names)
+            # For hydrogen/deuterium this contains deuterium/hydrogen; 
+            # so let's get rid of them
+            if (line == 'HI') or (line =='DI'):
+                cond = np.array([l.startswith(line) for l in names])
+                names = names[cond]
+            return list(names)
+        else:
+            raise ValueError('Line {} not found in the linelist'.format(line))
+
+            
     #####
     def __getattr__(self,k):
         ''' Passback an array or Column of the data 
