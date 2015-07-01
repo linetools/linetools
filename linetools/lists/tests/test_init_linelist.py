@@ -64,3 +64,5 @@ def test_unknown():
 	unknown = ism.unknown_line()
 	assert unknown['name'] == 'unknown', 'There is a problem in the LineList.unknown_line()'
 	assert unknown['wrest'] == 0.*u.AA, 'There is a problem in the LineList.unknown_line()'
+	print(ism[unknown])
+	

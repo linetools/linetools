@@ -219,7 +219,7 @@ class LineList(object):
     def unknown_line(self):
         """Returns a dictionary of line properties set to an unknown
         line. Currently using the default value from ."""     
-        ldict, _ = lilp.line_data()
+        ldict , _ = lilp.line_data()
         ldict['name'] = 'unknown'
         return ldict
 
@@ -245,6 +245,7 @@ class LineList(object):
           float,Quantity -- Wavelength (e.g. 1215.6700)
           str -- Name (e.g. 'CII 1334')
           tuple -- Zion, e.g. (6,2)
+          [Note: to retrieve an unknown line use string 'unknown']
 
         Returns:
         ----------
@@ -257,7 +258,10 @@ class LineList(object):
                 inwv = k
             mt = np.where( np.abs(inwv-self.wrest) < tol)[0]
         elif isinstance(k, basestring): # Name
-            mt = np.where(str(k) == self.name)[0] 
+            if k == 'unknown':
+                return self.unknown_line()
+            else:
+                mt = np.where(str(k) == self.name)[0]
         elif isinstance(k, tuple): # Zion
             mt = (self._data['Z'] == k[0]) & (self._data['ion'] == k[1])
         else:
