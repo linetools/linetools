@@ -59,7 +59,7 @@ def line_data(nrows=1):
      2048: User2 (Reserved)
     '''
     ldict = {
-        'name': ' '*20,           # Name
+        'name': ' '*20,       # Name
         'wrest': 0.*u.AA,     # Rest Wavelength (Quantity)
         'f':  0.,             # Oscillator strength
         'gk': 0.,             # Degeneracy of the upper level
