@@ -223,11 +223,10 @@ class LineList(object):
         ldict['name'] = 'unknown'
         return ldict
 
-    def all_transition_names_from_line(self,line):  
-
-        """For a given line transition, this function returns a list of strings
-        with the names of all transitions of the ion containing such line
-        in the linelist.
+    def all_transitions(self,line):
+        """For a given single line transition, this function returns a
+        all transitions of the ion containing such single line found in 
+        the linelist.
 
         Parameters:
         ----------
@@ -240,20 +239,20 @@ class LineList(object):
 
         Returns:
         ----------
-        list of strings with names
-            e.g. ['SiIII 1206', 'SiIII 1892']
+        dict (if only 1 transition found) or Table (if > 1 transitions are found)
 
         """
+
         if isinstance(line, basestring): # Name
             line = line.split(' ')[0] # keep only the first part of input name
         else:
             raise ValueError('Not prepared for this type')
 
         if line == 'unknown':
-            return ['unknown']
+            return self.unknown_line()
         else:
-            data = self._data
             Z = None
+            data = self._data
             for row in data: #is this loop avoidable?
                 name = row['name']
                 #keep only the first part of name in linelist too
@@ -262,17 +261,21 @@ class LineList(object):
                     Z = row['Z'] #atomic number
                     ie = row['ion'] #ionization estate
                     break
-        if Z is not None:
-            names = self.__getitem__((Z,ie))['name']
-            names = np.array(names)
-            # For hydrogen/deuterium this contains deuterium/hydrogen; 
-            # so let's get rid of them
-            if (line == 'HI') or (line =='DI'):
-                cond = np.array([l.startswith(line) for l in names])
-                names = names[cond]
-            return list(names)
-        else:
-            raise ValueError('Line {} not found in the linelist'.format(line))
+            if Z is not None:
+                tbl = self.__getitem__((Z,ie))
+                # For hydrogen/deuterium this contains deuterium/hydrogen; 
+                # so let's get rid of them
+                if (line == 'HI') or (line == 'DI'):
+                    names = np.array(tbl['name'])
+                    cond = np.array([l.startswith(line) for l in names])
+                    tbl = tbl[cond]
+                if len(tbl) > 1:
+                    return tbl
+                else: #this whould be always len(tbl)==1 because Z is not None
+                    name = tbl['name'][0]
+                    return self.__getitem__(name)
+            else:
+                raise ValueError('Line {} not found in the linelist'.format(line))
 
             
     #####

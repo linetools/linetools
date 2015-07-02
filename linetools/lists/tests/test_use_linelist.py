@@ -28,9 +28,20 @@ def test_closest():
 	line = ism[1250.584*u.AA]
 	np.testing.assert_allclose(line['wrest'], 1250.578*u.AA, rtol=1e-7)
 
-def test_all_transition_names_from_line():
+def test_all_transitions():
+	error_msg = 'Something is wrong in all_transition_names_from_line()'
 	ism = LineList('ISM')
+	#check simple case
 	line = 'OVI'
-	names = ism.all_transition_names_from_line(line)
-	assert len(names == 2), 'Something is wrong in all_transition_names_from_line()'
-	print(names)
+	ovi_transitions = ism.all_transitions(line)
+	assert len(ovi_transitions) == 2, error_msg
+	print(ovi_transitions['name'])
+	#check unknown
+	line = 'unknown'
+	out = ism.all_transitions(line)
+	assert type(out) == dict, error_msg
+	#check case of single transition ion
+	line = 'CIII'
+	out = ism.all_transitions(line)
+	assert type(out) == dict, error_msg
+	print 'test_all_transitions() passed'
