@@ -4,7 +4,7 @@ Module for LineList Class
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import os, pdb
+import os
 
 from astropy import units as u
 from astropy.units.quantity import Quantity
@@ -183,6 +183,8 @@ class LineList(object):
                         print('set_lines: Did not find {:g} in data Tables'.format(gdlin))
 
         # Deal with Defined sets
+        #import pdb
+        #pdb.set_trace()
         if len(set_flags) > 0:
             # Read standard file
             set_data = lilp.read_sets()
@@ -193,7 +195,7 @@ class LineList(object):
                 # Match to wavelengths
                 for igd in gdset:
                     mt = np.where( 
-                        np.abs(set_data[igd]['wrest']-wrest) < 1e-4 )[0]
+                        np.abs(set_data[igd]['wrest']-wrest) < 9e-5 )[0]
                     if len(mt) == 1:
                         for imt in mt:
                             # Over-ride name!
@@ -211,7 +213,7 @@ class LineList(object):
                                 set_data[igd]['name']))
 
         # Collate (should grab unique ones!)
-        all_idx = np.concatenate( [np.array(itt) for itt in indices] )
+        all_idx = np.unique( np.concatenate( [np.array(itt) for itt in indices] ) )
 
         # Parse (consider masking instead)
         self._data = self._fulltable[all_idx]
