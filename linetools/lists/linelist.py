@@ -63,8 +63,8 @@ class LineList(object):
 
     # 
     def load_data(self, tol=1e-3*u.AA):
-        ''' Grab the data for the lines of interest
-        '''
+        """Grab the data for the lines of interest
+        """
         # Import
         reload(lilp)
 
@@ -169,7 +169,7 @@ class LineList(object):
                 else:
                     raise ValueError('set_lines: Not ready for this: {:s}'.format(llist))
         else: # Input subset of lines
-            wrest = self._fulltable['wrest'].value # Assuming Anstroms
+            wrest = self._fulltable['wrest'].value # Assuming Angstroms
             for gdlin in gd_lines:
                 mt = np.where( 
                     np.abs(gdlin-wrest) < 1e-4 )[0]
@@ -187,7 +187,7 @@ class LineList(object):
             # Read standard file
             set_data = lilp.read_sets()
             # Speed up
-            wrest = self._fulltable['wrest'].value # Assuming Anstroms
+            wrest = self._fulltable['wrest'].value # Assuming Angstroms
             for sflag in set_flags:
                 gdset = np.where(set_data[sflag] == 1)[0]
                 # Match to wavelengths
@@ -216,6 +216,68 @@ class LineList(object):
         # Parse (consider masking instead)
         self._data = self._fulltable[all_idx]
 
+    def unknown_line(self):
+        """Returns a dictionary of line properties set to an unknown
+        line. Currently using the default value from ."""     
+        ldict , _ = lilp.line_data()
+        ldict['name'] = 'unknown'
+        return ldict
+
+    def all_transitions(self,line):
+        """For a given single line transition, this function returns a
+        all transitions of the ion containing such single line found in 
+        the linelist.
+
+        Parameters:
+        ----------
+        line: string
+            Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII')
+        
+            [Note: when string contains spaces it only considers the first
+             part of it, so 'HI' and 'HI 1215' and 'HI 1025' are all equivalent]
+            [Note: to retrieve an unknown line use string 'unknown']
+
+        Returns:
+        ----------
+        dict (if only 1 transition found) or Table (if > 1 transitions are found)
+
+        """
+
+        if isinstance(line, basestring): # Name
+            line = line.split(' ')[0] # keep only the first part of input name
+        else:
+            raise ValueError('Not prepared for this type')
+
+        if line == 'unknown':
+            return self.unknown_line()
+        else:
+            Z = None
+            data = self._data
+            for row in data: #is this loop avoidable?
+                name = row['name']
+                #keep only the first part of name in linelist too
+                name = name.split(' ')[0]
+                if name == line:
+                    Z = row['Z'] #atomic number
+                    ie = row['ion'] #ionization estate
+                    break
+            if Z is not None:
+                tbl = self.__getitem__((Z,ie))
+                # For hydrogen/deuterium this contains deuterium/hydrogen; 
+                # so let's get rid of them
+                if (line == 'HI') or (line == 'DI'):
+                    names = np.array(tbl['name'])
+                    cond = np.array([l.startswith(line) for l in names])
+                    tbl = tbl[cond]
+                if len(tbl) > 1:
+                    return tbl
+                else: #this whould be always len(tbl)==1 because Z is not None
+                    name = tbl['name'][0]
+                    return self.__getitem__(name)
+            else:
+                raise ValueError('Line {} not found in the linelist'.format(line))
+
+            
     #####
     def __getattr__(self,k):
         ''' Passback an array or Column of the data 
@@ -238,6 +300,7 @@ class LineList(object):
           float,Quantity -- Wavelength (e.g. 1215.6700)
           str -- Name (e.g. 'CII 1334')
           tuple -- Zion, e.g. (6,2)
+          [Note: to retrieve an unknown line use string 'unknown']
 
         Returns:
         ----------
@@ -250,7 +313,10 @@ class LineList(object):
                 inwv = k
             mt = np.where( np.abs(inwv-self.wrest) < tol)[0]
         elif isinstance(k, basestring): # Name
-            mt = np.where(str(k) == self.name)[0] 
+            if k == 'unknown':
+                return self.unknown_line()
+            else:
+                mt = np.where(str(k) == self.name)[0]
         elif isinstance(k, tuple): # Zion
             mt = (self._data['Z'] == k[0]) & (self._data['ion'] == k[1])
         else:

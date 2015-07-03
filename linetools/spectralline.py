@@ -248,6 +248,7 @@ class AbsLine(SpectralLine):
     trans: Quantity or str
       Quantity: Rest wavelength (e.g. 1215.6700*u.AA)
       str: Name of transition (e.g. 'CIV 1548')
+        [Note: for an unknown transition use string 'unknown']
     """
     # Initialize with a .dat file
     def __init__(self, trans, **kwargs):
@@ -265,6 +266,7 @@ class AbsLine(SpectralLine):
         trans: Quantity or str
           Quantity: Rest wavelength (e.g. 1215.6700*u.AA)
           str: Name of transition (e.g. 'CIV 1548')
+            [Note: for an unknown transition use string 'unknown']
         linelist : LineList, optional
           Class of linelist or str setting LineList
         closest : bool, optional
@@ -285,8 +287,8 @@ class AbsLine(SpectralLine):
         self.llist.closest = closest
 
         # Data
-        newlin = self.llist[trans]
-        self.data.update(self.llist[trans])
+        newline = self.llist[trans]
+        self.data.update(newline)
 
         # Update
         self.wrest = self.data['wrest']
