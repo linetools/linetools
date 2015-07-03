@@ -223,6 +223,61 @@ class LineList(object):
         ldict['name'] = 'unknown'
         return ldict
 
+    def all_transitions(self,line):
+        """For a given single line transition, this function returns a
+        all transitions of the ion containing such single line found in 
+        the linelist.
+
+        Parameters:
+        ----------
+        line: string
+            Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII')
+        
+            [Note: when string contains spaces it only considers the first
+             part of it, so 'HI' and 'HI 1215' and 'HI 1025' are all equivalent]
+            [Note: to retrieve an unknown line use string 'unknown']
+
+        Returns:
+        ----------
+        dict (if only 1 transition found) or Table (if > 1 transitions are found)
+
+        """
+
+        if isinstance(line, basestring): # Name
+            line = line.split(' ')[0] # keep only the first part of input name
+        else:
+            raise ValueError('Not prepared for this type')
+
+        if line == 'unknown':
+            return self.unknown_line()
+        else:
+            Z = None
+            data = self._data
+            for row in data: #is this loop avoidable?
+                name = row['name']
+                #keep only the first part of name in linelist too
+                name = name.split(' ')[0]
+                if name == line:
+                    Z = row['Z'] #atomic number
+                    ie = row['ion'] #ionization estate
+                    break
+            if Z is not None:
+                tbl = self.__getitem__((Z,ie))
+                # For hydrogen/deuterium this contains deuterium/hydrogen; 
+                # so let's get rid of them
+                if (line == 'HI') or (line == 'DI'):
+                    names = np.array(tbl['name'])
+                    cond = np.array([l.startswith(line) for l in names])
+                    tbl = tbl[cond]
+                if len(tbl) > 1:
+                    return tbl
+                else: #this whould be always len(tbl)==1 because Z is not None
+                    name = tbl['name'][0]
+                    return self.__getitem__(name)
+            else:
+                raise ValueError('Line {} not found in the linelist'.format(line))
+
+            
     #####
     def __getattr__(self,k):
         ''' Passback an array or Column of the data 
