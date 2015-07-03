@@ -38,11 +38,14 @@ class SpectralLine(object):
           type of line, e.g.  Abs, Emiss
         wrest : Quantity
           Rest wavelength
+        z: float
+          Redshift
     """
     __metaclass__ = ABCMeta
 
     # Initialize with wavelength
-    def __init__(self, ltype, trans, linelist=None, closest=False):
+    def __init__(self, ltype, trans, linelist=None, closest=False,
+        z=0.):
         """  Initiator
 
         Parameters
@@ -76,7 +79,7 @@ class SpectralLine(object):
             }
         self.attrib = {   # Properties (e.g. column, EW, centroid)
                        'RA': 0.*u.deg, 'Dec': 0.*u.deg,  #  Coords
-                       'z': 0., 'zsig': 0.,  #  Redshift
+                       'z': z, 'zsig': 0.,  #  Redshift
                        'v': 0.*u.km/u.s, 'vsig': 0.*u.km/u.s,  #  Velocity relative to z
                        'EW': 0.*u.AA, 'EWsig': 0.*u.AA, 'flgEW': 0 # EW
                        }
@@ -84,24 +87,46 @@ class SpectralLine(object):
         # Fill data
         self.fill_data(trans, linelist=linelist, closest=closest)
 
-    def ismatch(self,oline):
+    def ismatch(self,inp,Zion=None,RADec=None):
         '''Query whether input line matches on:  z, Z, ion, RA, Dec
         Parameters:
         ----------
-        oline: SpectralLine
-          Other spectral line for comparison
+        inp: SpectralLine or tuple
+          SpectralLine -- Other spectral line for comparison
+          tuple -- (z,wrest) float,Quantity
+             e.g. (1.3123, 1215.670*u.AA)
+        Zion: tuple of ints, optional
+          Generally used with tuple input, e.g. (6,2)
+        RADec: tuple of Quantities, optional
+          Generally used with tuple input e.g. (124.132*u.deg, 29.231*u.deg)
 
         Returns:
         -------
         answer: bool
           True if a match, else False
         '''
-        answer = ( np.allclose(self.wrest, oline.wrest) &
-            np.allclose(self.attrib['z'], oline.attrib['z'], rtol=1e-6) &
-            (self.data['Z'] == oline.data['Z']) &
-            (self.data['ion'] == oline.data['ion']) &
-            np.allclose(self.attrib['RA'], oline.attrib['RA']) &
-            np.allclose(self.attrib['Dec'], oline.attrib['Dec']) )
+        if isinstance(inp,SpectralLine):
+            wrest = inp.wrest
+            z = inp.attrib['z']
+            if Zion is None:
+                Zion = (inp.data['Z'], inp.data['ion'])
+            if RADec is None:
+                RADec = (inp.attrib['RA'], inp.attrib['Dec'])
+        elif isinstance(inp,tuple):
+            z = inp[0]
+            wrest = inp[1]
+        else:
+            raise ValueError('ismatch: Bad input')
+
+        # Queries
+        answer = ( np.allclose(self.wrest, wrest) &
+            np.allclose(self.attrib['z'], z, rtol=1e-6))
+        if Zion is not None:
+            answer = answer & (self.data['Z'] == Zion[0]) & (self.data['ion'] == Zion[1])
+        if RADec is not None:
+            answer = (answer & np.allclose(self.attrib['RA'], RADec[0]) &
+                np.allclose(self.attrib['Dec'], RADec[1]) )
+
         # Return
         return answer
 

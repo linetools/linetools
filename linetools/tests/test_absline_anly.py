@@ -49,3 +49,6 @@ def test_ismatch():
     abslin2.attrib['z'] = 1.2322
 
     assert abslin.ismatch(abslin2)
+    # tuples
+    assert abslin.ismatch((1.2322,1548.195*u.AA))
+    assert abslin.ismatch((1.2322,1548.195*u.AA),Zion=(6,4))
