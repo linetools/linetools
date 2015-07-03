@@ -264,16 +264,20 @@ def setwave(hdr):
     # Parse the header
     npix = hdr['NAXIS1'] 
     crpix1 = hdr['CRPIX1'] if 'CRPIX1' in hdr else 1.
-    crval1 = hdr['CRVAL1'] if 'CRVAL1' in hdr else 1.
-    cdelt1 = hdr['CDELT1'] if 'CDELT1' in hdr else 1.
-    ctype1 = hdr['CTYPE1'] if 'CTYPE1' in hdr else None
+    crval1 = hdr['CRVAL1']
+    cdelt1 = hdr['CDELT1']
     dcflag = hdr['DC-FLAG'] if 'DC-FLAG' in hdr else None
 
-    # Generate
-    if (dcflag == 1) or (cdelt1 < 1e-4):
-        wave = 10.**(crval1 + ( cdelt1 * np.arange(npix) + 1. - crpix1) ) # Log
+    if cdelt1 < 1e-4:
+        import warnings
+        warnings.warn('WARNING: CDELT1 < 1e-4, Assuming log wavelength scale')
+        dcflag = 1
 
-    # Return
+    # Generate
+    wave = crval1 + cdelt1 * (np.arange(npix) + 1. - crpix1)
+    if dcflag == 1:
+        wave = 10.**wave # Log
+
     return wave
 
 #### ###############################

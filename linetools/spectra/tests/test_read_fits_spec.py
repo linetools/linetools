@@ -4,6 +4,7 @@ import pytest
 import astropy.io.ascii as ascii
 from astropy import units as u
 import numpy as np
+from astropy.io import fits
 
 from linetools.spectra import io
 
@@ -20,4 +21,12 @@ def test_sep_files():
     np.testing.assert_allclose(spec.sig, idl['sig'], atol=1e-3, rtol=0)
 
     assert spec.dispersion.unit == u.Unit('AA')
+
+def test_setwave():
+    hd = fits.getheader(data_path('UM184_nF.fits'))
+    wave = io.setwave(hd)
+    np.testing.assert_allclose(wave[0], 3042.34515916)
+    hd['CRPIX1'] = 10
+    wave = io.setwave(hd)
+    np.testing.assert_allclose(wave[0], 3040.33648468)
 
