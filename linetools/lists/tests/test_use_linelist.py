@@ -44,4 +44,4 @@ def test_all_transitions():
 	line = 'CIII'
 	out = ism.all_transitions(line)
 	assert type(out) == dict, error_msg
-	print 'test_all_transitions() passed'
+	print('test_all_transitions() passed')
