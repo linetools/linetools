@@ -19,6 +19,8 @@ from astropy import constants as const
 from astropy import units as u
 from astropy.units import Quantity
 
+from linetools.analysis import utils as lau
+from linetools.analysis import absline as laa
 from linetools.spectra import io as lsio
 from linetools.lists.linelist import LineList
 
@@ -73,7 +75,7 @@ class SpectralLine(object):
         # Other
         self.data = {} # Atomic/Moleculare Data (e.g. f-value, A coefficient, Elow)
         self.analy = {'spec': None, # Analysis inputs (e.g. spectrum; from .clm file or AbsID)
-            'wvlim': [0., 0.], # Wavelength interval about the line (observed)
+            'wvlim': [0., 0.]*u.AA, # Wavelength interval about the line (observed)
             'vlim': [0., 0.]*u.km/u.s, # Velocity limit of line, relative to self.attrib['z']
             'do_analysis': 1 # Analyze
             }
@@ -146,23 +148,32 @@ class SpectralLine(object):
           Arrays (numpy or Quantity) of flux, error, and wavelength/velocity
         '''
         # Checks
-        if np.sum(self.analy['wvlim']) == 0.:
-            raise ValueError('spectralline.cut_spec: Need to set wvlim!') # Could use VMNX
         if self.analy['spec'] is None:
             raise ValueError('spectralline.cut_spec: Need to set spectrum!')
         if self.analy['spec'].wcs.unit == 1.:
             raise ValueError('Expecting a unit!')
+                    # Velocity
 
         # Pixels for evaluation
-        pix = self.analy['spec'].pix_minmax(self.analy['wvlim'])[0]
+        if np.sum(self.analy['wvlim'].value > 0.):
+            pix = self.analy['spec'].pix_minmax(self.analy['wvlim'])[0]
+        elif np.sum(np.abs(self.analy['vlim'].value) > 0.):
+            pix = self.analy['spec'].pix_minmax(
+                self.attrib['z'], self.wrest, self.analy['vlim'])[0]
+        else:
+            raise ValueError('spectralline.cut_spec: Need to set wvlim or vlim!')
 
         # Cut for analysis
         fx = self.analy['spec'].flux[pix]
         sig = self.analy['spec'].sig[pix]
         wave = self.analy['spec'].dispersion[pix]
 
+        # Velocity array
+        self.analy['spec'].velo = self.analy['spec'].relative_vel(
+            self.wrest*(1+self.attrib['z']))
+        velo = self.analy['spec'].velo[pix] 
 
-        # Normalize
+        # Normalize?
         if normalize:
             try:
                 fx = fx / self.analy['spec'].conti[pix]
@@ -171,64 +182,54 @@ class SpectralLine(object):
             else:
                 sig = sig / self.analy['spec'].conti[pix]
 
-        # Velocity
-        self.analy['spec'].velo = self.analy['spec'].relative_vel(
-            self.wrest*(1+self.attrib['z']))
-        # Cut
-        velo = self.analy['spec'].velo[pix] 
-        # Return
+       # Return
         return fx, sig, dict(wave=wave, velo=velo)
 
 
     # EW 
-    def box_ew(self):
+    def measure_ew(self, flg=1):
         """  EW calculation
         Default is simple boxcar integration
-        Observer frame, not rest-frame
+        Observer frame, not rest-frame (use measure_restew below)
           wvlim must be set!
           spec must be set!
 
         Parameters
         ----------
+        flg: int, optional
+          1: Boxcar integration
 
-        Returns:
-          EW, sigEW : EW and error in observer frame
+        Fills:
+        -------
+        self.attrib[ 'EW', 'sigEW' ] : 
+          EW and error in observer frame
         """
+        reload(lau)
         # Cut spectrum
         fx, sig, xdict = self.cut_spec(normalize=True)
         wv = xdict['wave']
 
-        # dwv
-        dwv = wv - np.roll(wv,1)
-        dwv[0] = dwv[1]
-
-
-        # Simple boxcar
-        EW = np.sum( dwv * (1. - fx) ) 
-        varEW = np.sum( dwv**2 * sig**2 )
-        sigEW = np.sqrt(varEW) 
-
+        # Calculate
+        if flg == 1: # Boxcar
+            EW,sigEW = lau.box_ew( (wv, fx, sig) )
+        else:
+            raise ValueError('measure_ew: Not ready for this flag {:d}'.format(flg))
 
         # Fill
         self.attrib['EW'] = EW 
         self.attrib['sigEW'] = sigEW 
 
-        # Return
-        return EW, sigEW
-            
     # EW 
-    def restew(self):
+    def measure_restew(self,**kwargs):
         """  Rest EW calculation
-        Return rest-frame.  See "box_ew" above for details
+        Return rest-frame.  See "measure_ew" above for details
         """
         # Standard call
-        EW,sigEW = self.box_ew()
-        # Push to rest-frame
-        self.attrib['EW'] = EW / (self.attrib['z']+1)
-        self.attrib['sigEW'] = sigEW / (self.attrib['z']+1)
+        self.measure_ew(**kwargs)
 
-        # Return
-        return self.attrib['EW'], self.attrib['sigEW'] 
+        # Push to rest-frame
+        self.attrib['EW'] = self.attrib['EW'] / (self.attrib['z']+1)
+        self.attrib['sigEW'] = self.attrib['sigEW'] / (self.attrib['z']+1)
 
     # Output
     def __repr__(self):
@@ -306,54 +307,40 @@ class AbsLine(SpectralLine):
         self.attrib.update({'N': 0., 'Nsig': 0., 'flagN': 0, # Column
                        'b': 0., 'bsig': 0.  # Doppler
                        } )
-
-    '''
-    # Perform AODM on the line
-    def aodm(self, flg_sat=None):
+    # AODM
+    def measure_aodm(self, nsig=3.):
         """  AODM calculation
-
         Parameters
         ----------
+        nsig: float, optional
+          Number of sigma significance required for a "detection"
 
-        Returns:
-          N, sigN : Column and error in linear space
-          flg_sat:  Set to True if saturated pixels exist
+        Fills:
+        -------
+        self.attrib[ 'N', 'sigN', 'logN', 'sig_logN' ]  
+          Column densities and errors, linear and log
         """
+        reload(laa)
+
         # Cut spectrum
-        fx, sig, velo = self.cut_spec(normalize=True, relvel=True)
+        fx, sig, xdict = self.cut_spec(normalize=True)
+        velo = xdict['velo']
 
-        # dv
-        delv = velo - np.roll(velo,1)
-        delv[0] = delv[1]
+        # Calculate
+        N,sigN,flg_sat = laa.aodm( (velo, fx, sig), (self.wrest,self.data['f']) )
 
-        # Atomic data
-        cst = (const.m_e.cgs*const.c.cgs / (np.pi * 
-            (const.e.esu**2).cgs)).to(u.AA*u.s/(u.km*u.cm**2))
-        cst = cst/(self.data['f']*self.wrest) #/ (u.km/u.s) / u.cm * (u.AA/u.cm)
+        # Flag
+        if flg_sat:
+            self.attrib['flagN'] = 2
+        else:
+            if N > nsig*sigN:
+                self.attrib['flagN'] = 1
+            else:
+                self.attrib['flagN'] = 3
 
-        # Mask
-        mask = (fx == fx) # True = good
-        nndt = Quantity(np.zeros(len(fx)), unit='s/(km cm cm)')
-
-        # Saturated?
-        satp = np.where( (fx <= sig/5.) | (fx < 0.05) )[0]
-        if len(satp) > 0:
-            mask[satp] = False
-            lim = np.where(sig[satp] > 0.)[0]
-            if len(lim) > 0:
-                sub = np.maximum(0.05, sig[satp[lim]]/5.)
-                nndt[satp[lim]] = np.log(1./sub)*cst
-                flg_sat = True
-        # AODM
-        nndt[mask] = np.log(1./fx[mask])*cst
-
-        # Sum it
-        ntot = np.sum( nndt*delv )
-        tvar = np.sum( (delv*cst*sig/fx)**2 )
-
-        # Fill
-        self.attrib['N'] = ntot
-        self.attrib['sigN'] = np.sqrt(tvar)
+        # Values
+        self.attrib['N'] = N
+        self.attrib['sigN'] = sigN
 
         # Log
         logN = np.log10( self.attrib['N'].value ) 
@@ -361,10 +348,6 @@ class AbsLine(SpectralLine):
         sig_logN = np.sqrt(lgvar)
         self.attrib['logN'] = logN # Dimensionless
         self.attrib['sig_logN'] = sig_logN # Dimensionless
-
-        # Return
-        return self.attrib['N'], self.attrib['sigN']
-    '''
 
 
     # Output
