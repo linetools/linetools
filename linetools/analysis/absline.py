@@ -10,6 +10,9 @@ import os
 from astropy import units as u
 from astropy import constants as const
 
+atom_cst = (const.m_e.cgs*const.c.cgs / (np.pi * 
+    (const.e.esu**2).cgs)).to(u.AA*u.s/(u.km*u.cm**2))
+ 
 
 # Perform AODM on the line
 def aodm(spec,idata):
@@ -18,7 +21,7 @@ def aodm(spec,idata):
 
     Parameters
     ----------
-    spec -- Tuple of (wave, fx, sig)
+    spec -- Tuple of (vel, fx, sig)
     idata -- Tuple of (wrest, fval)
 
     Returns:
@@ -26,6 +29,9 @@ def aodm(spec,idata):
       Column and error in linear space (cm^-2)
     flg_sat: bool
       Set to True if saturated pixels exist
+
+    ToDo: 
+      -- Generate a function for nndt alone
     """
     flg_sat = False
 
@@ -38,9 +44,7 @@ def aodm(spec,idata):
     delv[0] = delv[1]
 
     # Atomic data
-    cst = (const.m_e.cgs*const.c.cgs / (np.pi * 
-        (const.e.esu**2).cgs)).to(u.AA*u.s/(u.km*u.cm**2))
-    cst = cst/(fval*wrest) #/ (u.km/u.s) / u.cm * (u.AA/u.cm)
+   cst = atom_cst/(fval*wrest) #/ (u.km/u.s) / u.cm * (u.AA/u.cm)
 
     # Mask
     mask = (fx == fx) # True = good
