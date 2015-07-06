@@ -10,9 +10,9 @@ import os
 from astropy import units as u
 from astropy import constants as const
 
+# Atomcic constant
 atom_cst = (const.m_e.cgs*const.c.cgs / (np.pi * 
     (const.e.esu**2).cgs)).to(u.AA*u.s/(u.km*u.cm**2))
- 
 
 # Perform AODM on the line
 def aodm(spec,idata):
@@ -44,7 +44,7 @@ def aodm(spec,idata):
     delv[0] = delv[1]
 
     # Atomic data
-   cst = atom_cst/(fval*wrest) #/ (u.km/u.s) / u.cm * (u.AA/u.cm)
+    cst = atom_cst/(fval*wrest) #/ (u.km/u.s) / u.cm * (u.AA/u.cm)
 
     # Mask
     mask = (fx == fx) # True = good
