@@ -78,7 +78,7 @@ class XSpectrum1D(Spectrum1D):
     #### ###############################
     #  Grabs spectrum pixels in a velocity window
     def pix_minmax(self, *args):
-        """Find pixels in velocity range
+        """Find pixels in wavelength or velocity range
 
         Parameters
         ----------
@@ -89,7 +89,7 @@ class XSpectrum1D(Spectrum1D):
         Option 2: zabs, wrest, vmnx  [not as a tuple or list!]
           zabs: Absorption redshift
           wrest: Rest wavelength  (with Units!)
-          vmnx: Tuple of 2 floats
+          vmnx: Tuple/array/list of 2 Quantities
             vmin, vmax in km/s
 
         Returns:
