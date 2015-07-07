@@ -1,4 +1,4 @@
-""" General utilities.
+""" Module for general utilities which don't belong an a sub-package.
 """
 
 def between(a, vmin, vmax):
