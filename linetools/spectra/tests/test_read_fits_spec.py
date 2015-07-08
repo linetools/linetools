@@ -18,7 +18,7 @@ def test_sep_files():
     spec = io.readspec(data_path('UM184_nF.fits'))
     idl = ascii.read(data_path('UM184.dat.gz'), names=['wave', 'flux', 'sig'])
     np.testing.assert_allclose(spec.dispersion, idl['wave'])
-    np.testing.assert_allclose(spec.sig, idl['sig'], atol=1e-3, rtol=0)
+    np.testing.assert_allclose(spec.sig, idl['sig'], atol=2e-3, rtol=0)
 
     assert spec.dispersion.unit == u.Unit('AA')
 
