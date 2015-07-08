@@ -6,8 +6,8 @@ from __future__ import print_function, absolute_import, division, \
 import sys, os
 import numpy as np
 
-from linetools.utils import between
-from barak.interp import AkimaSpline
+from ..utils import between
+from .interp import AkimaSpline
 
 __all__ = ['qso_continuum']
 
