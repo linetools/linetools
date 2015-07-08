@@ -150,22 +150,6 @@ def interp_Akima(x_new, x, y):
     "A new method of interpolation and smooth curve fitting based
     on local procedures." Hiroshi Akima, J. ACM, October 1970, 17(4),
     589-602.
-
-    Examples
-    --------
-    Plot interpolated Gaussian noise:
-
-    >>> x = np.sort(np.random.random(10) * 100)
-    >>> y = np.random.normal(0.0, 0.1, size=len(x))
-    >>> x2 = np.arange(x[0], x[-1], 0.02)
-    >>> y2 = interp_Akima(x2, x, y)
-    >>> y3 = interp_spline(x2, x, y)
-    >>> from matplotlib import pyplot as plt
-    >>> plt.plot(x2, y2, 'b-', label='Akima')
-    >>> plt.plot(x2, y3, 'r-', label='Cubic')
-    >>> plt.plot(x, y, 'co')
-    >>> plt.legend()
-    >>> plt.show()
     """
     interpolator = AkimaSpline(x, y)
     return interpolator(x_new)
