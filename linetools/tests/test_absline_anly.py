@@ -25,7 +25,7 @@ def test_aodm_absline():
     abslin.measure_aodm()
     N, sigN, flgN = [abslin.attrib[key] for key in ['N','sigN','flagN']] 
 
-    np.testing.assert_allclose(N.value, 299143539014510.06, rtol=1e-2)
+    np.testing.assert_allclose(N.value, 299143539014510.06)
     assert N.unit == 1/u.cm**2
     assert flgN == 1
     # Now velocity limits
@@ -36,7 +36,7 @@ def test_aodm_absline():
     #
     abslin.measure_aodm()
     N, sigN, flgN = [abslin.attrib[key] for key in ['N','sigN','flagN']] 
-    np.testing.assert_allclose(N.value, 8.01113013392e+13, rtol=1e-2)
+    np.testing.assert_allclose(N.value, 8.01113013392e+13)
 
 def test_boxew_absline():
     # Text boxcar EW evaluation
@@ -50,13 +50,11 @@ def test_boxew_absline():
     abslin.measure_ew() 
     ew = abslin.attrib['EW']
 
-    np.testing.assert_allclose(ew.value, 0.990466303607004, rtol=1e-2)
+    np.testing.assert_allclose(ew.value, 0.990466303607004)
     assert ew.unit == u.AA
 
     abslin.measure_restew() 
-    np.testing.assert_allclose(ew.value,
-                               0.990466303607004/(1+abslin.attrib['z']),
-                               rtol=1e-2)
+    np.testing.assert_allclose(ew.value, 0.990466303607004/(1+abslin.attrib['z']))
 
 def test_ismatch():
     # Init CIV 1548
