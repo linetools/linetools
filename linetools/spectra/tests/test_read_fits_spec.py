@@ -30,3 +30,7 @@ def test_setwave():
     wave = io.setwave(hd)
     np.testing.assert_allclose(wave[0], 3040.33648468)
 
+# ASCII format
+def test_read_ascii():
+    spec = io.readspec(data_path('UM184.dat.gz'))
+    assert spec.dispersion.unit == u.Unit('AA')

@@ -107,6 +107,7 @@ def convolve_window(a, window, edge='invert'):
 
     return temp2[n:-n]
 
+'''
 def convolve_constant_dv(wa, fl, wa_dv=None, npix=4., vfwhm=None, dv_const=False):
     """ Convolve a wavelength array with a gaussian of constant
     velocity width.
@@ -171,3 +172,4 @@ def convolve_constant_dv(wa, fl, wa_dv=None, npix=4., vfwhm=None, dv_const=False
     else: fl_out = fl_dv_smoothed
     # Return
     return fl_out
+'''
