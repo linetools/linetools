@@ -13,7 +13,6 @@ from astropy import constants as const
 from astropy.io import fits, ascii
 from astropy.table import QTable, Column, Table
 
-from xastropy.xutils import xdebug as xdb
 
 lt_path = imp.find_module('linetools')[1]
 xa_path = imp.find_module('xastropy')[1]
