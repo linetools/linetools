@@ -74,19 +74,3 @@ def test_write_fits():
     # Write
     spec.write_to_fits(data_path('tmp.fits'))
 
-
-'''
-def test_spice():
-        # Read blue
-    bfil = '~/LCO/data/MIKE/RedData/PKS2000-330/Data/Sep_2_2004/Q2000-330a_b_F.fits'
-    bspec = lsi.readspec(bfil)
-    # Read red
-    rfil = '~/LCO/data/MIKE/RedData/PKS2000-330/Data/Sep_2_2004/Q2000-330a_r_F.fits'
-    rspec = lsi.readspec(rfil)
-    # Splice
-    import pdb
-    pdb.set_trace()
-    tspec = bspec.splice(rspec)
-    tspec.plot()
-'''
-
