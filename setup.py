@@ -77,6 +77,21 @@ package_info = get_package_info()
 # Add the project-global data
 package_info['package_data'].setdefault(PACKAGENAME, [])
 
+# Need a recursive glob to find all package data files if there are
+# subdirectories (copied from specutils)
+import fnmatch
+def recursive_glob(basedir, pattern):
+    matches = []
+    for root, dirnames, filenames in os.walk(basedir):
+        for filename in fnmatch.filter(filenames, pattern):
+            matches.append(os.path.join(root, filename))
+    return matches
+
+data_files = recursive_glob(os.path.join(PACKAGENAME, 'data'), '*')
+data_files = [f[len(PACKAGENAME)+1:] for f in data_files]
+package_info['package_data'][PACKAGENAME] += data_files
+
+
 # Define entry points for command-line scripts
 entry_points = {}
 entry_points['console_scripts'] = [
@@ -100,7 +115,7 @@ setup(name=PACKAGENAME,
       description=DESCRIPTION,
       scripts=scripts,
       requires=['astropy', 'specutils', 'scipy'],
-      install_requires=['astropy', 'specutils', 'scipy'],
+      install_requires=['astropy', 'specutils'],
       provides=[PACKAGENAME],
       author=AUTHOR,
       author_email=AUTHOR_EMAIL,
