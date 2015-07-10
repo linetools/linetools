@@ -13,6 +13,8 @@ from astropy import constants as const
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 
+from linetools import utils as liu
+
 from specutils import Spectrum1D
 from specutils.wcs.specwcs import Spectrum1DPolynomialWCS, Spectrum1DLookupWCS
 
@@ -277,7 +279,6 @@ class XSpectrum1D(Spectrum1D):
         --------
           XSpectrum1D of the smoothed spectrum
         """
-        from xastropy.xutils import arrays as xxa
         if preserve:
             from astropy.convolution import convolve, Box1DKernel
             new_fx = convolve(self.flux, Box1DKernel(nbox))
@@ -293,9 +294,9 @@ class XSpectrum1D(Spectrum1D):
             orig_pix = np.arange( new_npix * nbox )
 
             # Rebin (mean)
-            new_wv = xxa.scipy_rebin( self.dispersion[orig_pix], new_npix )
-            new_fx = xxa.scipy_rebin( self.flux[orig_pix], new_npix )
-            new_sig = xxa.scipy_rebin( self.sig[orig_pix], new_npix ) / np.sqrt(nbox)
+            new_wv = liu.scipy_rebin( self.dispersion[orig_pix], new_npix )
+            new_fx = liu.scipy_rebin( self.flux[orig_pix], new_npix )
+            new_sig = liu.scipy_rebin( self.sig[orig_pix], new_npix ) / np.sqrt(nbox)
 
         # Return
         return XSpectrum1D.from_array(new_wv, new_fx,
