@@ -28,3 +28,20 @@ def between(a, vmin, vmax):
     c = a < vmax
     c &= a >= vmin
     return c
+
+#
+def scipy_rebin(a, *args):
+    ''' Simple script to rebin an input array to a new shape.  Akin to IDL's routine
+    Taken from scipy documentation: http://wiki.scipy.org/Cookbook/Rebinning
+    As in IDL, the new shape must be a factor of the old one.
+    The ugly 'evList trick' builds and executes a python command 
+    '''
+    shape = a.shape
+    lenShape = len(shape)
+    factor = np.asarray(shape)/np.asarray(args)
+    evList = ['a.reshape('] + \
+             ['args[%d],factor[%d],'%(i,i) for i in range(lenShape)] + \
+             [')'] + ['.mean(%d)'%(i+1) for i in range(lenShape)]
+    #print ''.join(evList)
+    return eval(''.join(evList))
+

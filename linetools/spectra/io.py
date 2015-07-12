@@ -26,12 +26,16 @@ from linetools.spectra.utils import XSpectrum1D
 #
 def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None, 
     sig_tags=None, multi_ivar=False):
-    ''' Read a FITS file (or astropy Table) into a Spectrum1D class
+    ''' Read a FITS file (or astropy Table or ASCII file) into a Spectrum1D class
 
     Parameters:
     -----------
-    specfil: string or Table
+    specfil: str or Table
       Input file
+      If str, 
+        FITS file must include in '.fit'
+        ASCII must either have a proper Table format
+          or be 3 columns with WAVE,FLUX,ERROR
     efil: string, optional
       Explicit filename for Error array.  Code will attempt to find this
       file on its own.
@@ -59,13 +63,26 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         datfil = 'None'
         # Dummy hdulist
         hdulist = [fits.PrimaryHDU(), specfil]
+    elif isinstance(specfil, basestring): 
+        flg_fits = False
+        for ext in ['.fit']:
+            if ext in specfil:
+                flg_fits = True
+        if flg_fits: # FITS
+            # Read header
+            datfil,chk = chk_for_gz(specfil)
+            if chk == 0:
+                print('xastropy.spec.readwrite: File does not exist ', specfil)
+                return -1
+            hdulist = fits.open(os.path.expanduser(datfil))
+        else: #ASCII
+            try:
+                tbl = Table.read(specfil)
+            except Exception:
+                tbl = ascii.read(specfil, names=['WAVE', 'FLUX', 'ERROR'])
+            hdulist = [fits.PrimaryHDU(), tbl]
     else:
-        # Read header
-        datfil,chk = chk_for_gz(specfil)
-        if chk == 0:
-            print('xastropy.spec.readwrite: File does not exist ', specfil)
-            return -1
-        hdulist = fits.open(os.path.expanduser(datfil))
+        raise IOError('readspec: Bad spectra input')
 
     head0 = hdulist[0].header
 

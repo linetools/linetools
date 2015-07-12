@@ -13,6 +13,8 @@ from astropy import constants as const
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 
+from linetools import utils as liu
+
 from specutils import Spectrum1D
 from specutils.wcs.specwcs import Spectrum1DPolynomialWCS, Spectrum1DLookupWCS
 
@@ -43,7 +45,34 @@ class XSpectrum1D(Spectrum1D):
             return None
 
 
-    #### ###############################
+    #  Add noise
+    def add_noise(self,seed=None,s2n=None):
+        '''Add noise to the existing spectrum
+        Uses the uncertainty array unless otherwise specified
+        Converts flux to float64
+
+        Parameters:
+        -----------
+        seed: int, optional  
+          Seed for the random number generator [not yet functional]
+        s2n: float, optional
+          S/N per pixel for the output spectrum
+        '''
+        # Seed
+        np.random.seed(seed=seed)
+        #
+        npix = len(self.flux)
+        # Random numbers
+        rand = np.random.normal(size=npix)
+
+        # Modifty the flux
+        if s2n is not None:
+            sig =  1./s2n
+        else:
+            sig = self.sig
+        #
+        self.flux = self.flux.value + (rand * sig)*self.flux.unit
+
     #  Normalize
     def normalize(self, conti, verbose=False, no_check=False):
         """
@@ -116,106 +145,11 @@ class XSpectrum1D(Spectrum1D):
         return gdpix, wvmnx, (pixmin, pixmax)
 
     #### ###############################
-    #  Box car smooth
-    def box_smooth(self, nbox, preserve=False):
-        """ Box car smooth spectrum and return a new one
-        Is a simple wrapper to the rebin routine
-
-        Parameters
-        ----------
-        nbox: integer
-          Number of pixels to smooth over
-        preserve: bool (False) 
-          Keep the new spectrum at the same number of pixels as original
-        Returns:
-          XSpectrum1D of the smoothed spectrum
-        """
-        from xastropy.xutils import arrays as xxa
-        if preserve:
-            from astropy.convolution import convolve, Box1DKernel
-            new_fx = convolve(self.flux, Box1DKernel(nbox))
-            new_sig = convolve(self.sig, Box1DKernel(nbox))
-            new_wv = self.dispersion
-        else:
-            # Truncate arrays as need be
-            npix = len(self.flux)
-            try:
-                new_npix = npix // nbox # New division
-            except ZeroDivisionError:
-                raise ZeroDivisionError('Dividing by zero..')
-            orig_pix = np.arange( new_npix * nbox )
-
-            # Rebin (mean)
-            new_wv = xxa.scipy_rebin( self.dispersion[orig_pix], new_npix )
-            new_fx = xxa.scipy_rebin( self.flux[orig_pix], new_npix )
-            new_sig = xxa.scipy_rebin( self.sig[orig_pix], new_npix ) / np.sqrt(nbox)
-
-        # Return
-        return XSpectrum1D.from_array(new_wv, new_fx,
-                                      uncertainty=apy.nddata.StdDevUncertainty(new_sig))
-
-    #### ###############################
-    #  Rebin
-    def rebin(self, new_wv):
-        """ Rebin the existing spectrum to a new wavelength array
-        Uses simple linear interpolation.  The default (and only) option 
-        conserves counts (and flambda).
-        
-        WARNING: Do not trust either edge pixel of the new array
-
-        Parameters
-        ----------
-        new_wv: Quantity array
-          New wavelength array
-
-        Returns:
-        ----------
-          XSpectrum1D of the rebinned spectrum
-        """
-        from scipy.interpolate import interp1d
-
-        # Endpoints of original pixels
-        npix = len(self.dispersion)
-        wvh = (self.dispersion + np.roll(self.dispersion, -1))/2.
-        wvh[npix-1] = self.dispersion[npix-1] + (self.dispersion[npix-1] - self.dispersion[npix-2])/2.
-        dwv = wvh - np.roll(wvh,1)
-        dwv[0] = 2*(wvh[0]-self.dispersion[0])
-
-        # Cumulative Sum
-        cumsum = np.cumsum(self.flux * dwv)
-
-        # Interpolate
-        fcum = interp1d(wvh, cumsum, fill_value=0., bounds_error=False)
-
-        # Endpoints of new pixels
-        nnew = len(new_wv)
-        nwvh = (new_wv + np.roll(new_wv, -1))/2.
-        nwvh[nnew-1] = new_wv[nnew-1] + (new_wv[nnew-1] - new_wv[nnew-2])/2.
-        # Pad starting point
-        bwv = np.zeros(nnew+1) * new_wv.unit
-        bwv[0] = new_wv[0] - (new_wv[1] - new_wv[0])/2.
-        bwv[1:] = nwvh
-
-        # Evaluate
-        newcum = fcum(bwv)
-        # Endpoint
-        if (bwv[-1] > wvh[-1]):
-            newcum[-1] = cumsum[-1]
-
-        # Rebinned flux
-        new_fx = (np.roll(newcum,-1)-newcum)[:-1]
-
-        # Normalize (preserve counts and flambda)
-        new_dwv = bwv - np.roll(bwv,1)
-        new_fx = new_fx / new_dwv[1:]
-
-        # Return new spectrum
-        return XSpectrum1D.from_array(new_wv, new_fx)
 
 
     # Splice spectrum + Normalize
     def parse_spec(spec, **kwargs):
-        ''' Splice the spectrum.
+        ''' Slice the spectrum.
         Normalize too
         '''
         fx = spec.flux[spec.sub_pix]
@@ -251,6 +185,66 @@ class XSpectrum1D(Spectrum1D):
             plt.plot(self.dispersion, self.flux)
         plt.show()
 
+    #  Rebin
+    def rebin(self, new_wv):
+        """ Rebin the existing spectrum rebinned to a new wavelength array
+        Uses simple linear interpolation.  The default (and only) option 
+        conserves counts (and flambda).
+        
+        WARNING: Do not trust either edge pixel of the new array
+
+        Parameters
+        ----------
+        new_wv: Quantity array
+          New wavelength array
+
+        Returns:
+        ----------
+          XSpectrum1D of the rebinned spectrum
+        """
+        from scipy.interpolate import interp1d
+
+        # Endpoints of original pixels
+        npix = len(self.dispersion)
+        wvh = (self.dispersion + np.roll(self.dispersion, -1))/2.
+        wvh[npix-1] = self.dispersion[npix-1] + (self.dispersion[npix-1] - self.dispersion[npix-2])/2.
+        dwv = wvh - np.roll(wvh,1)
+        dwv[0] = 2*(wvh[0]-self.dispersion[0])
+
+        # Cumulative Sum
+        cumsum = np.cumsum(self.flux * dwv)
+
+        # Interpolate (loses the units)
+        fcum = interp1d(wvh, cumsum, fill_value=0., bounds_error=False)
+
+        # Endpoints of new pixels
+        nnew = len(new_wv)
+        nwvh = (new_wv + np.roll(new_wv, -1))/2.
+        nwvh[nnew-1] = new_wv[nnew-1] + (new_wv[nnew-1] - new_wv[nnew-2])/2.
+        # Pad starting point
+        bwv = np.zeros(nnew+1) * new_wv.unit
+        bwv[0] = new_wv[0] - (new_wv[1] - new_wv[0])/2.
+        bwv[1:] = nwvh
+
+        # Evaluate and put unit back
+        newcum = fcum(bwv) * dwv.unit
+
+        # Endpoint
+        if (bwv[-1] > wvh[-1]):
+            newcum[-1] = cumsum[-1]
+
+        # Rebinned flux
+        new_fx = (np.roll(newcum,-1)-newcum)[:-1]
+
+        # Normalize (preserve counts and flambda)
+        new_dwv = bwv - np.roll(bwv,1)
+        #import pdb
+        #pdb.set_trace()
+        new_fx = new_fx / new_dwv[1:]
+
+        # Return new spectrum
+        return XSpectrum1D.from_array(new_wv, new_fx)
+
     # Velo array
     def relative_vel(self, wv_obs):
         ''' Return a velocity array relative to an input wavelength
@@ -268,6 +262,107 @@ class XSpectrum1D(Spectrum1D):
         velo: Quantity array (km/s)
         '''
         return  (self.dispersion-wv_obs) * const.c.to('km/s')/wv_obs
+
+    #  Box car smooth
+    def box_smooth(self, nbox, preserve=False):
+        """ Box car smooth spectrum and return a new one
+        Is a simple wrapper to the rebin routine
+
+        Parameters
+        ----------
+        nbox: integer
+          Number of pixels to smooth over
+        preserve: bool (False) 
+          Keep the new spectrum at the same number of pixels as original
+
+        Returns:
+        --------
+          XSpectrum1D of the smoothed spectrum
+        """
+        if preserve:
+            from astropy.convolution import convolve, Box1DKernel
+            new_fx = convolve(self.flux, Box1DKernel(nbox))
+            new_sig = convolve(self.sig, Box1DKernel(nbox))
+            new_wv = self.dispersion
+        else:
+            # Truncate arrays as need be
+            npix = len(self.flux)
+            try:
+                new_npix = npix // nbox # New division
+            except ZeroDivisionError:
+                raise ZeroDivisionError('Dividing by zero..')
+            orig_pix = np.arange( new_npix * nbox )
+
+            # Rebin (mean)
+            new_wv = liu.scipy_rebin( self.dispersion[orig_pix], new_npix )
+            new_fx = liu.scipy_rebin( self.flux[orig_pix], new_npix )
+            new_sig = liu.scipy_rebin( self.sig[orig_pix], new_npix ) / np.sqrt(nbox)
+
+        # Return
+        return XSpectrum1D.from_array(new_wv, new_fx,
+                                      uncertainty=apy.nddata.StdDevUncertainty(new_sig))
+
+    # Splice two spectra together
+    def gauss_smooth(self, fwhm, **kwargs):
+        ''' Smooth a spectrum with a Gaussian
+        Need to consider smoothing the uncertainty array
+
+        Parameters
+        ----------
+        fwhm: float
+            FWHM of the Gaussian in pixels (unitless)
+
+        Returns:
+        --------
+          XSpectrum1D of the smoothed spectrum
+        Returns:
+        '''
+        # Import
+        from linetools.spectra import convolve as lsc
+
+        # Apply to flux
+        new_fx = lsc.convolve_psf(self.flux.value, fwhm, **kwargs)*self.flux.unit
+
+        # Return
+        return XSpectrum1D.from_array(self.dispersion, new_fx,
+                                      uncertainty=self.uncertainty)
+
+    # Splice two spectra together
+    def splice(self, spec2, wvmx=None):
+        ''' Combine two spectra
+        It is assumed that the internal spectrum is *bluer* than
+        the input spectrum.
+
+        Parameters
+        ----------
+        spec2: Spectrum1D
+          Second spectrum
+        wvmx: Quantity
+          Wavelength to begin splicing *after*
+
+        Returns:
+        ----------
+        spec3: Spectrum1D
+          Spliced spectrum
+        '''
+        # Begin splicing after the end of the internal spectrum
+        if wvmx is None:
+            wvmx = np.max(self.dispersion)
+        # 
+        gdp = np.where(spec2.dispersion > wvmx)[0]
+        # Concatenate
+        new_wv = np.concatenate( (self.dispersion.value, 
+            spec2.dispersion.value[gdp]) )
+        uwave = u.Quantity(new_wv, unit=self.wcs.unit)
+        new_fx = np.concatenate( (self.flux.value, 
+            spec2.flux.value[gdp]) )
+        if self.sig is not None:
+            new_sig = np.concatenate( (self.sig, spec2.sig[gdp]) )
+        # Generate
+        spec3 = XSpectrum1D.from_array(uwave, u.Quantity(new_fx),
+                                         uncertainty=StdDevUncertainty(new_sig))
+        # Return
+        return spec3
 
     # Write to fits
     def write_to_fits(self, outfil, clobber=True, add_wave=False):
@@ -350,108 +445,3 @@ class XSpectrum1D(Spectrum1D):
         hdu.writeto(outfil, clobber=clobber)
         print('Wrote spectrum to {:s}'.format(outfil))
 
-    # Splice two spectra together
-    def splice(self, spec2, wvmx=None):
-        ''' Combine two spectra
-        It is assumed that the internal spectrum is *bluer* than
-        the input spectrum.
-
-        Parameters
-        ----------
-        spec2: Spectrum1D
-          Second spectrum
-        wvmx: Quantity
-          Wavelength to begin splicing *after*
-
-        Returns:
-        ----------
-        spec3: Spectrum1D
-          Spliced spectrum
-        '''
-        # Begin splicing after the end of the internal spectrum
-        if wvmx is None:
-            wvmx = np.max(self.dispersion)
-        # 
-        gdp = np.where(spec2.dispersion > wvmx)[0]
-        # Concatenate
-        new_wv = np.concatenate( (self.dispersion.value, 
-            spec2.dispersion.value[gdp]) )
-        uwave = u.Quantity(new_wv, unit=self.wcs.unit)
-        new_fx = np.concatenate( (self.flux.value, 
-            spec2.flux.value[gdp]) )
-        if self.sig is not None:
-            new_sig = np.concatenate( (self.sig, spec2.sig[gdp]) )
-        # Generate
-        spec3 = XSpectrum1D.from_array(uwave, u.Quantity(new_fx),
-                                         uncertainty=StdDevUncertainty(new_sig))
-        # Return
-        return spec3
-
-
-# ################
-if __name__ == "__main__":
-
-    flg_test = 0
-    #flg_test += 2**0  # Test write (simple)
-    #flg_test += 2**1  # Test write with 3 arrays
-    #flg_test += 2**2  # Test boxcar
-    #flg_test += 2**3  # Test rebin
-    flg_test += 2**4  # Test splice
-
-    from linetools.spectra import io as lsi
-
-    if (flg_test % 2**1) >= 2**0:
-        # Standard log-linear read + write (MagE)
-        fil = '~/PROGETTI/LLSZ3/data/normalize/UM669_nF.fits'
-        myspec = lsi.readspec(fil)
-        # Write
-        myspec.write_to_fits('tmp.fits')
-
-    if (flg_test % 2**2) >= 2**1:
-        # Now 2D
-        fil = '/Users/xavier/Dropbox/QSOPairs/data/LRIS_redux/SDSSJ231254.65-025403.1_b400_F.fits.gz'
-        myspec = lsi.readspec(fil)
-        myspec.write_to_fits('tmp.fits')
-
-    if (flg_test % 2**3) >= 2**2: # Boxcar
-        fil = '~/PROGETTI/LLSZ3/data/normalize/UM669_nF.fits'
-        myspec = lsi.readspec(fil)
-        newspec = myspec.box_smooth(3)
-        # 
-        newspec2 = myspec.box_smooth(3, preserve=True)
-        xdb.xplot(myspec.dispersion, myspec.flux, newspec2.flux)
-    
-    if (flg_test % 2**4) >= 2**3: # Rebin array
-        fil = '~/PROGETTI/LLSZ3/data/normalize/UM669_nF.fits'
-        myspec = lsi.readspec(fil)
-
-        new_wv = np.arange(3000., 9000., 5) * u.AA
-        newspec = myspec.rebin(new_wv)
-        #xdb.xplot(myspec.dispersion, myspec.flux,
-        #    xtwo=new_wv, ytwo=newspec.flux)
-        # Test EW
-        wvmnx = np.array((4859., 4961.))*u.AA
-        gd1 = np.where( (myspec.dispersion > wvmnx[0]) & 
-            (myspec.dispersion < wvmnx[1]))[0]
-        dwv1 = myspec.dispersion - np.roll(myspec.dispersion,1)
-        EW1 = np.sum(dwv1[gd1]*(1.-myspec.flux[gd1].value))
-        gd2 = np.where( (newspec.dispersion > wvmnx[0]) & 
-            (newspec.dispersion < wvmnx[1]))[0]
-        dwv2 = newspec.dispersion - np.roll(newspec.dispersion,1)
-        EW2 = np.sum(dwv2[gd2]*(1.-newspec.flux[gd2].value))
-        print('EW1={:g} and EW2={:g} for wvmnx={:g},{:g}'.format(
-            EW1,EW2,wvmnx[0],wvmnx[1]))
-        print('Percent diff = {:0.2f}%'.format(100*(EW2-EW1)/EW1))
-
-    if (flg_test % 2**5) >= 2**4: # Splice two spectra
-        # Read blue
-        bfil = '~/LCO/data/MIKE/RedData/PKS2000-330/Data/Sep_2_2004/Q2000-330a_b_F.fits'
-        bspec = lsi.readspec(bfil)
-        # Read red
-        rfil = '~/LCO/data/MIKE/RedData/PKS2000-330/Data/Sep_2_2004/Q2000-330a_r_F.fits'
-        rspec = lsi.readspec(rfil)
-        # Splice
-        import pdb
-        pdb.set_trace()
-        tspec = bspec.splice(rspec)
-        tspec.plot()
