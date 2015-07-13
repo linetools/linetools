@@ -207,7 +207,7 @@ class LineList(object):
                         
                         print('wrest = {:g}'.format(set_data[igd]['wrest']))
                         raise RuntimeError(('wrest %s,' % set_data[igd]['wrest'],
-                                           self._fulltable[imt]['wrest'].value))
+                                           self._fulltable[mt]['wrest'].value))
                         import pdb
                         pdb.set_trace()
                     else:
