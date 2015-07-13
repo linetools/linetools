@@ -13,7 +13,6 @@ env:
         # to repeat them for all configurations.
         - NUMPY_VERSION=1.9
         - ASTROPY_VERSION=stable
-        - SCIPY_VERSION=0.15
         - CONDA_INSTALL='conda install -c astropy-ci-extras --yes'
         - PIP_INSTALL='pip install'
     matrix:
@@ -91,7 +90,7 @@ install:
     # conda for packages available through conda, or pip for any other
     # packages. You should leave the `numpy=$NUMPY_VERSION` in the `conda`
     # install since this ensures Numpy does not get automatically upgraded.
-    - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION; fi
+    - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION scipy; fi
     - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL specutils; fi
 
     # DOCUMENTATION DEPENDENCIES
