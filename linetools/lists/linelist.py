@@ -205,6 +205,7 @@ class LineList(object):
                         indices.append(mt)
                     elif len(mt) > 1:
                         print('wrest = {:g}'.format(set_data[igd]['wrest']))
+                        raise RuntimeError('wrest = {:g}'.format(set_data[igd]['wrest']))
                         import pdb
                         pdb.set_trace()
                     else:
