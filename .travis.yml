@@ -13,8 +13,8 @@ env:
         # to repeat them for all configurations.
         - NUMPY_VERSION=1.9
         - ASTROPY_VERSION=stable
-	- SCIPY_VERSION=0.15
-	- SPECUTILS_VERSION=0.1
+        - SCIPY_VERSION=0.15
+        - SPECUTILS_VERSION=0.1
         - CONDA_INSTALL='conda install -c astropy-ci-extras --yes'
         - PIP_INSTALL='pip install'
     matrix:
@@ -33,8 +33,8 @@ matrix:
         #  env: SETUP_CMD='build_sphinx -w'
 
         # Try Astropy development version
-        #- python: 2.7
-        #  env: ASTROPY_VERSION=development SETUP_CMD='test'
+        - python: 2.7
+          env: ASTROPY_VERSION=development SETUP_CMD='test'
         #- python: 3.3
         #  env: ASTROPY_VERSION=development SETUP_CMD='test'
 
@@ -92,8 +92,8 @@ install:
     # conda for packages available through conda, or pip for any other
     # packages. You should leave the `numpy=$NUMPY_VERSION` in the `conda`
     # install since this ensures Numpy does not get automatically upgraded.
-    - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION scipy=$SCIPY_VERSION ; fi
-    - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL specutils; fi
+    # - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION ... ; fi
+    # - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL ...; fi
 
     # DOCUMENTATION DEPENDENCIES
     # build_sphinx needs sphinx and matplotlib (for plot_directive). Note that
