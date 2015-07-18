@@ -21,7 +21,6 @@ except ImportError:
     #raise Warning('specutils is not present, so spectra io functionality will not work.')
     class Spectrum1D(object): pass
 
-from specutils.wcs.specwcs import Spectrum1DPolynomialWCS, Spectrum1DLookupWCS
 
 #from xastropy.xutils import xdebug as xdb
 
@@ -386,6 +385,7 @@ class XSpectrum1D(Spectrum1D):
         # TODO
         #  1. Add unit support for wavelength arrays
 
+        from specutils.wcs.specwcs import Spectrum1DPolynomialWCS, Spectrum1DLookupWCS
         from specutils.io import write_fits as sui_wf
         prihdu = sui_wf._make_hdu(self.data)  # Not for binary table format
         prihdu.name = 'FLUX'
