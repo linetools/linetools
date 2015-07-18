@@ -15,7 +15,12 @@ from astropy.nddata import StdDevUncertainty
 
 from linetools import utils as liu
 
-from specutils import Spectrum1D
+try:
+    from specutils import Spectrum1D
+except ImportError:
+    #raise Warning('specutils is not present, so spectra io functionality will not work.')
+    class Spectrum1D(object): pass
+
 from specutils.wcs.specwcs import Spectrum1DPolynomialWCS, Spectrum1DLookupWCS
 
 #from xastropy.xutils import xdebug as xdb
