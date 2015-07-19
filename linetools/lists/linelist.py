@@ -336,7 +336,7 @@ class LineList(object):
                 print('WARNING: Using {:.4f} for your input {:.4f}'.format(self.wrest[mt[0]], 
                     inwv))
             else:
-                print('No such line in the list')
+                print('No such line in the list', k)
                 return None
 
         # Now we have something
