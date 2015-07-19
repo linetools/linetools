@@ -16,8 +16,6 @@ from astropy.table import Table, Column
 from astropy.io.fits.fitsrec import FITS_rec
 from astropy.io.fits.hdu.table import BinTableHDU
 
-from specutils.io import read_fits as spec_read_fits
-
 #from xastropy.xutils import xdebug as xdb
 from linetools.spectra.utils import XSpectrum1D
 
@@ -52,6 +50,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
     -----------
     A Spectrum1D class (or XSpectrum1D which is an overloaded variant)   
     '''
+    from specutils.io import read_fits as spec_read_fits
 
     # Initialize
     dat = None
