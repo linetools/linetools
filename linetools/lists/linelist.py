@@ -146,6 +146,7 @@ class LineList(object):
           List of wrest for lines to use (drawn from input linelist)
           Should be unitless, i.e. not Quantity
         '''
+        import warnings
 
         indices = []
         set_flags = []
@@ -176,8 +177,7 @@ class LineList(object):
                 if len(mt) == 1:
                     indices.append(mt)
                 elif len(mt) > 1:
-                    import pdb
-                    pdb.set_trace()
+                    raise ValueError('Need unique entries!')
                 else:
                     if verbose:
                         print('set_lines: Did not find {:g} in data Tables'.format(gdlin))
@@ -202,21 +202,22 @@ class LineList(object):
                             self._fulltable[imt]['name'] = set_data[igd]['name']
                             #if set_data[igd]['name'] == 'DI 1215':
                             #    xdb.set_trace()
-                        indices.append(mt)
+                        indices.append(mt[0])
                     elif len(mt) > 1:
-                        
-                        print('wrest = {:g}'.format(set_data[igd]['wrest']))
-                        raise RuntimeError(('wrest %s,' % set_data[igd]['wrest'],
-                                           self._fulltable[mt]['wrest'].value))
-                        import pdb
-                        pdb.set_trace()
+                        #
+                        wmsg = 'WARNING: Multiple lines with wrest={:g}'.format(
+                            set_data[igd]['wrest'])
+                        warnings.warn(wmsg)
+                        warnings.warn('Taking the first entry. Maybe use higher precision.')
+                        indices.append(mt[0])
                     else:
                         if verbose:
                             print('set_lines: Did not find {:s} in data Tables'.format(
                                 set_data[igd]['name']))
 
         # Collate (should grab unique ones!)
-        all_idx = np.unique( np.concatenate( [np.array(itt) for itt in indices] ) )
+        #all_idx = np.unique( np.concatenate( [np.array(itt) for itt in indices] ) )
+        all_idx = np.unique( np.array(indices) )
 
         # Parse (consider masking instead)
         self._data = self._fulltable[all_idx]
