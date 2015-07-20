@@ -326,7 +326,7 @@ class LineList(object):
         elif isinstance(k, tuple): # Zion
             mt = (self._data['Z'] == k[0]) & (self._data['ion'] == k[1])
         else:
-            raise ValueError('Not prepared for this type')
+            raise ValueError('Not prepared for this type',k)
 
         # No Match?
         if len(mt) == 0:

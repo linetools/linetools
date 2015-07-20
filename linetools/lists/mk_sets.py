@@ -105,7 +105,8 @@ def mk_hi(infil=None, outfil=None):
     '''
     if infil is None:
         fils = glob.glob(lt_path+'/lists/sets/llist_v*')
-        infil = fils[-1] # Should grab the lateset
+        fils.sort()
+        infil = fils[srt][-1] # Should grab the lateset
 
     # Read
     data = ascii.read(infil, format='fixed_width')

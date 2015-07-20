@@ -106,8 +106,10 @@ def read_sets(infil=None):
     '''
     if infil is None:
         fils = glob.glob(lt_path+'/lists/sets/llist_v*')
+        fils.sort()
         infil = fils[-1] # Should grab the lateset
     # Read
+    print('read_sets: Using set file -- \n  {:s}'.format(infil))
     set_data = ascii.read(infil, format='fixed_width')
 
     # Return
