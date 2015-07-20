@@ -196,6 +196,12 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
                 tmpsig[gdp] = np.sqrt(1./sig[gdp])
                 sig = tmpsig
                 wave = 10.**wave
+    elif (head0['NAXIS'] == 2) and (head0['NAXIS2'] == 5): # SDSS .fit format
+        fx = hdulist[0].data[0,:].flatten()
+        sig = hdulist[0].data[2,:].flatten()
+        wave = setwave(head0)
+        #import pdb
+        #pdb.set_trace()
     else:  # Should not be here
         print('spec.readwrite: Looks like an image')
         return dat
@@ -281,7 +287,10 @@ def setwave(hdr):
     npix = hdr['NAXIS1'] 
     crpix1 = hdr['CRPIX1'] if 'CRPIX1' in hdr else 1.
     crval1 = hdr['CRVAL1']
-    cdelt1 = hdr['CDELT1']
+    try:
+        cdelt1 = hdr['CDELT1']
+    except KeyError:
+        cdelt1 = hdr['CD1_1'] # SDSS style
     dcflag = hdr['DC-FLAG'] if 'DC-FLAG' in hdr else None
 
     if cdelt1 < 1e-4:

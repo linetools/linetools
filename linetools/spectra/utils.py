@@ -174,7 +174,7 @@ class XSpectrum1D(Spectrum1D):
 
 
     # Quick plot
-    def plot(self):
+    def plot(self, **kwargs):
         ''' Plot the spectrum
 
         Parameters
@@ -183,10 +183,10 @@ class XSpectrum1D(Spectrum1D):
         import matplotlib.pyplot as plt
 
         if self.sig is not None:
-            plt.plot(self.dispersion, self.flux)
-            plt.plot(self.dispersion, self.sig)
+            plt.plot(self.dispersion, self.flux,drawstyle='steps', **kwargs)
+            plt.plot(self.dispersion, self.sig, **kwargs)
         else:
-            plt.plot(self.dispersion, self.flux)
+            plt.plot(self.dispersion, self.flux,drawstyle='steps', **kwargs)
         plt.show()
 
     #  Rebin
