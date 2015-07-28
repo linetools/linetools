@@ -6,7 +6,6 @@ from astropy import units as u
 import numpy as np
 from astropy.io import fits
 
-from linetools.spectra import io
 from linetools.spectra.xspectrum1d import XSpectrum1D
 
 
@@ -14,24 +13,25 @@ def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
 
-# Separate flux/error files
-def test_sep_files():
-    spec = io.readspec(data_path('UM184_nF.fits'))
+# From arrays
+def test_from_tuple():
     idl = ascii.read(data_path('UM184.dat.gz'), names=['wave', 'flux', 'sig'])
+    spec = XSpectrum1D.from_tuple((idl['wave'],idl['flux'],idl['sig']))
+    #
     np.testing.assert_allclose(spec.dispersion, idl['wave'])
     np.testing.assert_allclose(spec.sig, idl['sig'], atol=2e-3, rtol=0)
 
     assert spec.dispersion.unit == u.Unit('AA')
 
-def test_setwave():
-    hd = fits.getheader(data_path('UM184_nF.fits'))
-    wave = io.setwave(hd)
-    np.testing.assert_allclose(wave[0], 3042.34515916)
-    hd['CRPIX1'] = 10
-    wave = io.setwave(hd)
-    np.testing.assert_allclose(wave[0], 3040.33648468)
+# From Table
+#def test_from_table():
 
-# ASCII format
-def test_read_ascii():
-    spec = io.readspec(data_path('UM184.dat.gz'))
+# From file
+def test_from_file():
+    spec = XSpectrum1D.from_file(data_path('UM184_nF.fits'))
+    idl = ascii.read(data_path('UM184.dat.gz'), names=['wave', 'flux', 'sig'])
+    
+    np.testing.assert_allclose(spec.dispersion, idl['wave'])
+    np.testing.assert_allclose(spec.sig, idl['sig'], atol=2e-3, rtol=0)
+
     assert spec.dispersion.unit == u.Unit('AA')
