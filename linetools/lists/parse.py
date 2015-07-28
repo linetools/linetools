@@ -106,8 +106,10 @@ def read_sets(infil=None):
     '''
     if infil is None:
         fils = glob.glob(lt_path+'/lists/sets/llist_v*')
+        fils.sort()
         infil = fils[-1] # Should grab the lateset
     # Read
+    print('read_sets: Using set file -- \n  {:s}'.format(infil))
     set_data = ascii.read(infil, format='fixed_width')
 
     # Return
@@ -466,8 +468,9 @@ def mktab_morton03(do_this=False, outfil=None, fits=True):
     print('mktab_morton03: Wrote {:s}'.format(outfil))
     # Compress and delete
     print('mktab_morton03: Now compressing...')
-    with open(outfil) as src, gzip.open(outfil+'.gz', 'wb') as dst:
-        dst.writelines(src)
+    with open(outfil) as src:
+        with gzip.open(outfil+'.gz', 'wb') as dst:
+            dst.writelines(src)
     os.unlink(outfil)
     #subprocess.call(['gzip', '-f', outfil])
 
@@ -494,8 +497,9 @@ def mktab_morton00(do_this=False, outfil=None):
     print('mktab_morton00: Wrote {:s}'.format(outfil))
     #
     print('mktab_morton03: Now compressing...')
-    with open(outfil) as src, gzip.open(outfil+'.gz', 'wb') as dst:
-        dst.writelines(src)
+    with open(outfil) as src:
+        with gzip.open(outfil+'.gz', 'wb') as dst:
+            dst.writelines(src)
     os.unlink(outfil)
 
 def update_fval(table, verbose=False):

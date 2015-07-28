@@ -15,8 +15,12 @@ from astropy.nddata import StdDevUncertainty
 
 from linetools import utils as liu
 
-from specutils import Spectrum1D
-from specutils.wcs.specwcs import Spectrum1DPolynomialWCS, Spectrum1DLookupWCS
+try:
+    from specutils import Spectrum1D
+except ImportError:
+    #raise Warning('specutils is not present, so spectra io functionality will not work.')
+    class Spectrum1D(object): pass
+
 
 #from xastropy.xutils import xdebug as xdb
 
@@ -170,7 +174,7 @@ class XSpectrum1D(Spectrum1D):
 
 
     # Quick plot
-    def plot(self):
+    def plot(self, **kwargs):
         ''' Plot the spectrum
 
         Parameters
@@ -179,10 +183,10 @@ class XSpectrum1D(Spectrum1D):
         import matplotlib.pyplot as plt
 
         if self.sig is not None:
-            plt.plot(self.dispersion, self.flux)
-            plt.plot(self.dispersion, self.sig)
+            plt.plot(self.dispersion, self.flux,drawstyle='steps', **kwargs)
+            plt.plot(self.dispersion, self.sig, **kwargs)
         else:
-            plt.plot(self.dispersion, self.flux)
+            plt.plot(self.dispersion, self.flux,drawstyle='steps', **kwargs)
         plt.show()
 
     #  Rebin
@@ -381,6 +385,7 @@ class XSpectrum1D(Spectrum1D):
         # TODO
         #  1. Add unit support for wavelength arrays
 
+        from specutils.wcs.specwcs import Spectrum1DPolynomialWCS, Spectrum1DLookupWCS
         from specutils.io import write_fits as sui_wf
         prihdu = sui_wf._make_hdu(self.data)  # Not for binary table format
         prihdu.name = 'FLUX'
