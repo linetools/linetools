@@ -36,6 +36,7 @@ class LineList(object):
        'AGN'     :: Key AGN lines
     gd_lines: list, optional
       List of wrest for lines to use (drawn from input linelist)
+      Needs to be Quantity
     verbose: bool, optional
       Give info galore if True
     '''
@@ -172,7 +173,7 @@ class LineList(object):
             wrest = self._fulltable['wrest'].value # Assuming Angstroms
             for gdlin in gd_lines:
                 mt = np.where( 
-                    np.abs(gdlin-wrest) < 1e-4 )[0]
+                    np.abs(gdlin.value-wrest) < 1e-4 )[0]
                 if len(mt) == 1:
                     indices.append(mt)
                 elif len(mt) > 1:
