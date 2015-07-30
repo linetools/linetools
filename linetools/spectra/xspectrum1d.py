@@ -403,6 +403,7 @@ class XSpectrum1D(Spectrum1D):
 
     # Write to fits
     def write_to_fits(self, outfil, clobber=True, add_wave=False):
+        
         ''' Write to a FITS file
         Should generate a separate code to make a Binary FITS table format
 

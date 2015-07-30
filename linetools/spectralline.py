@@ -13,6 +13,7 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
+import pdb
 from abc import ABCMeta, abstractmethod
 
 from astropy import constants as const
@@ -305,7 +306,7 @@ class AbsLine(SpectralLine):
 
         # Additional attributes for Absorption Line
         self.attrib.update({'N': 0., 'Nsig': 0., 'flagN': 0, # Column
-                       'b': 0., 'bsig': 0.  # Doppler
+                       'b': 0.*u.km/u.s, 'bsig': 0.*u.km/u.s  # Doppler
                        } )
     # AODM
     def measure_aodm(self, nsig=3.):
