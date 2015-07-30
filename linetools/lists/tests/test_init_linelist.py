@@ -55,7 +55,7 @@ def test_co():
 
 # Set of Input lines
 def test_gdlines():
-	ism = LineList('ISM', gd_lines=[1215.6700, 1608.4511])
+	ism = LineList('ISM', gd_lines=np.array([1215.6700, 1608.4511])*u.AA)
 	# 
 	assert len(ism._data) == 2
 	np.testing.assert_allclose(ism['FeII 1608']['wrest'], 1608.4511*u.AA, rtol=1e-7)
