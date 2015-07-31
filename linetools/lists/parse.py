@@ -116,6 +116,20 @@ def read_sets(infil=None):
     return set_data
 
 #
+def read_euv():
+    ''' Simple def to read additional EUV lines
+
+    Returns:
+    --------
+    QTable of EUV lines
+    '''
+    EUV_fil = lt_path + '/data/lines/EUV_lines.ascii'
+    print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(EUV_fil))
+    data = Table.read(EUV_fil, format='ascii', guess=False, comment=';')
+
+    # Return
+    return data
+#
 def read_H2():
     ''' Simple def to read H2 data
 

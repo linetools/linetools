@@ -29,8 +29,8 @@ class LineList(object):
        'HI'      :: HI Lyman series
        'H2'      :: H2 (Lyman-Werner)
        'CO'      :: CO UV band-heads
+       'EUV'     :: Additional EUV lines (for CASBAH project)
        ---- NOT IMPLEMENTED YET -----
-       'EUV'     :: Key EUV lines (for CASBAH project)
        'Gal_E'   :: Galaxy emission lines (HII)
        'Gal_A'   :: Galaxy absorption lines (stellar)
        'AGN'     :: Key AGN lines
@@ -73,7 +73,8 @@ class LineList(object):
         dataset = {
             'ism': [lilp.parse_morton03,lilp.parse_morton00, 
                 lilp.read_verner94], # Morton 2003, Morton 00, Verner 94 
-            'molecules': [lilp.read_H2,lilp.read_CO]   # H2 (Abrigail), CO (JXP)
+            'molecules': [lilp.read_H2,lilp.read_CO],   # H2 (Abrigail), CO (JXP)
+            'euv': [lilp.read_euv]   # EUV lines (by hand for now)
             }
 
         # Loop on lists
@@ -95,6 +96,11 @@ class LineList(object):
                 flag_wrest = True
             elif str(llist) == 'HI':
                 sets.append('ism')
+            elif str(llist) == 'EUV':
+                sets.append('ism')
+                sets.append('euv')
+                flag_fval = True
+                flag_wrest = True
             else:
                 import pdb
                 pdb.set_trace()
@@ -168,6 +174,8 @@ class LineList(object):
                     set_flags.append('fSI')
                 elif llist == 'HI':
                     set_flags.append('fHI')
+                elif llist == 'EUV':
+                    set_flags.append('fEUV')
                 else:
                     raise ValueError('set_lines: Not ready for this: {:s}'.format(llist))
         else: # Input subset of lines
