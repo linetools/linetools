@@ -7,7 +7,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 # Import libraries
 import numpy as np
-import os
+import os, pdb
 
 from astropy.io import fits, ascii
 from astropy.nddata import StdDevUncertainty
@@ -122,26 +122,25 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         if len(hdulist) == 1: # Old school (one file per flux, error)
             # Error
             if efil == None:
-                ipos = max(specfil.find('F.fits'),specfil.find('f.fits'))
-                if ipos < 0: # No error array
-                    efil = None
-                    #sig = np.zeros(fx.size)
+                ipos = max(specfil.find('F.fits'),
+                    specfil.find('f.fits'), specfil.find('flx.fits'))
+                if ipos < 0: 
+                    # Becker XShooter style
+                    ipos = specfil.find('.fits') 
+                    efil,chk = chk_for_gz(specfil[0:ipos]+'e.fits')
                 else:
                     if specfil.find('F.fits') > 0:
                         efil,chk = chk_for_gz(specfil[0:ipos]+'E.fits')
                     else:
                         efil,chk = chk_for_gz(specfil[0:ipos]+'e.fits')
-                if efil != None:
+                    if efil is None:
+                        efil,chk = chk_for_gz(specfil[0:ipos]+'err.fits')
+                if efil is not None:
                     efil=os.path.expanduser(efil)
 
             # Error file
-            if efil != None:
-                # BZERO -- This has to happen before reading the data!
-                try:
-                    bzero = head0['BZERO']
-                except KeyError:
-                    bzero = 0.
-                sig=fits.getdata(efil) - bzero
+            if efil is not None:
+                sig=fits.getdata(efil) 
                 uncertainty = StdDevUncertainty(sig)
             else:
                 uncertainty = None
@@ -150,14 +149,23 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             try:
                 dc_flag = head0['DC-FLAG']
             except KeyError:
-                dc_flag = 0
+                # The following is necessary for Becker's XShooter output
+                try:
+                    cdelt1 = head0['CDELT1']
+                except KeyError:
+                    cdelt1 = head0['CD1_1'] # SDSS style
+                if cdelt1 < 1e-4:
+                    dc_flag = 1
+                else:
+                    dc_flag = 0
  
+            # Read
             if dc_flag == 0:
                 # Read FITS file
                 spec1d = spec_read_fits.read_fits_spectrum1d(os.path.expanduser(datfil),
                                                              dispersion_unit='AA')
                 spec1d.uncertainty = uncertainty
-                xspec1d = XSpectrum1D.from_spec1d(spec1d) # UNTESTED!
+                xspec1d = XSpectrum1D.from_spec1d(spec1d) 
             elif dc_flag == 1: # Generate wavelengths and use array approach
                 fx = hdulist[0].data
                 # Generate wave
@@ -166,7 +174,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
                 raise ValueError('DC-FLAG has unusual value {:d}'.format(dc_flag))
 
 
-        elif len(hdulist) == 2: # NEW SCHOOL (one file per flux, error)
+        elif len(hdulist) == 2: # NEW SCHOOL (one file for flux and error)
             spec1d = spec_read_fits.read_fits_spectrum1d(os.path.expanduser(datfil), dispersion_unit='AA')
             # Error array
             sig = hdulist[1].data
@@ -281,6 +289,14 @@ def get_table_column(tags, hdulist, idx=1):
 #  Set wavelength array using Header cards
 def setwave(hdr):
     ''' Generate wavelength array from header
+    Parameters:
+    -----------
+    hdr: FITS header
+
+    Returns:
+    --------
+    wave: ndarray  
+      No units yet
     '''
 
     # Parse the header
