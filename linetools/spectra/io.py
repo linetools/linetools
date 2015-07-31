@@ -122,7 +122,8 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         if len(hdulist) == 1: # Old school (one file per flux, error)
             # Error
             if efil == None:
-                ipos = max(specfil.find('F.fits'),specfil.find('f.fits'))
+                ipos = max(specfil.find('F.fits'),
+                    specfil.find('f.fits'), specfil.find('flx.fits'))
                 if ipos < 0: 
                     # Becker XShooter style
                     ipos = specfil.find('.fits') 
@@ -132,6 +133,8 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
                         efil,chk = chk_for_gz(specfil[0:ipos]+'E.fits')
                     else:
                         efil,chk = chk_for_gz(specfil[0:ipos]+'e.fits')
+                    if efil is None:
+                        efil,chk = chk_for_gz(specfil[0:ipos]+'err.fits')
                 if efil is not None:
                     efil=os.path.expanduser(efil)
 
