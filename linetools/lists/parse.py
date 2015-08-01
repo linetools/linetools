@@ -125,7 +125,7 @@ def read_euv():
     '''
     EUV_fil = lt_path + '/data/lines/EUV_lines.ascii'
     print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(EUV_fil))
-    data = Table.read(EUV_fil, format='ascii', guess=False, comment=';')
+    data = Table.read(EUV_fil, format='ascii', guess=False, comment=';',delimiter='|')
 
     # Return
     return data
