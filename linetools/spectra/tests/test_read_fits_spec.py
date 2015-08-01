@@ -14,6 +14,12 @@ def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
 
+def test_get_cdelt_dcflag():
+    hd = fits.getheader(data_path('UM184_nF.fits'))
+    cdelt1, dc_flag = io.get_cdelt_dcflag(hd)
+    np.testing.assert_allclose(cdelt1, 3.1870310099e-05)
+    np.testing.assert_allclose(dc_flag, 1)
+
 # Separate flux/error files
 def test_sep_files():
     spec = io.readspec(data_path('UM184_nF.fits'))
