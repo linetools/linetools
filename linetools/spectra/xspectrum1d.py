@@ -365,7 +365,7 @@ class XSpectrum1D(Spectrum1D):
                                       uncertainty=self.uncertainty)
 
     # Splice two spectra together
-    def splice(self, spec2, wvmx=None):
+    def splice(self, spec2, wvmx=None, scale=1.):
         ''' Combine two spectra
         It is assumed that the internal spectrum is *bluer* than
         the input spectrum.
@@ -374,8 +374,11 @@ class XSpectrum1D(Spectrum1D):
         ----------
         spec2: Spectrum1D
           Second spectrum
-        wvmx: Quantity
+        wvmx: Quantity, optional
           Wavelength to begin splicing *after*
+        scale: float, optional
+          Scale factor for flux and error array.  
+          Mainly for convenience of plotting
 
         Returns:
         ----------
@@ -392,9 +395,9 @@ class XSpectrum1D(Spectrum1D):
             spec2.dispersion.value[gdp]) )
         uwave = u.Quantity(new_wv, unit=self.wcs.unit)
         new_fx = np.concatenate( (self.flux.value, 
-            spec2.flux.value[gdp]) )
+            spec2.flux.value[gdp]*scale) )
         if self.sig is not None:
-            new_sig = np.concatenate( (self.sig, spec2.sig[gdp]) )
+            new_sig = np.concatenate( (self.sig, spec2.sig[gdp]*scale) )
         # Generate
         spec3 = XSpectrum1D.from_array(uwave, u.Quantity(new_fx),
                                          uncertainty=StdDevUncertainty(new_sig))
