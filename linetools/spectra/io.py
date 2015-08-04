@@ -150,14 +150,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
                 dc_flag = head0['DC-FLAG']
             except KeyError:
                 # The following is necessary for Becker's XShooter output
-                try:
-                    cdelt1 = head0['CDELT1']
-                except KeyError:
-                    cdelt1 = head0['CD1_1'] # SDSS style
-                if cdelt1 < 1e-4:
-                    dc_flag = 1
-                else:
-                    dc_flag = 0
+                cdelt1, dc_flag = get_cdelt_dcflag(head0)
  
             # Read
             if dc_flag == 0:
@@ -303,23 +296,45 @@ def setwave(hdr):
     npix = hdr['NAXIS1'] 
     crpix1 = hdr['CRPIX1'] if 'CRPIX1' in hdr else 1.
     crval1 = hdr['CRVAL1']
-    try:
-        cdelt1 = hdr['CDELT1']
-    except KeyError:
-        cdelt1 = hdr['CD1_1'] # SDSS style
-    dcflag = hdr['DC-FLAG'] if 'DC-FLAG' in hdr else None
 
-    if cdelt1 < 1e-4:
-        import warnings
-        warnings.warn('WARNING: CDELT1 < 1e-4, Assuming log wavelength scale')
-        dcflag = 1
+    cdelt1, dc_flag = get_cdelt_dcflag(hdr)
 
     # Generate
     wave = crval1 + cdelt1 * (np.arange(npix) + 1. - crpix1)
-    if dcflag == 1:
+    if dc_flag == 1:
         wave = 10.**wave # Log
 
     return wave
+
+
+def get_cdelt_dcflag(hd):
+    """ Find the wavelength stepsize and dcflag from a fits header.
+
+    Parameters
+    ----------
+    hd: astropy.io.fits header instance
+
+    Returns
+    -------
+    cdelt, dc_flag: float, int
+      Wavelength stepsize and dcflag (1 if log-linear scale, 0 if linear).
+    """
+    cdelt = None
+    if 'CDELT1' in hd:
+        cdelt1 = hd['CDELT1']
+    elif 'CD1_1' in hd:
+        cdelt1 = hd['CD1_1']  # SDSS style
+
+    dc_flag = 0
+    if 'DC-FLAG' in hd:
+        dc_flag = hd['DC-FLAG']
+    elif cdelt1 < 1e-4:
+        import warnings
+        warnings.warn('WARNING: CDELT1 < 1e-4, Assuming log wavelength scale')
+        dc_flag = 1
+
+    return cdelt1, dc_flag
+
 
 #### ###############################
 # Deal with .gz extensions, usually on FITS files
