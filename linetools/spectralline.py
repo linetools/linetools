@@ -199,6 +199,7 @@ class SpectralLine(object):
         ----------
         flg: int, optional
           1: Boxcar integration
+          2: Gaussian fit
 
         Fills:
         -------
@@ -213,6 +214,8 @@ class SpectralLine(object):
         # Calculate
         if flg == 1: # Boxcar
             EW,sigEW = lau.box_ew( (wv, fx, sig) )
+        elif flg == 2: #Gaussian
+            EW,sigEW = lau.gaussian_ew( (wv, fx, sig) )
         else:
             raise ValueError('measure_ew: Not ready for this flag {:d}'.format(flg))
 
