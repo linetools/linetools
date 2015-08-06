@@ -67,11 +67,14 @@ def test_gaussew_absline():
     abslin.analy['spec'] = lsio.readspec(data_path('UM184_nF.fits')) # Fumagalli+13 MagE spectrum
     abslin.analy['wvlim'] = [6080.78, 6087.82]*u.AA
     # Measure EW (not rest-frame)
-    abslin.measure_ew(flg=2) 
+    abslin.measure_ew(flg=2)
     ew = abslin.attrib['EW']
 
     np.testing.assert_allclose(ew.value, 1.02,atol=0.01)
     assert ew.unit == u.AA
+
+    abslin.measure_ew(flg=2,initial_guesses=(0.5,6081,1))
+    np.testing.assert_allclose(ew.value, 1.02,atol=0.01)
 
     abslin.measure_restew() 
     np.testing.assert_allclose(ew.value, 1.02/(1+abslin.attrib['z']),atol=0.01)

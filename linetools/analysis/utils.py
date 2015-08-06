@@ -45,7 +45,7 @@ def box_ew(spec):
     return EW, sigEW
 
 #Gaussian EW
-def gaussian_ew(spec):
+def gaussian_ew(spec, ltype, initial_guesses=None):
     """  EW calculation using Gaussian fit
     Observer frame, not rest-frame
     wvlim must be set!
@@ -53,11 +53,16 @@ def gaussian_ew(spec):
 
     Parameters
     ----------
-    spec -- Tuple of (wave, fx, sig)
+    spec: Tuple of (wave, fx, sig)
+    ltype: string
+        whether this is for absorption or emission line (see SpectralLine Class)
+    initial_guesses, optional: Tuple of (amplitude, mean, stddev) 
+        Initial guesses of the Gaussian fit (unitless)
 
     Returns:
     ----------
     EW, sigEW : EW and error in observer frame
+    
     Note: Tested in test_absline_anly
     """
     # Grab
@@ -66,24 +71,55 @@ def gaussian_ew(spec):
     # dwv
     dwv = wv - np.roll(wv,1)
     dwv[0] = dwv[1]
-    
-    # Fit the data using a Gaussian
-    # Initial guesses
-    amp_init = np.mean(fx)/2. #half the mean flux
-    stddev_init = 3*np.mean(dwv) #3 pixels
-    mean_init = np.mean(wv) #half wave range
-    # Model initialization
-    g_init = models.GaussianAbsorption1D(amplitude=amp_init.value, mean=mean_init.value, stddev=stddev_init.value)
-    # Fitting initialization
-    fit_g = fitting.LevMarLSQFitter()
-    # Actual fit
-    g = fit_g(g_init, wv, fx, weights=1./sig)
 
-    # Area under curve of Gaussian is [amplitude*stdev*sqrt(2*pi)]
+    # Initial guesses of the Gaussian fit
+    if initial_guesses is None:
+        amp_init = np.mean(fx).value/2. #half the mean flux
+        stddev_init = 3*np.mean(dwv).value #3 pixels
+        mean_init = np.mean(wv).value #half wave range
+    elif len(initial_guesses)==3:
+        amp_init = initial_guesses[0]
+        mean_init = initial_guesses[1] 
+        stddev_init = initial_guesses[2]
+        #check whether these values are sensible
+        if (mean_init < np.min(wv.value)) or (mean_init > np.max(wv.value)):
+             raise ValueError('The initial guess for Gaussian mean is not sensible; check it!')
+        if (amp_init < 0):
+             raise ValueError('The initial guess for Gaussian amplitude is not sensible; check it!')
+        if (stddev_init < 0):
+             raise ValueError('The initial guess for Gaussian stddev is not sensible; check it!')
+    else:
+        raise ValueError('Format of the initial_guesses is incorrect')
+
+    # Model initialization
+    if ltype == 'Abs':
+        g_init = models.GaussianAbsorption1D(amplitude=amp_init, mean=mean_init, stddev=stddev_init) # This model does not support units
+    elif ltype == 'Emiss':
+        g_init = models.Gaussian1D(amplitude=amp_init, mean=mean_init, stddev=stddev_init) # This model does not support units
+    else:
+        raise ValueError("ltype has to be either 'Abs' or 'Emiss'")    
+    
+    # Fitting algorithm initialization
+    fit_g = fitting.LevMarLSQFitter()
+    # Use only good values (i.e. with meaningful errors)
+    cond = (sig > 0.) & (np.isfinite(sig))
+    # Actual fit
+    g = fit_g(g_init, wv[cond], fx[cond], weights=1./sig[cond])
+
+    #Check whether the final fit is sensible
+    fit_info = fit_g.fit_info
+    if fit_info['param_cov'] is None:
+        raise ValueError('The fit is not sensible! Check initial_guesses')
+
+    # Area under curve of Gaussian is [amplitude*stddev*sqrt(2*pi)]
     EW = g.amplitude.value * g.stddev.value * np.sqrt(2 * np.pi) #unitless
     EW = EW * wv.unit #add the same unit as wv
-    #error missing; maybe sum up the residuals in cuadrature?
-    sigEW = np.nan
+    
+    #error estimation
+    cov = fit_g.fit_info['param_cov'] #covariance matrix
+    x = g.parameters[0] # amplitude
+    y = g.parameters[2] # stddev
+    sigEW = EW * np.sqrt(cov[0,0] / x**2 + cov[2,2] / y**2 + 2 * cov[0,2] / (x*y))
 
     #Return
     return EW, sigEW
