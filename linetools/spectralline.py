@@ -379,37 +379,42 @@ class AbsLine(SpectralLine):
 
 
 # ###########################################
-# Class for Generic Component of Absorption Line Systems
-class AbsComponent(object):
-    
-    """A component corresponds to list of AbsLines that share a common
-    lower energy level (e.g. HI Lyman series, CIV doublet, etc), which is
-    supposed to characterize a single physical entity; therefore it has a
-    single unique position (RA, DEC, redshift), column density, Doppler
-    parameter, etc.
-
-    [under construction]
-
- """
-
-    def __init__(self, abslines):
-        """  Initiator
-
-        Parameters
-        ----------
-        abslines : a list of AbsLine objects
-    
-        """
-        #check whether the format is correct
-        if isinstance(abslines,list):
-            if all(isinstance(x,AbsLine) for x in abslines):
-                self.abslines = abslines
-            else: 
-                raise ValueError('An element of the initial list is not of class AbsLine')
-        else:
-            raise ValueError('abslines is not a list')
-
-        #check whether individual AbsLines are coming from the same
-        #ion species
-
+## Class for Generic Component of Absorption Line Systems
+#class AbsComponent(object):
+#    
+#    """A component corresponds to list of AbsLines that share a common
+#    lower energy level (e.g. HI Lyman series, CIV doublet, etc), which is
+#    supposed to characterize a single physical entity; therefore it has a
+#    single unique position (RA, DEC, redshift), column density, Doppler
+#    parameter, etc.
+#
+#    [under construction]
+#
+# """
+#
+#    def __init__(self, abslines):
+#        """  Initiator
+#
+#        Parameters
+#        ----------
+#        abslines : a list of AbsLine objects
+#    
+#        """
+#        #check whether the format is correct
+#        if isinstance(abslines,list):
+#            if all(isinstance(x,AbsLine) for x in abslines):
+#                self.abslines = abslines
+#            else: 
+#                raise ValueError('An element of the initial list is not of class AbsLine')
+#        else:
+#            raise ValueError('abslines is not a list')
+#
+#        #check whether individual AbsLines are coming from the same
+#        #ion species
+#        if len(abslines) == 1: #This component only has 1 line
+#            pass
+#        elif:
+#            for absline in abslines[1:]:
+#
+#                absline.
         
