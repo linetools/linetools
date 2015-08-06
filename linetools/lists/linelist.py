@@ -73,6 +73,7 @@ class LineList(object):
         dataset = {
             'ism': [lilp.parse_morton03,lilp.parse_morton00, 
                 lilp.read_verner94, lilp.read_euv], # Morton 2003, Morton 00, Verner 94, Verner 96 [soon]
+            'hi': [lilp.parse_morton03],
             'molecules': [lilp.read_H2,lilp.read_CO],   # H2 (Abrigail), CO (JXP)
             'euv': [lilp.read_euv]   # EUV lines (by hand for now; soon to be Verner96)
             }
@@ -95,7 +96,7 @@ class LineList(object):
                 flag_fval = True
                 flag_wrest = True
             elif str(llist) == 'HI':
-                sets.append('ism')
+                sets.append('hi')
             elif str(llist) == 'EUV':
                 sets.append('ism')
                 sets.append('euv')
