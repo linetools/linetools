@@ -24,13 +24,13 @@ class LineList(object):
     ----------
     llst_keys: str or list  
       Input to grab line list.  Current options are:
-       'ISM'     :: "All" ISM lines
+       'ISM'     :: "All" ISM lines (can be overwhelming!)
        'Strong'  :: Strong ISM lines
        'HI'      :: HI Lyman series
        'H2'      :: H2 (Lyman-Werner)
        'CO'      :: CO UV band-heads
+       'EUV'     :: EUV lines (for CASBAH project)
        ---- NOT IMPLEMENTED YET -----
-       'EUV'     :: Key EUV lines (for CASBAH project)
        'Gal_E'   :: Galaxy emission lines (HII)
        'Gal_A'   :: Galaxy absorption lines (stellar)
        'AGN'     :: Key AGN lines
@@ -72,8 +72,10 @@ class LineList(object):
         # Define datasets: In order of Priority
         dataset = {
             'ism': [lilp.parse_morton03,lilp.parse_morton00, 
-                lilp.read_verner94], # Morton 2003, Morton 00, Verner 94 
-            'molecules': [lilp.read_H2,lilp.read_CO]   # H2 (Abrigail), CO (JXP)
+                lilp.read_verner94, lilp.read_euv], # Morton 2003, Morton 00, Verner 94, Verner 96 [soon]
+            'hi': [lilp.parse_morton03],
+            'molecules': [lilp.read_H2,lilp.read_CO],   # H2 (Abrigail), CO (JXP)
+            'euv': [lilp.read_euv]   # EUV lines (by hand for now; soon to be Verner96)
             }
 
         # Loop on lists
@@ -94,7 +96,12 @@ class LineList(object):
                 flag_fval = True
                 flag_wrest = True
             elif str(llist) == 'HI':
+                sets.append('hi')
+            elif str(llist) == 'EUV':
                 sets.append('ism')
+                sets.append('euv')
+                flag_fval = True
+                flag_wrest = True
             else:
                 import pdb
                 pdb.set_trace()
@@ -168,6 +175,8 @@ class LineList(object):
                     set_flags.append('fSI')
                 elif llist == 'HI':
                     set_flags.append('fHI')
+                elif llist == 'EUV':
+                    set_flags.append('fEUV')
                 else:
                     raise ValueError('set_lines: Not ready for this: {:s}'.format(llist))
         else: # Input subset of lines
@@ -220,8 +229,11 @@ class LineList(object):
         #all_idx = np.unique( np.concatenate( [np.array(itt) for itt in indices] ) )
         all_idx = np.unique( np.array(indices) )
 
-        # Parse (consider masking instead)
-        self._data = self._fulltable[all_idx]
+        # Parse and sort (consider masking instead)
+        tmp_tab = self._fulltable[all_idx]
+        tmp_tab.sort('wrest')
+        #
+        self._data = tmp_tab
 
     def unknown_line(self):
         """Returns a dictionary of line properties set to an unknown
