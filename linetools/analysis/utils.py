@@ -83,13 +83,13 @@ def gaussian_ew(spec, ltype, initial_guesses=None):
         stddev_init = initial_guesses[2]
         #check whether these values are sensible
         if (mean_init < np.min(wv.value)) or (mean_init > np.max(wv.value)):
-             raise ValueError('The initial guess for Gaussian mean is not sensible; check it!')
+             raise ValueError('gaussian_ew: The initial guess for Gaussian mean is not sensible; check it!')
         if (amp_init < 0):
-             raise ValueError('The initial guess for Gaussian amplitude is not sensible; check it!')
+             raise ValueError('gaussian_ew: The initial guess for Gaussian amplitude is not sensible; check it!')
         if (stddev_init < 0):
-             raise ValueError('The initial guess for Gaussian stddev is not sensible; check it!')
+             raise ValueError('gaussian_ew: The initial guess for Gaussian stddev is not sensible; check it!')
     else:
-        raise ValueError('Format of the initial_guesses is incorrect')
+        raise ValueError('gaussian_ew: Format of the initial_guesses is incorrect')
 
     # Model initialization
     if ltype == 'Abs':
@@ -97,7 +97,7 @@ def gaussian_ew(spec, ltype, initial_guesses=None):
     elif ltype == 'Emiss':
         g_init = models.Gaussian1D(amplitude=amp_init, mean=mean_init, stddev=stddev_init) # This model does not support units
     else:
-        raise ValueError("ltype has to be either 'Abs' or 'Emiss'")    
+        raise ValueError("gaussian_ew: ltype has to be either 'Abs' or 'Emiss'")    
     
     # Fitting algorithm initialization
     fit_g = fitting.LevMarLSQFitter()
@@ -109,7 +109,7 @@ def gaussian_ew(spec, ltype, initial_guesses=None):
     #Check whether the final fit is sensible
     fit_info = fit_g.fit_info
     if fit_info['param_cov'] is None:
-        raise ValueError('The fit is not sensible! Check initial_guesses')
+        raise ValueError('gaussian_ew: The fit is not sensible! Check initial_guesses')
 
     # Area under curve of Gaussian is [amplitude*stddev*sqrt(2*pi)]
     EW = g.amplitude.value * g.stddev.value * np.sqrt(2 * np.pi) #unitless
