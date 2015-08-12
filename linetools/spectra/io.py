@@ -21,7 +21,7 @@ from astropy.io.fits.hdu.table import BinTableHDU
 #### ###############################
 #  Generate Spectrum1D from FITS file
 #
-def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None, 
+def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
     sig_tags=None, multi_ivar=False):
     ''' Read a FITS file (or astropy Table or ASCII file) into a Spectrum1D class
 
@@ -29,7 +29,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
     -----------
     specfil: str or Table
       Input file
-      If str, 
+      If str,
         FITS file must include in '.fit'
         ASCII must either have a proper Table format
           or be 3 columns with WAVE,FLUX,ERROR
@@ -42,12 +42,12 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
     sig_tags: list of strings, optional
       Tags for error in Binary FITS table
       Default: sig_tags = ['ERROR','ERR','SIGMA_FLUX','FLAM_SIG', 'SIGMA_UP', 'ERRSTIS', 'FLUXERR', 'er']
-    multi_ivar: bool, optional 
+    multi_ivar: bool, optional
       If True, assume BOSS format of  flux, ivar, log10(wave) in multi-extension FITS
 
     Returns:
     -----------
-    A Spectrum1D class (or XSpectrum1D which is an overloaded variant)   
+    A Spectrum1D class (or XSpectrum1D which is an overloaded variant)
     '''
     from specutils.io import read_fits as spec_read_fits
     from linetools.spectra.xspectrum1d import XSpectrum1D
@@ -62,7 +62,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         datfil = 'None'
         # Dummy hdulist
         hdulist = [fits.PrimaryHDU(), specfil]
-    elif isinstance(specfil, basestring): 
+    elif isinstance(specfil, basestring):
         flg_fits = False
         for ext in ['.fit']:
             if ext in specfil:
@@ -82,7 +82,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
                 names = 'WAVE', 'FLUX', 'ERROR', 'CONTINUUM'
                 for i,name in enumerate(tbl.colnames):
                     tbl[name].name = names[i]
-                        
+
             hdulist = [fits.PrimaryHDU(), tbl]
     else:
         raise IOError('readspec: Bad spectra input')
@@ -99,7 +99,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         xspec1d = parse_UVES_popler(hdulist)
 
     elif head0['NAXIS'] == 0:
-        # Flux 
+        # Flux
         if flux_tags is None:
             flux_tags = ['SPEC', 'FLUX', 'FLAM', 'FX',
                          'FLUXSTIS', 'FLUX_OPT', 'fl', 'flux']
@@ -118,7 +118,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             if ivar is None:
                 print('spec.readwrite: Binary FITS Table but no error tags')
                 return
-            else: 
+            else:
                 sig = np.zeros(ivar.size)
                 gdi = np.where( ivar > 0.)[0]
                 sig[gdi] = np.sqrt(1./ivar[gdi])
@@ -142,9 +142,9 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             if efil == None:
                 ipos = max(specfil.find('F.fits'),
                     specfil.find('f.fits'), specfil.find('flx.fits'))
-                if ipos < 0: 
+                if ipos < 0:
                     # Becker XShooter style
-                    ipos = specfil.find('.fits') 
+                    ipos = specfil.find('.fits')
                     efil,chk = chk_for_gz(specfil[0:ipos]+'e.fits')
                 else:
                     if specfil.find('F.fits') > 0:
@@ -158,7 +158,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
 
             # Error file
             if efil is not None:
-                sig = fits.getdata(efil) 
+                sig = fits.getdata(efil)
                 uncertainty = StdDevUncertainty(sig)
             else:
                 uncertainty = None
@@ -169,14 +169,14 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             except KeyError:
                 # The following is necessary for Becker's XShooter output
                 cdelt1, dc_flag = get_cdelt_dcflag(head0)
- 
+
             # Read
             if dc_flag == 0:
                 # Read FITS file
                 spec1d = spec_read_fits.read_fits_spectrum1d(os.path.expanduser(datfil),
                                                              dispersion_unit='AA')
                 spec1d.uncertainty = uncertainty
-                xspec1d = XSpectrum1D.from_spec1d(spec1d) 
+                xspec1d = XSpectrum1D.from_spec1d(spec1d)
             elif dc_flag == 1: # Generate wavelengths and use array approach
                 fx = hdulist[0].data
                 # Generate wave
@@ -184,7 +184,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             else:
                 raise ValueError('DC-FLAG has unusual value {:d}'.format(dc_flag))
 
-        elif hdulist[0].name == 'FLUX' and hdulist[1].name == 'ERROR': 
+        elif hdulist[0].name == 'FLUX' and hdulist[1].name == 'ERROR':
             # NEW SCHOOL (one file for flux and error)
             if 'WAVELENGTH' not in hdulist:
                 spec1d = spec_read_fits.read_fits_spectrum1d(
@@ -255,11 +255,11 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             except IOError:
                 npix = len(xspec1d.flux)
                 xspec1d.co = np.nan * np.ones(npix)
-            
+
     # Add in the header
     xspec1d.head = head0
 
-    # Return 
+    # Return
     return xspec1d
 
 
@@ -267,7 +267,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
 #  Grab values from the Binary FITS Table or Table
 def get_table_column(tags, hdulist, idx=1):
     '''Simple script to return values from a FITS table
-    Function used to return flux/error/wave values from 
+    Function used to return flux/error/wave values from
     a binary FITS table from a list of tags
 
     Parameters:
@@ -300,7 +300,7 @@ def get_table_column(tags, hdulist, idx=1):
     # Return
     if dat is not None:
         return dat.flatten(), tag
-    else: 
+    else:
         return dat, 'NONE'
 
 #### ###############################
@@ -313,12 +313,12 @@ def setwave(hdr):
 
     Returns:
     --------
-    wave: ndarray  
+    wave: ndarray
       No units yet
     '''
 
     # Parse the header
-    npix = hdr['NAXIS1'] 
+    npix = hdr['NAXIS1']
     crpix1 = hdr['CRPIX1'] if 'CRPIX1' in hdr else 1.
     crval1 = hdr['CRVAL1']
 
@@ -384,14 +384,14 @@ def chk_for_gz(filenm):
     chk: bool or int
       True if file exists
       0 if No check was performed
-      False if no file exists 
+      False if no file exists
     '''
     import os, pdb
     from os.path import expanduser
     filenm = expanduser(filenm)
 
     # File exist?
-    if os.path.lexists(filenm): 
+    if os.path.lexists(filenm):
         chk=True
         return filenm, chk
 
@@ -401,7 +401,7 @@ def chk_for_gz(filenm):
         return filenm, chk
 
     # Add .gz
-    if os.path.lexists(filenm+'.gz'): 
+    if os.path.lexists(filenm+'.gz'):
         chk=True
         return filenm+'.gz', chk
     else:
