@@ -14,8 +14,10 @@ from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.table import Table
 
-from linetools import utils as liu
-from linetools.spectra import io as lsio
+import linetools.utils as liu
+import linetools.spectra.io as lsio
+
+from .plotting import get_flux_plotrange
 
 try:
     from specutils import Spectrum1D
@@ -102,7 +104,7 @@ class XSpectrum1D(Spectrum1D):
         # Random numbers
         rand = np.random.normal(size=npix)
 
-        # Modifty the flux
+        # Modify the flux
         if s2n is not None:
             sig =  1./s2n
         else:
@@ -111,24 +113,31 @@ class XSpectrum1D(Spectrum1D):
         self.flux = self.flux.value + (rand * sig)*self.flux.unit
 
     #  Normalize
-    def normalize(self, conti, verbose=False, no_check=False):
+    def normalize(self, conti=None, verbose=False, no_check=False):
         """
         Normalize the spectrum with an input continuum
 
         Parameters
         ----------
         conti: numpy array
-          Continuum
+          Continuum. Use XSpectrum1D.co if None is given
         verbose: bool, optional (False)
         no_check: bool, optional (False)
           Check size of array?
         """
         # Sanity check
+        if conti is None:
+            if hasattr(self, 'co') and self.co is not None:
+                conti = self.co
+            else:
+                raise ValueError('Must specify a continuum with conti keyword.')
         if (len(conti) != len(self.flux)): 
             if no_check:
                 print('WARNING: Continuum length differs from flux')
                 if len(conti) > len(self.flux):
-                    self.flux = self.flux / conti[0:len(self.flux)]
+                    self.flux /= conti[0:len(self.flux)]
+                    if self.uncertainty is not None:
+                        self.uncertainty.array /= conti[0:len(self.flux)]
                     return
                 else:
                     raise ValueError('normalize: Continuum needs to be longer!')
@@ -136,7 +145,9 @@ class XSpectrum1D(Spectrum1D):
                 raise ValueError('normalize: Continuum needs to be same length as flux array')
 
         # Adjust the flux
-        self.flux = self.flux / conti
+        self.flux /= conti
+        if self.uncertainty is not None:
+            self.uncertainty.array /= conti
         if verbose:
             print('spec.utils: Normalizing the spectrum')
 
@@ -214,12 +225,21 @@ class XSpectrum1D(Spectrum1D):
         ----------
         '''
         import matplotlib.pyplot as plt
+        ax = plt.gca()
+
+        kwargs.update(color='0.6')
+        ax.plot(self.dispersion, self.flux, drawstyle='steps-mid',
+                **kwargs)
 
         if self.sig is not None:
-            plt.plot(self.dispersion, self.flux,drawstyle='steps', **kwargs)
-            plt.plot(self.dispersion, self.sig, **kwargs)
-        else:
-            plt.plot(self.dispersion, self.flux,drawstyle='steps', **kwargs)
+            kwargs.update(color='g')
+            ax.plot(self.dispersion, self.sig, **kwargs)
+        if self.co is not None:
+            kwargs.update(color='r')
+            ax.plot(self.dispersion, self.co, **kwargs)
+
+        ax.set_ylim(*get_flux_plotrange(self.flux))
+        ax.set_xlim(self.dispersion.value[0], self.dispersion.value[-1])
         plt.show()
 
     #  Rebin
@@ -423,7 +443,7 @@ class XSpectrum1D(Spectrum1D):
         from specutils.io import write_fits as sui_wf
         prihdu = sui_wf._make_hdu(self.data)  # Not for binary table format
         prihdu.name = 'FLUX'
-        multi = 0 #  Multi-extension?
+        hdu = fits.HDUList([prihdu])
 
         # Type
         if type(self.wcs) is Spectrum1DPolynomialWCS:  # CRVAL1, etc. WCS
@@ -434,27 +454,29 @@ class XSpectrum1D(Spectrum1D):
             if self.sig is not None:
                 sighdu = fits.ImageHDU(self.sig)
                 sighdu.name='ERROR'
+                hdu.append(sighdu)
                 # 
-                if add_wave:
-                    wvhdu = fits.ImageHDU(self.dispersion.value)
-                    wvhdu.name = 'WAVELENGTH'
-                    hdu = fits.HDUList([prihdu, sighdu, wvhdu])
-                else:
-                    hdu = fits.HDUList([prihdu, sighdu])
-                multi=1
-            else:
-                hdu = prihdu
+            if add_wave:
+                wvhdu = fits.ImageHDU(self.dispersion.value)
+                wvhdu.name = 'WAVELENGTH'
+                hdu.append(wvhdu)
 
-        elif type(self.wcs) is Spectrum1DLookupWCS: # Wavelengths as an array (without units for now)
+        elif type(self.wcs) is Spectrum1DLookupWCS:
+            # Wavelengths as an array (without units for now)
             # Add sig, wavelength to HDU
             sighdu = fits.ImageHDU(self.sig)
-            sighdu.name='ERROR'
+            sighdu.name = 'ERROR'
+            hdu.append(sighdu)
             wvhdu = fits.ImageHDU(self.dispersion.value)
             wvhdu.name = 'WAVELENGTH'
-            hdu = fits.HDUList([prihdu, sighdu, wvhdu])
-            multi=1
+            hdu.append(wvhdu)
         else:
             raise ValueError('write_to_fits: Not ready for this type of spectrum wavelengths')
+        
+        if hasattr(self, 'co') and self.co is not None:
+            cohdu = fits.ImageHDU(self.co)
+            cohdu.name = 'CONTINUUM'
+            hdu.append(cohdu)
 
         # Deal with header
         if hasattr(self,'head'):
