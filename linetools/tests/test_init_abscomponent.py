@@ -37,3 +37,4 @@ def test_mk_abscomponent():
     component.remove_abslines(['HI 1025'])
     component.add_abslines(lyb)
     component.remove_abslines(['HI 1025','HI 1215'])
+    
