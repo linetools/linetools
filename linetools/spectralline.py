@@ -572,7 +572,7 @@ class AbsComponent(object):
         """
 
         #check format
-        if isinstance(absline_name,str):
+        if isinstance(absline_name,basestring):
             pass
         else:
             raise ValueError('Input is not a string!')
@@ -594,10 +594,10 @@ class AbsComponent(object):
 
         """
         #check format
-        if isinstance(abslines_names,str):
+        if isinstance(abslines_names,basestring):
             abslines_names = [abslines_names] #if single string make it a list
         elif isinstance(abslines_names,list):
-            if all(isinstance(absline_name,str) for absline_name in abslines_names):
+            if all(isinstance(absline_name,basestring) for absline_name in abslines_names):
                 pass
             else:    
                 raise ValueError('An element of abslines_names is not a string!')
