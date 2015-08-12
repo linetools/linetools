@@ -58,7 +58,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         inflg = 0
 
     # Check specfil type
-    if isinstance(specfil,Table):  # MAYBE SHOULD USE SPECUTILS FROM_TABLE
+    if isinstance(specfil, Table):  # MAYBE SHOULD USE SPECUTILS FROM_TABLE
         datfil = 'None'
         # Dummy hdulist
         hdulist = [fits.PrimaryHDU(), specfil]
@@ -78,26 +78,39 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             try:
                 tbl = Table.read(specfil)
             except Exception:
-                tbl = ascii.read(specfil, names=['WAVE', 'FLUX', 'ERROR'])
+                tbl = ascii.read(specfil)
+                names = 'WAVE', 'FLUX', 'ERROR', 'CONTINUUM'
+                for i,name in enumerate(tbl.colnames):
+                    tbl[name].name = names[i]
+                        
             hdulist = [fits.PrimaryHDU(), tbl]
     else:
         raise IOError('readspec: Bad spectra input')
 
     head0 = hdulist[0].header
 
+    co = None
+
     ## #################
     # Binary FITS table?
-    if head0['NAXIS'] == 0:
+
+    #import pdb; pdb.set_trace()
+    if is_UVES_popler(head0):
+        xspec1d = parse_UVES_popler(hdulist)
+
+    elif head0['NAXIS'] == 0:
         # Flux 
         if flux_tags is None:
-            flux_tags = ['SPEC', 'FLUX','FLAM','FX', 'FLUXSTIS', 'FLUX_OPT', 'fl']
+            flux_tags = ['SPEC', 'FLUX', 'FLAM', 'FX',
+                         'FLUXSTIS', 'FLUX_OPT', 'fl', 'flux']
         fx, fx_tag = get_table_column(flux_tags, hdulist)
         if fx is None:
             print('spec.readwrite: Binary FITS Table but no Flux tag')
             return
         # Error
         if sig_tags is None:
-            sig_tags = ['ERROR','ERR','SIGMA_FLUX','FLAM_SIG', 'SIGMA_UP', 'ERRSTIS', 'FLUXERR', 'er']
+            sig_tags = ['ERROR','ERR','SIGMA_FLUX','FLAM_SIG', 'SIGMA_UP',
+                        'ERRSTIS', 'FLUXERR', 'sigma', 'er']
         sig, sig_tag = get_table_column(sig_tags, hdulist)
         if sig is None:
             ivar_tags = ['IVAR', 'IVAR_OPT']
@@ -110,14 +123,19 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
                 gdi = np.where( ivar > 0.)[0]
                 sig[gdi] = np.sqrt(1./ivar[gdi])
         # Wavelength
-        wave_tags = ['WAVE','WAVELENGTH','LAMBDA','LOGLAM', 'WAVESTIS', 'WAVE_OPT', 'wa']
+        wave_tags = ['WAVE','WAVELENGTH','LAMBDA','LOGLAM',
+                     'WAVESTIS', 'WAVE_OPT', 'wa', 'wave']
         wave, wave_tag = get_table_column(wave_tags, hdulist)
         if wave_tag == 'LOGLAM':
             wave = 10.**wave
         if wave is None:
             print('spec.readwrite: Binary FITS Table but no wavelength tag')
             return
+        co_tags = ['CONT', 'CO', 'CONTINUUM', 'co', 'cont']
+        co, co_tag = get_table_column(co_tags, hdulist)
+
     elif head0['NAXIS'] == 1: # Data in the zero extension
+
         # How many entries?
         if len(hdulist) == 1: # Old school (one file per flux, error)
             # Error
@@ -136,11 +154,11 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
                     if efil is None:
                         efil,chk = chk_for_gz(specfil[0:ipos]+'err.fits')
                 if efil is not None:
-                    efil=os.path.expanduser(efil)
+                    efil = os.path.expanduser(efil)
 
             # Error file
             if efil is not None:
-                sig=fits.getdata(efil) 
+                sig = fits.getdata(efil) 
                 uncertainty = StdDevUncertainty(sig)
             else:
                 uncertainty = None
@@ -166,14 +184,23 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             else:
                 raise ValueError('DC-FLAG has unusual value {:d}'.format(dc_flag))
 
+        elif hdulist[0].name == 'FLUX' and hdulist[1].name == 'ERROR': 
+            # NEW SCHOOL (one file for flux and error)
+            if 'WAVELENGTH' not in hdulist:
+                spec1d = spec_read_fits.read_fits_spectrum1d(
+                    os.path.expanduser(datfil), dispersion_unit='AA')
+                xspec1d = XSpectrum1D.from_spec1d(spec1d)
+            else:
+                wave = hdulist['WAVELENGTH'].data * u.AA
+                fx = hdulist['FLUX'].data
+                xspec1d = XSpectrum1D.from_array(wave, u.Quantity(fx))
 
-        elif len(hdulist) == 2: # NEW SCHOOL (one file for flux and error)
-            spec1d = spec_read_fits.read_fits_spectrum1d(os.path.expanduser(datfil), dispersion_unit='AA')
             # Error array
-            sig = hdulist[1].data
-            spec1d.uncertainty = StdDevUncertainty(sig)
+            sig = hdulist['ERROR'].data
+            xspec1d.uncertainty = StdDevUncertainty(sig)
             #
-            xspec1d = XSpectrum1D.from_spec1d(spec1d)
+            if 'CONTINUUM' in hdulist:
+                xspec1d.co = hdulist['CONTINUUM'].data
 
         else:  # ASSUMING MULTI-EXTENSION
             if len(hdulist) <= 2:
@@ -201,8 +228,6 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         fx = hdulist[0].data[0,:].flatten()
         sig = hdulist[0].data[2,:].flatten()
         wave = setwave(head0)
-        #import pdb
-        #pdb.set_trace()
     else:  # Should not be here
         print('spec.readwrite: Looks like an image')
         return dat
@@ -212,26 +237,25 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         # Give Ang as default
         if not hasattr(wave, 'unit'):
             uwave = u.Quantity(wave, unit=u.AA)
+        elif wave.unit is None:
+            uwave = u.Quantity(wave, unit=u.AA)
         else:
-            if wave.unit is None:
-                uwave = u.Quantity(wave, unit=u.AA)
-            else:
-                uwave = u.Quantity(wave)
+            uwave = u.Quantity(wave)
         xspec1d = XSpectrum1D.from_array(uwave, u.Quantity(fx),
                                          uncertainty=StdDevUncertainty(sig))
 
     xspec1d.filename = specfil
 
-    # Continuum?
-    try:
-        co = fits.getdata(name+'_c.fits')
-    except:
-        try:
-            npix = len(fx)
-        except UnboundLocalError:
-            npix = len(xspec1d.flux)
-        co = np.nan*np.ones(npix)
-
+    if not hasattr(xspec1d, 'co'):
+        xspec1d.co = co
+        # Final check for continuum in a separate file
+        if co is None and specfil.endswith('.fits'):
+            try:
+                xspec1d.co = fits.getdata(specfil.replace('.fits', '_c.fits'))
+            except IOError:
+                npix = len(xspec1d.flux)
+                xspec1d.co = np.nan * np.ones(npix)
+            
     # Add in the header
     xspec1d.head = head0
 
@@ -267,8 +291,9 @@ def get_table_column(tags, hdulist, idx=1):
         tab = hdulist[idx]
 
     # Grab
+    names = set(tab.dtype.names)
     for tag in tags:
-        if tag in tab.dtype.names: 
+        if tag in names:
             dat = tab[tag]
             break  # Break with first hit
 
@@ -305,7 +330,6 @@ def setwave(hdr):
         wave = 10.**wave # Log
 
     return wave
-
 
 def get_cdelt_dcflag(hd):
     """ Find the wavelength stepsize and dcflag from a fits header.
@@ -383,3 +407,28 @@ def chk_for_gz(filenm):
     else:
         chk=False
         return None, chk
+
+def is_UVES_popler(hd):
+    """ Check if UVES_popler output.
+    """
+    if 'history' not in hd:
+        return False
+    for row in hd['history']:
+        if 'UVES POst Pipeline Echelle Reduction' in row:
+            return True
+    return False
+
+def parse_UVES_popler(hdulist):
+    """ Read a spectrum from a UVES_popler-style fits file.
+    """
+    from linetools.spectra.xspectrum1d import XSpectrum1D
+
+    hd = hdulist[0].header
+    uwave = setwave(hd) * u.Angstrom
+    co = hdulist[0].data[3]
+    fx = hdulist[0].data[0] * co  #  Flux
+    sig = hdulist[0].data[1] * co
+    xspec1d = XSpectrum1D.from_array(uwave, u.Quantity(fx),
+                                     uncertainty=StdDevUncertainty(sig))
+    xspec1d.co = co
+    return xspec1d
