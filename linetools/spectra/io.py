@@ -53,7 +53,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
     from linetools.spectra.xspectrum1d import XSpectrum1D
 
     # Initialize
-    dat = None
+
     if inflg == None:
         inflg = 0
 
@@ -230,7 +230,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         wave = setwave(head0)
     else:  # Should not be here
         print('spec.readwrite: Looks like an image')
-        return dat
+        return
 
     # Generate, as needed
     if 'xspec1d' not in locals():
@@ -253,8 +253,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             try:
                 xspec1d.co = fits.getdata(specfil.replace('.fits', '_c.fits'))
             except IOError:
-                npix = len(xspec1d.flux)
-                xspec1d.co = np.nan * np.ones(npix)
+                pass
 
     # Add in the header
     xspec1d.head = head0
