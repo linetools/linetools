@@ -41,3 +41,8 @@ def test_setwave():
 def test_read_ascii():
     spec = io.readspec(data_path('UM184.dat.gz'))
     assert spec.dispersion.unit == u.Unit('AA')
+    spec = io.readspec(data_path('q0002m422.txt.gz'))
+
+def test_uves_popler():
+    spec = io.readspec(data_path('popler_sample.fits'))
+    assert spec.dispersion.unit == u.Unit('AA')
