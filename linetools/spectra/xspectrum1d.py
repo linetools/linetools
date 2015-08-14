@@ -249,6 +249,7 @@ class XSpectrum1D(Spectrum1D):
         conserves counts (and flambda).
         
         WARNING: Do not trust either edge pixel of the new array
+        WARNING: Does not act on the Error array!  Nor does it generate one
 
         Parameters
         ----------
@@ -257,7 +258,7 @@ class XSpectrum1D(Spectrum1D):
 
         Returns:
         ----------
-          XSpectrum1D of the rebinned spectrum
+          XSpectrum1D of the rebinned spectrum (without error array)
         """
         from scipy.interpolate import interp1d
 
