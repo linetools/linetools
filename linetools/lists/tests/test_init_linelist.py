@@ -28,6 +28,12 @@ def test_updfval():
 	# 
 	np.testing.assert_allclose(ism['FeII 1144']['f'], 0.106)
 
+# Test update_gamma
+def test_updgamma():
+	ism = LineList('ISM')
+	# 
+	np.testing.assert_allclose(ism['HI 1215']['gamma'], 626500000.0/u.s)
+
 # Strong ISM LineList
 def test_strong():
 	strng = LineList('Strong')

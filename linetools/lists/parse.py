@@ -561,6 +561,27 @@ def update_fval(table, verbose=False):
         else:
             raise ValueError('Uh oh')
 
+def update_gamma(table, verbose=True):
+    '''Update/add-in gamma values 
+    Parameters:
+    -----------
+    table: QTable
+      Data to be updated
+    '''
+    # HI - Morton doesn't give these for the combined HI lines (sensible)
+    #  Nor does he give them for the lines beyond Ly-d (not sure why)
+    HI = np.where((table['Z']==1) & (table['ion']==1))[0]
+    if len(HI) > 0:
+        # Same kludge as in atom.dat of VPFIT for higher order lines
+        table['gamma'] = table['A']
+        # More accurate for stronger lines (pulled from Morton)
+        gdict = {1215.670:6.265E+08/u.s, 1025.7222:1.897E+08/u.s, # From Morton
+            972.5367:8.127E+07/u.s, 949.7430:4.204E+07/u.s, 937.8034:2.450E+07/u.s}
+        for key in gdict.keys():
+            mt = np.where( (np.abs(table['wrest']-key*u.AA) < 1e-4*u.AA))[0] 
+            if len(mt) > 0:
+                table['gamma'][mt[0]] = gdict[key]
+
 def update_wrest(table, verbose=True):
     '''Update wrest values (and Ej,Ek)
     Parameters:

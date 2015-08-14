@@ -82,6 +82,7 @@ class LineList(object):
         sets = []
         flag_fval = False # Update f-values?
         flag_wrest = False # Update wavelengths?
+        flag_gamma = True # Update gamma values (recommended)
         for llist in self.lists:
             if str(llist) == 'H2':
                 sets.append('molecules')
@@ -142,8 +143,10 @@ class LineList(object):
         # Update f-values (Howk00)
         if flag_fval:
             lilp.update_fval(self._fulltable)
-        #import pdb
-        #pdb.set_trace()
+
+        # Update gamma-values (Mainly HI)
+        if flag_gamma:
+            lilp.update_gamma(self._fulltable)
 
     #####
     def set_lines(self, verbose=True, gd_lines=None):
