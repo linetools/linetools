@@ -268,8 +268,8 @@ class LineList(object):
 
         Parameters:
         ----------
-        line: string
-            Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII')
+        line: str or float
+            Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII', 1215.6700*u.AA)
         
             [Note: when string contains spaces it only considers the first
              part of it, so 'HI' and 'HI 1215' and 'HI 1025' are all equivalent]
@@ -283,6 +283,9 @@ class LineList(object):
 
         if isinstance(line, basestring): # Name
             line = line.split(' ')[0] # keep only the first part of input name
+        elif isinstance(line, Quantity): # Rest wavelength (with units)
+            data = self.__getitem__(line)
+            return self.all_transitions(data['name'])
         else:
             raise ValueError('Not prepared for this type')
 
@@ -290,8 +293,7 @@ class LineList(object):
             return self.unknown_line()
         else:
             Z = None
-            data = self._data
-            for row in data: #is this loop avoidable?
+            for row in self._data: #is this loop avoidable?
                 name = row['name']
                 #keep only the first part of name in linelist too
                 name = name.split(' ')[0]

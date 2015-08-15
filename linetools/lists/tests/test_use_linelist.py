@@ -35,7 +35,7 @@ def test_all_transitions():
 	line = 'OVI'
 	ovi_transitions = ism.all_transitions(line)
 	assert len(ovi_transitions) == 2, error_msg
-	print(ovi_transitions['name'])
+	#print(ovi_transitions['name'])
 	#check unknown
 	line = 'unknown'
 	out = ism.all_transitions(line)
@@ -44,4 +44,7 @@ def test_all_transitions():
 	line = 'CIII'
 	out = ism.all_transitions(line)
 	assert type(out) == dict, error_msg
-	print('test_all_transitions() passed')
+	# wrest
+	out = ism.all_transitions(1215.6700*u.AA)
+	assert len(out) == 30 # 30 Lyman series transitions
+	#print('test_all_transitions() passed')
