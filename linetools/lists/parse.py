@@ -388,9 +388,6 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
                             raise ValueError('Uh oh ion')
                     if ioni[gdi] in isoi: # Isotope
                         continue
-                    # Isotope (Atomic number)
-                    if ioni[gdi] == Dline:
-                        tbl[count]['Am'] = 2
                     # Ion
                     tbl[count]['ion'] = roman_to_number(ionv[gdi])
 
@@ -408,6 +405,11 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
                     # Name
                     tbl[count]['name'] = elmc[gdZ]+ionv[gdi]+' {:d}'.format(
                         int(tbl[count]['wrest']))
+                    # Isotope (Atomic number)
+                    if ioni[gdi] == Dline:
+                        tbl[count]['Am'] = 2
+                        tbl[count]['name'] = 'D'+ionv[gdi]+' {:d}'.format(
+                            int(tbl[count]['wrest']))
                     # f
                     try:
                         tbl[count]['f'] = float(line[79:89])

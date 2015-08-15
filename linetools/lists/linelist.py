@@ -183,17 +183,33 @@ class LineList(object):
                 else:
                     raise ValueError('set_lines: Not ready for this: {:s}'.format(llist))
         else: # Input subset of lines
-            wrest = self._fulltable['wrest'].value # Assuming Angstroms
-            for gdlin in gd_lines:
-                mt = np.where( 
-                    np.abs(gdlin.value-wrest) < 1e-4 )[0]
-                if len(mt) == 1:
-                    indices.append(mt)
-                elif len(mt) > 1:
-                    raise ValueError('Need unique entries!')
-                else:
-                    if verbose:
-                        print('set_lines: Did not find {:g} in data Tables'.format(gdlin))
+            if isinstance(gd_lines[0],(float,Quantity)): # wrest
+                wrest = self._fulltable['wrest'].value # Assuming Angstroms
+                for gdlin in gd_lines:
+                    mt = np.where( 
+                        np.abs(gdlin.value-wrest) < 1e-4 )[0]
+                    if len(mt) == 1:
+                        indices.append(mt)
+                    elif len(mt) > 1:
+                        raise ValueError('Need unique entries!')
+                    else:
+                        if verbose:
+                            print('set_lines: Did not find {:g} in data Tables'.format(gdlin))
+            elif isinstance(gd_lines[0],(basestring)): # Names
+                names = np.array(self._fulltable['name'])
+                for gdlin in gd_lines:
+                    mt = np.where(str(gdlin)==names)[0]
+                    if len(mt) == 1:
+                        indices.append(mt[0])
+                    elif len(mt) > 1:
+                        raise ValueError('Need unique name entries!')
+                    else:
+                        if verbose:
+                            print('set_lines: Did not find {:s} in data Tables'.format(gdlin))
+                #import pdb
+                #pdb.set_trace()
+            else:
+                raise ValueError('Not ready for this type of gd_lines')
 
         # Deal with Defined sets
         #import pdb
