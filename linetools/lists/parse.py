@@ -388,9 +388,6 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
                             raise ValueError('Uh oh ion')
                     if ioni[gdi] in isoi: # Isotope
                         continue
-                    # Isotope (Atomic number)
-                    if ioni[gdi] == Dline:
-                        tbl[count]['Am'] = 2
                     # Ion
                     tbl[count]['ion'] = roman_to_number(ionv[gdi])
 
@@ -408,6 +405,11 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
                     # Name
                     tbl[count]['name'] = elmc[gdZ]+ionv[gdi]+' {:d}'.format(
                         int(tbl[count]['wrest']))
+                    # Isotope (Atomic number)
+                    if ioni[gdi] == Dline:
+                        tbl[count]['Am'] = 2
+                        tbl[count]['name'] = 'D'+ionv[gdi]+' {:d}'.format(
+                            int(tbl[count]['wrest']))
                     # f
                     try:
                         tbl[count]['f'] = float(line[79:89])
@@ -560,6 +562,31 @@ def update_fval(table, verbose=False):
             table['f'][mt[0]] = row['f']
         else:
             raise ValueError('Uh oh')
+
+def update_gamma(table, verbose=True):
+    '''Update/add-in gamma values 
+    Parameters:
+    -----------
+    table: QTable
+      Data to be updated
+    '''
+    # HI - Morton doesn't give these for the combined HI lines (sensible)
+    #  Nor does he give them for the lines beyond Ly-d (not sure why)
+    try:
+        HI = np.where((table['Z']==1) & (table['ion']==1))[0]
+    except KeyError: # Molecules
+        pass
+    else:
+        if len(HI) > 0:
+            # Same kludge as in atom.dat of VPFIT for higher order lines
+            table['gamma'] = table['A']
+            # More accurate for stronger lines (pulled from Morton)
+            gdict = {1215.670:6.265E+08/u.s, 1025.7222:1.897E+08/u.s, # From Morton
+                972.5367:8.127E+07/u.s, 949.7430:4.204E+07/u.s, 937.8034:2.450E+07/u.s}
+            for key in gdict.keys():
+                mt = np.where( (np.abs(table['wrest']-key*u.AA) < 1e-4*u.AA))[0] 
+                if len(mt) > 0:
+                    table['gamma'][mt[0]] = gdict[key]
 
 def update_wrest(table, verbose=True):
     '''Update wrest values (and Ej,Ek)

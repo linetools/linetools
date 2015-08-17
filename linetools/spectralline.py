@@ -165,6 +165,7 @@ class SpectralLine(object):
                 self.attrib['z'], self.wrest, self.analy['vlim'])[0]
         else:
             raise ValueError('spectralline.cut_spec: Need to set wvlim or vlim!')
+        self.analy['pix'] = pix
 
         # Cut for analysis
         fx = self.analy['spec'].flux[pix]

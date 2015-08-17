@@ -110,7 +110,7 @@ class XSpectrum1D(Spectrum1D):
         else:
             sig = self.sig
         #
-        self.flux = self.flux.value + (rand * sig)*self.flux.unit
+        self.flux = self.flux + (rand * sig)*self.flux.unit
 
     #  Normalize
     def normalize(self, conti=None, verbose=False, no_check=False):
@@ -234,9 +234,10 @@ class XSpectrum1D(Spectrum1D):
         if self.sig is not None:
             kwargs.update(color='g')
             ax.plot(self.dispersion, self.sig, **kwargs)
-        if self.co is not None:
-            kwargs.update(color='r')
-            ax.plot(self.dispersion, self.co, **kwargs)
+        if hasattr(self,'co'):
+            if self.co is not None:
+                kwargs.update(color='r')
+                ax.plot(self.dispersion, self.co, **kwargs)
 
         ax.set_ylim(*get_flux_plotrange(self.flux))
         ax.set_xlim(self.dispersion.value[0], self.dispersion.value[-1])
@@ -249,6 +250,7 @@ class XSpectrum1D(Spectrum1D):
         conserves counts (and flambda).
         
         WARNING: Do not trust either edge pixel of the new array
+        WARNING: Does not act on the Error array!  Nor does it generate one
 
         Parameters
         ----------
@@ -257,7 +259,7 @@ class XSpectrum1D(Spectrum1D):
 
         Returns:
         ----------
-          XSpectrum1D of the rebinned spectrum
+          XSpectrum1D of the rebinned spectrum (without error array)
         """
         from scipy.interpolate import interp1d
 
