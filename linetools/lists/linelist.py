@@ -202,7 +202,11 @@ class LineList(object):
                     if len(mt) == 1:
                         indices.append(mt[0])
                     elif len(mt) > 1:
-                        raise ValueError('Need unique name entries!')
+                        warnings.warn('Found more than one line for {:s}'.format(str(gdlin)))
+                        warnings.warn('Taking the first one from Ref={:s}'.format(
+                                self._fulltable['Ref'][mt[0]]))
+                        indices.append(mt[0])
+                        #raise ValueError('Need unique name entries!')
                     else:
                         if verbose:
                             print('set_lines: Did not find {:s} in data Tables'.format(gdlin))
@@ -251,6 +255,7 @@ class LineList(object):
         # Parse and sort (consider masking instead)
         tmp_tab = self._fulltable[all_idx]
         tmp_tab.sort('wrest')
+
         #
         self._data = tmp_tab
 
