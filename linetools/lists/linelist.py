@@ -36,12 +36,15 @@ class LineList(object):
        'AGN'     :: Key AGN lines
     gd_lines: list, optional
       List of wrest for lines to use (drawn from input linelist)
-      Needs to be Quantity
+      Needs to be Quantity or str (e.g. [1215.6700] or ['HI 1215'])
+    sort: bool, optional
+      Sort the list? [True]
     verbose: bool, optional
       Give info galore if True
     '''
     # Init
-    def __init__(self, llst_keys, gd_lines=None, verbose=False):
+    def __init__(self, llst_keys, gd_lines=None, verbose=False,
+        sort=True):
 
         # Error catching
         if not isinstance(llst_keys,(str,list,unicode)):
@@ -52,6 +55,7 @@ class LineList(object):
             self.lists = [llst_keys]
         else:
             self.lists = llst_keys
+        self.sort = sort
 
         # Take closest line?
         self.closest = False
@@ -254,7 +258,8 @@ class LineList(object):
 
         # Parse and sort (consider masking instead)
         tmp_tab = self._fulltable[all_idx]
-        tmp_tab.sort('wrest')
+        if self.sort:
+            tmp_tab.sort('wrest')
 
         #
         self._data = tmp_tab
