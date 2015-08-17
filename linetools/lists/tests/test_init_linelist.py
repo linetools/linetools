@@ -15,6 +15,7 @@ from linetools.lists.linelist import LineList
 
 #import pdb
 #pdb.set_trace()
+# Set of Input lines
 
 # ISM LineList
 def test_ism():
@@ -59,14 +60,13 @@ def test_co():
 	# 
 	np.testing.assert_allclose(CO[1322.133*u.AA]['f'], 0.0006683439, rtol=1e-5)
 
-# Set of Input lines
-def test_gdlines():
-	ism = LineList('ISM', gd_lines=np.array([1215.6700, 1608.4511])*u.AA)
+def test_subset():
+	ism = LineList('ISM', subset=np.array([1215.6700, 1608.4511])*u.AA)
 	# 
 	assert len(ism._data) == 2
 	np.testing.assert_allclose(ism['FeII 1608']['wrest'], 1608.4511*u.AA, rtol=1e-7)
 	# Now with names
-	ism = LineList('ISM', gd_lines=['HI 1215', 'HI 1025', 'CIV 1548'])
+	ism = LineList('ISM', subset=['HI 1215', 'HI 1025', 'CIV 1548'])
 	np.testing.assert_allclose(ism['HI 1215']['wrest'], 1215.6700*u.AA, rtol=1e-7)
 
 # Unknown lines

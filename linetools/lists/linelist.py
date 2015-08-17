@@ -34,17 +34,17 @@ class LineList(object):
        'Gal_E'   :: Galaxy emission lines (HII)
        'Gal_A'   :: Galaxy absorption lines (stellar)
        'AGN'     :: Key AGN lines
-    gd_lines: list, optional
-      List of wrest for lines to use (drawn from input linelist)
+    subset: list, optional
+      List of subset of lines to use (drawn from input linelist)
       Needs to be Quantity or str (e.g. [1215.6700] or ['HI 1215'])
-    sort: bool, optional
-      Sort the list? [True]
+    sort_subset: bool, optional
+      Sort the subset? [False]
     verbose: bool, optional
       Give info galore if True
     '''
     # Init
-    def __init__(self, llst_keys, gd_lines=None, verbose=False,
-        sort=True):
+    def __init__(self, llst_keys, subset=None, verbose=False,
+        sort_subset=False):
 
         # Error catching
         if not isinstance(llst_keys,(str,list,unicode)):
@@ -55,7 +55,6 @@ class LineList(object):
             self.lists = [llst_keys]
         else:
             self.lists = llst_keys
-        self.sort = sort
 
         # Take closest line?
         self.closest = False
@@ -63,8 +62,12 @@ class LineList(object):
         # Load Data
         self.load_data()
 
-        # Set lines for use
-        self.set_lines(gd_lines=gd_lines, verbose=verbose)
+        # Set lines for use (from defined LineList)
+        self.set_lines(verbose=verbose)
+
+        # Subset of lines for use
+        if subset is not None:
+            self.subset_lines(subset, verbose=verbose, sort=sort_subset)
 
     # 
     def load_data(self, tol=1e-3*u.AA):
@@ -153,13 +156,8 @@ class LineList(object):
             lilp.update_gamma(self._fulltable)
 
     #####
-    def set_lines(self, verbose=True, gd_lines=None):
+    def set_lines(self, verbose=True):#, gd_lines=None):
         ''' Parse the lines of interest
-        Parameters:
-        -------------
-        gd_lines: list, optional
-          List of wrest for lines to use (drawn from input linelist)
-          Should be unitless, i.e. not Quantity
         '''
         import warnings
 
@@ -167,57 +165,25 @@ class LineList(object):
         set_flags = []
 
         # Default list
-        if gd_lines is None:  
-            # Loop on lines
-            for llist in self.lists:
-                if llist in ['H2','CO']:
-                    gdi = np.where(self._fulltable['mol'] == llist)[0]
-                    if len(gdi) == 0:
-                        raise IndexError(
-                            'set_lines: Found no {:s} molecules! Read more data'.format(llist))
-                    indices.append(gdi)
-                elif llist == 'ISM':
-                    set_flags.append('fISM')
-                elif llist == 'Strong':
-                    set_flags.append('fSI')
-                elif llist == 'HI':
-                    set_flags.append('fHI')
-                elif llist == 'EUV':
-                    set_flags.append('fEUV')
-                else:
-                    raise ValueError('set_lines: Not ready for this: {:s}'.format(llist))
-        else: # Input subset of lines
-            if isinstance(gd_lines[0],(float,Quantity)): # wrest
-                wrest = self._fulltable['wrest'].value # Assuming Angstroms
-                for gdlin in gd_lines:
-                    mt = np.where( 
-                        np.abs(gdlin.value-wrest) < 1e-4 )[0]
-                    if len(mt) == 1:
-                        indices.append(mt)
-                    elif len(mt) > 1:
-                        raise ValueError('Need unique entries!')
-                    else:
-                        if verbose:
-                            print('set_lines: Did not find {:g} in data Tables'.format(gdlin))
-            elif isinstance(gd_lines[0],(basestring)): # Names
-                names = np.array(self._fulltable['name'])
-                for gdlin in gd_lines:
-                    mt = np.where(str(gdlin)==names)[0]
-                    if len(mt) == 1:
-                        indices.append(mt[0])
-                    elif len(mt) > 1:
-                        warnings.warn('Found more than one line for {:s}'.format(str(gdlin)))
-                        warnings.warn('Taking the first one from Ref={:s}'.format(
-                                self._fulltable['Ref'][mt[0]]))
-                        indices.append(mt[0])
-                        #raise ValueError('Need unique name entries!')
-                    else:
-                        if verbose:
-                            print('set_lines: Did not find {:s} in data Tables'.format(gdlin))
-                #import pdb
-                #pdb.set_trace()
+        # Loop on lines
+        for llist in self.lists:
+            if llist in ['H2','CO']:
+                gdi = np.where(self._fulltable['mol'] == llist)[0]
+                if len(gdi) == 0:
+                    raise IndexError(
+                        'set_lines: Found no {:s} molecules! Read more data'.format(llist))
+                indices.append(gdi)
+            elif llist == 'ISM':
+                set_flags.append('fISM')
+            elif llist == 'Strong':
+                set_flags.append('fSI')
+            elif llist == 'HI':
+                set_flags.append('fHI')
+            elif llist == 'EUV':
+                set_flags.append('fEUV')
             else:
-                raise ValueError('Not ready for this type of gd_lines')
+                raise ValueError('set_lines: Not ready for this: {:s}'.format(llist))
+
 
         # Deal with Defined sets
         #import pdb
@@ -258,11 +224,62 @@ class LineList(object):
 
         # Parse and sort (consider masking instead)
         tmp_tab = self._fulltable[all_idx]
-        if self.sort:
-            tmp_tab.sort('wrest')
+        tmp_tab.sort('wrest')
 
         #
         self._data = tmp_tab
+
+    def subset_lines(self, subset, sort=False, verbose=False):
+        '''
+        Select a user-specific subset of the lines from the LineList for usage
+
+        Parameters:
+        -------------
+        subset: list, optional
+          List of wrest for lines to use (drawn from input linelist)
+          Quantity or str
+        sort: bool, optional
+          Sort this subset? [False]
+        '''
+        indices = []
+        if isinstance(subset[0],(float,Quantity)): # wrest
+            wrest = self._data['wrest'].value # Assuming Angstroms
+            for gdlin in subset:
+                mt = np.where( 
+                    np.abs(gdlin.value-wrest) < 1e-4 )[0]
+                if len(mt) == 1:
+                    indices.append(mt)
+                elif len(mt) > 1:
+                    raise ValueError('Need unique entries!')
+                else:
+                    if verbose:
+                        print('set_lines: Did not find {:g} in data Tables'.format(gdlin))
+        elif isinstance(subset[0],(basestring)): # Names
+            names = np.array(self._data['name'])
+            for gdlin in subset:
+                mt = np.where(str(gdlin)==names)[0]
+                if len(mt) == 1:
+                    indices.append(mt[0])
+                elif len(mt) > 1:
+                    raise ValueError('Should have been only one line with name {:s}!'.format(str(gdlin)))
+                    #warnings.warn('Found more than one line for {:s}'.format(str(gdlin)))
+                    #warnings.warn('Taking the first one from Ref={:s}'.format(
+                    #        self._data['Ref'][mt[0]]))
+                    #indices.append(mt[0])
+                    #raise ValueError('Need unique name entries!')
+                else:
+                    if verbose:
+                        print('set_lines: Did not find {:s} in data Tables'.format(gdlin))
+            #import pdb
+            #pdb.set_trace()
+        else:
+            raise ValueError('Not ready for this type of gd_lines')
+        # Sort
+        tmp = self._data[np.array(indices)]
+        if sort:
+            tmp.sort('wrest')
+        # Finish
+        self._data = tmp
 
     def unknown_line(self):
         """Returns a dictionary of line properties set to an unknown
@@ -278,7 +295,7 @@ class LineList(object):
 
         Parameters:
         ----------
-        line: str or float
+        line: str or Quantity
             Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII', 1215.6700*u.AA)
         
             [Note: when string contains spaces it only considers the first
