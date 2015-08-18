@@ -244,7 +244,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         xspec1d = XSpectrum1D.from_array(uwave, u.Quantity(fx),
                                          uncertainty=StdDevUncertainty(sig))
 
-    xspec1d.filename = specfil
+    xspec1d.meta['filename'] = specfil
 
     if not hasattr(xspec1d, 'co'):
         xspec1d.co = co
