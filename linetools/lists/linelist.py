@@ -332,6 +332,9 @@ class LineList(object):
                     break
             if Z is not None:
                 tbl = self.__getitem__((Z,ie))
+                # Make sure the lower energy level is the same too
+                cond = tbl['Ej'] == Ej
+                tbl = tbl[cond]
                 # For hydrogen/deuterium this contains deuterium/hydrogen; 
                 # so let's get rid of them
                 if (line == 'HI') or (line == 'DI'):
@@ -385,7 +388,10 @@ class LineList(object):
         if len(wvlims) != 2:
             raise SyntaxError('wlims has to be of size len()== 2; Please correct format')
         if wvlims[0] >= wvlims[1]:
-            raise ValueError('Minimum limit (wlims[0]) is larger than maximum limit (wlims[1]); please correct')
+            raise ValueError('Minimum limit (wlims[0]) is not smaller than maximum limit (wlims[1]); please correct')
+
+        if n_max < 1:
+            return None
 
         data = self.all_transitions(line)
         wv_obs = data['wrest'] * (1 + z)
@@ -400,7 +406,7 @@ class LineList(object):
         elif np.sum(cond) == 1: #only 1 case from a QTable format
             name = data[cond]['name'][0]
             return self.__getitem__(name)
-        else: #multiple cases
+        else:
             #remove transitions out of range
             data = data[cond]
             #add strength column to data
@@ -412,9 +418,13 @@ class LineList(object):
             data = data[:n_max]
             #remove column strength for consistency
             data.remove_column('strength')
-            return data
+            if len(data) == 1: #return a dictionary
+                name = data['name'][0]
+                return self.__getitem__(name)
+            else:
+                return data
 
-    def available_transitions(self, wvlims, z, n_max_tuple=3):
+    def available_transitions(self, wvlims, z, n_max=100,n_max_tuple=3, min_strength=4):
         """For a given wavelength range in Angstroms, wvlims=(wv_min,wv_max),
         this function retrieves the n_max_tuple strongest transitions per each ion 
         species in the LineList available at redshift z within such a wavelength 
@@ -427,42 +437,61 @@ class LineList(object):
             Wavelength range, e.g. wvlims=(1100*u.AA, 3200*u.AA)
         z : float
             Redshift
-        n_max_tuple : int
+        n_max : int, optional
+            Maximum number of transitions retrieved
+        n_max_tuple : int, optional
             Maximum number of transitions in a given ion species to 
             retrieve. e.g., if Lyman series are all available, it will 
-            retrieve only up to Lyman gamma if n_max_tuple=3. 
+            retrieve only up to Lyman gamma if n_max_tuple=3.
+        min_strength : float, optional
+            Minimum strenght calculated from log10(wrest * fosc * abundance)
+            In thin space HI 1215 has 14.7 [not]
+
         
         Returns:
         ----------
         dict (if only 1 transition found) or QTable (if > 1 transitions are found)
-
+        or None (if no transition is found)
         """
+        if all(isinstance(n,int) for n in [n_max,n_max_tuple]):
+            pass
+        else:
+            raise SyntaxError('Both n_max and n_max_tuple must be integers!')
+
+        if n_max == 0:
+            return None
+
         data = copy.deepcopy(self._data)
 
         #identify unique ion_names (e.g. HI, CIV, CIII)
         unique_ion_names = list(set([name.split(' ')[0] for name in data['name']]))
+        unique_ion_names = np.array(unique_ion_names)
 
-        #obtain the strongest transition of a given unique ion
-        strongest = []
+        #obtain the strongest transition of a given unique ion species
+        ion_name = []
         strength = []
-        for ion in unique_ion_names:
-            aux = self.strongest_transitions(ion,wvlims,z,n_max=1)
+        for ion in unique_ion_names: #This loop is necesary to have a non trivial but convinient order in the final output
+            aux = self.strongest_transitions(ion,wvlims,z,n_max=1) #only the strongest
             if aux is not None:
-                if isinstance(aux,dict):
+                if isinstance(aux,dict):#this should always be True given n_max=1
                     name = aux['name']
                 else:
                     name = aux['name'][0]
-                abundance = get_abundance(name)
-                strongest += [name]
-                strength += [aux['wrest'].value*aux['f']*np.power(10,abundance)]
+                abundance = get_abundance(name)[0]
+                ion_name += [name]
+                strength += [np.log10(aux['wrest'].value * aux['f']) + abundance]
+        if len(ion_name)==0:
+            #no matches
+            return None
+
         #create Table
         unique = Table()
-        unique.add_column(Column(data=strongest,name='name'))
+        unique.add_column(Column(data=ion_name,name='name'))
         unique.add_column(Column(data=strength,name='strength'))
 
         #sort by strength
-        unique.sort('strength')
-        unique.reverse() #Table unique is now sorted by strenght, with only 
+        unique.sort(['strength'])
+        unique.reverse() #Table unique is now sorted by strength, with only 
                          #1 entry per ion species
 
         #Create output data adding up to n_max_tuple per ion species
@@ -475,16 +504,19 @@ class LineList(object):
             if i == 0:
                 output = Table(aux) #convert to table because QTable does not like vstack
             else:
-                output = vstack([output,Table(aux)])
+                output = vstack([output,Table(aux)]) #vstack is only supported for Table()
         #if len==1 return dict
         if len(output) == 1:
-            name = data[cond]['name'][0]
+            name = output['name'][0]
             return self.__getitem__(name)
-        else:
-            return unique,QTable(output)
-                    
-
-
+        else: #n_max>1
+            if n_max>1:
+                output = output[:n_max]
+            if len(output) == 1: #return dictionary
+                name = output['name'][0]
+                return self.__getitem__(name)
+            else:
+                return QTable(output)
 
             
     def from_dict_to_qtable(self,a):
@@ -584,14 +616,13 @@ class LineList(object):
         return '[LineList: {:s}]'.format(sstr)
 
 
-
 def get_abundance(transitions_names): #please remove this function later 
     """Temporary function to obtain an array of abundances from 
     a given array of ion names. The abundance scheme should be 
     implemented in a better way!!! This is only a temporary function"""
 
     #Create a dictionary of abundances [temporary, until abundances 
-    # is implemented at a higher level]
+    # is implemented at a higher level somewhere]
 
     if isinstance(transitions_names,basestring):
         transitions_names = [transitions_names]
