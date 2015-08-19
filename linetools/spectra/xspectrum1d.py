@@ -220,16 +220,19 @@ class XSpectrum1D(Spectrum1D):
     # Quick plot
     def plot(self, **kwargs):
         ''' Plot the spectrum
-
-        Parameters
-        ----------
         '''
         import matplotlib.pyplot as plt
+        from ..analysis.interactive_plot import PlotWrapNav
+
         ax = plt.gca()
+        fig = plt.gcf()
+
+        artists = {}
+        ax.axhline(0, color='k', lw=0.5)
 
         kwargs.update(color='0.6')
-        ax.plot(self.dispersion, self.flux, drawstyle='steps-mid',
-                **kwargs)
+        artists['fl'] = ax.plot(self.dispersion, self.flux,
+                                drawstyle='steps-mid', **kwargs)[0]
 
         if self.sig is not None:
             kwargs.update(color='g')
@@ -241,7 +244,20 @@ class XSpectrum1D(Spectrum1D):
 
         ax.set_ylim(*get_flux_plotrange(self.flux))
         ax.set_xlim(self.dispersion.value[0], self.dispersion.value[-1])
-        plt.show()
+
+
+        if plt.get_backend() == 'MacOSX':
+            import warnings
+            warnings.warn("""\
+Looks like you're using the MacOSX matplotlib backend. Switch to the TkAgg
+or QtAgg backends to enable all interactive plotting commands.
+""")
+        else:
+            # Enable xspecplot-style navigation (i/o for zooming, etc).
+            # Need to save this as an attribute so it doesn't get
+            # garbage-collected.
+            self._plotter = PlotWrapNav(fig, ax, self.dispersion,
+                                        self.flux, artists)
 
     #  Rebin
     def rebin(self, new_wv):
@@ -510,4 +526,3 @@ class XSpectrum1D(Spectrum1D):
         # Write
         hdu.writeto(outfil, clobber=clobber)
         print('Wrote spectrum to {:s}'.format(outfil))
-
