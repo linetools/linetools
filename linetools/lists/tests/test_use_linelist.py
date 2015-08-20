@@ -56,15 +56,15 @@ def test_strongest_transitions():
 	wvlims = (1200,1800)*u.AA
 	z = 0.5
 	transitions = ism.strongest_transitions('HI',wvlims,z,n_max=5)
-	assert len(transitions) == 5, , error_msg
-	assert transitions[0]['name'] == 'HI 1025', , error_msg
+	assert len(transitions) == 5,  error_msg
+	assert transitions[0]['name'] == 'HI 1025' , error_msg
 	assert isinstance(transitions,QTable), error_msg
 
 	wvlims = (1500,1700)*u.AA
 	z = 0.5
 	transitions = ism.strongest_transitions('HI',wvlims,z,n_max=5)
-	assert len(transitions) == 1, error_msg #Only Lyb should be available
-	assert isinstance(transitions,dict), error_msg
+	assert isinstance(transitions,dict), error_msg #only Lyb should be available, so dict is expected
+	assert transitions['name'] == 'HI 1025'
 
 	wvlims = (1100,1200)*u.AA
 	z = 0.0
@@ -79,7 +79,7 @@ def test_available_transitions():
 
 	transitions = ism.available_transitions(wvlims,z,n_max=3,n_max_tuple=5)
 	assert len(transitions) == 3, error_msg 
-	assert transitions[2]['name'] == 'HI 972', , error_msg
+	assert transitions[2]['name'] == 'HI 972' , error_msg
 	assert isinstance(transitions,QTable), error_msg
 
 	transitions = ism.available_transitions(wvlims,z,n_max=10,n_max_tuple=2)
@@ -105,4 +105,3 @@ def test_available_transitions():
 	z = 0
 	transitions = ism.available_transitions(wvlims,z,n_max=100,n_max_tuple=2)
 	assert isinstance(transitions,dict), error_msg
-	
