@@ -37,12 +37,15 @@ def test_setwave():
     wave = io.setwave(hd)
     np.testing.assert_allclose(wave[0], 3040.33648468)
 
+
 # ASCII format
 def test_read_ascii():
     spec = io.readspec(data_path('UM184.dat.gz'))
     assert spec.dispersion.unit == u.Unit('AA')
     spec = io.readspec(data_path('q0002m422.txt.gz'))
+    assert spec.filename.endswith('q0002m422.txt.gz')
 
 def test_uves_popler():
     spec = io.readspec(data_path('popler_sample.fits'))
     assert spec.dispersion.unit == u.Unit('AA')
+    assert spec.filename.endswith('popler_sample.fits')
