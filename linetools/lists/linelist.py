@@ -349,11 +349,10 @@ class LineList(object):
             else:
                 raise ValueError('Line {} not found in the linelist'.format(line))
 
-    def strongest_transitions(self,line, wvlims, z, n_max=3,verbose=False):
+    def strongest_transitions(self,line, wvlims, n_max=3,verbose=False):
         """For a given single line transition, this function returns
-        the n_max strongest transitions of the ion found in 
-        the linelist, within the wavelenght range wlims at a given redshift z
-
+        the n_max strongest transitions of the ion species found in 
+        the linelist, within the wavelenght range wlims.
 
         Parameters:
         ----------
@@ -362,16 +361,15 @@ class LineList(object):
             [Note: when string contains spaces it only considers the first
              part of it, so 'HI' and 'HI 1215' and 'HI 1025' are all equivalent]
             [Note: to retrieve an unknown line use string 'unknown']
-        wvlims : tuple of Quantity
-            Wavelength range, e.g. wvlims=(1100*u.AA, 3200*u.AA) or wvlims=(1100, 3200)*u.AA
-        z : float
-            Redshift of interest
-        n_max : int 
+        wvlims : tuple of Quantity, or Quantity tuple
+            Wavelength range, e.g. wvlims=(1100*u.AA, 3200*u.AA) or wvlims=(1100, 3200)*u.AA         
+        n_max : int
             Maximun number of transitions to retrieve
 
         Returns:
         ----------
-        None (if no transitions are found), dict (if only 1 transition found), or QTable (if > 1 transitions are found)
+        None (if no transitions are found), dict (if only 1 transition found), or 
+        QTable (if > 1 transitions are found)
 
         """    
 
@@ -380,23 +378,24 @@ class LineList(object):
             if all(isinstance(wvlim,Quantity) for wvlim in wvlims):
                 pass
             else:
-                raise ValueError('Elements of wvlims have to be of class Quantity; correct format please')
+                raise SyntaxError('Elements of wvlims have to be of class Quantity; correct format please')
         elif isinstance(wvlims, Quantity): # or quantity
             pass
         else:
-            raise ValueError('wvlims has to be tuple or Quantity')
+            raise SyntaxError('wvlims has to be tuple or Quantity')
         if len(wvlims) != 2:
             raise SyntaxError('wlims has to be of size len()== 2; Please correct format')
         if wvlims[0] >= wvlims[1]:
             raise ValueError('Minimum limit (wlims[0]) is not smaller than maximum limit (wlims[1]); please correct')
-
-        if n_max < 1:
-            return None
+        if isinstance(n_max,int):
+            if n_max < 1:
+                return None
+        else:
+            raise SyntaxError('n_max must be integer')
 
         data = self.all_transitions(line)
-        wv_obs = data['wrest'] * (1 + z)
         # condition to be within wvrange
-        cond = (wv_obs >= wvlims[0]) & (wv_obs <= wvlims[1])
+        cond = (data['wrest'] >= wvlims[0]) & (data['wrest'] <= wvlims[1])
         if np.sum(cond) == 0:
             if verbose:
                 print('[strongest_transitions] Warning: no transitions found within wvlims; returning None')
@@ -409,34 +408,32 @@ class LineList(object):
         else:
             #remove transitions out of range
             data = data[cond]
-            #add strength column to data
+            #sort by strength defined as wrest * fosc
             strength = data['wrest'] * data['f']
-            data.add_column(Column(data=strength,name='strength'))
-            data.sort('strength')
-            data.reverse()
+            sorted_inds = np.argsort(strength)
+            #reverse sorted indices, so strongest get first
+            sorted_inds = sorted_inds[::-1]
+            #sort using sorted_inds
+            data = data[sorted_inds]            
             #keep only the first n_max or less
             data = data[:n_max]
-            #remove column strength for consistency
-            data.remove_column('strength')
+            
             if len(data) == 1: #return a dictionary
                 name = data['name'][0]
                 return self.__getitem__(name)
             else:
                 return data
 
-    def available_transitions(self, wvlims, z, n_max=100,n_max_tuple=3, min_strength=4):
-        """For a given wavelength range in Angstroms, wvlims=(wv_min,wv_max),
-        this function retrieves the n_max_tuple strongest transitions per each ion 
-        species in the LineList available at redshift z within such a wavelength 
-        range. The output is sorted by strength of the strongest available transition 
-        per ion species, modualted by abundance.
+    def available_transitions(self, wvlims, n_max=100,n_max_tuple=3, min_strength=5):
+        """For a given wavelength, wvlims=(wv_min,wv_max), this function retrieves the 
+        n_max_tuple strongest transitions per each ion species in the LineList available 
+        at redshift z within such a wavelength range. The output is sorted by strength of
+        the strongest available transition per ion species, modualted by abundance.
 
         Parameters:
         ----------
         wvlims : tuple of Quantity
             Wavelength range, e.g. wvlims=(1100*u.AA, 3200*u.AA)
-        z : float
-            Redshift
         n_max : int, optional
             Maximum number of transitions retrieved
         n_max_tuple : int, optional
@@ -445,7 +442,7 @@ class LineList(object):
             retrieve only up to Lyman gamma if n_max_tuple=3.
         min_strength : float, optional
             Minimum strenght calculated from log10(wrest * fosc * abundance)
-            In thin space HI 1215 has 14.7 [not]
+            In thin space HI 1215 has 14.7.
 
         
         Returns:
@@ -454,24 +451,25 @@ class LineList(object):
         or None (if no transition is found)
         """
         if all(isinstance(n,int) for n in [n_max,n_max_tuple]):
-            pass
+            if n_max < 1:
+                return None
         else:
             raise SyntaxError('Both n_max and n_max_tuple must be integers!')
+        if isinstance(min_strength,float) or isinstance(min_strength,int):
+            pass
+        else:
+            raise SyntaxError('min_strength must be a float value')
 
-        if n_max == 0:
-            return None
-
-        data = copy.deepcopy(self._data)
-
-        #identify unique ion_names (e.g. HI, CIV, CIII)
-        unique_ion_names = list(set([name.split(' ')[0] for name in data['name']]))
-        unique_ion_names = np.array(unique_ion_names)
+        # Identify unique ion_names (e.g. HI, CIV, CIII)
+        #unique_ion_names = list(set([name.split(' ')[0] for name in self._data['name']]))
+        #unique_ion_names = np.array(unique_ion_names)
+        unique_ion_names = np.unique([name.split(' ')[0] for name in self._data['name']])
 
         #obtain the strongest transition of a given unique ion species
         ion_name = []
         strength = []
         for ion in unique_ion_names: #This loop is necesary to have a non trivial but convinient order in the final output
-            aux = self.strongest_transitions(ion,wvlims,z,n_max=1) #only the strongest
+            aux = self.strongest_transitions(ion,wvlims,n_max=1) #only the strongest
             if aux is not None:
                 if isinstance(aux,dict):#this should always be True given n_max=1
                     name = aux['name']
@@ -489,6 +487,12 @@ class LineList(object):
         unique.add_column(Column(data=ion_name,name='name'))
         unique.add_column(Column(data=strength,name='strength'))
 
+        #get rid of those below the min_strength threshold
+        cond = unique['strength'] >= min_strength
+        unique = unique[cond]
+        if len(unique) < 1:
+            return None
+
         #sort by strength
         unique.sort(['strength'])
         unique.reverse() #Table unique is now sorted by strength, with only 
@@ -497,7 +501,7 @@ class LineList(object):
         #Create output data adding up to n_max_tuple per ion species
         for i,row in enumerate(unique):
             name = row['name']
-            aux = self.strongest_transitions(name, wvlims, z, n_max=n_max_tuple)
+            aux = self.strongest_transitions(name, wvlims, n_max=n_max_tuple)
             #need to deal with dict vs QTable format now
             if isinstance(aux,dict):
                 aux = self.from_dict_to_qtable(aux)
@@ -527,8 +531,8 @@ class LineList(object):
             raise SyntaxError('Input has to be a dictionary')
         
         keys = self._data.keys()
-        dtype = self._data.dtype
-        mask = self._data.mask
+        #dtype = self._data.dtype
+        #mask = self._data.mask
         
         #Create a QTable with same shape as self._data
         tab = QTable(data=self._data[0])
@@ -537,7 +541,6 @@ class LineList(object):
             tab[0][key] = a[key]
         return tab
     
-
     #####
     def __getattr__(self,k):
         ''' Passback an array or Column of the data 
