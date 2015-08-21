@@ -36,7 +36,7 @@ class LineList(object):
        'AGN'     :: Key AGN lines
     subset: list, optional
       List of subset of lines to use (drawn from input linelist)
-      Needs to be Quantity or str (e.g. [1215.6700] or ['HI 1215'])
+      Needs to be Quantity or str (e.g. [1215.6700*u.AA] or ['HI 1215'])
     sort_subset: bool, optional
       Sort the subset? [False]
     verbose: bool, optional
