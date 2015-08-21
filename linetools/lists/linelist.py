@@ -424,11 +424,12 @@ class LineList(object):
             else:
                 return data
 
-    def available_transitions(self, wvlims, n_max=100,n_max_tuple=3, min_strength=5):
-        """For a given wavelength, wvlims=(wv_min,wv_max), this function retrieves the 
-        n_max_tuple strongest transitions per each ion species in the LineList available 
-        at redshift z within such a wavelength range. The output is sorted by strength of
-        the strongest available transition per ion species, modualted by abundance.
+    def available_transitions(self, wvlims, n_max=100,n_max_tuple=3, min_strength=1.):
+        """For a given wavelength range, wvlims=(wv_min,wv_max), this function retrieves
+        the n_max_tuple strongest transitions per each ion species in the LineList 
+        available at such a wavelength range and having strength larger than min_strength.
+        Strength is defined as log10(wrest*fosc*abundance). The output is sorted by strength 
+        of the strongest available transition per ion species.
 
         Parameters:
         ----------
@@ -444,7 +445,6 @@ class LineList(object):
             Minimum strenght calculated from log10(wrest * fosc * abundance)
             In thin space HI 1215 has 14.7.
 
-        
         Returns:
         ----------
         dict (if only 1 transition found) or QTable (if > 1 transitions are found)
