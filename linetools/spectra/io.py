@@ -110,7 +110,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         # Error
         if sig_tags is None:
             sig_tags = ['ERROR','ERR','SIGMA_FLUX','FLAM_SIG', 'SIGMA_UP',
-                        'ERRSTIS', 'FLUXERR', 'sigma', 'sigma_flux', 'er']
+                        'ERRSTIS', 'FLUXERR', 'sigma', 'sigma_flux', 'er','err']
         sig, sig_tag = get_table_column(sig_tags, hdulist)
         if sig is None:
             ivar_tags = ['IVAR', 'IVAR_OPT']
