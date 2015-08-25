@@ -320,7 +320,7 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
         for kk,line in enumerate(lines):
             #print('kk = {:d}'.format(kk))
             try: # Deals with bad Byte in Morton00
-                tmp = ('Z = ' in line) & ('A = ' in line)  
+                tmp = ('Z = ' in line) & ('A =' in line)  
             except UnicodeDecodeError:
                 tmp = False
             if tmp:
@@ -452,6 +452,7 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
         data['mol'] = ''
 
     # Return
+    #pdb.set_trace()
     return data
 
 def mktab_morton03(do_this=False, outfil=None, fits=True):
