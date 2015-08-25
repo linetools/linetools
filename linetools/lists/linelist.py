@@ -245,12 +245,8 @@ class LineList(object):
         sort: bool, optional
           Sort this subset? [False]
         '''
+        
         # Reset _data (useful for changing subsets)
-        if not isinstance(subset,list):
-            try:
-                subset = [subset]
-            except:
-                raise SyntaxError('subset_lines: subset has to be a list!')
         if reset_data:
             self.set_lines(verbose=False)
 
