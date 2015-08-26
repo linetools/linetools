@@ -240,10 +240,13 @@ class LineList(object):
           List of wrest for lines to use (drawn from input linelist)
           Quantity or str
         reset_data: bool, optional
-          Reset _data Table based on default list (useful for 
-          changing subsets) [False]
-        sort: bool, optional
+          Reset self._data QTable based on the original list at the 
+          initialization (i.e. the default list). This is useful for 
+          changing subsets of lines without the need to initialize a 
+          different LineList() object. [False]
+        sort: bool, optional 
           Sort this subset? [False]
+
         '''
         
         # Reset _data (useful for changing subsets)
