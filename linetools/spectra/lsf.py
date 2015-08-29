@@ -79,60 +79,79 @@ class LSF(object):
                         'G185M': 37. / 1000. * u.AA,
                         'G225M': 33. / 1000. * u.AA,
                         'G285M': 40. / 1000. * u.AA}
+            #define chanel based on grating name
+            channel = {'G130M':  'FUV',
+                        'G160M': 'FUV',
+                        'G140L': 'FUV',
+                        'G230L': 'NUV',
+                        'G185M': 'NUV',
+                        'G225M': 'NUV',
+                        'G285M': 'NUV'}
 
-            channel = self.instr_config['channel']
-            if channel == 'NUV': #there is only 1 LSF file for NUV data
+            try:
+                grating = self.instr_config['grating']
+            except:
+                raise SyntaxError('`grating` keyword missing in `instr_config` dictionary.')
+            
+            if grating not in channel.keys():
+                raise ValueError('Not ready for this HST/COS grating: {}'.format(grating))
+
+            if channel[grating] == 'NUV': #there is only 1 LSF file for NUV data
                 file_name = 'nuv_all_lp1.txt'
-                col_names = ['rel_pix','1700A','1800A','1900A','2000A','2100A','2200A',\
-                            '2300A','2400A','2500A','2600A','2700A','2800A','2900A',\
-                            '3000A','3100A','3200A']
-                rel_pix = 390/1000. * u.AA # this number has to be given together with lsf solutions
-                data = ascii.read(file_name,data_start=1,names=col_names)
-                return rel_pix , data
             #COS
-            elif channel == 'FUV':
+            elif channel[grating] == 'FUV':
                 # Use the ones corrected by scattering when possible
                 # (currently, these are only available for lifetime-position 1)
                 # check: http://www.stsci.edu/hst/cos/performance/spectral_resolution
-                life_position = self.instr_config['life_position']
-                grating = self.instr_config['grating']
+                try:
+                    life_position = self.instr_config['life_position']
+                except:
+                    raise SyntaxError('`life_position` keyword missing in `instr_config` dictionary.')
+
+                if life_position not in ['1','2']:
+                    raise ValueError('HST/COS `life_position` should be either `1` or `2` (strings)') 
+
                 if life_position == '1':
                     if grating == 'G140L': #use theoretical values 
                         file_name = 'fuv_G140L_lp1.txt'
-                        col_names = ['rel_pix','1250A','1300A','1350A','1400A','1450A','1500A',
-                                    '1550A','1600A','1650A','1700A','1750A','1800A']
                         
                     elif grating == 'G130M': #use empirical values corrected by scattering
                         file_name = 'fuv_G130M_lp1_empir.txt'
-                        col_names = ['rel_pix','1150A','1200A','1250A','1300A','1350A','1400A','1450A']
 
                     elif grating == 'G160M': #use empirical values corrected by scattering
                         file_name = 'fuv_G160M_lp1_empir.txt'
-                        col_names = ['rel_pix','1450A','1500A','1550A','1600A','1650A','1700A','1750A']
                 
                 elif life_position == '2':
-                    cen_wave = self.instr_config['cen_wave']
+                    try:
+                        cen_wave = self.instr_config['cen_wave']
+                    except:
+                        raise SyntaxError('`cen_wave` keyword missing in `instr_config` dictionary. This should point to the central wavelength of the grating in Angstroms.')
+                    #adjust format in cases where cen_wave is of the form: str(1230A)
                     if cen_wave.endswith('A'): #adjust format
                         cen_wave = cen_wave[:-1]
-                    else:
-                        pass
+                    
+                    #filenames in this case have a well defined naming convention
                     file_name = 'fuv_{}_{}_lp2.txt'.format(grating,cen_wave)
-                    aux = lt_path + '/data/lsf/{}/{}'.format(self.name,file_name)
-                    #get column names
-                    f = open(aux,'r')
-                    line = f.readline() #first line of file
-                    f.close()
-                    #get rid of '\n'
-                    line = line.split('\n')[0]
-                    #get rid of spaces and then split by tabs
-                    col_names = line.replace(' ','').split('\t')
-                    col_names[0] = 'rel_pix'
-
-            else:
+            
+            else: #this should never happen
                 raise ValueError('Not ready for the given HST/COS channel; only `NUV` and `FUV` channels allowed.')
             
             #still in COS
-            rel_pix = pixel_scale[grating] #read from dictionary defined above
+            #point to the right file
             file_name = lt_path + '/data/lsf/{}/{}'.format(self.name,file_name)
+            
+            #get column names
+            f = open(file_name,'r')
+            line = f.readline() #first line of file
+            f.close()
+            #get rid of '\n'
+            line = line.split('\n')[0]
+            #by construction first column should be separated by `,`
+            col_names = line.split(',')
+            col_names[0] = 'rel_pix'
+            
+            rel_pix = pixel_scale[grating] #read from dictionary defined above
+            #read data
             data = ascii.read(file_name,data_start=1,names=col_names)
+            
             return rel_pix , data
