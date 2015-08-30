@@ -147,12 +147,12 @@ def chisq_chunk(model, fl, er, masked, indices, knots, chithresh=1.5):
             knots[iknot][FLAG] = True
 
 
-def prepare_knots(s, edges, ax=None, debug=False):
+def prepare_knots(wa, fl, er, edges, ax=None, debug=False):
     """ Make initial knots for the continuum estimation.
 
     Parameters
     ----------
-    s : s.wa, s.fl, s.er
+    wa, fl, er : arrays
        Wavelength, flux, error.
     edges : The edges of the wavelength chunks. Splines knots are to be
        places at the centre of these chunks.
@@ -169,26 +169,26 @@ def prepare_knots(s, edges, ax=None, debug=False):
       indices: A list of tuples (i,j) giving the start and end index
       of each chunk.
 
-      masked: An array the same shape as s.wa.
+      masked: An array the same shape as wa.
     """
-    indices = s.wa.searchsorted(edges)
+    indices = wa.searchsorted(edges)
     indices = [(i0,i1) for i0,i1 in zip(indices[:-1],indices[1:])]
     wavc = [0.5*(w1 + w2) for w1,w2 in zip(edges[:-1],edges[1:])]
 
     knots = [[wavc[i], 0, False] for i in range(len(wavc))]
 
-    masked = np.zeros(len(s.wa), bool)
-    masked[~(s.er > 0)] = True
+    masked = np.zeros(len(wa), bool)
+    masked[~(er > 0)] = True
 
     # remove bad knots
-    remove_bad_knots(knots, indices, masked, s.fl, s.er, debug=debug)
+    remove_bad_knots(knots, indices, masked, fl, er, debug=debug)
 
     if ax is not None:
-        yedge = np.interp(edges, s.wa, s.fl)
+        yedge = np.interp(edges, wa, fl)
         ax.vlines(edges, 0, yedge + 100, color='c', zorder=10)
 
     # set the knot flux values
-    update_knots(knots, indices, s.fl, masked)
+    update_knots(knots, indices, fl, masked)
 
     if ax is not None:
         x,y = zip(*knots)[:2]
@@ -332,7 +332,8 @@ def find_continuum(spec, edges=None, ax=None, debug=False, kind='QSO',
         ax.plot(s.wa, s.fl, '-', color='0.7', drawstyle='steps-mid')
         ax.plot(s.wa, s.er, 'g')
 
-    knots, indices, masked = prepare_knots(s, edges, ax=ax, debug=debug)
+    knots, indices, masked = prepare_knots(s.wa, s.fl, s.er, edges,
+                                           ax=ax, debug=debug)
 
     # Note this modifies knots and masked inplace
     co = estimate_continuum(s, knots, indices, masked, ax=ax, debug=debug)
