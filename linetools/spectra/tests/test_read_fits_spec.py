@@ -14,6 +14,12 @@ def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
 
+def test_get_cdelt_dcflag():
+    hd = fits.getheader(data_path('UM184_nF.fits'))
+    cdelt1, dc_flag = io.get_cdelt_dcflag(hd)
+    np.testing.assert_allclose(cdelt1, 3.1870310099e-05)
+    np.testing.assert_allclose(dc_flag, 1)
+
 # Separate flux/error files
 def test_sep_files():
     spec = io.readspec(data_path('UM184_nF.fits'))
@@ -31,7 +37,15 @@ def test_setwave():
     wave = io.setwave(hd)
     np.testing.assert_allclose(wave[0], 3040.33648468)
 
+
 # ASCII format
 def test_read_ascii():
     spec = io.readspec(data_path('UM184.dat.gz'))
     assert spec.dispersion.unit == u.Unit('AA')
+    spec = io.readspec(data_path('q0002m422.txt.gz'))
+    assert spec.filename.endswith('q0002m422.txt.gz')
+
+def test_uves_popler():
+    spec = io.readspec(data_path('popler_sample.fits'))
+    assert spec.dispersion.unit == u.Unit('AA')
+    assert spec.filename.endswith('popler_sample.fits')

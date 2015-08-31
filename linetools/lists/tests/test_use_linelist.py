@@ -7,6 +7,7 @@ import os, pdb
 import pytest
 import astropy.io.ascii as ascii
 from astropy import units as u
+from astropy.table import QTable
 import numpy as np
 
 from linetools.lists.linelist import LineList
@@ -29,13 +30,13 @@ def test_closest():
 	np.testing.assert_allclose(line['wrest'], 1250.578*u.AA, rtol=1e-7)
 
 def test_all_transitions():
-	error_msg = 'Something is wrong in all_transition_names_from_line()'
+	error_msg = 'Something is wrong in all_transitions()'
 	ism = LineList('ISM')
 	#check simple case
 	line = 'OVI'
 	ovi_transitions = ism.all_transitions(line)
 	assert len(ovi_transitions) == 2, error_msg
-	print(ovi_transitions['name'])
+	#print(ovi_transitions['name'])
 	#check unknown
 	line = 'unknown'
 	out = ism.all_transitions(line)
@@ -44,4 +45,63 @@ def test_all_transitions():
 	line = 'CIII'
 	out = ism.all_transitions(line)
 	assert type(out) == dict, error_msg
-	print('test_all_transitions() passed')
+	# wrest
+	out = ism.all_transitions(1215.6700*u.AA)
+	assert len(out) == 30 # 30 Lyman series transitions
+	#print('test_all_transitions() passed')
+
+def test_strongest_transitions():
+	error_msg = 'Something is wrong in strongest_transitions()'
+	ism = LineList('ISM')
+	wvlims = (1200,1800)*u.AA
+	z = 0.5
+	transitions = ism.strongest_transitions('HI',wvlims/(1+z),n_max=5)
+	assert len(transitions) == 5,  error_msg
+	assert transitions[0]['name'] == 'HI 1025' , error_msg
+	assert isinstance(transitions,QTable), error_msg
+
+	wvlims = (1500,1700)*u.AA
+	z = 0.5
+	transitions = ism.strongest_transitions('HI',wvlims/(1+z),n_max=5)
+	assert isinstance(transitions,dict), error_msg #only Lyb should be available, so dict is expected
+	assert transitions['name'] == 'HI 1025'
+
+	wvlims = (1100,1200)*u.AA
+	z = 0.0
+	transitions = ism.strongest_transitions('HI',wvlims/(1+z),n_max=5)
+	assert transitions is None, error_msg
+
+def test_available_transitions():
+	error_msg = 'Something is wrong in available_transitions()'
+	ism = LineList('ISM')
+	wvlims = (900,1800)*u.AA
+	z = 0.1
+
+	transitions = ism.available_transitions(wvlims/(1+z),n_max=3,n_max_tuple=5)
+	assert len(transitions) == 3, error_msg 
+	assert transitions[2]['name'] == 'HI 972' , error_msg
+	assert isinstance(transitions,QTable), error_msg
+
+	transitions = ism.available_transitions(wvlims/(1+z),n_max=10,n_max_tuple=2)
+	assert len(transitions) == 10, error_msg 
+	assert transitions[2]['name'] == 'CIII 977' , error_msg #Only Lya and Lyb as the first two
+
+	wvlims = (1200,1800)*u.AA
+	z = 0.5
+	transitions = ism.available_transitions(wvlims/(1+z),n_max=15,n_max_tuple=2)
+	assert len(transitions) == 15, error_msg 
+	assert transitions[0]['name'] == 'HI 1025', error_msg 
+	assert 'OVI 1031' in transitions['name'], error_msg 
+	assert 'CIII 977' in transitions['name'], error_msg
+
+	wvlims = (1000,3000)*u.AA
+	z = 1.5
+	transitions = ism.available_transitions(wvlims/(1+z),n_max=100,n_max_tuple=2)
+	assert 'NeVIII 770' in transitions['name'], error_msg
+	assert 'MgX 609' in transitions['name'], error_msg
+	assert 'HI 1215' not in transitions['name'], error_msg
+
+	wvlims = (1215.6,1217)*u.AA
+	z = 0
+	transitions = ism.available_transitions(wvlims/(1+z),n_max=100,n_max_tuple=2)
+	assert isinstance(transitions,dict), error_msg
