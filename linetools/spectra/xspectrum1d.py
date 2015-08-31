@@ -449,6 +449,8 @@ class XSpectrum1D(Spectrum1D):
             # Add sig, wavelength to HDU
             sighdu = fits.ImageHDU(self.sig)
             sighdu.name='ERROR'
+            #import pdb
+            #pdb.set_trace()
             wvhdu = fits.ImageHDU(self.dispersion.value)
             wvhdu.name = 'WAVELENGTH'
             hdu = fits.HDUList([prihdu, sighdu, wvhdu])
