@@ -230,7 +230,7 @@ class LineList(object):
         #
         self._data = tmp_tab
 
-    def subset_lines(self, subset, sort=False, verbose=False):
+    def subset_lines(self, subset, sort=False, reset_data=False, verbose=False):
         '''
         Select a user-specific subset of the lines from the LineList for usage
 
@@ -239,9 +239,20 @@ class LineList(object):
         subset: list, optional
           List of wrest for lines to use (drawn from input linelist)
           Quantity or str
-        sort: bool, optional
+        reset_data: bool, optional
+          Reset self._data QTable based on the original list at the 
+          initialization (i.e. the default list). This is useful for 
+          changing subsets of lines without the need to initialize a 
+          different LineList() object. [False]
+        sort: bool, optional 
           Sort this subset? [False]
+
         '''
+        
+        # Reset _data (useful for changing subsets)
+        if reset_data:
+            self.set_lines(verbose=False)
+
         indices = []
         if isinstance(subset[0],(float,Quantity)): # wrest
             wrest = self._data['wrest'].value # Assuming Angstroms
@@ -254,7 +265,7 @@ class LineList(object):
                     raise ValueError('Need unique entries!')
                 else:
                     if verbose:
-                        print('set_lines: Did not find {:g} in data Tables'.format(gdlin))
+                        print('subset_lines: Did not find {:g} in data Tables'.format(gdlin))
         elif isinstance(subset[0],(basestring)): # Names
             names = np.array(self._data['name'])
             for gdlin in subset:
@@ -270,7 +281,7 @@ class LineList(object):
                     #raise ValueError('Need unique name entries!')
                 else:
                     if verbose:
-                        print('set_lines: Did not find {:s} in data Tables'.format(gdlin))
+                        print('subset_lines: Did not find {:s} in data Tables'.format(gdlin))
             #import pdb
             #pdb.set_trace()
         else:
@@ -284,7 +295,7 @@ class LineList(object):
 
     def unknown_line(self):
         """Returns a dictionary of line properties set to an unknown
-        line. Currently using the default value from ."""     
+        line. Currently using the default value from linetools.lists.parse()."""     
         ldict , _ = lilp.line_data()
         ldict['name'] = 'unknown'
         return ldict
@@ -522,7 +533,6 @@ class LineList(object):
             else:
                 return QTable(output)
 
-            
     def from_dict_to_qtable(self,a):
         """Convert dictionary a to its QTable version"""
         if isinstance(a,dict):
