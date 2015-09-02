@@ -7,7 +7,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 from astropy.io import fits, ascii
 from astropy.units import Quantity
-from astropy.table import Table, Column
+from astropy.table import Table, QTable, Column
 import matplotlib.pyplot as plt
 import astropy.units as u
 import glob, imp
@@ -17,56 +17,39 @@ lt_path = imp.find_module('linetools')[1]
 class LSF(object):
 
     """Class to deal with line-spread-functions (LSFs) from
-    various different astornomical spectrographs.
+    various different astronomical spectrographs.
 
     Note: only implemented for HST/COS at the moment.
 
     Parameters
     ----------
-    wv_array : Quantity numpy.ndarray, shape(N,)
-        Wavelength array for which the LSF kernel is defined. The 
-        central wavelength value of `wv_array` define the wavelength
-        at which the LSF is defined, while the limits of `wv_array` 
-        define the extent of the kernel.
     instr_config : dict
         A dictionary with the instrument configuration details relevant
         to the required LSF. Mandatory keywords of the dict are: ['name'], 
         all of which must be either string or None. 
         Note: There must be extra relevant keywords specific to each instrument.
 
-
-
-    Attributes
-    ----------
-
     """
 
-    def __init__(self, wv_array, instr_config):
+    def __init__(self, instr_config):
         #mandatory keys for characterizing a spectrograph mode
         self.mandatory_dict_keys = ['name']
                 
         #Check correct format
-        if not ((isinstance(wv_array, np.ndarray)) or (isinstance(wv_array, Quantity))):
-            raise SyntaxError('`wv_array` must be Quantity numpy.ndarray')
-        elif len(wv_array.shape) != 1:
-            raise SyntaxError('`wv_array` must be of shape(N,), i.e. 1-dimensional array')
-        elif not isinstance(instr_config,dict):
+        if not isinstance(instr_config,dict):
             raise SyntaxError('`instr_config` must be a dictionary.')
         elif not all([key in instr_config.keys() for key in self.mandatory_dict_keys]):
             raise SyntaxError('`instr_config` must have the following mandatory keys {}:'.format(self.mandatory_dict_keys))
 
         #Initialize
-        self.wv_array = wv_array
-        self.wv_min = np.min(wv_array)
-        self.wv_max = np.max(wv_array)
-        self.wv0 = 0.5 * (self.wv_max - self.wv_min)
         self.instr_config = instr_config
         self.name = instr_config['name']
         # initialize specific to given intrument name
         if self.name not in ['COS']:
             raise ValueError('Not ready for this instrument: {}'.format(self.name))
         # IMPORTANT: make sure that LSFs are given in linear wavelength scales 
-        # for COS
+        
+        # only implemented for HST/COS so far
         if self.name == 'COS':
             self.pixel_scale , self._data = self.load_COS_data()
         #add more intruments here as needed
@@ -75,6 +58,33 @@ class LSF(object):
 
         #reformat self._data
         self.check_and_reformat_data()
+        
+
+    def get_lsf(self, wv_array):
+        """ Given a wavelenth array `wv_array`, it returns 
+        the LSF kernel at the central wavelength of the array, 
+        using the same pixel scale and extent of `wv_array`. 
+
+        Parameters
+        ----------
+        wv_array : Quantity numpy.ndarray, shape(N,)
+            Wavelength array for which the LSF kernel is defined. The 
+            central wavelength value of `wv_array` define the wavelength
+            at which the LSF is defined, while the limits of `wv_array` 
+            define the extent of the kernel.
+
+        Output
+        ------
+        lsf_array : numpy.ndarray, shape(N,)
+            The lsf kernel.
+
+
+        Method: First, tabulated LSF are linearly interpolated
+        to the center of `wv_array` (see LSF.interpolate_to_wv0()); 
+        then, the LSF is interpolated to match the `wv_array` scale 
+        and extent using a cubic spline (see LSF.XXX)
+        """
+        return self.interpolate_to_wv_array(wv_array)
 
 
     def check_and_reformat_data(self):
@@ -207,8 +217,8 @@ class LSF(object):
 
         Output
         ------
-        LSF.lsf : Table [documentation to be completed]
-            The actual lsf at wv0
+        LSF.lsf_wv0 : QTable
+            The interpolated lsf at wv0
         """
         #get wa0 to Angstroms
         wv0 = wv0.to('AA')
@@ -222,24 +232,66 @@ class LSF(object):
             aux_val = []
             for i in range(1,len(row)):
                 aux_val += [row[i]]
-            f = interp1d(col_waves,aux_val,bounds_error=True) #we do not want to extrapolate
+            f = interp1d(col_waves,aux_val,bounds_error=True,kind='linear') #we do not want to extrapolate
             lsf_vals += [f(wv0.value)]
         lsf_vals = np.array(lsf_vals)
         #normalize
         lsf_vals /= np.max(lsf_vals)
 
         #create Column to store the interpolated LSF
-        lsf_vals = Column(name='{:.0f}A'.format(wv0.value),data=lsf_vals)
+        #lsf_vals = Column(name='{:.0f}A'.format(wv0.value),data=lsf_vals)
+        lsf_vals = Column(name='kernel',data=lsf_vals)
+        
         #create column of relative pixel in absolute wavelength
-        wv_array = self.pixel_scale * self._data['rel_pix'] + wv0
+        wv_array = [(self.pixel_scale * self._data['rel_pix'][i] + wv0).value for i in range(len(self._data))]
         wv = Column(name='wv',data=wv_array, unit=u.AA)
 
-        #create lsf table
-        lsf = QTable()
+        #create lsf Table
+        lsf = Table()
         lsf.add_column(wv)
         lsf.add_column(lsf_vals)
 
         #return lsf Table()
         return lsf
 
+    def interpolate_to_wv_array(self,wv_array):
+        """
+        Given `wv_array` this function interpolates an LSF
+        to match both scale and extent of `wv_array`. Some checks 
+        are performed.
+
+        Parameters
+        ----------
+        wv_array : Quantity numpy.ndarray, shape(N,)
+            Wavelength array for which the LSF kernel is defined. The 
+            central wavelength value of `wv_array` define the wavelength
+            at which the LSF is defined, while the limits of `wv_array` 
+            define the extent of the kernel.
+
+
+        """
+        # Check correct format
+        if not ((isinstance(wv_array, np.ndarray)) or (isinstance(wv_array, Quantity))):
+            raise SyntaxError('`wv_array` must be Quantity numpy.ndarray')
+        elif len(wv_array.shape) != 1:
+            raise SyntaxError('`wv_array` must be of shape(N,), i.e. 1-dimensional array')
         
+        #define useful quantities
+        self.wv_array = wv_array
+        self.wv_min = np.min(wv_array)
+        self.wv_max = np.max(wv_array)
+        self.wv0 = 0.5 * (self.wv_max + self.wv_min)
+        
+        lsf_tab = self.interpolate_to_wv0(self.wv0)
+        f = interp1d(lsf_tab['wv'],lsf_tab['kernel'],kind='cubic',bounds_error=False,fill_value=0)
+
+        #convert to Angstroms
+        self.wv_array_AA = np.array([wv.to('AA').value for wv in wv_array])
+        
+        #return interpolated lsf
+        lsf =  f(self.wv_array_AA)
+
+        #normalize
+        lsf /= np.max(lsf)
+
+        return lsf
