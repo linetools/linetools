@@ -7,7 +7,6 @@ import numpy as np
 from linetools.spectra.lsf import LSF
 
 def test_lsf_COS():
-    wv_array = np.arange(1200,1500,1)*u.AA
     
     gratings = ['G130M','G160M', 'G140L','G230L', 'G185M', 'G225M', 'G285M']
     life_positions = ['1','2']
@@ -28,8 +27,8 @@ def test_lsf_COS():
 
             	for cen_wave in cen_waves_aux:
             		instr_config['cen_wave'] = cen_wave
-            		lsf = LSF(wv_array,instr_config)
+            		lsf = LSF(instr_config)
             		print(lp,grating,cen_wave)
             elif lp == '1':
-				lsf = LSF(wv_array,instr_config)
+				lsf = LSF(instr_config)
 				print(lp,grating)
