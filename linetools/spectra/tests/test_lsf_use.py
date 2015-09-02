@@ -3,7 +3,8 @@ import os
 import pytest
 from astropy import units as u
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
+
 from linetools.spectra.lsf import LSF
 
 def test_interpolate_to_wv0(plot=False):
