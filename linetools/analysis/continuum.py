@@ -298,8 +298,14 @@ def find_continuum(spec, edges=None, ax=None, debug=False, kind='QSO',
 
     Returns
     -------
-    co: array, shape (N,)
-      An estimate for the continuum.
+    co, contpoints: array of shape (N,) and a list of (x,y) pairs.
+
+      co is an estimate for the continuum.
+
+      contpoints is a list of (x,y) pairs, giving the position of
+      spline knots used to generate the continuum. Use
+      linetools.analysis.interp.AkimaSpline to re-generate the
+      continuum from these knots.
     """
 
     s = np.rec.fromarrays([spec.dispersion.value,
@@ -343,4 +349,4 @@ def find_continuum(spec, edges=None, ax=None, debug=False, kind='QSO',
         ymax = np.percentile(s.fl[~np.isnan(s.fl)],  95)
         ax.set_ylim(-0.02*ymax, 1.1*ymax)
 
-    return co
+    return co, [k[:2] for k in knots]

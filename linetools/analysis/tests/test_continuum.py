@@ -9,7 +9,7 @@ import numpy as np
 def test_find_continuum():
     d = imp.find_module('linetools')[1]
     spec = readspec(d + '/spectra/tests/files/q0002m422.txt.gz')
-    co = find_continuum(spec, redshift=2.76, divmult=3.5,
+    co, pts = find_continuum(spec, redshift=2.76, divmult=3.5,
                        forest_divmult=3, kind='QSO')
     assert np.allclose(co[:3], [6810.73400022,  6807.63940372,  6804.54478286])
     assert np.allclose(co[-3:],[384.69366713, 384.69095479,   384.68824243])
