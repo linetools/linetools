@@ -41,24 +41,24 @@ class LSF(object):
         elif not all([key in instr_config.keys() for key in self.mandatory_dict_keys]):
             raise SyntaxError('`instr_config` must have the following mandatory keys {}:'.format(self.mandatory_dict_keys))
 
-        #Initialize
+        #Initialize basics
         self.instr_config = instr_config
         self.name = instr_config['name']
-        # initialize specific to given intrument name
         if self.name not in ['COS']:
             raise ValueError('Not ready for this instrument: {}'.format(self.name))
-        # IMPORTANT: make sure that LSFs are given in linear wavelength scales 
         
+        # initialize specific to given intrument name
         # only implemented for HST/COS so far
         if self.name == 'COS':
             self.pixel_scale , self._data = self.load_COS_data()
-        #add more intruments here as needed
-        # if self.name == 'XX':
-            # self.rel_pix , self._data = self.load_XX_data()
 
+        # IMPORTANT: make sure that LSFs are given in linear wavelength scales 
+                
         #reformat self._data
         self.check_and_reformat_data()
         
+        #other relevant values to initialize?
+
 
     def get_lsf(self, wv_array):
         """ Given a wavelenth array `wv_array`, it returns 
@@ -171,7 +171,7 @@ class LSF(object):
                 try:
                     cen_wave = self.instr_config['cen_wave']
                 except:
-                    raise SyntaxError('`cen_wave` keyword missing in `instr_config` dictionary. This should point to the central wavelength of the grating in Angstroms.')
+                    raise SyntaxError('`cen_wave` keyword missing in `instr_config` dictionary. This should provide the central wavelength of the grating in Angstroms as a string.')
                 #adjust format in cases where cen_wave is of the form: str(1230A)
                 if cen_wave.endswith('A'): #adjust format
                     cen_wave = cen_wave[:-1]
@@ -182,7 +182,6 @@ class LSF(object):
         else: #this should never happen
             raise ValueError('Not ready for the given HST/COS channel; only `NUV` and `FUV` channels allowed.')
         
-        #still in COS
         #point to the right file
         file_name = lt_path + '/data/lsf/{}/{}'.format(self.name,file_name)
         
@@ -203,7 +202,7 @@ class LSF(object):
         return pixel_scale , data
 
     def interpolate_to_wv0(self,wv0):
-        """This function retrieves a unique single LSF valid at wavelength 
+        """This function retrieves a unique LSF valid at wavelength 
         wv0, by interpolating from tabulated values at different wavelengths
         (this tabulated values (stored in self._data) are usually given as 
         calibration products by intrument developers and should be loaded by 
@@ -277,19 +276,18 @@ class LSF(object):
             raise SyntaxError('`wv_array` must be of shape(N,), i.e. 1-dimensional array')
         
         #define useful quantities
-        self.wv_array = wv_array
-        self.wv_min = np.min(wv_array)
-        self.wv_max = np.max(wv_array)
-        self.wv0 = 0.5 * (self.wv_max + self.wv_min)
+        wv_min = np.min(wv_array)
+        wv_max = np.max(wv_array)
+        wv0 = 0.5 * (wv_max + wv_min)
         
-        lsf_tab = self.interpolate_to_wv0(self.wv0)
+        lsf_tab = self.interpolate_to_wv0(wv0)
         f = interp1d(lsf_tab['wv'],lsf_tab['kernel'],kind='cubic',bounds_error=False,fill_value=0)
 
         #convert to Angstroms
-        self.wv_array_AA = np.array([wv.to('AA').value for wv in wv_array])
+        wv_array_AA = np.array([wv.to('AA').value for wv in wv_array])
         
         #return interpolated lsf
-        lsf =  f(self.wv_array_AA)
+        lsf =  f(wv_array_AA)
 
         #normalize
         lsf /= np.max(lsf)
