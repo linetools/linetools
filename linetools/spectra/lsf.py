@@ -8,7 +8,7 @@ from scipy.interpolate import interp1d
 from astropy.io import fits, ascii
 from astropy.units import Quantity
 from astropy.table import Table, QTable, Column
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import astropy.units as u
 import glob, imp
 
