@@ -4,13 +4,13 @@ Module for dealing with LSFs of various astronomical instruments.
 from __future__ import print_function
 
 import numpy as np
-from scipy.interpolate import interp1d
+from scipy.interpolate import interp1d, Akima1DInterpolator
 from astropy.io import fits, ascii
 from astropy.units import Quantity
-from astropy.table import Table, QTable, Column
-# import matplotlib.pyplot as plt
 import astropy.units as u
+from astropy.table import Table, QTable, Column
 import glob, imp
+from linetools.analysis.interp import interp_Akima
 
 lt_path = imp.find_module('linetools')[1]
 
@@ -37,7 +37,7 @@ class LSF(object):
                 
         #Check correct format
         if not isinstance(instr_config,dict):
-            raise SyntaxError('`instr_config` must be a dictionary.')
+            raise TypeError('`instr_config` must be a dictionary.')
         elif not all([key in instr_config.keys() for key in self.mandatory_dict_keys]):
             raise SyntaxError('`instr_config` must have the following mandatory keys {}:'.format(self.mandatory_dict_keys))
 
@@ -45,7 +45,7 @@ class LSF(object):
         self.instr_config = instr_config
         self.name = instr_config['name']
         if self.name not in ['COS']:
-            raise ValueError('Not ready for this instrument: {}'.format(self.name))
+            raise NotImplementedError('Not ready for this instrument: {}'.format(self.name))
         
         # initialize specific to given intrument name
         # only implemented for HST/COS so far
@@ -60,7 +60,7 @@ class LSF(object):
         #other relevant values to initialize?
 
 
-    def get_lsf(self, wv_array):
+    def get_lsf(self, wv_array, kind = 'Akima'):
         """ Given a wavelenth array `wv_array`, it returns 
         the LSF kernel at the central wavelength of the array, 
         using the same pixel scale and extent of `wv_array`. 
@@ -72,6 +72,9 @@ class LSF(object):
             central wavelength value of `wv_array` define the wavelength
             at which the LSF is defined, while the limits of `wv_array` 
             define the extent of the kernel.
+        kind : str, optional
+            Specifies the kind of interpolation as a string either 
+            ('cubic', 'Akima')
 
         Output
         ------
@@ -80,12 +83,13 @@ class LSF(object):
 
 
         Method: First, tabulated LSF are linearly interpolated
-        to the center of `wv_array` (see LSF.interpolate_to_wv0()); 
-        then, the LSF is interpolated to match the `wv_array` scale 
-        and extent using a cubic spline (see LSF.XXX)
+        to the center of `wv_array` (see LSF.interpolate_to_wv0() for
+        details); then, the LSF is interpolated to match the `wv_array`
+        scale and extent using Akima interpolation (see 
+        LSF.interpolate_to_wv_array() for details).
         """
-        return self.interpolate_to_wv_array(wv_array)
-
+        lsf_array = self.interpolate_to_wv_array(wv_array,kind=kind)
+        return lsf_array['kernel'].data
 
     def check_and_reformat_data(self):
         """Any reformating of self._data should happen here. 
@@ -111,7 +115,6 @@ class LSF(object):
         for col_name in self._data.keys()[1:]:
             self._data[col_name] /= np.max(self._data[col_name]) 
 
-
     def load_COS_data(self):
         """Load the right data according to `instr_config` for HST/COS 
         instrument"""
@@ -125,7 +128,7 @@ class LSF(object):
                     'G185M': 37. / 1000. * u.AA,
                     'G225M': 33. / 1000. * u.AA,
                     'G285M': 40. / 1000. * u.AA}
-        #define chanel based on grating name
+        #define channel based on grating name
         channel_dict = {'G130M':  'FUV',
                     'G160M': 'FUV',
                     'G140L': 'FUV',
@@ -140,7 +143,7 @@ class LSF(object):
             raise SyntaxError('`grating` keyword missing in `instr_config` dictionary.')
         
         if grating not in channel_dict.keys():
-            raise ValueError('Not ready for this HST/COS grating: {}'.format(grating))
+            raise NotImplementedError('Not ready for this HST/COS grating: {}'.format(grating))
 
         if channel_dict[grating] == 'NUV': #there is only 1 LSF file for NUV data
             file_name = 'nuv_all_lp1.txt'
@@ -180,7 +183,7 @@ class LSF(object):
                 file_name = 'fuv_{}_{}_lp2.txt'.format(grating,cen_wave)
         
         else: #this should never happen
-            raise ValueError('Not ready for the given HST/COS channel; only `NUV` and `FUV` channels allowed.')
+            raise NotImplementedError('Not ready for the given HST/COS channel; only `NUV` and `FUV` channels allowed.')
         
         #point to the right file
         file_name = lt_path + '/data/lsf/{}/{}'.format(self.name,file_name)
@@ -203,7 +206,7 @@ class LSF(object):
 
     def interpolate_to_wv0(self,wv0):
         """This function retrieves a unique LSF valid at wavelength 
-        wv0, by interpolating from tabulated values at different wavelengths
+        wv0, by linearly interpolating from tabulated values at different wavelengths
         (this tabulated values (stored in self._data) are usually given as 
         calibration products by intrument developers and should be loaded by 
         self.load_XX_data() in the initialization stage of LSF(), where XX 
@@ -216,8 +219,9 @@ class LSF(object):
 
         Output
         ------
-        LSF.lsf_wv0 : QTable
-            The interpolated lsf at wv0
+        lsf_table : Table
+            The interpolated lsf at wv0. This table has two 
+            columns: 'wv' and 'kernel' 
         """
         #get wa0 to Angstroms
         wv0 = wv0.to('AA')
@@ -253,11 +257,12 @@ class LSF(object):
         #return lsf Table()
         return lsf
 
-    def interpolate_to_wv_array(self,wv_array):
+    def interpolate_to_wv_array(self,wv_array, kind='Akima'):
         """
         Given `wv_array` this function interpolates an LSF
-        to match both scale and extent of `wv_array`. Some checks 
-        are performed.
+        to match both scale and extent of `wv_array` using the 
+        Akima or cubic-spline interpolators (default is Akima). 
+        Some checks are performed too.
 
         Parameters
         ----------
@@ -266,7 +271,17 @@ class LSF(object):
             central wavelength value of `wv_array` define the wavelength
             at which the LSF is defined, while the limits of `wv_array` 
             define the extent of the kernel.
+        kind : str, optional
+            Specifies the kind of interpolation as a string either 
+            ('cubic', 'Akima'); default is `Akima`.
 
+        Output
+        ------
+        lsf_table : Table
+            The interpolated lsf using at the central wavelength of 
+            `wv_array`, using the same pixel scale as `wv_array`. 
+            This table has two columns: 'wv' and 'kernel'. (lst_table['wv'] 
+            is equal to `wv_array` by construction.)
 
         """
         # Check correct format
@@ -274,22 +289,36 @@ class LSF(object):
             raise SyntaxError('`wv_array` must be Quantity numpy.ndarray')
         elif len(wv_array.shape) != 1:
             raise SyntaxError('`wv_array` must be of shape(N,), i.e. 1-dimensional array')
-        
+        if kind not in ['cubic','Akima','akima']:
+            raise ValueError('Only `cubic` or `Akima` interpolation available.')
+
         #define useful quantities
         wv_min = np.min(wv_array)
         wv_max = np.max(wv_array)
         wv0 = 0.5 * (wv_max + wv_min)
         
         lsf_tab = self.interpolate_to_wv0(wv0)
-        f = interp1d(lsf_tab['wv'],lsf_tab['kernel'],kind='cubic',bounds_error=False,fill_value=0)
 
         #convert to Angstroms
         wv_array_AA = np.array([wv.to('AA').value for wv in wv_array])
         
-        #return interpolated lsf
-        lsf =  f(wv_array_AA)
+        #interpolate to wv_array
+        if kind == 'cubic':
+            f = interp1d(lsf_tab['wv'],lsf_tab['kernel'],kind='cubic',bounds_error=False,fill_value=0)
+            lsf_vals =  f(wv_array_AA)
+        elif kind in ('Akima','akima'):
+            # f = Akima1DInterpolator(lsf_tab['wv'],lsf_tab['kernel']) 
+            # NT: I tried Akima interpolator from scipy.inter and is not robust in extreme situations
+            # where the wv_array is large compared to the kernel FWHM.
+            #Let's try linetools.analysis.interp Akima version 
+            lsf_vals = interp_Akima(wv_array_AA,lsf_tab['wv'],lsf_tab['kernel'])
 
         #normalize
-        lsf /= np.max(lsf)
+        lsf_vals /= np.max(lsf_vals)
 
-        return lsf
+        #re-define Table
+        lsf_tab = Table()
+        lsf_tab.add_column(Column(name='wv',data=wv_array))
+        lsf_tab.add_column(Column(name='kernel',data=lsf_vals))
+
+        return lsf_tab
