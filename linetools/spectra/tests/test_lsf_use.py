@@ -3,6 +3,7 @@ import os
 import pytest
 import astropy.units as u
 import numpy as np
+from astropy.table import Table
 
 from linetools.spectra.lsf import LSF
 
