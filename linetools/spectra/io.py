@@ -202,6 +202,9 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             if 'CONTINUUM' in hdulist:
                 xspec1d.co = hdulist['CONTINUUM'].data
 
+            if 'METADATA' in hdulist:
+                xspec1d.meta = read_metadata(hdulist['METADATA'])
+
         else:  # ASSUMING MULTI-EXTENSION
             if len(hdulist) <= 2:
                 print('spec.readwrite: No wavelength info but only 2 extensions!')

@@ -46,7 +46,8 @@ class XSpectrum1D(Spectrum1D):
         '''
         # Giddy up
         return cls(flux=spec1d.flux, wcs=spec1d.wcs, unit=spec1d.unit,
-                   uncertainty=spec1d.uncertainty, mask=spec1d.mask, meta=spec1d.meta)
+                   uncertainty=spec1d.uncertainty, mask=spec1d.mask,
+                   meta=spec1d.meta.copy())
 
     @classmethod
     def from_tuple(cls,ituple):
@@ -82,7 +83,6 @@ class XSpectrum1D(Spectrum1D):
             return self.uncertainty.array
         else:
             return None
-
 
     #  Add noise
     def add_noise(self,seed=None,s2n=None):
@@ -318,7 +318,7 @@ or QtAgg backends to enable all interactive plotting commands.
         new_fx = new_fx / new_dwv[1:]
 
         # Return new spectrum
-        return XSpectrum1D.from_array(new_wv, new_fx)
+        return XSpectrum1D.from_array(new_wv, new_fx, meta=self.meta.copy())
 
     # Velo array
     def relative_vel(self, wv_obs):
@@ -374,8 +374,9 @@ or QtAgg backends to enable all interactive plotting commands.
             new_sig = liu.scipy_rebin( self.sig[orig_pix], new_npix ) / np.sqrt(nbox)
 
         # Return
-        return XSpectrum1D.from_array(new_wv, new_fx,
-                                      uncertainty=apy.nddata.StdDevUncertainty(new_sig))
+        return XSpectrum1D.from_array(
+            new_wv, new_fx, meta=self.meta.copy(),
+            uncertainty=apy.nddata.StdDevUncertainty(new_sig))
 
     # Splice two spectra together
     def gauss_smooth(self, fwhm, **kwargs):
@@ -399,8 +400,9 @@ or QtAgg backends to enable all interactive plotting commands.
         new_fx = lsc.convolve_psf(self.flux.value, fwhm, **kwargs)*self.flux.unit
 
         # Return
-        return XSpectrum1D.from_array(self.dispersion, new_fx,
-                                      uncertainty=self.uncertainty)
+        return XSpectrum1D.from_array(
+            self.dispersion, new_fx, meta=self.meta.copy(),
+            uncertainty=self.uncertainty)
 
     # Splice two spectra together
     def splice(self, spec2, wvmx=None, scale=1.):
@@ -437,8 +439,9 @@ or QtAgg backends to enable all interactive plotting commands.
         if self.sig is not None:
             new_sig = np.concatenate( (self.sig, spec2.sig[gdp]*scale) )
         # Generate
-        spec3 = XSpectrum1D.from_array(uwave, u.Quantity(new_fx),
-                                         uncertainty=StdDevUncertainty(new_sig))
+        spec3 = XSpectrum1D.from_array(
+            uwave, u.Quantity(new_fx), meta=self.meta.copy()
+            uncertainty=StdDevUncertainty(new_sig))
         # Return
         return spec3
 
@@ -497,6 +500,11 @@ or QtAgg backends to enable all interactive plotting commands.
         if hasattr(self, 'co') and self.co is not None:
             cohdu = fits.ImageHDU(self.co)
             cohdu.name = 'CONTINUUM'
+            hdu.append(cohdu)
+
+        if self.meta is not None:
+            cohdu = fits.ImageHDU(self.co)
+            cohdu.name = 'METADATA'
             hdu.append(cohdu)
 
         # Deal with header
