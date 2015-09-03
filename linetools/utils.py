@@ -31,11 +31,11 @@ def between(a, vmin, vmax):
 
 #
 def scipy_rebin(a, *args):
-    ''' Simple script to rebin an input array to a new shape.  Akin to IDL's routine
+    """ Simple script to rebin an input array to a new shape.  Akin to IDL's routine
     Taken from scipy documentation: http://wiki.scipy.org/Cookbook/Rebinning
     As in IDL, the new shape must be a factor of the old one.
     The ugly 'evList trick' builds and executes a python command 
-    '''
+    """
     shape = a.shape
     lenShape = len(shape)
     factor = np.asarray(shape)/np.asarray(args)
@@ -45,3 +45,28 @@ def scipy_rebin(a, *args):
     #print ''.join(evList)
     return eval(''.join(evList))
 
+
+def jsonify_dict(d):
+    """ Process a dictionary so it can be serialised in json format.
+
+    Currently simply converts arrays to lists.
+
+    Parameters
+    ----------
+    d : dict
+      Input dictionary
+
+    Returns
+    -------
+    dout : dict
+      A copy of the input dictionary in json-friendly format
+    """
+    dout = {}
+    for key, value in d.items():
+        if isinstance(value, dict):
+            dout[key] = jsonify_dict(value)
+        elif isinstance(value, np.ndarray):
+            dout[key] = value.tolist()
+        else:
+            dout[key] = value
+    return dout

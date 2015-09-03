@@ -6,6 +6,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import os
+import json
 
 import astropy as apy
 from astropy import units as u
@@ -440,7 +441,7 @@ or QtAgg backends to enable all interactive plotting commands.
             new_sig = np.concatenate( (self.sig, spec2.sig[gdp]*scale) )
         # Generate
         spec3 = XSpectrum1D.from_array(
-            uwave, u.Quantity(new_fx), meta=self.meta.copy()
+            uwave, u.Quantity(new_fx), meta=self.meta.copy(),
             uncertainty=StdDevUncertainty(new_sig))
         # Return
         return spec3
@@ -467,6 +468,7 @@ or QtAgg backends to enable all interactive plotting commands.
         from specutils.io import write_fits as sui_wf
         prihdu = sui_wf._make_hdu(self.data)  # Not for binary table format
         prihdu.name = 'FLUX'
+
         hdu = fits.HDUList([prihdu])
 
         # Type
@@ -502,11 +504,6 @@ or QtAgg backends to enable all interactive plotting commands.
             cohdu.name = 'CONTINUUM'
             hdu.append(cohdu)
 
-        if self.meta is not None:
-            cohdu = fits.ImageHDU(self.co)
-            cohdu.name = 'METADATA'
-            hdu.append(cohdu)
-
         # Deal with header
         if hasattr(self,'head'):
             hdukeys = prihdu.header.keys()
@@ -531,6 +528,9 @@ or QtAgg backends to enable all interactive plotting commands.
                     import pdb
                     pdb.set_trace()
 
-        # Write
+        if self.meta is not None and len(self.meta) > 0:
+            d = liu.jsonify_dict(self.meta)
+            prihdu.header['METADATA'] = json.dumps(d)
+
         hdu.writeto(outfil, clobber=clobber)
         print('Wrote spectrum to {:s}'.format(outfil))
