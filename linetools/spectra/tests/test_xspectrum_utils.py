@@ -7,6 +7,7 @@ import numpy as np
 from astropy.io import fits
 
 from linetools.spectra import io
+from linetools.spectra.xspectrum1d import XSpectrum1D
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
@@ -75,3 +76,11 @@ def test_write_fits():
     spec2 = io.readspec(data_path('tmp.fits'))
     # check a round trip works
     np.testing.assert_allclose(spec.dispersion, spec2.dispersion)
+
+def test_readwrite_without_sig():
+    sp = XSpectrum1D.from_tuple(([5,6,7], np.ones(3)))
+    sp.write_to_fits(data_path('tmp.fits'))
+    sp1 = io.readspec(data_path('tmp.fits'))
+    np.testing.assert_allclose(sp1.dispersion.value, sp.dispersion.value)
+    np.testing.assert_allclose(sp1.flux.value, sp.flux.value)
+
