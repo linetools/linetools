@@ -183,7 +183,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             else:
                 raise ValueError('DC-FLAG has unusual value {:d}'.format(dc_flag))
 
-        elif hdulist[0].name == 'FLUX' and hdulist[1].name == 'ERROR':
+        elif hdulist[0].name == 'FLUX':
             # NEW SCHOOL (one file for flux and error)
             if 'WAVELENGTH' not in hdulist:
                 spec1d = spec_read_fits.read_fits_spectrum1d(
@@ -195,16 +195,18 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
                 xspec1d = XSpectrum1D.from_array(wave, u.Quantity(fx))
 
             # Error array
-            sig = hdulist['ERROR'].data
-            xspec1d.uncertainty = StdDevUncertainty(sig)
-            #
+            if 'ERROR' in hdulist:
+                sig = hdulist['ERROR'].data
+                xspec1d.uncertainty = StdDevUncertainty(sig)
+            else:
+                sig = None
+
             if 'CONTINUUM' in hdulist:
                 xspec1d.co = hdulist['CONTINUUM'].data
 
         else:  # ASSUMING MULTI-EXTENSION
             if len(hdulist) <= 2:
-                print('spec.readwrite: No wavelength info but only 2 extensions!')
-                return
+                raise RuntimeError('spec.readwrite: No wavelength info but only 2 extensions!')
             fx = hdulist[0].data.flatten()
             try:
                 sig = hdulist[1].data.flatten()
@@ -240,8 +242,12 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             uwave = u.Quantity(wave, unit=u.AA)
         else:
             uwave = u.Quantity(wave)
-        xspec1d = XSpectrum1D.from_array(uwave, u.Quantity(fx),
-                                         uncertainty=StdDevUncertainty(sig))
+        if sig is not None:
+            xspec1d = XSpectrum1D.from_array(uwave, u.Quantity(fx),
+                                             uncertainty=StdDevUncertainty(sig))
+        else:
+            xspec1d = XSpectrum1D.from_array(uwave, u.Quantity(fx))
+
 
     xspec1d.filename = specfil
 
