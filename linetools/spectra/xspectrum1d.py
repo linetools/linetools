@@ -485,9 +485,10 @@ or QtAgg backends to enable all interactive plotting commands.
         elif type(self.wcs) is Spectrum1DLookupWCS:
             # Wavelengths as an array (without units for now)
             # Add sig, wavelength to HDU
-            sighdu = fits.ImageHDU(self.sig)
-            sighdu.name = 'ERROR'
-            hdu.append(sighdu)
+            if self.sig is not None:
+                sighdu = fits.ImageHDU(self.sig)
+                sighdu.name = 'ERROR'
+                hdu.append(sighdu)
             wvhdu = fits.ImageHDU(self.dispersion.value)
             wvhdu.name = 'WAVELENGTH'
             hdu.append(wvhdu)
