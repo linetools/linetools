@@ -71,8 +71,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             # Read header
             datfil,chk = chk_for_gz(specfil)
             if chk == 0:
-                print('xastropy.spec.readwrite: File does not exist ', specfil)
-                return -1
+                raise IOError('File does not exist {}'.format(specfil))
             hdulist = fits.open(os.path.expanduser(datfil))
         else: #ASCII
             try:
