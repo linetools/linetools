@@ -3,17 +3,16 @@
 from __future__ import print_function, absolute_import, division, \
      unicode_literals
 
+import warnings
 import sys, os
 import numpy as np
 
 from ..utils import between
 from .interp import AkimaSpline
 
-__all__ = ['qso_continuum']
-
-def make_chunks(wa, redshift, divmult=1, forest_divmult=1, debug=False):
+def make_chunks_qso(wa, redshift, divmult=1, forest_divmult=1, debug=False):
     """ Generate a series of wavelength chunks for use by
-    prepare_knots.
+    prepare_knots, assuming a QSO spectrum
     """
 
     zp1 = 1 + redshift
@@ -61,9 +60,9 @@ def make_chunks(wa, redshift, divmult=1, forest_divmult=1, debug=False):
     return edges[i0:i2]
 
 
-def update_knots(knots, indices, fl, masked, minpix=3):
+def update_knots(knots, indices, fl, masked):
     """ Calculate the y position of each knot. Updates inplace.
-    
+
     Parameters
     ---------
     knots: list of [xpos, ypos, bool] with length N
@@ -74,17 +73,17 @@ def update_knots(knots, indices, fl, masked, minpix=3):
     fl, masked: arrays shape (M,)
        The flux, and boolean arrays showing which pixels are
        masked.
-      
     """
-    X, Y, FLAG = 0,1,2
+
+    iy, iflag = 1, 2
     for iknot,(i1,i2) in enumerate(indices):
-        if knots[iknot][FLAG]:
+        if knots[iknot][iflag]:
             continue
 
         f0 = fl[i1:i2]
         m0 = masked[i1:i2]
         f1 = f0[~m0]
-        knots[iknot][Y] = np.median(f1)
+        knots[iknot][iy] = np.median(f1)
 
 
 def linear_co(wa, knots):
@@ -148,50 +147,48 @@ def chisq_chunk(model, fl, er, masked, indices, knots, chithresh=1.5):
             knots[iknot][FLAG] = True
 
 
-def prepare_knots(s, redshift, divmult=3,
-                  forestmult=3, ax=None, debug=False):
-    """ Make initial knots the continuum estimation.
+def prepare_knots(wa, fl, er, edges, ax=None, debug=False):
+    """ Make initial knots for the continuum estimation.
 
     Parameters
     ----------
-    s : s.wa, s.fl, s.er
+    wa, fl, er : arrays
        Wavelength, flux, error.
+    edges : The edges of the wavelength chunks. Splines knots are to be
+       places at the centre of these chunks.
     ax : Matplotlib Axes
        If not None, use to plot debugging info.
 
     Returns
     -------
     knots, indices, masked
-    
+
       knots: A list of [x, y, flag] lists giving the x and y position
       of each knot.
 
       indices: A list of tuples (i,j) giving the start and end index
       of each chunk.
 
-      masked: An array the same shape as s.wa.
+      masked: An array the same shape as wa.
     """
-
-    edges = make_chunks(s.wa, redshift, debug=debug,
-                        divmult=divmult, forest_divmult=forestmult)
-    indices = s.wa.searchsorted(edges)
+    indices = wa.searchsorted(edges)
     indices = [(i0,i1) for i0,i1 in zip(indices[:-1],indices[1:])]
     wavc = [0.5*(w1 + w2) for w1,w2 in zip(edges[:-1],edges[1:])]
 
     knots = [[wavc[i], 0, False] for i in range(len(wavc))]
 
-    masked = np.zeros(len(s.wa), bool)
-    masked[~(s.er > 0)] = True
+    masked = np.zeros(len(wa), bool)
+    masked[~(er > 0)] = True
 
     # remove bad knots
-    remove_bad_knots(knots, indices, masked, s.fl, s.er, debug=debug)
+    remove_bad_knots(knots, indices, masked, fl, er, debug=debug)
 
     if ax is not None:
-        yedge = np.interp(edges, s.wa, s.fl)
+        yedge = np.interp(edges, wa, fl)
         ax.vlines(edges, 0, yedge + 100, color='c', zorder=10)
 
-    # first guess
-    update_knots(knots, indices, s.fl, masked)
+    # set the knot flux values
+    update_knots(knots, indices, fl, masked)
 
     if ax is not None:
         x,y = zip(*knots)[:2]
@@ -268,18 +265,29 @@ def estimate_continuum(s, knots, indices, masked, ax=None, maxiter=1000,
     return co
 
 
-
-def qso_continuum(wa, fl, er, redshift, forestmult=2, divmult=2,
-                  ax=None, debug=False):
-    """ Estimate a QSO continuum.
+def find_continuum(spec, edges=None, ax=None, debug=False, kind='QSO',
+                   **kwargs):
+    """ Estimate a continuum for a spectrum.
 
     Parameters
     ----------
-    wa, fl, er: arrays with shape (N,)
+    spec: XSpectrum1D object
       Wavelength, flux and one sigma error.
+    kind : {'default', 'QSO'}
+      Which kind of continuum to fit. This is used to generate a list
+      of wavelength chunks where spline knots will be placed.
+    edges: array of float
+      A list of wavelengths giving the edges of chunks where a spline
+      knot will be fitted. If this is given, the 'kind' keyword is
+      ignored.
+    ax : matplotlib Axes
+      If this is not None, use ax to make diagnostic plots.
+
+    Additional keywords for kind = 'QSO':
+
     redshift: float
       QSO emission redshift.
-    forestmult: float
+    forest_divmult: float
       Multiplier for the number of spline knots at wavelengths shorter
       than Lya. The default (2) is suitable for UVES/HIRES resoluion
       spectra - experiment with smaller values for lower resolution
@@ -287,25 +295,53 @@ def qso_continuum(wa, fl, er, redshift, forestmult=2, divmult=2,
     divmult: float
       Multiplier for the number of knots at wavelengths longer than
       Lya.
-    ax : matplotlib Axes
-      If this is not None, use ax to make diagnostic plots.
+
     Returns
     -------
-    co: array, shape (N,)
-      An estimate for the continuum.
+    co, contpoints: array of shape (N,) and a list of (x,y) pairs.
+
+      co is an estimate for the continuum.
+
+      contpoints is a list of (x,y) pairs, giving the position of
+      spline knots used to generate the continuum. Use
+      linetools.analysis.interp.AkimaSpline to re-generate the
+      continuum from these knots.
     """
 
-    s = np.rec.fromarrays([wa, fl, er], names=str('wa,fl,er'))
+    s = np.rec.fromarrays([spec.dispersion.value,
+                           spec.flux.value,
+                           spec.sig], names=str('wa,fl,er'))
+
+    if edges is not None:
+        edges = list(edges)
+    elif kind.upper() == 'QSO':
+        if 'redshift' in kwargs:
+            z = kwargs['redshift']
+        elif 'redshift' in spec.meta:
+            z = spec.meta['redshift']
+        else:
+            raise RuntimeError(
+                "I need the emission redshift for kind='qso'")
+
+        divmult = kwargs.get('divmult', 2)
+        forest_divmult = kwargs.get('forest_divmult', 2)
+        edges = make_chunks_qso(
+            s.wa, z, debug=debug, divmult=divmult,
+            forest_divmult=forest_divmult)
+    else:
+        s = "Kind keyword {:s} unknown. ".format(kind)
+        s += "Currently only kind='QSO' is supported"
+        raise ValueError(s)
+
 
     if ax is not None:
         ax.plot(s.wa, s.fl, '-', color='0.7', drawstyle='steps-mid')
         ax.plot(s.wa, s.er, 'g')
 
-    knots, indices, masked = prepare_knots(
-        s, redshift, ax=ax, divmult=divmult, forestmult=forestmult,
-        debug=debug)
+    knots, indices, masked = prepare_knots(s.wa, s.fl, s.er, edges,
+                                           ax=ax, debug=debug)
 
-    # Note that estimate_co modifies knots and masked inplace
+    # Note this modifies knots and masked inplace
     co = estimate_continuum(s, knots, indices, masked, ax=ax, debug=debug)
 
     if ax is not None:
@@ -313,4 +349,4 @@ def qso_continuum(wa, fl, er, redshift, forestmult=2, divmult=2,
         ymax = np.percentile(s.fl[~np.isnan(s.fl)],  95)
         ax.set_ylim(-0.02*ymax, 1.1*ymax)
 
-    return co
+    return co, [k[:2] for k in knots]

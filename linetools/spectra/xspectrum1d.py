@@ -19,6 +19,11 @@ import linetools.spectra.io as lsio
 
 from .plotting import get_flux_plotrange
 
+from ..analysis.interactive_plot import InteractiveCoFit
+from ..analysis.continuum import prepare_knots
+from ..analysis.continuum import find_continuum
+
+
 try:
     from specutils import Spectrum1D
 except ImportError:
@@ -66,9 +71,9 @@ class XSpectrum1D(Spectrum1D):
         #pdb.set_trace()
         # Generate
         if len(ituple) == 2: # wave, flux
-            spec = cls.from_array(uwave, u.Quantity(ituple[1])) 
+            spec = cls.from_array(uwave, u.Quantity(ituple[1]))
         else:
-            spec = cls.from_array(uwave, u.Quantity(ituple[1]), 
+            spec = cls.from_array(uwave, u.Quantity(ituple[1]),
                 uncertainty=StdDevUncertainty(ituple[2]))
         spec.filename = 'none'
         # Return
@@ -92,7 +97,7 @@ class XSpectrum1D(Spectrum1D):
 
         Parameters:
         -----------
-        seed: int, optional  
+        seed: int, optional
           Seed for the random number generator [not yet functional]
         s2n: float, optional
           S/N per pixel for the output spectrum
@@ -131,7 +136,7 @@ class XSpectrum1D(Spectrum1D):
                 conti = self.co
             else:
                 raise ValueError('Must specify a continuum with conti keyword.')
-        if (len(conti) != len(self.flux)): 
+        if (len(conti) != len(self.flux)):
             if no_check:
                 print('WARNING: Continuum length differs from flux')
                 if len(conti) > len(self.flux):
@@ -201,7 +206,7 @@ class XSpectrum1D(Spectrum1D):
         Normalize too
         '''
         fx = spec.flux[spec.sub_pix]
-        sig = spec.sig[spec.sub_pix] 
+        sig = spec.sig[spec.sub_pix]
 
         # Normalize?
         try:
@@ -262,9 +267,9 @@ or QtAgg backends to enable all interactive plotting commands.
     #  Rebin
     def rebin(self, new_wv):
         """ Rebin the existing spectrum rebinned to a new wavelength array
-        Uses simple linear interpolation.  The default (and only) option 
+        Uses simple linear interpolation.  The default (and only) option
         conserves counts (and flambda).
-        
+
         WARNING: Do not trust either edge pixel of the new array
         WARNING: Does not act on the Error array!  Nor does it generate one
 
@@ -323,7 +328,7 @@ or QtAgg backends to enable all interactive plotting commands.
     # Velo array
     def relative_vel(self, wv_obs):
         ''' Return a velocity array relative to an input wavelength
-        Should consider adding a velocity array to this Class, 
+        Should consider adding a velocity array to this Class,
         i.e. self.velo
 
         Parameters
@@ -347,7 +352,7 @@ or QtAgg backends to enable all interactive plotting commands.
         ----------
         nbox: integer
           Number of pixels to smooth over
-        preserve: bool (False) 
+        preserve: bool (False)
           Keep the new spectrum at the same number of pixels as original
 
         Returns:
@@ -415,7 +420,7 @@ or QtAgg backends to enable all interactive plotting commands.
         wvmx: Quantity, optional
           Wavelength to begin splicing *after*
         scale: float, optional
-          Scale factor for flux and error array.  
+          Scale factor for flux and error array.
           Mainly for convenience of plotting
 
         Returns:
@@ -426,13 +431,13 @@ or QtAgg backends to enable all interactive plotting commands.
         # Begin splicing after the end of the internal spectrum
         if wvmx is None:
             wvmx = np.max(self.dispersion)
-        # 
+        #
         gdp = np.where(spec2.dispersion > wvmx)[0]
         # Concatenate
-        new_wv = np.concatenate( (self.dispersion.value, 
+        new_wv = np.concatenate( (self.dispersion.value,
             spec2.dispersion.value[gdp]) )
         uwave = u.Quantity(new_wv, unit=self.wcs.unit)
-        new_fx = np.concatenate( (self.flux.value, 
+        new_fx = np.concatenate( (self.flux.value,
             spec2.flux.value[gdp]*scale) )
         if self.sig is not None:
             new_sig = np.concatenate( (self.sig, spec2.sig[gdp]*scale) )
@@ -444,7 +449,7 @@ or QtAgg backends to enable all interactive plotting commands.
 
     # Write to fits
     def write_to_fits(self, outfil, clobber=True, add_wave=False):
-        
+
         ''' Write to a FITS file
         Should generate a separate code to make a Binary FITS table format
 
@@ -476,7 +481,7 @@ or QtAgg backends to enable all interactive plotting commands.
                 sighdu = fits.ImageHDU(self.sig)
                 sighdu.name='ERROR'
                 hdu.append(sighdu)
-                # 
+                #
             if add_wave:
                 wvhdu = fits.ImageHDU(self.dispersion.value)
                 wvhdu.name = 'WAVELENGTH'
@@ -494,7 +499,7 @@ or QtAgg backends to enable all interactive plotting commands.
             hdu.append(wvhdu)
         else:
             raise ValueError('write_to_fits: Not ready for this type of spectrum wavelengths')
-        
+
         if hasattr(self, 'co') and self.co is not None:
             cohdu = fits.ImageHDU(self.co)
             cohdu.name = 'CONTINUUM'
@@ -527,3 +532,85 @@ or QtAgg backends to enable all interactive plotting commands.
         # Write
         hdu.writeto(outfil, clobber=clobber)
         print('Wrote spectrum to {:s}'.format(outfil))
+
+
+    def fit_continuum(self, knots=None, edges=None, wlim=None, dw=10.,
+                      kind=None, **kwargs):
+        """ Interactively fit a continuum.
+
+        Parameters
+        ----------
+        spec : Spectrum1D
+        wlim : (float, float), optional
+          Start and end wavelengths for fitting the continuum. Default is
+          None, which fits the entire spectrum.
+        knots: list of (x, y) pairs, optional
+          A list of spline knots to use for the continuum.
+        edges: list of floats, optional
+          A list of edges defining wavelength chunks. Spline knots
+          will be placed at the centre of these chunks.
+        dw : float, default 10.0
+          The approximate distance between spline knots in
+          Angstroms.
+        kind : {'QSO', None}, default None
+          If given, generate spline knots using
+          linetools.analysis.continuum.find_continuum.
+
+        Updates
+        -------
+        spec.co with the new continuum
+        spec.meta['contpoints'] with the knots defining the continuum
+
+        Use linetools.analysis.interp.AkimaSpline to regenerate the
+        continuum from the the knots.
+        """
+
+        wa = self.dispersion.value
+
+        if wlim is None:
+            wmin, wmax = wa[0], wa[-1]
+        else:
+            wmin, wmax = wlim
+            if wmax < wmin:
+                wmin, wmax = wmax, wmin
+
+        if kind is not None:
+            _, knots = find_continuum(self, kind=kind, **kwargs)
+            # only keep knots between wmin and wmax
+            knots = [[x,y] for (x,y) in knots if wmin < x < wmax]
+        else:
+            if edges is None:
+                nchunks = max(3, (wmax - wmin) / float(dw))
+                edges = np.linspace(wmin, wmax, nchunks + 1)
+    
+        if knots is None:
+            knots, indices, masked = prepare_knots(
+                wa, self.flux.value, self.uncertainty.array, edges)
+        else:
+            knots = [list(k) for k in knots]
+    
+        co = (self.co if hasattr(self, 'co') else None)
+        if co is not None:
+            x = [k[0] for k in knots]
+            ynew = np.interp(x, wa, co)
+            for i in range(len(knots)):
+                knots[i][1] = ynew[i]
+    
+        contpoints = [k[:2] for k in knots]
+        import matplotlib.pyplot as plt
+        fig = plt.figure(figsize=(11, 7))
+        fig.subplots_adjust(left=0.05, right=0.95, bottom=0.1, top=0.95)
+        wrapper = InteractiveCoFit(wa, self.flux.value, self.uncertainty.array,
+                                   contpoints, co=co, fig=fig)
+
+        # wait until the interactive fitting has finished
+        while not wrapper.finished:
+            plt.waitforbuttonpress()
+
+        print('Updating continuum')
+        self.co = wrapper.continuum
+        if 'contpoints' not in self.meta:
+            self.meta['contpoints'] = []
+        self.meta['contpoints'].extend(
+            [tuple(pts) for pts in wrapper.contpoints])
+        self.meta['contpoints'].sort()
