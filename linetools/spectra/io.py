@@ -8,6 +8,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 # Import libraries
 import numpy as np
 import os, pdb
+import json
 
 from astropy.io import fits, ascii
 from astropy.nddata import StdDevUncertainty
@@ -203,6 +204,9 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
 
             if 'CONTINUUM' in hdulist:
                 xspec1d.co = hdulist['CONTINUUM'].data
+
+            if 'METADATA' in head0:
+                xspec1d.meta.update(json.loads(head0['METADATA']))
 
         else:  # ASSUMING MULTI-EXTENSION
             if len(hdulist) <= 2:
