@@ -174,7 +174,7 @@ class PlotWrapNav(PlotWrapBase):
     For example, i and o for zooming in y direction, [ and ] for
     panning, S and U for smoothing and unsmoothing.
     """
-    def __init__(self, fig, ax, wa, fl, artists):
+    def __init__(self, fig, ax, wa, fl, artists, printhelp=True):
         """
         Parameters
         ----------
@@ -186,6 +186,8 @@ class PlotWrapNav(PlotWrapBase):
         artists : dict
           A dictionary which must contain a key 'fl', which is the
           matplotlib artist corresponding to the flux line.
+        printhelp : bool, optional
+          Whether to print a help message which first called.
         """
         self.artists = artists
         self.fig = fig
@@ -203,7 +205,8 @@ class PlotWrapNav(PlotWrapBase):
             fig.canvas.callbacks.disconnect(cid)
         self.cids = {}
         self.connect()
-        print(self._help_string)
+        if printhelp:
+            print(self._help_string)
 
 
     def on_keypress(self, event):
@@ -234,19 +237,23 @@ m        : move the nearest knot
 q        : quit
 """
     def __init__(self, wa, fl, er, contpoints, co=None,
-                 redshift=None, fig=None):
+                 fig=None, anchor=None):
         """ Initialise figure, plots and variables.
 
         Parameters
         ----------
-        wa :   Wavelengths
-        fl :   Fluxes
-        er :   One sigma errors
+        wa : Wavelengths
+        fl : Fluxes
+        er : One sigma errors
         contpoints : list of x,y tuple pairs (None)
             The points through which a cubic spline is passed,
-            defining the continuum. First and last two points are 'anchors'
-        redshift : float (None)
-            Redshift used to plot reference emission lines.
+            defining the continuum.
+        co : Continuum, optional  
+            The existing continuum, if one is already defined.
+        anchor : bool
+            Whether to prevent modification of the first and last
+            spline knots. Deafult is None, which means anchor only if
+            co is given.
 
         Notes
         -----
@@ -264,15 +271,28 @@ q        : quit
         self.wa = wa
         self.fl = fl
         self.er = er
+        self.anchor = anchor
         if co is not None:
             self.continuum = np.array(co, copy=True)
+            if self.anchor is None:
+                self.anchor = True
+        else:
+            spl = AkimaSpline(*list(zip(*contpoints)))
+            self.continuum = spl(wa)
+            if self.anchor is None:
+                self.anchor = False
+
         if os.path.lexists('./_knots.jsn'):
             c = raw_input('knots file exists, use this? (y) ')
             if c.lower() != 'n':
                 contpoints = loadjson('./_knots.jsn')
         contpoints = sorted(tuple(cp) for cp in contpoints)
-        wmin = contpoints[0][0]
-        wmax = contpoints[-1][0]
+        if self.anchor:
+            wmin = contpoints[0][0]
+            wmax = contpoints[-1][0]
+        else:
+            wmin = wa[0]
+            wmax = wa[-1]
 
         # add extra anchor points so the slopes match at each end of
         # the fitting region.
@@ -283,15 +303,16 @@ q        : quit
         i1, i2 = wa.searchsorted([wmin, wmax])
         if i1 == 0:
             i1 = 1
-        if i2 == len(wa) - 1 or i2 < 0:
-            i2 = len(wa)
+        if i2 == len(wa) or i2 < 0:
+            i2 = len(wa) - 1
         x,y = contpoints[0]
         contpoints[0] = wa[i1], y
         x,y = contpoints[-1]
         contpoints[-1] = wa[i2], y
         self.indices = i1, i2
-        self.anchor_start = wa[i1 - 1], co[i1 - 1]
-        self.anchor_end = wa[i2 + 1], co[i2 + 1]
+        if self.anchor:
+            self.anchor_start = wa[i1 - 1], co[i1 - 1]
+            self.anchor_end = wa[i2 + 1], co[i2 + 1]
         self.contpoints = contpoints
         self.wmin = wmin
         self.wmax = wmax
@@ -302,9 +323,9 @@ q        : quit
         else:
             self.fig = fig
         # disable any existing key press callbacks
-        cids = list(fig.canvas.callbacks.callbacks['key_press_event'])
+        cids = list(self.fig.canvas.callbacks.callbacks['key_press_event'])
         for cid in cids:
-            fig.canvas.callbacks.disconnect(cid)
+            self.fig.canvas.callbacks.disconnect(cid)
 
         self.connections = []
         self.finished = False
@@ -341,8 +362,8 @@ q        : quit
 
         i0,i1 = self.indices
         art = []
-        art.append(a0.axvline(wa[i0], color='r', ls='--', lw=2))
-        art.append(a0.axvline(wa[i1], color='r', ls='--', lw=2))
+        art.append(a0.axvline(wa[i0], color='r', ls='--', lw=2, zorder=10))
+        art.append(a0.axvline(wa[i1], color='r', ls='--', lw=2, zorder=10))
         self.artists['indices'] = art
 
         a0.plot(wa, self.continuum, color='k', lw=2, ls='dashed', zorder=3)
@@ -382,7 +403,10 @@ q        : quit
         """
         wa,fl,er = self.wa, self.fl, self.er
         co = self.continuum
-        cpts = [self.anchor_start] + self.contpoints + [self.anchor_end]
+        if self.anchor:
+            cpts = [self.anchor_start] + self.contpoints + [self.anchor_end]
+        else:
+            cpts = self.contpoints
         if len(cpts) >= 3:
             spline = AkimaSpline(*list(zip(*cpts)))
             i,j = self.indices
@@ -401,7 +425,11 @@ q        : quit
         X = 0.05 * X / Xmax
         self.artists['hist_left'].set_data(X, b)
 
-        x, y = zip(*self.contpoints[1:-1])
+        if self.anchor:
+            x, y = zip(*self.contpoints[1:-1])
+        else:
+            x, y = zip(*self.contpoints)
+
         self.artists['contpoints'].set_data((x, y))
         self.artists['cont'].set_data(wa[i:j], co[i:j])
         self.artists['resid'].set_data(wa[i:j], resid)
@@ -472,7 +500,7 @@ q        : quit
             sep = np.hypot(event.x - np.array(contx),
                            event.y - np.array(conty))
             ind = sep.argmin()
-            if ind in (0, len(sep) - 1):
+            if ind in (0, len(sep) - 1) and self.anchor:
                 return
             self.contpoints.remove(self.contpoints[ind])
             self.update()
@@ -485,8 +513,10 @@ q        : quit
             sep = np.hypot(event.x - np.array(contx),
                            event.y - np.array(conty))
             ind = np.argmin(sep)
-            if ind in (0, len(sep) - 1):
-                return
+            if self.anchor and ind == 0:
+                ind = 1
+            elif self.anchor and ind == len(sep) - 1:
+                ind = len(sep) - 2
             self.contpoints[ind] = event.xdata, event.ydata
             self.contpoints.sort()
             self.update()
