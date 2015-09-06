@@ -263,7 +263,7 @@ or QtAgg backends to enable all interactive plotting commands.
             # Need to save this as an attribute so it doesn't get
             # garbage-collected.
             self._plotter = PlotWrapNav(fig, ax, self.dispersion,
-                                        self.flux, artists)
+                                        self.flux, artists, printhelp=False)
 
     #  Rebin
     def rebin(self, new_wv):
@@ -575,17 +575,19 @@ or QtAgg backends to enable all interactive plotting commands.
 
         wa = self.dispersion.value
 
+        anchor = False
         if wlim is None:
             wmin, wmax = wa[0], wa[-1]
         else:
             wmin, wmax = wlim
             if wmax < wmin:
                 wmin, wmax = wmax, wmin
-
+            anchor = True
+                
         if kind is not None:
             _, knots = find_continuum(self, kind=kind, **kwargs)
             # only keep knots between wmin and wmax
-            knots = [[x,y] for (x,y) in knots if wmin < x < wmax]
+            knots = [[x,y] for (x,y) in knots if wmin <= x <= wmax]
         else:
             if edges is None:
                 nchunks = max(3, (wmax - wmin) / float(dw))
@@ -609,7 +611,7 @@ or QtAgg backends to enable all interactive plotting commands.
         fig = plt.figure(figsize=(11, 7))
         fig.subplots_adjust(left=0.05, right=0.95, bottom=0.1, top=0.95)
         wrapper = InteractiveCoFit(wa, self.flux.value, self.uncertainty.array,
-                                   contpoints, co=co, fig=fig)
+                                   contpoints, co=co, fig=fig, anchor=anchor)
 
         # wait until the interactive fitting has finished
         while not wrapper.finished:
