@@ -505,11 +505,12 @@ q        : quit
                 return
             self.contpoints.remove(self.contpoints[ind])
             self.update()
-        elif event.key == 'm':
+        elif event.key in ('m', 'M'):
+            # Move a point
             if not between(event.xdata, self.wmin, self.wmax):
                 print('Outside fitting region')
                 return
-            # Move a point
+            
             contx,conty = zip(*self.ax.transData.transform(self.contpoints))
             sep = np.hypot(event.x - np.array(contx),
                            event.y - np.array(conty))
@@ -518,26 +519,16 @@ q        : quit
                 ind = 1
             elif self.anchor and ind == len(sep) - 1:
                 ind = len(sep) - 2
-            self.contpoints[ind] = event.xdata, event.ydata
-            self.contpoints.sort()
-            self.update()
-        elif event.key == 'M':
-            if not between(event.xdata, self.wmin, self.wmax):
-                print('Outside fitting region')
-                return
-            # Move a point, estimating via median
-            contx,conty = zip(*self.ax.transData.transform(self.contpoints))
-            sep = np.hypot(event.x - np.array(contx),
-                           event.y - np.array(conty))
-            ind = np.argmin(sep)
-            if ind in (0, len(sep) - 1):
-                return
-            x = event.xdata
-            if not self.contpoints or x not in zip(*self.contpoints)[0]:
-                y = local_median(self.wa, self.fl, self.er, x, default=event.ydata)
+            x, y = event.xdata, event.ydata
+            # if M, get y value from a local_median
+            if event.key == 'M' and \
+                   (not self.contpoints or x not in zip(*self.contpoints)[0]):
+                y = local_median(self.wa, self.fl, self.er, x,
+                                 default=event.ydata)
             self.contpoints[ind] = x, y
             self.contpoints.sort()
             self.update()
+
         elif event.key == '?':
             print(self.help_message)
 
