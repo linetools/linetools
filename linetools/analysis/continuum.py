@@ -321,7 +321,8 @@ def find_continuum(spec, edges=None, ax=None, debug=False, kind='QSO',
             z = spec.meta['redshift']
         else:
             raise RuntimeError(
-                "I need the emission redshift for kind='qso'")
+                "I need the emission redshift for kind='qso'; please\
+                provide redshift using `redshift` keyword.")
 
         divmult = kwargs.get('divmult', 2)
         forest_divmult = kwargs.get('forest_divmult', 2)
@@ -331,7 +332,7 @@ def find_continuum(spec, edges=None, ax=None, debug=False, kind='QSO',
     else:
         s = "Kind keyword {:s} unknown. ".format(kind)
         s += "Currently only kind='QSO' is supported"
-        raise ValueError(s)
+        raise NotImplementedError(s)
 
 
     if ax is not None:

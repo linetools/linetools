@@ -230,6 +230,7 @@ A        : add a new spline knot, and use a flux median to guess y position
 _        : halve the number of spline knots
 d        : delete the nearest knot
 m        : move the nearest knot
+M        : move the nearest knot, and use a flux median to guess y position
 
 q        : quit
 """
@@ -488,6 +489,23 @@ q        : quit
             if ind in (0, len(sep) - 1):
                 return
             self.contpoints[ind] = event.xdata, event.ydata
+            self.contpoints.sort()
+            self.update()
+        elif event.key == 'M':
+            if not between(event.xdata, self.wmin, self.wmax):
+                print('Outside fitting region')
+                return
+            # Move a point, estimating via median
+            contx,conty = zip(*self.ax.transData.transform(self.contpoints))
+            sep = np.hypot(event.x - np.array(contx),
+                           event.y - np.array(conty))
+            ind = np.argmin(sep)
+            if ind in (0, len(sep) - 1):
+                return
+            x = event.xdata
+            if not self.contpoints or x not in zip(*self.contpoints)[0]:
+                y = local_median(self.wa, self.fl, self.er, x, default=event.ydata)
+            self.contpoints[ind] = x, y
             self.contpoints.sort()
             self.update()
         elif event.key == '?':
