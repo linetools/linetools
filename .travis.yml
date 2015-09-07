@@ -15,6 +15,10 @@ env:
         - ASTROPY_VERSION=stable
         - CONDA_INSTALL='conda install -c astropy-ci-extras --yes'
         - PIP_INSTALL='pip install'
+
+	# for matplotlib tests
+        - DISPLAY=:0
+
     matrix:
         - SETUP_CMD='egg_info'
 
