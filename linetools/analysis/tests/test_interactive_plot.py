@@ -1,6 +1,11 @@
-from __future__ import print_function, absolute_import, division, unicode_literals
+from __future__ import print_function, absolute_import, division, \
+     unicode_literals
 
 import linetools.analysis.interactive_plot as inter 
+
+import matplotlib
+matplotlib.use('agg')
+
 import matplotlib.pyplot as plt
 import numpy as np
 import os

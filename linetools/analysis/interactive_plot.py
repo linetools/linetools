@@ -187,7 +187,7 @@ class PlotWrapNav(PlotWrapBase):
           A dictionary which must contain a key 'fl', which is the
           matplotlib artist corresponding to the flux line.
         printhelp : bool, optional
-          Whether to print a help message which first called.
+          Whether to print a help message when first called.
         """
         self.artists = artists
         self.fig = fig
@@ -253,7 +253,7 @@ q        : quit
             The existing continuum, if one is already defined.
         anchor : bool
             Whether to prevent modification of the first and last
-            spline knots. Deafult is None, which means anchor only if
+            spline knots. Default is None, which means anchor only if
             co is given.
 
         Notes
@@ -273,21 +273,29 @@ q        : quit
         self.fl = fl
         self.er = er
         self.anchor = anchor
-        if co is not None:
-            self.continuum = np.array(co, copy=True)
-            if self.anchor is None:
-                self.anchor = True
-        else:
-            spl = AkimaSpline(*list(zip(*contpoints)))
-            self.continuum = spl(wa)
-            if self.anchor is None:
-                self.anchor = False
 
         if os.path.lexists('./_knots.jsn'):
             c = raw_input('knots file exists, use this? (y) ')
             if c.lower() != 'n':
                 contpoints = loadjson('./_knots.jsn')
         contpoints = sorted(tuple(cp) for cp in contpoints)
+
+        if co is not None:
+            self.continuum = np.array(co, copy=True)
+            if self.anchor is None:
+                self.anchor = True
+        else:
+            xpts, ypts = zip(*contpoints)
+            if len(contpoints) >= 5:
+                # need 5 points to define an Akima Spline
+                spline = AkimaSpline(xpts, ypts)
+                self.continuum = spline(wa)
+            else:
+                self.continuum = np.interp(wa, xpts, ypts)
+            co = self.continuum
+            if self.anchor is None:
+                self.anchor = False
+
         if self.anchor:
             wmin = contpoints[0][0]
             wmax = contpoints[-1][0]
@@ -298,9 +306,6 @@ q        : quit
         # add extra anchor points so the slopes match at each end of
         # the fitting region.
 
-        # We should add a flag to turn this off, if you're fitting the
-        # whole spectrum and don't need to worry about matching an
-        # existing continuum.
         i1, i2 = wa.searchsorted([wmin, wmax])
         if i1 == 0:
             i1 = 1
@@ -366,7 +371,6 @@ q        : quit
         art.append(a0.axvline(wa[i0], color='r', ls='--', lw=2, zorder=10))
         art.append(a0.axvline(wa[i1], color='r', ls='--', lw=2, zorder=10))
         self.artists['indices'] = art
-
         a0.plot(wa, self.continuum, color='k', lw=2, ls='dashed', zorder=3)
         self.artists['fl'], = a0.plot(wa, fl, lw=1, color='0.7',
                                       linestyle='steps-mid')
@@ -408,14 +412,18 @@ q        : quit
             cpts = [self.anchor_start] + self.contpoints + [self.anchor_end]
         else:
             cpts = self.contpoints
-        if len(cpts) >= 3:
-            spline = AkimaSpline(*list(zip(*cpts)))
-            i,j = self.indices
+        i,j = self.indices
+        xpts, ypts = zip(*cpts)
+        if len(cpts) >= 5:
+            # need 5 points to define an Akima Spline
+            spline = AkimaSpline(xpts, ypts)
             co[i:j] = spline(wa[i:j])
+        else:
+            co[i:j] = np.interp(wa[i:j], xpts, ypts)
 
         resid = (fl[i:j] - co[i:j]) / er[i:j]
         # histogram
-        bins = np.arange(0, 5+0.1, 0.2)
+        bins = np.arange(0, 5 + 0.1, 0.2)
         w0,w1 = self.fig.axes[1].get_xlim()
         i,j = self.indices
         x,_ = np.histogram(resid[between(wa[i:j], w0, w1)],
@@ -427,11 +435,11 @@ q        : quit
         self.artists['hist_left'].set_data(X, b)
 
         if self.anchor:
-            x, y = zip(*self.contpoints[1:-1])
+            xpts, ypts = zip(*self.contpoints[1:-1])
         else:
-            x, y = zip(*self.contpoints)
+            xpts, ypts = zip(*self.contpoints)
 
-        self.artists['contpoints'].set_data((x, y))
+        self.artists['contpoints'].set_data((xpts, ypts))
         self.artists['cont'].set_data(wa[i:j], co[i:j])
         self.artists['resid'].set_data(wa[i:j], resid)
         self.continuum = co
@@ -456,44 +464,49 @@ q        : quit
             xnew = []
             xnew.extend(np.array(xc[:-1]) + 0.5*np.diff(xc))
             ynew = np.interp(xnew, xc, yc)
-            ynew = [local_median(self.wa, self.fl, self.er, xnew[i], default=ynew[i])
+            ynew = [local_median(self.wa, self.fl, self.er, xnew[i],
+                                 default=ynew[i])
                     for i in range(len(xnew))]
             # add to contpoints
             self.contpoints.extend(zip(xnew, ynew))
             self.contpoints.sort()
             self.update()
         if event.key == '_':
-            # remove (roughly) halve the number of knots
+            # remove (roughly) half the number of knots
             cp = self.contpoints
+            if len(cp) < 2:
+                print("Too few spline knots.")
+                return
             self.contpoints = [cp[0]] + cp[1:-1][1::2] + [cp[-1]]
             self.update()
         if event.inaxes != self.fig.axes[0]:
             return
 
         if event.key in ('a', '3'):
-            if not between(event.xdata, self.wmin, self.wmax):
+            if not (self.wmin < event.xdata < self.wmax):
                 print('Outside fitting region')
                 return
             # add a point to contpoints
-            x,y = event.xdata,event.ydata
+            x, y = event.xdata, event.ydata
             if not self.contpoints or x not in zip(*self.contpoints)[0]:
                 self.contpoints.append((x, y))
                 self.contpoints.sort()
                 self.update()
         if event.key == 'A':
             # add a point to contpoints, estimating via median
-            if not between(event.xdata, self.wmin, self.wmax):
+            if not (self.wmin < event.xdata < self.wmax):
                 print('Outside fitting region')
                 return
             x = event.xdata
             if not self.contpoints or x not in zip(*self.contpoints)[0]:
-                y = local_median(self.wa, self.fl, self.er, x, default=event.ydata)
+                y = local_median(self.wa, self.fl, self.er, x,
+                                 default=event.ydata)
                 self.contpoints.append((x, y))
                 self.contpoints.sort()
                 self.update()
         elif event.key in ('d', '4'):
             # remove a point from contpoints
-            if len(self.contpoints) < 3:
+            if len(self.contpoints) < 2:
                 print('Need at least 1 spline knot')
                 return
 
@@ -502,6 +515,7 @@ q        : quit
                            event.y - np.array(conty))
             ind = sep.argmin()
             if ind in (0, len(sep) - 1) and self.anchor:
+                print('Cannot remove anchor knots')
                 return
             self.contpoints.remove(self.contpoints[ind])
             self.update()
@@ -516,9 +530,18 @@ q        : quit
                            event.y - np.array(conty))
             ind = np.argmin(sep)
             if self.anchor and ind == 0:
-                ind = 1
+                if len(self.contpoints) > 2:
+                    ind = 1
+                else:
+                    print('Cannot move anchor knots')
+                    return
             elif self.anchor and ind == len(sep) - 1:
-                ind = len(sep) - 2
+                if len(self.contpoints) > 2:
+                    ind = len(sep) - 2
+                else:
+                    print('Cannot move anchor knots')
+                    return
+
             x, y = event.xdata, event.ydata
             # if M, get y value from a local_median
             if event.key == 'M' and \
