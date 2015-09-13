@@ -13,7 +13,7 @@ from astropy import units as u
 from astropy import constants as const
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
-from astropy.table import Table
+from astropy.table import Table, QTable
 
 import linetools.utils as liu
 import linetools.spectra.io as lsio
@@ -452,14 +452,33 @@ or QtAgg backends to enable all interactive plotting commands.
         return spec3
 
     # Write to fits
-    def write_to_fits(self, outfil, clobber=True, add_wave=False):
+    def write_to_ascii(self, outfil, format='ascii.ecsv'):
+        ''' Write spectrum to an ASCII file
 
+        Parameters
+        ----------
+        outfil: str
+          Name of the FITS file
+
+        Returns:
+        --------
+        Outputs an ASCII file
+        '''
+        # Convert to astropy Table 
+        table = QTable([self.dispersion, self.flux, self.sig], 
+            names=('WAVE','FLUX','ERROR'))
+
+        # Write
+        table.write(outfil,format=format)
+
+    # Write to fits
+    def write_to_fits(self, outfil, clobber=True, add_wave=False):
         ''' Write to a FITS file
         Should generate a separate code to make a Binary FITS table format
 
         Parameters
         ----------
-        outfil: String
+        outfil: str
           Name of the FITS file
         clobber: bool (True)
           Clobber existing file?

@@ -23,7 +23,7 @@ from astropy.io.fits.hdu.table import BinTableHDU
 #  Generate Spectrum1D from FITS file
 #
 def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
-    sig_tags=None, multi_ivar=False):
+    sig_tags=None, multi_ivar=False, format='ascii'):
     ''' Read a FITS file (or astropy Table or ASCII file) into a Spectrum1D class
 
     Parameters:
@@ -45,6 +45,8 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
       Default: sig_tags = ['ERROR','ERR','SIGMA_FLUX','FLAM_SIG', 'SIGMA_UP', 'ERRSTIS', 'FLUXERR', 'er']
     multi_ivar: bool, optional
       If True, assume BOSS format of  flux, ivar, log10(wave) in multi-extension FITS
+    format: str, optional
+      Format for ASCII table input ['ascii']
 
     Returns:
     -----------
@@ -75,14 +77,12 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
                 raise IOError('File does not exist {}'.format(specfil))
             hdulist = fits.open(os.path.expanduser(datfil))
         else: #ASCII
-            try:
-                tbl = Table.read(specfil)
-            except Exception:
-                tbl = ascii.read(specfil)
+            tbl = Table.read(specfil,format=format)
+            # No header?
+            if tbl.colnames[0] == 'col1':
                 names = 'WAVE', 'FLUX', 'ERROR', 'CONTINUUM'
                 for i,name in enumerate(tbl.colnames):
                     tbl[name].name = names[i]
-
             hdulist = [fits.PrimaryHDU(), tbl]
     else:
         raise IOError('readspec: Bad spectra input')
