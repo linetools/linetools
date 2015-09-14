@@ -13,7 +13,9 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
+import pdb
 from abc import ABCMeta, abstractmethod
+import copy
 
 from astropy import constants as const
 from astropy import units as u
@@ -30,6 +32,7 @@ from linetools.lists.linelist import LineList
 
 # class SpectralLine(object):
 # class AbsLine(SpectralLine):
+# class AbsComponens(AbsLine):
 
 # Class for Spectral line
 class SpectralLine(object):
@@ -162,6 +165,7 @@ class SpectralLine(object):
                 self.attrib['z'], self.wrest, self.analy['vlim'])[0]
         else:
             raise ValueError('spectralline.cut_spec: Need to set wvlim or vlim!')
+        self.analy['pix'] = pix
 
         # Cut for analysis
         fx = self.analy['spec'].flux[pix]
@@ -187,7 +191,7 @@ class SpectralLine(object):
 
 
     # EW 
-    def measure_ew(self, flg=1):
+    def measure_ew(self, flg=1, initial_guesses=None):
         """  EW calculation
         Default is simple boxcar integration
         Observer frame, not rest-frame (use measure_restew below)
@@ -198,6 +202,11 @@ class SpectralLine(object):
         ----------
         flg: int, optional
           1: Boxcar integration
+          2: Gaussian fit
+        
+        initial_guesses, optional: tuple of floats
+          if a model is chosen (e.g. flg=2, Gaussian) a tuple of (amplitude, mean, stddev)
+          can be specified. 
 
         Fills:
         -------
@@ -211,7 +220,9 @@ class SpectralLine(object):
 
         # Calculate
         if flg == 1: # Boxcar
-            EW,sigEW = lau.box_ew( (wv, fx, sig) )
+            EW, sigEW = lau.box_ew( (wv, fx, sig) )
+        elif flg == 2: #Gaussian
+            EW, sigEW = lau.gaussian_ew( (wv, fx, sig), self.ltype, initial_guesses=initial_guesses)
         else:
             raise ValueError('measure_ew: Not ready for this flag {:d}'.format(flg))
 
@@ -305,7 +316,7 @@ class AbsLine(SpectralLine):
 
         # Additional attributes for Absorption Line
         self.attrib.update({'N': 0., 'Nsig': 0., 'flagN': 0, # Column
-                       'b': 0., 'bsig': 0.  # Doppler
+                       'b': 0.*u.km/u.s, 'bsig': 0.*u.km/u.s  # Doppler
                        } )
     # AODM
     def measure_aodm(self, nsig=3.):

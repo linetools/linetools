@@ -1,0 +1,324 @@
+"""
+Module for dealing with LSFs of various astronomical instruments.
+"""
+from __future__ import print_function
+
+import numpy as np
+from scipy.interpolate import interp1d, Akima1DInterpolator
+from astropy.io import fits, ascii
+from astropy.units import Quantity
+import astropy.units as u
+from astropy.table import Table, QTable, Column
+import glob, imp
+from linetools.analysis.interp import interp_Akima
+
+lt_path = imp.find_module('linetools')[1]
+
+class LSF(object):
+
+    """Class to deal with line-spread-functions (LSFs) from
+    various different astronomical spectrographs.
+
+    Note: only implemented for HST/COS at the moment.
+
+    Parameters
+    ----------
+    instr_config : dict
+        A dictionary with the instrument configuration details relevant
+        to the required LSF. Mandatory keywords of the dict are: ['name'], 
+        all of which must be either string or None. 
+        Note: There must be extra relevant keywords specific to each instrument.
+
+    """
+
+    def __init__(self, instr_config):
+        #mandatory keys for characterizing a spectrograph mode
+        self.mandatory_dict_keys = ['name']
+                
+        #Check correct format
+        if not isinstance(instr_config,dict):
+            raise TypeError('`instr_config` must be a dictionary.')
+        elif not all([key in instr_config.keys() for key in self.mandatory_dict_keys]):
+            raise SyntaxError('`instr_config` must have the following mandatory keys {}:'.format(self.mandatory_dict_keys))
+
+        #Initialize basics
+        self.instr_config = instr_config
+        self.name = instr_config['name']
+        if self.name not in ['COS']:
+            raise NotImplementedError('Not ready for this instrument: {}'.format(self.name))
+        
+        # initialize specific to given intrument name
+        # only implemented for HST/COS so far
+        if self.name == 'COS':
+            self.pixel_scale , self._data = self.load_COS_data()
+
+        # IMPORTANT: make sure that LSFs are given in linear wavelength scales 
+                
+        #reformat self._data
+        self.check_and_reformat_data()
+        
+        #other relevant values to initialize?
+
+
+    def get_lsf(self, wv_array, kind = 'Akima'):
+        """ Given a wavelenth array `wv_array`, it returns 
+        the LSF kernel at the central wavelength of the array, 
+        using the same pixel scale and extent of `wv_array`. 
+
+        Parameters
+        ----------
+        wv_array : Quantity numpy.ndarray, shape(N,)
+            Wavelength array for which the LSF kernel is defined. The 
+            central wavelength value of `wv_array` define the wavelength
+            at which the LSF is defined, while the limits of `wv_array` 
+            define the extent of the kernel.
+        kind : str, optional
+            Specifies the kind of interpolation as a string either 
+            ('cubic', 'Akima')
+
+        Output
+        ------
+        lsf_array : numpy.ndarray, shape(N,)
+            The lsf kernel.
+
+
+        Method: First, tabulated LSF are linearly interpolated
+        to the center of `wv_array` (see LSF.interpolate_to_wv0() for
+        details); then, the LSF is interpolated to match the `wv_array`
+        scale and extent using Akima interpolation (see 
+        LSF.interpolate_to_wv_array() for details).
+        """
+        lsf_array = self.interpolate_to_wv_array(wv_array,kind=kind)
+        return lsf_array['kernel'].data
+
+    def check_and_reformat_data(self):
+        """Any reformating of self._data should happen here. 
+        At the moment this function does the following:
+
+        - Make sure that relative pixels of the LSF are given as odd integers
+        - Impose the middle value to define the 0 relative pixel
+        - Normalize tabulated LSFs
+        """
+        
+        rel_pix_array = self._data['rel_pix']
+        assert len(rel_pix_array) % 2 != 0, SyntaxError('LSF tables should be given as odd integers!')
+        
+        # redefine rel_pix_array making sure the maximum is 
+        # always the center value. Here we assume rel_pix are 
+        # given in linear scale, which should be checked in load_XX_data()
+
+        n = len(rel_pix_array) / 2 #this should be always integer
+        rel_pixel_array = np.arange(-n,n+1,1)
+        self._data['rel_pix'] = rel_pixel_array
+
+        #normalize given LSFs
+        for col_name in self._data.keys()[1:]:
+            self._data[col_name] /= np.max(self._data[col_name]) 
+
+    def load_COS_data(self):
+        """Load the right data according to `instr_config` for HST/COS 
+        instrument"""
+
+        #define pixel scales; values obtained from STScI
+        #these values must be consistent with the given LSFs
+        pixel_scale_dict = {'G130M': 9.97 / 1000. * u.AA,
+                    'G160M': 12.23 / 1000. * u.AA,
+                    'G140L': 80.3 / 1000. * u.AA,
+                    'G230L': 390. / 1000. * u.AA,
+                    'G185M': 37. / 1000. * u.AA,
+                    'G225M': 33. / 1000. * u.AA,
+                    'G285M': 40. / 1000. * u.AA}
+        #define channel based on grating name
+        channel_dict = {'G130M':  'FUV',
+                    'G160M': 'FUV',
+                    'G140L': 'FUV',
+                    'G230L': 'NUV',
+                    'G185M': 'NUV',
+                    'G225M': 'NUV',
+                    'G285M': 'NUV'}
+
+        try:
+            grating = self.instr_config['grating']
+        except:
+            raise SyntaxError('`grating` keyword missing in `instr_config` dictionary.')
+        
+        if grating not in channel_dict.keys():
+            raise NotImplementedError('Not ready for this HST/COS grating: {}'.format(grating))
+
+        if channel_dict[grating] == 'NUV': #there is only 1 LSF file for NUV data
+            file_name = 'nuv_all_lp1.txt'
+        #COS
+        elif channel_dict[grating] == 'FUV':
+            # Use the ones corrected by scattering when possible
+            # (currently, these are only available for lifetime-position 1)
+            # check: http://www.stsci.edu/hst/cos/performance/spectral_resolution
+            try:
+                life_position = self.instr_config['life_position']
+            except:
+                raise SyntaxError('`life_position` keyword missing in `instr_config` dictionary.')
+
+            if life_position not in ['1','2']:
+                raise ValueError('HST/COS `life_position` should be either `1` or `2` (strings)') 
+
+            if life_position == '1':
+                if grating == 'G140L': #use theoretical values 
+                    file_name = 'fuv_G140L_lp1.txt'
+                    
+                elif grating == 'G130M': #use empirical values corrected by scattering
+                    file_name = 'fuv_G130M_lp1_empir.txt'
+
+                elif grating == 'G160M': #use empirical values corrected by scattering
+                    file_name = 'fuv_G160M_lp1_empir.txt'
+            
+            elif life_position == '2':
+                try:
+                    cen_wave = self.instr_config['cen_wave']
+                except:
+                    raise SyntaxError('`cen_wave` keyword missing in `instr_config` dictionary. This should provide the central wavelength of the grating in Angstroms as a string.')
+                #adjust format in cases where cen_wave is of the form: str(1230A)
+                if cen_wave.endswith('A'): #adjust format
+                    cen_wave = cen_wave[:-1]
+                
+                #filenames in this case have a well defined naming convention
+                file_name = 'fuv_{}_{}_lp2.txt'.format(grating,cen_wave)
+        
+        else: #this should never happen
+            raise NotImplementedError('Not ready for the given HST/COS channel; only `NUV` and `FUV` channels allowed.')
+        
+        #point to the right file
+        file_name = lt_path + '/data/lsf/{}/{}'.format(self.name,file_name)
+        
+        #get column names
+        f = open(file_name,'r')
+        line = f.readline() #first line of file
+        f.close()
+        #get rid of '\n'
+        line = line.split('\n')[0]
+        #by construction first column should be separated by `,`
+        col_names = line.split(',')
+        col_names[0] = 'rel_pix'
+        
+        pixel_scale = pixel_scale_dict[grating] #read from dictionary defined above
+        #read data
+        data = ascii.read(file_name,data_start=1,names=col_names)
+        
+        return pixel_scale , data
+
+    def interpolate_to_wv0(self,wv0):
+        """This function retrieves a unique LSF valid at wavelength 
+        wv0, by linearly interpolating from tabulated values at different wavelengths
+        (this tabulated values (stored in self._data) are usually given as 
+        calibration products by intrument developers and should be loaded by 
+        self.load_XX_data() in the initialization stage of LSF(), where XX 
+        is the name of the instrument)
+
+        Parameters
+        ----------
+        wv0 : Quantity 
+            Wavelenght at which an LSF solution is required
+
+        Output
+        ------
+        lsf_table : Table
+            The interpolated lsf at wv0. This table has two 
+            columns: 'wv' and 'kernel' 
+        """
+        #get wa0 to Angstroms
+        wv0 = wv0.to('AA')
+
+        #transform to wavelength in float() form assuming Angstroms
+        col_names = self._data.keys()
+        col_waves = [float(name.split('A')[0]) for name in col_names[1:]]
+                    
+        lsf_vals = []
+        for row in self._data:
+            aux_val = []
+            for i in range(1,len(row)):
+                aux_val += [row[i]]
+            f = interp1d(col_waves,aux_val,bounds_error=True,kind='linear') #we do not want to extrapolate
+            lsf_vals += [f(wv0.value)]
+        lsf_vals = np.array(lsf_vals)
+        #normalize
+        lsf_vals /= np.max(lsf_vals)
+
+        #create Column to store the interpolated LSF
+        #lsf_vals = Column(name='{:.0f}A'.format(wv0.value),data=lsf_vals)
+        lsf_vals = Column(name='kernel',data=lsf_vals)
+        
+        #create column of relative pixel in absolute wavelength
+        wv_array = [(self.pixel_scale * self._data['rel_pix'][i] + wv0).value for i in range(len(self._data))]
+        wv = Column(name='wv',data=wv_array, unit=u.AA)
+
+        #create lsf Table
+        lsf = Table()
+        lsf.add_column(wv)
+        lsf.add_column(lsf_vals)
+
+        #return lsf Table()
+        return lsf
+
+    def interpolate_to_wv_array(self,wv_array, kind='Akima'):
+        """
+        Given `wv_array` this function interpolates an LSF
+        to match both scale and extent of `wv_array` using the 
+        Akima or cubic-spline interpolators (default is Akima). 
+        Some checks are performed too.
+
+        Parameters
+        ----------
+        wv_array : Quantity numpy.ndarray, shape(N,)
+            Wavelength array for which the LSF kernel is defined. The 
+            central wavelength value of `wv_array` define the wavelength
+            at which the LSF is defined, while the limits of `wv_array` 
+            define the extent of the kernel.
+        kind : str, optional
+            Specifies the kind of interpolation as a string either 
+            ('cubic', 'Akima'); default is `Akima`.
+
+        Output
+        ------
+        lsf_table : Table
+            The interpolated lsf using at the central wavelength of 
+            `wv_array`, using the same pixel scale as `wv_array`. 
+            This table has two columns: 'wv' and 'kernel'. (lst_table['wv'] 
+            is equal to `wv_array` by construction.)
+
+        """
+        # Check correct format
+        if not ((isinstance(wv_array, np.ndarray)) or (isinstance(wv_array, Quantity))):
+            raise SyntaxError('`wv_array` must be Quantity numpy.ndarray')
+        elif len(wv_array.shape) != 1:
+            raise SyntaxError('`wv_array` must be of shape(N,), i.e. 1-dimensional array')
+        if kind not in ['cubic','Akima','akima']:
+            raise ValueError('Only `cubic` or `Akima` interpolation available.')
+
+        #define useful quantities
+        wv_min = np.min(wv_array)
+        wv_max = np.max(wv_array)
+        wv0 = 0.5 * (wv_max + wv_min)
+        
+        lsf_tab = self.interpolate_to_wv0(wv0)
+
+        #convert to Angstroms
+        wv_array_AA = np.array([wv.to('AA').value for wv in wv_array])
+        
+        #interpolate to wv_array
+        if kind == 'cubic':
+            f = interp1d(lsf_tab['wv'],lsf_tab['kernel'],kind='cubic',bounds_error=False,fill_value=0)
+            lsf_vals =  f(wv_array_AA)
+        elif kind in ('Akima','akima'):
+            # f = Akima1DInterpolator(lsf_tab['wv'],lsf_tab['kernel']) 
+            # NT: I tried Akima interpolator from scipy.inter and is not robust in extreme situations
+            # where the wv_array is large compared to the kernel FWHM.
+            #Let's try linetools.analysis.interp Akima version 
+            lsf_vals = interp_Akima(wv_array_AA,lsf_tab['wv'],lsf_tab['kernel'])
+
+        #normalize
+        lsf_vals /= np.max(lsf_vals)
+
+        #re-define Table
+        lsf_tab = Table()
+        lsf_tab.add_column(Column(name='wv',data=wv_array))
+        lsf_tab.add_column(Column(name='kernel',data=lsf_vals))
+
+        return lsf_tab

@@ -6,6 +6,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import os
+import json
 
 import astropy as apy
 from astropy import units as u
@@ -14,8 +15,15 @@ from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy.table import Table
 
-from linetools import utils as liu
-from linetools.spectra import io as lsio
+import linetools.utils as liu
+import linetools.spectra.io as lsio
+
+from .plotting import get_flux_plotrange
+
+from ..analysis.interactive_plot import InteractiveCoFit
+from ..analysis.continuum import prepare_knots
+from ..analysis.continuum import find_continuum
+
 
 try:
     from specutils import Spectrum1D
@@ -44,7 +52,8 @@ class XSpectrum1D(Spectrum1D):
         '''
         # Giddy up
         return cls(flux=spec1d.flux, wcs=spec1d.wcs, unit=spec1d.unit,
-                   uncertainty=spec1d.uncertainty, mask=spec1d.mask, meta=spec1d.meta)
+                   uncertainty=spec1d.uncertainty, mask=spec1d.mask,
+                   meta=spec1d.meta.copy())
 
     @classmethod
     def from_tuple(cls,ituple):
@@ -64,9 +73,9 @@ class XSpectrum1D(Spectrum1D):
         #pdb.set_trace()
         # Generate
         if len(ituple) == 2: # wave, flux
-            spec = cls.from_array(uwave, u.Quantity(ituple[1])) 
+            spec = cls.from_array(uwave, u.Quantity(ituple[1]))
         else:
-            spec = cls.from_array(uwave, u.Quantity(ituple[1]), 
+            spec = cls.from_array(uwave, u.Quantity(ituple[1]),
                 uncertainty=StdDevUncertainty(ituple[2]))
         spec.filename = 'none'
         # Return
@@ -81,7 +90,6 @@ class XSpectrum1D(Spectrum1D):
         else:
             return None
 
-
     #  Add noise
     def add_noise(self,seed=None,s2n=None):
         '''Add noise to the existing spectrum
@@ -90,7 +98,7 @@ class XSpectrum1D(Spectrum1D):
 
         Parameters:
         -----------
-        seed: int, optional  
+        seed: int, optional
           Seed for the random number generator [not yet functional]
         s2n: float, optional
           S/N per pixel for the output spectrum
@@ -102,33 +110,40 @@ class XSpectrum1D(Spectrum1D):
         # Random numbers
         rand = np.random.normal(size=npix)
 
-        # Modifty the flux
+        # Modify the flux
         if s2n is not None:
             sig =  1./s2n
         else:
             sig = self.sig
         #
-        self.flux = self.flux.value + (rand * sig)*self.flux.unit
+        self.flux = self.flux + (rand * sig)*self.flux.unit
 
     #  Normalize
-    def normalize(self, conti, verbose=False, no_check=False):
+    def normalize(self, conti=None, verbose=False, no_check=False):
         """
         Normalize the spectrum with an input continuum
 
         Parameters
         ----------
         conti: numpy array
-          Continuum
+          Continuum. Use XSpectrum1D.co if None is given
         verbose: bool, optional (False)
         no_check: bool, optional (False)
           Check size of array?
         """
         # Sanity check
-        if (len(conti) != len(self.flux)): 
+        if conti is None:
+            if hasattr(self, 'co') and self.co is not None:
+                conti = self.co
+            else:
+                raise ValueError('Must specify a continuum with conti keyword.')
+        if (len(conti) != len(self.flux)):
             if no_check:
                 print('WARNING: Continuum length differs from flux')
                 if len(conti) > len(self.flux):
-                    self.flux = self.flux / conti[0:len(self.flux)]
+                    self.flux /= conti[0:len(self.flux)]
+                    if self.uncertainty is not None:
+                        self.uncertainty.array /= conti[0:len(self.flux)]
                     return
                 else:
                     raise ValueError('normalize: Continuum needs to be longer!')
@@ -136,7 +151,9 @@ class XSpectrum1D(Spectrum1D):
                 raise ValueError('normalize: Continuum needs to be same length as flux array')
 
         # Adjust the flux
-        self.flux = self.flux / conti
+        self.flux /= conti
+        if self.uncertainty is not None:
+            self.uncertainty.array /= conti
         if verbose:
             print('spec.utils: Normalizing the spectrum')
 
@@ -190,7 +207,7 @@ class XSpectrum1D(Spectrum1D):
         Normalize too
         '''
         fx = spec.flux[spec.sub_pix]
-        sig = spec.sig[spec.sub_pix] 
+        sig = spec.sig[spec.sub_pix]
 
         # Normalize?
         try:
@@ -209,26 +226,53 @@ class XSpectrum1D(Spectrum1D):
     # Quick plot
     def plot(self, **kwargs):
         ''' Plot the spectrum
-
-        Parameters
-        ----------
         '''
         import matplotlib.pyplot as plt
+        from ..analysis.interactive_plot import PlotWrapNav
+
+        ax = plt.gca()
+        fig = plt.gcf()
+
+        artists = {}
+        ax.axhline(0, color='k', lw=0.5)
+
+        kwargs.update(color='0.6')
+        artists['fl'] = ax.plot(self.dispersion, self.flux,
+                                drawstyle='steps-mid', **kwargs)[0]
 
         if self.sig is not None:
-            plt.plot(self.dispersion, self.flux,drawstyle='steps', **kwargs)
-            plt.plot(self.dispersion, self.sig, **kwargs)
+            kwargs.update(color='g')
+            ax.plot(self.dispersion, self.sig, **kwargs)
+        if hasattr(self,'co'):
+            if self.co is not None:
+                kwargs.update(color='r')
+                ax.plot(self.dispersion, self.co, **kwargs)
+
+        ax.set_ylim(*get_flux_plotrange(self.flux))
+        ax.set_xlim(self.dispersion.value[0], self.dispersion.value[-1])
+
+
+        if plt.get_backend() == 'MacOSX':
+            import warnings
+            warnings.warn("""\
+Looks like you're using the MacOSX matplotlib backend. Switch to the TkAgg
+or QtAgg backends to enable all interactive plotting commands.
+""")
         else:
-            plt.plot(self.dispersion, self.flux,drawstyle='steps', **kwargs)
-        plt.show()
+            # Enable xspecplot-style navigation (i/o for zooming, etc).
+            # Need to save this as an attribute so it doesn't get
+            # garbage-collected.
+            self._plotter = PlotWrapNav(fig, ax, self.dispersion,
+                                        self.flux, artists, printhelp=False)
 
     #  Rebin
     def rebin(self, new_wv):
         """ Rebin the existing spectrum rebinned to a new wavelength array
-        Uses simple linear interpolation.  The default (and only) option 
+        Uses simple linear interpolation.  The default (and only) option
         conserves counts (and flambda).
-        
+
         WARNING: Do not trust either edge pixel of the new array
+        WARNING: Does not act on the Error array!  Nor does it generate one
 
         Parameters
         ----------
@@ -237,7 +281,7 @@ class XSpectrum1D(Spectrum1D):
 
         Returns:
         ----------
-          XSpectrum1D of the rebinned spectrum
+          XSpectrum1D of the rebinned spectrum (without error array)
         """
         from scipy.interpolate import interp1d
 
@@ -280,12 +324,12 @@ class XSpectrum1D(Spectrum1D):
         new_fx = new_fx / new_dwv[1:]
 
         # Return new spectrum
-        return XSpectrum1D.from_array(new_wv, new_fx)
+        return XSpectrum1D.from_array(new_wv, new_fx, meta=self.meta.copy())
 
     # Velo array
     def relative_vel(self, wv_obs):
         ''' Return a velocity array relative to an input wavelength
-        Should consider adding a velocity array to this Class, 
+        Should consider adding a velocity array to this Class,
         i.e. self.velo
 
         Parameters
@@ -309,7 +353,7 @@ class XSpectrum1D(Spectrum1D):
         ----------
         nbox: integer
           Number of pixels to smooth over
-        preserve: bool (False) 
+        preserve: bool (False)
           Keep the new spectrum at the same number of pixels as original
 
         Returns:
@@ -336,8 +380,9 @@ class XSpectrum1D(Spectrum1D):
             new_sig = liu.scipy_rebin( self.sig[orig_pix], new_npix ) / np.sqrt(nbox)
 
         # Return
-        return XSpectrum1D.from_array(new_wv, new_fx,
-                                      uncertainty=apy.nddata.StdDevUncertainty(new_sig))
+        return XSpectrum1D.from_array(
+            new_wv, new_fx, meta=self.meta.copy(),
+            uncertainty=apy.nddata.StdDevUncertainty(new_sig))
 
     # Splice two spectra together
     def gauss_smooth(self, fwhm, **kwargs):
@@ -361,11 +406,12 @@ class XSpectrum1D(Spectrum1D):
         new_fx = lsc.convolve_psf(self.flux.value, fwhm, **kwargs)*self.flux.unit
 
         # Return
-        return XSpectrum1D.from_array(self.dispersion, new_fx,
-                                      uncertainty=self.uncertainty)
+        return XSpectrum1D.from_array(
+            self.dispersion, new_fx, meta=self.meta.copy(),
+            uncertainty=self.uncertainty)
 
     # Splice two spectra together
-    def splice(self, spec2, wvmx=None):
+    def splice(self, spec2, wvmx=None, scale=1.):
         ''' Combine two spectra
         It is assumed that the internal spectrum is *bluer* than
         the input spectrum.
@@ -374,8 +420,11 @@ class XSpectrum1D(Spectrum1D):
         ----------
         spec2: Spectrum1D
           Second spectrum
-        wvmx: Quantity
+        wvmx: Quantity, optional
           Wavelength to begin splicing *after*
+        scale: float, optional
+          Scale factor for flux and error array.
+          Mainly for convenience of plotting
 
         Returns:
         ----------
@@ -385,24 +434,26 @@ class XSpectrum1D(Spectrum1D):
         # Begin splicing after the end of the internal spectrum
         if wvmx is None:
             wvmx = np.max(self.dispersion)
-        # 
+        #
         gdp = np.where(spec2.dispersion > wvmx)[0]
         # Concatenate
-        new_wv = np.concatenate( (self.dispersion.value, 
+        new_wv = np.concatenate( (self.dispersion.value,
             spec2.dispersion.value[gdp]) )
         uwave = u.Quantity(new_wv, unit=self.wcs.unit)
-        new_fx = np.concatenate( (self.flux.value, 
-            spec2.flux.value[gdp]) )
+        new_fx = np.concatenate( (self.flux.value,
+            spec2.flux.value[gdp]*scale) )
         if self.sig is not None:
-            new_sig = np.concatenate( (self.sig, spec2.sig[gdp]) )
+            new_sig = np.concatenate( (self.sig, spec2.sig[gdp]*scale) )
         # Generate
-        spec3 = XSpectrum1D.from_array(uwave, u.Quantity(new_fx),
-                                         uncertainty=StdDevUncertainty(new_sig))
+        spec3 = XSpectrum1D.from_array(
+            uwave, u.Quantity(new_fx), meta=self.meta.copy(),
+            uncertainty=StdDevUncertainty(new_sig))
         # Return
         return spec3
 
     # Write to fits
     def write_to_fits(self, outfil, clobber=True, add_wave=False):
+
         ''' Write to a FITS file
         Should generate a separate code to make a Binary FITS table format
 
@@ -422,7 +473,8 @@ class XSpectrum1D(Spectrum1D):
         from specutils.io import write_fits as sui_wf
         prihdu = sui_wf._make_hdu(self.data)  # Not for binary table format
         prihdu.name = 'FLUX'
-        multi = 0 #  Multi-extension?
+
+        hdu = fits.HDUList([prihdu])
 
         # Type
         if type(self.wcs) is Spectrum1DPolynomialWCS:  # CRVAL1, etc. WCS
@@ -433,27 +485,30 @@ class XSpectrum1D(Spectrum1D):
             if self.sig is not None:
                 sighdu = fits.ImageHDU(self.sig)
                 sighdu.name='ERROR'
-                # 
-                if add_wave:
-                    wvhdu = fits.ImageHDU(self.dispersion.value)
-                    wvhdu.name = 'WAVELENGTH'
-                    hdu = fits.HDUList([prihdu, sighdu, wvhdu])
-                else:
-                    hdu = fits.HDUList([prihdu, sighdu])
-                multi=1
-            else:
-                hdu = prihdu
+                hdu.append(sighdu)
+                #
+            if add_wave:
+                wvhdu = fits.ImageHDU(self.dispersion.value)
+                wvhdu.name = 'WAVELENGTH'
+                hdu.append(wvhdu)
 
-        elif type(self.wcs) is Spectrum1DLookupWCS: # Wavelengths as an array (without units for now)
+        elif type(self.wcs) is Spectrum1DLookupWCS:
+            # Wavelengths as an array (without units for now)
             # Add sig, wavelength to HDU
-            sighdu = fits.ImageHDU(self.sig)
-            sighdu.name='ERROR'
+            if self.sig is not None:
+                sighdu = fits.ImageHDU(self.sig)
+                sighdu.name = 'ERROR'
+                hdu.append(sighdu)
             wvhdu = fits.ImageHDU(self.dispersion.value)
             wvhdu.name = 'WAVELENGTH'
-            hdu = fits.HDUList([prihdu, sighdu, wvhdu])
-            multi=1
+            hdu.append(wvhdu)
         else:
             raise ValueError('write_to_fits: Not ready for this type of spectrum wavelengths')
+
+        if hasattr(self, 'co') and self.co is not None:
+            cohdu = fits.ImageHDU(self.co)
+            cohdu.name = 'CONTINUUM'
+            hdu.append(cohdu)
 
         # Deal with header
         if hasattr(self,'head'):
@@ -479,7 +534,93 @@ class XSpectrum1D(Spectrum1D):
                     import pdb
                     pdb.set_trace()
 
-        # Write
+        if self.meta is not None and len(self.meta) > 0:
+            d = liu.jsonify_dict(self.meta)
+            prihdu.header['METADATA'] = json.dumps(d)
+
         hdu.writeto(outfil, clobber=clobber)
         print('Wrote spectrum to {:s}'.format(outfil))
 
+
+    def fit_continuum(self, knots=None, edges=None, wlim=None, dw=10.,
+                      kind=None, **kwargs):
+        """ Interactively fit a continuum.
+
+        Parameters
+        ----------
+        spec : Spectrum1D
+        wlim : (float, float), optional
+          Start and end wavelengths for fitting the continuum. Default is
+          None, which fits the entire spectrum.
+        knots: list of (x, y) pairs, optional
+          A list of spline knots to use for the continuum.
+        edges: list of floats, optional
+          A list of edges defining wavelength chunks. Spline knots
+          will be placed at the centre of these chunks.
+        dw : float, default 10.0
+          The approximate distance between spline knots in
+          Angstroms.
+        kind : {'QSO', None}, default None
+          If given, generate spline knots using
+          linetools.analysis.continuum.find_continuum.
+
+        Updates
+        -------
+        spec.co with the new continuum
+        spec.meta['contpoints'] with the knots defining the continuum
+
+        Use linetools.analysis.interp.AkimaSpline to regenerate the
+        continuum from the the knots.
+        """
+
+        wa = self.dispersion.value
+
+        anchor = False
+        if wlim is None:
+            wmin, wmax = wa[0], wa[-1]
+        else:
+            wmin, wmax = wlim
+            if wmax < wmin:
+                wmin, wmax = wmax, wmin
+            anchor = True
+                
+        if kind is not None:
+            _, knots = find_continuum(self, kind=kind, **kwargs)
+            # only keep knots between wmin and wmax
+            knots = [[x,y] for (x,y) in knots if wmin <= x <= wmax]
+        else:
+            if edges is None:
+                nchunks = max(3, (wmax - wmin) / float(dw))
+                edges = np.linspace(wmin, wmax, nchunks + 1)
+    
+        if knots is None:
+            knots, indices, masked = prepare_knots(
+                wa, self.flux.value, self.uncertainty.array, edges)
+        else:
+            knots = [list(k) for k in knots]
+    
+        co = (self.co if hasattr(self, 'co') else None)
+        if co is not None:
+            x = [k[0] for k in knots]
+            ynew = np.interp(x, wa, co)
+            for i in range(len(knots)):
+                knots[i][1] = ynew[i]
+    
+        contpoints = [k[:2] for k in knots]
+        import matplotlib.pyplot as plt
+        fig = plt.figure(figsize=(11, 7))
+        fig.subplots_adjust(left=0.05, right=0.95, bottom=0.1, top=0.95)
+        wrapper = InteractiveCoFit(wa, self.flux.value, self.uncertainty.array,
+                                   contpoints, co=co, fig=fig, anchor=anchor)
+
+        # wait until the interactive fitting has finished
+        while not wrapper.finished:
+            plt.waitforbuttonpress()
+
+        print('Updating continuum')
+        self.co = wrapper.continuum
+        if 'contpoints' not in self.meta:
+            self.meta['contpoints'] = []
+        self.meta['contpoints'].extend(
+            [tuple(pts) for pts in wrapper.contpoints])
+        self.meta['contpoints'].sort()

@@ -7,7 +7,7 @@ import numpy as np
 from astropy.io import fits
 
 from linetools.spectra import io
-
+from linetools.spectra.xspectrum1d import XSpectrum1D
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
@@ -16,7 +16,7 @@ def data_path(filename):
 # Rel vel
 def test_addnoise():
     spec = io.readspec(data_path('UM184_nF.fits'))
-    # 
+    #
     spec.add_noise(seed=12)
     np.testing.assert_allclose(spec.flux[1000], 0.44806158542633057)
 
@@ -42,8 +42,8 @@ def test_gauss_smooth():
 
     # Smooth
     smth_spec = spec.gauss_smooth(4.)
-    # Test 
-    np.testing.assert_allclose(smth_spec.flux[3000].value, 0.8288972218574113)
+    # Test
+    np.testing.assert_allclose(smth_spec.flux[3000].value, 0.8288110494613)
     assert smth_spec.flux.unit == spec.flux.unit
 
 # Rebin
@@ -71,6 +71,28 @@ def test_relvel():
 def test_write_fits():
     spec = io.readspec(data_path('UM184_nF.fits'))
 
-    # Write
+    # Write. Should be replaced with tempfile.TemporaryFile
     spec.write_to_fits(data_path('tmp.fits'))
+    spec2 = io.readspec(data_path('tmp.fits'))
+    # check a round trip works
+    np.testing.assert_allclose(spec.dispersion, spec2.dispersion)
 
+def test_readwrite_without_sig():
+    sp = XSpectrum1D.from_tuple(([5,6,7], np.ones(3)))
+    sp.write_to_fits(data_path('tmp.fits'))
+    sp1 = io.readspec(data_path('tmp.fits'))
+    np.testing.assert_allclose(sp1.dispersion.value, sp.dispersion.value)
+    np.testing.assert_allclose(sp1.flux.value, sp.flux.value)
+
+def test_readwrite_metadata():
+    spec = io.readspec(data_path('UM184_nF.fits'))
+    d = {'a':1, 'b':'abc', 'c':3.2, 'd':np.array([1,2,3]),
+         'e':dict(a=1,b=2)}
+    spec.meta.update(d)
+    spec.write_to_fits(data_path('tmp.fits'))
+    spec2 = io.readspec(data_path('tmp.fits'))
+    assert spec2.meta['a'] == d['a']
+    assert spec2.meta['b'] == d['b']
+    np.testing.assert_allclose(spec2.meta['c'], d['c'])
+    np.testing.assert_allclose(spec2.meta['d'], d['d'])
+    assert spec2.meta['e'] == d['e']
