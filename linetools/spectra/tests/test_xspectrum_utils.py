@@ -1,10 +1,10 @@
 # Module to run tests on spectra.io
 import os
 import pytest
-import astropy.io.ascii as ascii
 from astropy import units as u
 import numpy as np
-from astropy.io import fits
+from astropy.io import fits, ascii
+from astropy.table import QTable, Table, Column
 
 from linetools.spectra import io
 from linetools.spectra.xspectrum1d import XSpectrum1D
@@ -66,6 +66,16 @@ def test_relvel():
     # Test
     np.testing.assert_allclose(velo[6600].value, -3716.441360213781)
     assert velo.unit == (u.km/u.s)
+
+# Write FITS
+def test_write_ascii():
+    spec = io.readspec(data_path('UM184_nF.fits'))
+    # Write. Should be replaced with tempfile.TemporaryFile
+    spec.write_to_ascii(data_path('tmp.ascii'))
+    # 
+    spec2 = io.readspec(data_path('tmp.ascii'))
+    # check a round trip works
+    np.testing.assert_allclose(spec.dispersion, spec2.dispersion)
 
 # Write FITS
 def test_write_fits():
