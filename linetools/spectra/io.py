@@ -66,6 +66,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         # Dummy hdulist
         hdulist = [fits.PrimaryHDU(), specfil]
     elif isinstance(specfil, basestring):
+        datfil = specfil
         flg_fits = False
         for ext in ['.fit']:
             if ext in specfil:
@@ -252,17 +253,18 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         else:
             xspec1d = XSpectrum1D.from_array(uwave, u.Quantity(fx))
 
-
-    xspec1d.filename = specfil
+    # Filename
+    xspec1d.filename = datfil
 
     if not hasattr(xspec1d, 'co'):
         xspec1d.co = co
         # Final check for continuum in a separate file
-        if co is None and specfil.endswith('.fits'):
-            try:
-                xspec1d.co = fits.getdata(specfil.replace('.fits', '_c.fits'))
-            except IOError:
-                pass
+        if isinstance(specfil,basestring):
+            if co is None and specfil.endswith('.fits'):
+                try:
+                    xspec1d.co = fits.getdata(specfil.replace('.fits', '_c.fits'))
+                except IOError:
+                    pass
 
     # Add in the header
     xspec1d.head = head0
