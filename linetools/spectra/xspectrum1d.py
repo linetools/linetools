@@ -222,7 +222,6 @@ class XSpectrum1D(Spectrum1D):
 
         return fx, sig
 
-
     # Quick plot
     def plot(self, **kwargs):
         ''' Plot the spectrum
