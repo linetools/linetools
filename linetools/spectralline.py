@@ -379,3 +379,35 @@ class AbsLine(SpectralLine):
         txt = txt + ']'
         return (txt)
 
+def many_abslines(all_wrest, llist):
+    '''Generate a list of AbsLine objects
+    Useful for when you have many lines (>1000) to generate
+    that have similar wrest.
+    Currently using copy.copy but may switch to copy.deepcopy
+
+    Parameters:
+    -----------
+    all_wrest: list of lines
+    llist: LineList
+
+    Returns:
+    ----------
+    abs_lines: list of AbsLine Objects
+    '''
+    # Find unique lines
+    wrestv =  np.array([iwrest.value for iwrest in all_wrest]) 
+    uniq_wrest = np.unique( wrestv )
+
+    # Generate a simple dict
+    adict = {}
+    unit = all_wrest[0].unit
+    for iuni in uniq_wrest:
+        adict[iuni] = AbsLine(iuni*unit,linelist=llist)
+
+    # Copy em up
+    abs_lines = []
+    for iwrestv in wrestv:
+        abs_lines.append(copy.copy(adict[iwrestv]))
+
+    # Return
+    return abs_lines
