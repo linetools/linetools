@@ -382,8 +382,7 @@ class AbsLine(SpectralLine):
 def many_abslines(all_wrest, llist):
     '''Generate a list of AbsLine objects
     Useful for when you have many lines (>1000) to generate
-    that have similar wrest.
-    Currently using copy.copy but may switch to copy.deepcopy
+    that have similar wrest.  Uses deepcopy
 
     Parameters:
     -----------
@@ -407,7 +406,7 @@ def many_abslines(all_wrest, llist):
     # Copy em up
     abs_lines = []
     for iwrestv in wrestv:
-        abs_lines.append(copy.copy(adict[iwrestv]))
+        abs_lines.append(copy.deepcopy(adict[iwrestv]))
 
     # Return
     return abs_lines
