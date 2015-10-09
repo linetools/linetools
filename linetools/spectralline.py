@@ -287,19 +287,19 @@ class AbsLine(SpectralLine):
 
         # Deal with LineList
         if linelist is None:
-            self.llist = LineList('ISM')
+            llist = LineList('ISM')
         elif isinstance(linelist,basestring):
-            self.llist = LineList(linelist)
+            llist = LineList(linelist)
         elif isinstance(linelist,LineList):
-            self.llist = linelist
+            llist = linelist
         else:
             raise ValueError('Bad input for linelist')
 
         # Closest?
-        self.llist.closest = closest
+        llist.closest = closest
 
         # Data
-        newline = self.llist[trans]
+        newline = llist[trans]
         self.data.update(newline)
 
         # Update
