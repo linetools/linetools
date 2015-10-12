@@ -547,7 +547,7 @@ or QtAgg backends to enable all interactive plotting commands.
 
         # Deal with header
         if hasattr(self,'head'):
-            hdukeys = prihdu.header.keys()
+            hdukeys = list(prihdu.header.keys())
             # Append ones to avoid
             hdukeys = hdukeys + ['BUNIT','COMMENT','', 'NAXIS2', 'HISTORY']
             for key in self.head.keys():

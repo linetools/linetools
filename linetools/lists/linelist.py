@@ -3,8 +3,14 @@ Module for LineList Class
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
+# Python 2 & 3 compatibility
+try:
+    basestring
+except NameError:
+    basestring = str
+
 import numpy as np
-import os
+import os, imp
 import copy
 
 from astropy import units as u
@@ -48,7 +54,7 @@ class LineList(object):
         sort_subset=False):
 
         # Error catching
-        if not isinstance(llst_keys,(str,list,unicode)):
+        if not isinstance(llst_keys, (list, basestring)):
             raise TypeError('LineList__init__: Wrong type for LineList input')
 
         # Save
@@ -75,7 +81,7 @@ class LineList(object):
         """Grab the data for the lines of interest
         """
         # Import
-        reload(lilp)
+        imp.reload(lilp)
 
         # Define datasets: In order of Priority
         dataset = {
