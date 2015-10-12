@@ -368,26 +368,28 @@ class LineList(object):
 
     def strongest_transitions(self,line, wvlims, n_max=3,verbose=False):
         """For a given single line transition, this function returns
-        the n_max strongest transitions of the ion species found in 
+        the n_max strongest transitions of the ion species found in
         the linelist, within the wavelenght range wlims.
 
         Parameters
         ----------
         line: str or Quantity
-            Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII', 1215.6700*u.AA)
-            [Note: when string contains spaces it only considers the first
-             part of it, so 'HI' and 'HI 1215' and 'HI 1025' are all equivalent]
-            [Note: to retrieve an unknown line use string 'unknown']
+            Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII',
+            1215.6700*u.AA) [Note: when string contains spaces it only
+            considers the first part of it, so 'HI' and 'HI 1215' and
+            'HI 1025' are all equivalent] [Note: to retrieve an
+            unknown line use string 'unknown']
         wvlims : tuple of Quantity, or Quantity tuple
-            Wavelength range, e.g. wvlims=(1100*u.AA, 3200*u.AA) or wvlims=(1100, 3200)*u.AA         
+            Wavelength range, e.g. wvlims=(1100*u.AA, 3200*u.AA) or
+            wvlims=(1100, 3200)*u.AA
         n_max : int or None
-            Maximun number of transitions to retrieve; if n_max=None it retrieves
-            all of them
+            Maximum number of transitions to retrieve; if n_max=None
+            it retrieves all of them
 
         Returns
         -------
-        None (if no transitions are found), dict (if only 1 transition found), or 
-        QTable (if > 1 transitions are found)
+        None (if no transitions are found), dict (if only 1 transition
+        found), or QTable (if > 1 transitions are found)
 
         """    
 
@@ -443,30 +445,34 @@ class LineList(object):
                 return data
 
     def available_transitions(self, wvlims, n_max=None,n_max_tuple=None, min_strength=1.):
-        """For a given wavelength range, wvlims=(wv_min,wv_max), this function retrieves
-        the n_max_tuple strongest transitions per each ion species in the LineList 
-        available at such a wavelength range and having strength larger than min_strength.
-        Strength is defined as log10(wrest*fosc*abundance). The output is sorted by strength 
-        of the strongest available transition per ion species.
+        """For a given wavelength range, wvlims=(wv_min,wv_max), this
+        function retrieves the n_max_tuple strongest transitions per
+        each ion species in the LineList available at such a
+        wavelength range and having strength larger than min_strength.
+        Strength is defined as log10(wrest*fosc*abundance). The output
+        is sorted by strength of the strongest available transition
+        per ion species.
 
         Parameters
         ----------
         wvlims : tuple of Quantity
             Wavelength range, e.g. wvlims=(1100*u.AA, 3200*u.AA)
         n_max : int, optional
-            Maximum number of transitions retrieved when given, otherwise recover all of them
+            Maximum number of transitions retrieved when given,
+            otherwise recover all of them
         n_max_tuple : int, optional
-            Maximum number of transitions in a given ion species to 
-            retrieve. e.g., if Lyman series are all available, it will 
-            retrieve only up to Lyman gamma if n_max_tuple=3. Otherwise it returns all of them
+            Maximum number of transitions in a given ion species to
+            retrieve. e.g., if Lyman series are all available, it will
+            retrieve only up to Lyman gamma if
+            n_max_tuple=3. Otherwise it returns all of them
         min_strength : float, optional
-            Minimum strenght calculated from log10(wrest * fosc * abundance)
-            In thin space HI 1215 has 14.7.
+            Minimum strength calculated from log10(wrest * fosc *
+            abundance) In thin space HI 1215 has 14.7.
 
         Returns
         -------
-        dict (if only 1 transition found) or QTable (if > 1 transitions are found)
-        or None (if no transition is found)
+        dict (if only 1 transition found) or QTable (if > 1
+        transitions are found) or None (if no transition is found)
         """
         if all((isinstance(n,int) or (n is None)) for n in [n_max,n_max_tuple]):
             if (n_max is not None) and (n_max < 1):
