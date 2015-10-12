@@ -3,6 +3,7 @@ import os
 import pytest
 import astropy.io.ascii as ascii
 from astropy import units as u
+from astropy.table import Table
 import numpy as np
 from astropy.io import fits
 
@@ -49,3 +50,9 @@ def test_uves_popler():
     spec = io.readspec(data_path('popler_sample.fits'))
     assert spec.dispersion.unit == u.Unit('AA')
     assert spec.filename.endswith('popler_sample.fits')
+
+def test_read_table():
+    t = Table([(1,2,3), (1,2,3), (1,2,3)], names=['WAVE', 'FLUX', 'ERR'])
+    spec = io.readspec(t)
+    np.testing.assert_allclose(spec.dispersion[0], 1)
+    np.testing.assert_allclose(spec.flux[0], 1)
