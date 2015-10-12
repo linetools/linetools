@@ -91,7 +91,7 @@ def linear_co(wa, knots):
 
     Add extra points on either end to give
     a nice slope at the end points."""
-    wavc, mfl = zip(*knots)[:2]
+    wavc, mfl = list(zip(*knots))[:2]
     extwavc = ([wavc[0] - (wavc[1] - wavc[0])] + list(wavc) +
                [wavc[-1] + (wavc[-1] - wavc[-2])])
     extmfl = ([mfl[0] - (mfl[1] - mfl[0])] + list(mfl) +
@@ -191,7 +191,7 @@ def prepare_knots(wa, fl, er, edges, ax=None, debug=False):
     update_knots(knots, indices, fl, masked)
 
     if ax is not None:
-        x,y = zip(*knots)[:2]
+        x,y = list(zip(*knots))[:2]
         ax.plot(x, y, 'o', mfc='none', mec='c', ms=10, mew=1, zorder=10)
 
     return knots, indices, masked
@@ -232,7 +232,7 @@ def estimate_continuum(s, knots, indices, masked, ax=None, maxiter=1000,
         model_a = Akima_co(s.wa, knots)
         chisq_chunk(model_a, s.fl, s.er, masked,
                     indices, knots, chithresh=1)
-        flags = zip(*knots)[-1]
+        flags = list(zip(*knots))[-1]
         if np.all(flags):
             if debug:
                 print('All regions have satisfactory fit, stopping')
@@ -259,7 +259,7 @@ def estimate_continuum(s, knots, indices, masked, ax=None, maxiter=1000,
     if ax is not None:
         ax.plot(s.wa, linear_co(s.wa, knots), color='0.7', lw=2)
         ax.plot(s.wa, co, 'k', lw=2, zorder=10)
-        x,y = zip(*knots)[:2]
+        x,y = list(zip(*knots))[:2]
         ax.plot(x, y, 'o', mfc='none', mec='k', ms=10, mew=1, zorder=10)
 
     return co

@@ -5,8 +5,11 @@ Module for parsing Line List data
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import os, imp, glob, pdb, gzip
+import os, imp, glob, pdb, gzip, sys
 import subprocess
+if not sys.version_info[0] > 2:
+    import codecs
+    open = codecs.open
 
 from astropy import units as u
 from astropy.units.quantity import Quantity
@@ -306,7 +309,7 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
         print(
             'linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
                 morton03_tab2))
-        f = open(morton03_tab2, 'r')
+        f = open(morton03_tab2, 'r', encoding="ISO-8859-1")
         lines = f.readlines()
         f.close()
 

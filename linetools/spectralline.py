@@ -12,10 +12,16 @@
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
+# Python 2 & 3 compatibility
+try:
+    basestring
+except NameError:
+    basestring = str
+
 import numpy as np
 import pdb
 from abc import ABCMeta, abstractmethod
-import copy
+import copy, imp
 
 from astropy import constants as const
 from astropy import units as u
@@ -213,7 +219,7 @@ class SpectralLine(object):
         self.attrib[ 'EW', 'sigEW' ] : 
           EW and error in observer frame
         """
-        reload(lau)
+        imp.reload(lau)
         # Cut spectrum
         fx, sig, xdict = self.cut_spec(normalize=True)
         wv = xdict['wave']
@@ -331,7 +337,7 @@ class AbsLine(SpectralLine):
         self.attrib[ 'N', 'sigN', 'logN', 'sig_logN' ]  
           Column densities and errors, linear and log
         """
-        reload(laa)
+        imp.reload(laa)
 
         # Cut spectrum
         fx, sig, xdict = self.cut_spec(normalize=True)

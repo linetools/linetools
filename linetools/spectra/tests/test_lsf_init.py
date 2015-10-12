@@ -1,4 +1,8 @@
 # Module to run tests on spectra.lsf
+
+from __future__ import print_function, absolute_import, \
+     division, unicode_literals
+
 import os
 import pytest
 from astropy import units as u
@@ -18,17 +22,17 @@ def test_lsf_COS():
             
             instr_config = dict(name='COS',grating=grating,life_position=lp)
             if lp == '2':
-            	if grating not in ['G130M','G160M']:
-            		continue
-            	if grating == 'G130M':
-            		cen_waves_aux = cen_waves_G130M
-            	elif grating == 'G160M':
-            		cen_waves_aux = cen_waves_G160M
+                if grating not in ['G130M','G160M']:
+                        continue
+                if grating == 'G130M':
+                        cen_waves_aux = cen_waves_G130M
+                elif grating == 'G160M':
+                        cen_waves_aux = cen_waves_G160M
 
-            	for cen_wave in cen_waves_aux:
-            		instr_config['cen_wave'] = cen_wave
-            		lsf = LSF(instr_config)
-            		print(lp,grating,cen_wave)
+                for cen_wave in cen_waves_aux:
+                        instr_config['cen_wave'] = cen_wave
+                        lsf = LSF(instr_config)
+                        print(lp,grating,cen_wave)
             elif lp == '1':
-				lsf = LSF(instr_config)
-				print(lp,grating)
+                lsf = LSF(instr_config)
+                print(lp,grating)
