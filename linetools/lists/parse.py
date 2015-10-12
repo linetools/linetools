@@ -535,7 +535,7 @@ def update_fval(table, verbose=False):
 
     # Howk 2000
     howk00_fil = lt_path + '/data/lines/howk00_table1.ascii'
-    howk00 = ascii.read(howk00_fil)
+    howk00 = ascii.read(howk00_fil, comment='#')
 
     # Dress up
     howk00['wrest'].unit = u.AA
