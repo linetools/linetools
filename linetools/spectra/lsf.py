@@ -1,7 +1,7 @@
 """
 Module for dealing with LSFs of various astronomical instruments.
 """
-from __future__ import print_function
+from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
 from scipy.interpolate import interp1d, Akima1DInterpolator
