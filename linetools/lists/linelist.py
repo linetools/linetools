@@ -21,6 +21,8 @@ from astropy.table import QTable, Table, vstack, Column
 
 #from xastropy.xutils import xdebug as xdb
 
+CACHE = {'full_table' : {}, 'data' : {}}
+
 from linetools.lists import parse as lilp
 
 #
@@ -76,10 +78,24 @@ class LineList(object):
         if subset is not None:
             self.subset_lines(subset, verbose=verbose, sort=sort_subset)
 
-    # 
+        # use this instead of overloading __getattr__, which causes
+        # recursion problems when caching. They also then show up in
+        # the list of attributes shown using ipython tab completion.
+        for colname in self._data.colnames:
+            if getattr(self, colname, None) is None:
+                setattr(self, colname, self._data[colname])
+
+
     def load_data(self, tol=1e-3*u.AA):
         """Grab the data for the lines of interest
         """
+
+        global CACHE
+        key = tuple(self.lists + [tol])
+        if key in CACHE['full_table']:
+            self._fulltable = CACHE['full_table'][key]
+            return
+            
         # Import
         imp.reload(lilp)
 
@@ -147,6 +163,7 @@ class LineList(object):
                     # Save to avoid repeating
                     all_func.append(func)
 
+
         # Save as QTable
         self._fulltable = QTable(full_table)
 
@@ -162,11 +179,21 @@ class LineList(object):
         if flag_gamma:
             lilp.update_gamma(self._fulltable)
 
+        CACHE['full_table'][key] = self._fulltable
+
+
+
     #####
     def set_lines(self, verbose=True):#, gd_lines=None):
         ''' Parse the lines of interest
         '''
         import warnings
+
+        global CACHE
+        key = tuple(self.lists)
+        if key in CACHE['data']:
+            self._data = CACHE['data'][key]
+            return
 
         indices = []
         set_flags = []
@@ -235,6 +262,8 @@ class LineList(object):
 
         #
         self._data = tmp_tab
+        CACHE['data'][key] = self._data
+
 
     def subset_lines(self, subset, sort=False, reset_data=False, verbose=False):
         '''
@@ -301,28 +330,32 @@ class LineList(object):
 
     def unknown_line(self):
         """Returns a dictionary of line properties set to an unknown
-        line. Currently using the default value from linetools.lists.parse()."""     
+        line. Currently using the default value from
+        linetools.lists.parse()."""     
         ldict , _ = lilp.line_data()
         ldict['name'] = 'unknown'
         return ldict
 
     def all_transitions(self,line):
         """For a given single line transition, this function returns
-        all transitions of the ion containing such single line found in 
-        the linelist.
+        all transitions of the ion containing such single line found
+        in the linelist.
 
         Parameters
         ----------
         line: str or Quantity
             Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII', 1215.6700*u.AA)
         
-            [Note: when string contains spaces it only considers the first
-             part of it, so 'HI' and 'HI 1215' and 'HI 1025' are all equivalent]
+            [Note: when string contains spaces it only considers the
+             first part of it, so 'HI' and 'HI 1215' and 'HI 1025' are
+             all equivalent]
             [Note: to retrieve an unknown line use string 'unknown']
 
         Returns
         -------
-        dict (if only 1 transition found) or QTable (if > 1 transitions are found)
+
+        dict (if only 1 transition found) or QTable (if > 1
+        transitions are found)
 
         """
 
@@ -563,19 +596,7 @@ class LineList(object):
         return tab
     
     #####
-    def __getattr__(self,k):
-        ''' Passback an array or Column of the data 
-        k must be a Column name in the data Table
-        '''
-        # Deal with QTable
-        colm = self._data[k]
-        if isinstance(colm[0], Quantity):
-            return self._data[k]
-        else:
-            return np.array(self._data[k])
-
-    #####
-    def __getitem__(self,k, tol=1e-3*u.AA):
+    def __getitem__(self, k, tol=1e-3*u.AA):
         ''' Passback data as a dict (from the table) for the input line
 
         Parameters:
