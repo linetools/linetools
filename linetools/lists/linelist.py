@@ -10,7 +10,7 @@ except NameError:
     basestring = str
 
 import numpy as np
-import os, imp
+import os
 import copy
 
 from astropy import units as u
@@ -78,13 +78,6 @@ class LineList(object):
         if subset is not None:
             self.subset_lines(subset, verbose=verbose, sort=sort_subset)
 
-        # use this instead of overloading __getattr__, which causes
-        # recursion problems when caching. They also then show up in
-        # the list of attributes shown using ipython tab completion.
-        for colname in self._data.colnames:
-            if getattr(self, colname, None) is None:
-                setattr(self, colname, self._data[colname])
-
 
     def load_data(self, tol=1e-3*u.AA):
         """Grab the data for the lines of interest
@@ -95,9 +88,6 @@ class LineList(object):
         if key in CACHE['full_table']:
             self._fulltable = CACHE['full_table'][key]
             return
-            
-        # Import
-        imp.reload(lilp)
 
         # Define datasets: In order of Priority
         dataset = {
@@ -596,6 +586,26 @@ class LineList(object):
         return tab
     
     #####
+    def __getattr__(self, k):
+        ''' Passback an array or Column of the data 
+        k must be a Column name in the data Table
+        '''
+        # Deal with QTable
+        try:
+            # First try to access __getitem__ in the parent class.
+            # This is needed to avoid an infinite loop which happens
+            # when trying to assign self._fulldata to the cache
+            # dictionary.
+            out = object.__getattr__(k)
+        except AttributeError:
+            colm = self._data[k]
+            if isinstance(colm[0], Quantity):
+                return self._data[k]
+            else:
+                return np.array(self._data[k])
+        else:
+            return out
+
     def __getitem__(self, k, tol=1e-3*u.AA):
         ''' Passback data as a dict (from the table) for the input line
 
