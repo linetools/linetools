@@ -10,6 +10,7 @@ import json
 
 import astropy as apy
 from astropy import units as u
+from astropy.units import Quantity
 from astropy import constants as const
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
@@ -222,7 +223,6 @@ class XSpectrum1D(Spectrum1D):
 
         return fx, sig
 
-
     # Quick plot
     def plot(self, **kwargs):
         ''' Plot the spectrum
@@ -350,7 +350,7 @@ or QtAgg backends to enable all interactive plotting commands.
 
         Parameters
         ----------
-        wv_obs : float
+        wv_obs : Quantity
           Wavelength to set the zero of the velocity array.
           Often (1+z)*wrest
 
@@ -358,6 +358,8 @@ or QtAgg backends to enable all interactive plotting commands.
         ---------
         velo: Quantity array (km/s)
         '''
+        if not isinstance(wv_obs, Quantity):
+            raise ValueError('Input wavelength needs to be a Quantity')
         return  (self.dispersion-wv_obs) * const.c.to('km/s')/wv_obs
 
     #  Box car smooth

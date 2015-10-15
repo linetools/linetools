@@ -73,14 +73,14 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         # Dummy hdulist
         hdulist = [fits.PrimaryHDU(), specfil]
     elif isinstance(specfil, basestring):
-        datfil = specfil
+        datfil = specfil.strip()
         flg_fits = False
         for ext in ['.fit']:
             if ext in specfil:
                 flg_fits = True
         if flg_fits: # FITS
             # Read header
-            datfil,chk = chk_for_gz(specfil)
+            datfil,chk = chk_for_gz(specfil.strip())
             if chk == 0:
                 raise IOError('File does not exist {}'.format(specfil))
             hdulist = fits.open(os.path.expanduser(datfil))
