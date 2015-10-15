@@ -5,6 +5,13 @@ Module for read/write of spectra FITS files
 
 from __future__ import print_function, absolute_import, division, unicode_literals
 
+# Python 2 & 3 compatibility
+try:
+    basestring
+except NameError:
+    basestring = str
+
+
 # Import libraries
 import numpy as np
 import os, pdb
