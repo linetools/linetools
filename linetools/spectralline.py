@@ -293,19 +293,19 @@ class AbsLine(SpectralLine):
 
         # Deal with LineList
         if linelist is None:
-            self.llist = LineList('ISM')
+            llist = LineList('ISM')
         elif isinstance(linelist,basestring):
-            self.llist = LineList(linelist)
+            llist = LineList(linelist)
         elif isinstance(linelist,LineList):
-            self.llist = linelist
+            llist = linelist
         else:
             raise ValueError('Bad input for linelist')
 
         # Closest?
-        self.llist.closest = closest
+        llist.closest = closest
 
         # Data
-        newline = self.llist[trans]
+        newline = llist[trans]
         self.data.update(newline)
 
         # Update
@@ -385,3 +385,34 @@ class AbsLine(SpectralLine):
         txt = txt + ']'
         return (txt)
 
+def many_abslines(all_wrest, llist):
+    '''Generate a list of AbsLine objects
+    Useful for when you have many lines (>1000) to generate
+    that have similar wrest.  Uses deepcopy
+
+    Parameters:
+    -----------
+    all_wrest: list of lines
+    llist: LineList
+
+    Returns:
+    ----------
+    abs_lines: list of AbsLine Objects
+    '''
+    # Find unique lines
+    wrestv =  np.array([iwrest.value for iwrest in all_wrest]) 
+    uniq_wrest = np.unique( wrestv )
+
+    # Generate a simple dict
+    adict = {}
+    unit = all_wrest[0].unit
+    for iuni in uniq_wrest:
+        adict[iuni] = AbsLine(iuni*unit,linelist=llist)
+
+    # Copy em up
+    abs_lines = []
+    for iwrestv in wrestv:
+        abs_lines.append(copy.deepcopy(adict[iwrestv]))
+
+    # Return
+    return abs_lines
