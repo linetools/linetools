@@ -27,7 +27,7 @@ def test_ism():
 def test_updfval():
 	ism = LineList('ISM')
 	# 
-	np.testing.assert_allclose(ism['FeII 1144']['f'], 0.106)
+	np.testing.assert_allclose(ism['FeII 1133']['f'], 0.0055)
 
 # Test update_gamma
 def test_updgamma():

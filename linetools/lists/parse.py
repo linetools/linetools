@@ -536,7 +536,7 @@ def update_fval(table, verbose=False):
     imn = np.argmin(np.abs(table['wrest']-1526.707*u.AA))
     table['f'][imn] = 0.127
 
-    # Howk 2000
+    # Howk 2000 (using Weise 2002 as in Morton for FeII 1142,1143,1144)
     howk00_fil = lt_path + '/data/lines/howk00_table1.ascii'
     howk00 = ascii.read(howk00_fil, comment='#')
 
