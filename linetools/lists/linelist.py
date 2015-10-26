@@ -79,13 +79,13 @@ class LineList(object):
             self.subset_lines(subset, verbose=verbose, sort=sort_subset)
 
 
-    def load_data(self, tol=1e-3*u.AA):
+    def load_data(self, tol=1e-3*u.AA, use_cache=True):
         """Grab the data for the lines of interest
         """
 
         global CACHE
         key = tuple(self.lists + [tol])
-        if key in CACHE['full_table']:
+        if use_cache and key in CACHE['full_table']:
             self._fulltable = CACHE['full_table'][key]
             return
 
@@ -174,14 +174,14 @@ class LineList(object):
 
 
     #####
-    def set_lines(self, verbose=True):#, gd_lines=None):
+    def set_lines(self, verbose=True, use_cache=True):#, gd_lines=None):
         ''' Parse the lines of interest
         '''
         import warnings
 
         global CACHE
         key = tuple(self.lists)
-        if key in CACHE['data']:
+        if use_cache and key in CACHE['data']:
             self._data = CACHE['data'][key]
             return
 
