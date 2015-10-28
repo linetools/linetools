@@ -10,10 +10,11 @@ import json
 
 import astropy as apy
 from astropy import units as u
+from astropy.units import Quantity
 from astropy import constants as const
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
-from astropy.table import Table
+from astropy.table import Table, QTable
 
 import linetools.utils as liu
 import linetools.spectra.io as lsio
@@ -222,10 +223,20 @@ class XSpectrum1D(Spectrum1D):
 
         return fx, sig
 
-
     # Quick plot
     def plot(self, **kwargs):
         ''' Plot the spectrum
+
+        Parameters
+        ----------
+        show : bool
+          If True (the default), then run the matplotlib.pyplot show
+          command to display the plot. Disable this if you are running
+          from a script and wish to delay showing the plot.
+
+        Other keyword arguments are passed to the matplotlib plot
+        command.
+
         '''
         import matplotlib.pyplot as plt
         from ..analysis.interactive_plot import PlotWrapNav
@@ -235,6 +246,8 @@ class XSpectrum1D(Spectrum1D):
 
         artists = {}
         ax.axhline(0, color='k', lw=0.5)
+
+        show = kwargs.pop('show', True)
 
         kwargs.update(color='0.6')
         artists['fl'] = ax.plot(self.dispersion, self.flux,
@@ -264,6 +277,9 @@ or QtAgg backends to enable all interactive plotting commands.
             # garbage-collected.
             self._plotter = PlotWrapNav(fig, ax, self.dispersion,
                                         self.flux, artists, printhelp=False)
+
+            if show:
+                plt.show()
 
     #  Rebin
     def rebin(self, new_wv):
@@ -334,7 +350,7 @@ or QtAgg backends to enable all interactive plotting commands.
 
         Parameters
         ----------
-        wv_obs : float
+        wv_obs : Quantity
           Wavelength to set the zero of the velocity array.
           Often (1+z)*wrest
 
@@ -342,6 +358,8 @@ or QtAgg backends to enable all interactive plotting commands.
         ---------
         velo: Quantity array (km/s)
         '''
+        if not isinstance(wv_obs, Quantity):
+            raise ValueError('Input wavelength needs to be a Quantity')
         return  (self.dispersion-wv_obs) * const.c.to('km/s')/wv_obs
 
     #  Box car smooth
@@ -452,14 +470,33 @@ or QtAgg backends to enable all interactive plotting commands.
         return spec3
 
     # Write to fits
-    def write_to_fits(self, outfil, clobber=True, add_wave=False):
+    def write_to_ascii(self, outfil, format='ascii.ecsv'):
+        ''' Write spectrum to an ASCII file
 
+        Parameters
+        ----------
+        outfil: str
+          Name of the FITS file
+
+        Returns:
+        --------
+        Outputs an ASCII file
+        '''
+        # Convert to astropy Table 
+        table = QTable([self.dispersion, self.flux, self.sig], 
+            names=('WAVE','FLUX','ERROR'))
+
+        # Write
+        table.write(outfil,format=format)
+
+    # Write to fits
+    def write_to_fits(self, outfil, clobber=True, add_wave=False):
         ''' Write to a FITS file
         Should generate a separate code to make a Binary FITS table format
 
         Parameters
         ----------
-        outfil: String
+        outfil: str
           Name of the FITS file
         clobber: bool (True)
           Clobber existing file?
@@ -512,7 +549,7 @@ or QtAgg backends to enable all interactive plotting commands.
 
         # Deal with header
         if hasattr(self,'head'):
-            hdukeys = prihdu.header.keys()
+            hdukeys = list(prihdu.header.keys())
             # Append ones to avoid
             hdukeys = hdukeys + ['BUNIT','COMMENT','', 'NAXIS2', 'HISTORY']
             for key in self.head.keys():
