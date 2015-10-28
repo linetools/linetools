@@ -152,6 +152,8 @@ class XSpectrum1D(Spectrum1D):
                 raise ValueError('normalize: Continuum needs to be same length as flux array')
 
         # Adjust the flux
+        import pdb
+        pdb.set_trace()
         self.flux /= conti
         if self.uncertainty is not None:
             self.uncertainty.array /= conti
