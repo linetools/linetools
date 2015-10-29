@@ -12,12 +12,12 @@ except NameError:
 import numpy as np
 import os, imp
 import copy
+import pdb
 
-from astropy import units as u
-from astropy.units.quantity import Quantity
 from astropy import constants as const
 from astropy.io import ascii
-from astropy.table import QTable, Table, vstack, Column
+from astropy.table import Table
+from astropy.utils.misc import isiterable
 
 #from xastropy.xutils import xdebug as xdb
 l_path = imp.find_module('linetools')[1]
@@ -91,6 +91,14 @@ class SolarAbund(object):
         ----------
         Abund or Abund difference for the ratio
         '''
+        # Iterate?
+        if isiterable(k) and not isinstance(k,basestring): 
+            out_abnd = []
+            for ik in k:
+                out_abnd.append(self[ik])
+            out_abnd = np.array(out_abnd)
+            return out_abnd
+
         if isinstance(k,int): # Atomic number
             mt = np.where(self._data['Z'] == k)[0]
             if len(mt) != 1:
