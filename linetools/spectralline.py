@@ -324,6 +324,23 @@ class AbsLine(SpectralLine):
         self.attrib.update({'N': 0., 'Nsig': 0., 'flagN': 0, # Column
                        'b': 0.*u.km/u.s, 'bsig': 0.*u.km/u.s  # Doppler
                        } )
+    # Voigt
+    def generate_voigt(self, wave):
+        """  Generate a Voigt profile for the absorption line
+        in a given spectrum.
+
+        Parameters:
+        ----------
+        wave: Quantity array
+          Wavelength array on which to calculate the line
+
+        Returns:
+        ----------
+        spec: XSpectrum1D
+          Spectrum with the input wavelength and the absorbed flux
+        """
+
+
     # AODM
     def measure_aodm(self, nsig=3.):
         """  AODM calculation
