@@ -10,7 +10,7 @@ except NameError:
     basestring = str
 
 import numpy as np
-import os
+import os, pdb
 import copy
 
 from astropy import units as u
@@ -348,7 +348,6 @@ class LineList(object):
         transitions are found)
 
         """
-
         if isinstance(line, basestring): # Name
             line = line.split(' ')[0] # keep only the first part of input name
         elif isinstance(line, Quantity): # Rest wavelength (with units)
@@ -497,6 +496,11 @@ class LineList(object):
         dict (if only 1 transition found) or QTable (if > 1
         transitions are found) or None (if no transition is found)
         """
+        # Init
+        from linetools.abund.solar import SolarAbund
+        from linetools.abund import ions as laions
+        solar = SolarAbund()
+        #
         if all((isinstance(n,int) or (n is None)) for n in [n_max,n_max_tuple]):
             if (n_max is not None) and (n_max < 1):
                 return None
@@ -516,13 +520,19 @@ class LineList(object):
         ion_name = []
         strength = []
         for ion in unique_ion_names: #This loop is necesary to have a non trivial but convinient order in the final output
+            # Abundance
+            Zion = laions.name_ion(ion)
+            if ion == 'DI':
+                abundance = 12.-4.8 # Approximate for Deuterium
+            else:
+                abundance = solar[Zion[0]]
+            #
             aux = self.strongest_transitions(ion,wvlims,n_max=1) #only the strongest
             if aux is not None:
                 if isinstance(aux,dict):#this should always be True given n_max=1
                     name = aux['name']
                 else:
                     name = aux['name'][0]
-                abundance = get_abundance(name)[0]
                 ion_name += [name]
                 strength += [np.log10(aux['wrest'].value * aux['f']) + abundance]
         if len(ion_name)==0:
@@ -670,56 +680,3 @@ class LineList(object):
                 sstr = sstr + ',' + llist
         return '[LineList: {:s}]'.format(sstr)
 
-
-def get_abundance(transitions_names): #please remove this function later 
-    """Temporary function to obtain an array of abundances from 
-    a given array of ion names. The abundance scheme should be 
-    implemented in a better way!!! This is only a temporary function"""
-
-    #Create a dictionary of abundances [temporary, until abundances 
-    # is implemented at a higher level somewhere]
-
-    if isinstance(transitions_names,basestring):
-        transitions_names = [transitions_names]
-
-    transitions_names = np.array(transitions_names)
-    
-
-    abundance = {
-    'H': 12.00,
-    'He': 10.9,
-    'Li': 1.05,
-    'Be': 1.38,
-    'B': 2.70,
-    'C': 8.43,
-    'N': 7.83,
-    'O': 8.69,
-    'F': 4.56,
-    'Ne': 7.93,
-    'Na': 6.24,
-    'Mg': 7.60,
-    'Al': 6.45,
-    'Si': 7.51,
-    'P': 5.41,
-    'S': 7.12,
-    'Cl': 5.50,
-    'Ar': 6.40,#jump to Fe
-    'Fe': 7.50
-    } #assume the rest are very small for now; see below
-
-    abund = []
-    #create abundance array
-    for name in transitions_names: 
-        #keep only the element
-        ion = name.split(' ')[0]
-        #get atom name
-        if ion[1].islower():
-            atom = ion[:2]
-        else:
-            atom = ion[0]
-        #check whether atom is in abundance dictionary
-        if atom in abundance.keys():
-            abund += [abundance[atom]]
-        else: #if not in key, use a very low abundance [Temporary!!!]
-            abund += [1.00]
-    return np.array(abund)
