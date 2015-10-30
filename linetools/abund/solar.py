@@ -29,7 +29,7 @@ class SolarAbund(object):
     Parameters:
     ----------
     ref: str, optional
-       'Asplund2009' :: AA&RA meteoritic table (several photometric)
+       'Asplund2009' :: Asplund et al. 2009, ARA&A, 47, 481 meteoritic table (several photometric)
     '''
     # Init
     def __init__(self, ref='Asplund2009', verbose=False):
@@ -60,32 +60,27 @@ class SolarAbund(object):
         self._data = table
 
 
-    #####
-    def __getattr__(self, k):
-        ''' Passback an array of the data 
-        Parameters:
-        ------------
-        k: Must be a Column name in the data Table
+    def get_ratio(self,rtio):
+        ''' Passback abundance ratio
+        rtio: str 
+          Element ratio (e.g. 'Si/Fe')
         '''
-        try:
-            # First try to access __getattr__ in the parent class.
-            # This is needed to avoid an infinite loop 
-            out = object.__getattr__(k)
-        except AttributeError:
-            colm = self._data[k]
-            return np.array(self._data[k])
-        else:
-            return out
+        # Elements
+        elm1,elm2 = rtio.split('/')
+        # Abundances
+        ab1 = self[elm1]
+        ab2 = self[elm2]
+        # ratio
+        return ab1-ab2
 
     def __getitem__(self, k):
-        ''' Passback data as a dict (from the table) for the input line
-
+        ''' Passback abundance value as a float given an element input
+ 
         Parameters:
         ----------
         k: overloaded
           int -- Atomic number (6)
           str -- Element name (e.g. 'C')
-          str -- Element ratio (e.g. 'Si/Fe')
 
         Returns:
         ----------
@@ -104,21 +99,14 @@ class SolarAbund(object):
             if len(mt) != 1:
                 raise ValueError('Atomic Number not in Table: {:d}'.format(k))
         elif isinstance(k, basestring): # Name
-            if '/' in k: # Ratio
-                elm1,elm2 = k.split('/')
-                ab1 = self[elm1]
-                ab2 = self[elm2]
-                return ab1-ab2
-            else:
-                mt = np.where(self._data['Elm'] == k)[0]
-                if len(mt) != 1:
-                    raise ValueError('Element not in Table: {:s}'.format(k))
+            mt = np.where(self._data['Elm'] == k)[0]
+            if len(mt) != 1:
+                raise ValueError('Element not in Table: {:s}'.format(k))
         else:
             raise IndexError('Not prepared for this type of input',k)
 
-        # Standard call
+        # Return
         return self._data['Abund'][mt][0]
-
 
     # Printing
     def __repr__(self):

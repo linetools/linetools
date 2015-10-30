@@ -31,6 +31,6 @@ def test_Z():
 
 def test_ratio():
 	sol = solar.SolarAbund()
-	np.testing.assert_allclose(sol['C/Fe'],0.98)
+	np.testing.assert_allclose(sol.get_ratio('C/Fe'),0.98)
 
 
