@@ -325,14 +325,16 @@ class AbsLine(SpectralLine):
                        'b': 0.*u.km/u.s, 'bsig': 0.*u.km/u.s  # Doppler
                        } )
     # Voigt
-    def generate_voigt(self, wave):
-        """  Generate a Voigt profile for the absorption line
+    def generate_voigt(self, wave, fwhm=None):
+        """  Generate a Voigt profile model for the absorption line
         in a given spectrum.
 
         Parameters:
         ----------
         wave: Quantity array
           Wavelength array on which to calculate the line
+        fwhm: float [None]
+          FWHM of the spectrometer (pixels)
 
         Returns:
         ----------
