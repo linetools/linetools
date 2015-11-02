@@ -325,7 +325,7 @@ class AbsLine(SpectralLine):
                        'b': 0.*u.km/u.s, 'bsig': 0.*u.km/u.s  # Doppler
                        } )
     # Voigt
-    def generate_voigt(self, wave, fwhm=None):
+    def generate_voigt(self, wave=None, fwhm=None):
         """  Generate a Voigt profile model for the absorption line
         in a given spectrum.
 
@@ -341,7 +341,23 @@ class AbsLine(SpectralLine):
         spec: XSpectrum1D
           Spectrum with the input wavelength and the absorbed flux
         """
+        from linetools.analysis import voigt as lav
+        reload(lav)
+        # Checks
+        if self.attrib['N'] < 1.:
+            raise ValueError("Need to initialize log column density in attrib['N']")
+        if self.attrib['b'] < 1.*u.km/u.s:
+            raise ValueError("Need to initialize Doppler parameter in attrib['b']")
+        if wave is None:
+            # Assume a spectrum has been loaded already
+            try:
+                wave = self.analy['spec'].dispersion
+            except:
+                raise ('You must provide a wavelength array in generate_voigt')
 
+        # Main call
+        spec = lav.voigt_model(wave, self, fwhm=fwhm)
+        return spec
 
     # AODM
     def measure_aodm(self, nsig=3.):
