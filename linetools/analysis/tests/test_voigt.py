@@ -4,7 +4,7 @@ import numpy as np
 from astropy import units as u
 
 from linetools.spectralline import AbsLine
-from linetools.analysis import voigt as lav
+from linetools.analysis.voigt import voigt_model 
 
 def test_voigt_sngl_line():
     # Wavelength array
@@ -34,5 +34,5 @@ def test_voigt_multi_line():
     abslin2.attrib['b'] = 15.*u.km/u.s
     abslin2.attrib['z'] = 2.0
     # Voigt
-    vmodel3 = lav.voigt_model(wave,[abslin,abslin2])
+    vmodel3 = voigt_model(wave,[abslin,abslin2])
     np.testing.assert_allclose(vmodel3.flux[imn],0.5714211)
