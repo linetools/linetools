@@ -27,9 +27,7 @@ from astropy.modeling import FittableModel, Parameter
 from linetools.spectra.xspectrum1d import XSpectrum1D
 from linetools.spectralline import AbsLine
 
-from xastropy.xutils import xdebug as xdb
-
-from xastropy.spec import abs_line
+#from xastropy.xutils import xdebug as xdb
 
 # The standard King model
 def voigtking(vin,a):
@@ -194,7 +192,6 @@ def voigt_model(iwave, line, fwhm=None, flg_ret=1, debug=False,
     if flg_ret % 2 == 1: ret_val.append(vmodel)
     if flg_ret % 4 >= 2: ret_val.append(tau)
     if flg_ret % 8 >= 4: ret_val.append(vmodel.flux.value)
-    #xdb.set_trace()
     if len(ret_val) == 1: ret_val = ret_val[0]
     return ret_val
 
