@@ -5,8 +5,11 @@ Module for parsing Line List data
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import os, imp, glob, pdb, gzip
+import os, imp, glob, pdb, gzip, sys
 import subprocess
+if not sys.version_info[0] > 2:
+    import codecs
+    open = codecs.open
 
 from astropy import units as u
 from astropy.units.quantity import Quantity
@@ -306,7 +309,7 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
         print(
             'linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
                 morton03_tab2))
-        f = open(morton03_tab2, 'r')
+        f = open(morton03_tab2, 'r', encoding="ISO-8859-1")
         lines = f.readlines()
         f.close()
 
@@ -533,9 +536,9 @@ def update_fval(table, verbose=False):
     imn = np.argmin(np.abs(table['wrest']-1526.707*u.AA))
     table['f'][imn] = 0.127
 
-    # Howk 2000
+    # Howk 2000 (using Weise 2002 as in Morton for FeII 1142,1143,1144)
     howk00_fil = lt_path + '/data/lines/howk00_table1.ascii'
-    howk00 = ascii.read(howk00_fil)
+    howk00 = ascii.read(howk00_fil, comment='#')
 
     # Dress up
     howk00['wrest'].unit = u.AA

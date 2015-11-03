@@ -1,7 +1,7 @@
 """
 Module for dealing with LSFs of various astronomical instruments.
 """
-from __future__ import print_function
+from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
 from scipy.interpolate import interp1d, Akima1DInterpolator
@@ -107,7 +107,7 @@ class LSF(object):
         # always the center value. Here we assume rel_pix are 
         # given in linear scale, which should be checked in load_XX_data()
 
-        n = len(rel_pix_array) / 2 #this should be always integer
+        n = len(rel_pix_array) // 2 #this should be always integer
         rel_pixel_array = np.arange(-n,n+1,1)
         self._data['rel_pix'] = rel_pixel_array
 
