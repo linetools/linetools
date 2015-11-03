@@ -18,6 +18,7 @@ import sys
 import os
 import copy
 import warnings
+import pdb
 
 from astropy import units as u
 from astropy.units import Unit, Quantity
@@ -109,6 +110,7 @@ def voigt_model(iwave, line, fwhm=None, flg_ret=1, debug=False,
         dwave = np.median(np.abs(iwave-np.roll(iwave,1)))
         medwave = np.median(iwave)
         warnings.warn('Using a sub-grid wavelength array because the input array is too coarse.')
+        warnings.warn('Will return values rebinned to the input array.')
         if const.c.to('km/s')*dwave/medwave > minb/10.:
             wmin = np.min(iwave.to('AA').value)
             wmax = np.max(iwave.to('AA').value)
@@ -144,16 +146,12 @@ def voigt_model(iwave, line, fwhm=None, flg_ret=1, debug=False,
         raise ValueError('voigt: Unknown type for voigt line')
 
     # tau
-    if 'tau' not in locals():
-        #cold = 10.0**par[0] / u.cm / u.cm
+    if 'tau' not in locals(): # Deals with multiple line input
         cold = 10.0**line.attrib['N'] / u.cm / u.cm
-        #zp1=par[1]+1.0
         zp1=line.attrib['z']+1.0
 
-        #wv=par[3].to(u.cm) #*1.0e-8
         wv=line.wrest.to(u.cm) #*1.0e-8
         nujk = (const.c / wv).to(u.Hz)
-        #dnu = (par[2].to(u.km/u.s) / wv).to('Hz')
         dnu = (line.attrib['b'].to(u.km/u.s) / wv).to('Hz')
         if line.data['gamma'].value == 0.:
             warnings.warn('Gamma value is probably not set for wrest={:g} {}!'
@@ -172,7 +170,15 @@ def voigt_model(iwave, line, fwhm=None, flg_ret=1, debug=False,
 
     # Only tau?
     if flg_ret == 2:
+        if flg_rebin: # Can only occur for single line input
+            # Might be better to do in flux space, but small flux values cause trouble
+            tmodel = XSpectrum1D.from_tuple((wave,tau))
+            tmodel = tmodel.rebin(iwave)
+            tau = tmodel.flux.value
+            warnings.warn('Rebinned tau back to your input array.  Reconsider input')
+        # Return
         return tau
+
     # Flux
     flux = np.exp(-1.0*tau)
     vmodel = XSpectrum1D.from_tuple((wave,flux))
