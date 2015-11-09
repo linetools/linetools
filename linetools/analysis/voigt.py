@@ -31,7 +31,7 @@ from linetools.spectra.xspectrum1d import XSpectrum1D
 from linetools.spectralline import AbsLine
 from linetools.spectra import convolve as lsc
 
-from xastropy.xutils import xdebug as xdb
+#from xastropy.xutils import xdebug as xdb
 
 spl = 29979245800.0 # cm/s
 # 
