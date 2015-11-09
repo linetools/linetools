@@ -5,7 +5,7 @@ import pdb
 from astropy import units as u
 
 from linetools.spectralline import AbsLine
-from linetools.analysis.voigt import voigt_model 
+from linetools.analysis.voigt import voigt_from_abslines
 
 def test_voigt_sngl_line():
     # Wavelength array
@@ -18,7 +18,7 @@ def test_voigt_sngl_line():
     abslin.attrib['z'] = 2.0
     # Voigt
     vmodel = abslin.generate_voigt(wave=wave)
-    np.testing.assert_allclose(vmodel.flux[imn],0.0514565487518)
+    np.testing.assert_allclose(vmodel.flux[imn].value,0.05145500775919881)
 
 def test_voigt_multi_line():
     # Wavelength array
@@ -35,8 +35,8 @@ def test_voigt_multi_line():
     abslin2.attrib['b'] = 15.*u.km/u.s
     abslin2.attrib['z'] = 2.0
     # Voigt
-    vmodel3 = voigt_model(wave,[abslin,abslin2])
-    np.testing.assert_allclose(vmodel3.flux[imn],0.5714211)
+    vmodel3 = voigt_from_abslines(wave,[abslin,abslin2])
+    np.testing.assert_allclose(vmodel3.flux[imn].value,0.5715512949324375)
 
 def test_voigt_sngl_tau():
     # Wavelength array
@@ -48,5 +48,5 @@ def test_voigt_sngl_tau():
     abslin.attrib['b'] = 25.*u.km/u.s
     abslin.attrib['z'] = 2.0
     # Tau
-    tau = voigt_model(wave,abslin,flg_ret=2)
-    np.testing.assert_allclose(tau[imn], 2.968099279427219)
+    tau = voigt_from_abslines(wave,abslin,ret='tau')
+    np.testing.assert_allclose(tau[imn], 2.9681283001576779)

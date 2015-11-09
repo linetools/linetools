@@ -355,7 +355,7 @@ class AbsLine(SpectralLine):
                 raise ('You must provide a wavelength array in generate_voigt')
 
         # Main call
-        spec = lav.voigt_model(wave, self, **kwargs)
+        spec = lav.voigt_from_abslines(wave, self, **kwargs)
         return spec
 
     # AODM
