@@ -128,7 +128,8 @@ def voigt_tau(wave, par):
     return tau
 
 # The primary call
-def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'], debug=False, skip_wveval=False):
+def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'], debug=False, 
+    skip_wveval=False):
     '''Generates a Voigt model from a line or list of lines
     This may run *slowly* for many many lines
 
