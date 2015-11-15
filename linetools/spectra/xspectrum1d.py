@@ -294,7 +294,7 @@ or QtAgg backends to enable all interactive plotting commands.
 
         Parameters
         ----------
-        new_wv: Quantity array
+        new_wv : Quantity array
           New wavelength array
 
         Returns:
