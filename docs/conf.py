@@ -76,6 +76,10 @@ copyright = '{0}, {1}'.format(
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
+extensions = [
+    'sphinx.ext.autodoc',
+    'sphinx.ext.mathjax',
+]
 
 __import__(setup_cfg['package_name'])
 package = sys.modules[setup_cfg['package_name']]
