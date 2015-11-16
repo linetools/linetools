@@ -255,8 +255,6 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             uwave = u.Quantity(wave, unit=u.AA)
         else:
             uwave = u.Quantity(wave)
-        import pdb
-        pdb.set_trace()
         if sig is not None:
             xspec1d = XSpectrum1D.from_array(uwave, u.Quantity(fx),
                                              uncertainty=StdDevUncertainty(sig))
