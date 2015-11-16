@@ -28,7 +28,7 @@ def test_get_cdelt_dcflag():
 def test_sep_files():
     spec = io.readspec(data_path('UM184_nF.fits'))
     idl = ascii.read(data_path('UM184.dat.gz'), names=['wave', 'flux', 'sig'])
-    np.testing.assert_allclose(spec.dispersion, idl['wave'])
+    np.testing.assert_allclose(spec.dispersion.value, idl['wave'])
     np.testing.assert_allclose(spec.sig, idl['sig'], atol=2e-3, rtol=0)
 
     assert spec.dispersion.unit == u.Unit('AA')
@@ -57,5 +57,5 @@ def test_uves_popler():
 def test_read_table():
     t = Table([(1,2,3), (1,2,3), (1,2,3)], names=['WAVE', 'FLUX', 'ERR'])
     spec = io.readspec(t)
-    np.testing.assert_allclose(spec.dispersion[0], 1)
+    np.testing.assert_allclose(spec.dispersion[0].value, 1)
     np.testing.assert_allclose(spec.flux[0], 1)
