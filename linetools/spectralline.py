@@ -130,13 +130,16 @@ class SpectralLine(object):
             raise ValueError('ismatch: Bad input')
 
         # Queries
-        answer = ( np.allclose(self.wrest, wrest) &
+        answer = ( np.allclose(self.wrest.to(u.AA).value,
+                               wrest.to(u.AA).value) &
             np.allclose(self.attrib['z'], z, rtol=1e-6))
         if Zion is not None:
             answer = answer & (self.data['Z'] == Zion[0]) & (self.data['ion'] == Zion[1])
         if RADec is not None:
-            answer = (answer & np.allclose(self.attrib['RA'], RADec[0]) &
-                np.allclose(self.attrib['Dec'], RADec[1]) )
+            answer = (answer & np.allclose(self.attrib['RA'].to(u.deg).value,
+                                           RADec[0].to(u.deg).value) &
+                      np.allclose(self.attrib['Dec'].to(u.deg).value,
+                                  RADec[1].to(u.deg).value) )
 
         # Return
         return answer
