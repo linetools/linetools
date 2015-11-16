@@ -15,6 +15,12 @@ def make_chunks_qso(wa, redshift, divmult=1, forest_divmult=1, debug=False):
     prepare_knots, assuming a QSO spectrum
     """
 
+    cond = np.isnan(wa)
+    if np.any(cond):
+        warnings.warn('Some wavelengths are NaN, ignoring these pixels.')
+        wa = wa[~cond]
+        assert len(wa) > 0
+
     zp1 = 1 + redshift
     #reflines = np.array([1025.72, 1215.6701, 1240.14, 1398.0,
     #                     1549.06, 1908,      2800            ])

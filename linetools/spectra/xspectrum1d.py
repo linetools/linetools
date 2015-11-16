@@ -25,6 +25,7 @@ from ..analysis.interactive_plot import InteractiveCoFit
 from ..analysis.continuum import prepare_knots
 from ..analysis.continuum import find_continuum
 
+eps = np.finfo(float).eps
 
 try:
     from specutils import Spectrum1D
@@ -92,6 +93,18 @@ class XSpectrum1D(Spectrum1D):
             return self.uncertainty.array
         else:
             return None
+
+    # overload dispersion to work around a bug in specutils that sets
+    # the first dispersion value to NaN for wavelength lookup tables.
+    @property
+    def dispersion(self):
+        #returning the disp
+        pixel_indices = np.arange(len(self.flux))
+        out = self.wcs(self.indexer(pixel_indices))
+        if abs(pixel_indices[0]) < eps:
+            out.value[0] = self.wcs.lookup_table_parameter.value[0]
+        return out
+
 
     #  Add noise
     def add_noise(self,seed=None,s2n=None):
@@ -294,7 +307,7 @@ or QtAgg backends to enable all interactive plotting commands.
 
         Parameters
         ----------
-        new_wv: Quantity array
+        new_wv : Quantity array
           New wavelength array
 
         Returns:

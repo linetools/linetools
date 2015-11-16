@@ -129,31 +129,32 @@ def voigt_tau(wave, par):
     return tau
 
 # The primary call
-def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'], debug=False, skip_wveval=False):
-    '''Generates a Voigt model from a line or list of lines
-    This may run *slowly* for many many lines
+def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'], skip_wveval=False, debug=False):
+    '''Generates a Voigt model from a line or list of AbsLines
+    This may run *slowly* for many many lines.
 
     Parameters:
-    ------------
-    wave: Quantity array
+    -----------
+    wave : Quantity array
       Observed wavelengths
-    line: AbsLine, List of Absline, or array of parameters
-    skip_wveval: bool, optional [False]
-      Skip wavelength check
-      If False, the median dwave value is calculated and compared against
-      1/10 of the b-value of the input line(s).  
-      If necessary, the wavelenght array is rebinned for the calculation
-      and the final array is rebinned to the original.
-    fwhm: float, optional [None]
+    line : AbsLine, List of Absline, or array of parameters
+    fwhm : float, optional [None]
       FWHM for Gaussian smoothing (pixels)
     ret : list, optional  
       List of things to return.  Options are 'vmodel', 'tau', 'flux'
         vmodel :: XSpectrum1D
         tau  :: optical depth array
         flux :: Absorbed flux [np.ndarray]
+    skip_wveval : bool, optional [False]
+      Skip wavelength check
+      If False, the median dwave value is calculated and compared against
+      1/10 of the b-value of the input line(s).  
+      If necessary, the wavelenght array is rebinned for the calculation
+      and the final array is rebinned to the original.
+    debug : bool, optional
 
     Returns:
-    ------------
+    --------
     list or single object
       Depends on ret, as described above
     '''
