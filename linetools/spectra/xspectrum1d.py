@@ -7,6 +7,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import numpy as np
 import os
 import json
+import warnings
 
 import astropy as apy
 from astropy import units as u
@@ -73,8 +74,6 @@ class XSpectrum1D(Spectrum1D):
             if wv_unit is None:
                 wv_unit = u.AA
         uwave = u.Quantity(ituple[0], unit=wv_unit)
-        #import pdb
-        #pdb.set_trace()
         # Generate
         if len(ituple) == 2: # wave, flux
             spec = cls.from_array(uwave, u.Quantity(ituple[1]))
@@ -281,7 +280,6 @@ class XSpectrum1D(Spectrum1D):
 
 
         if plt.get_backend() == 'MacOSX':
-            import warnings
             warnings.warn("""\
 Looks like you're using the MacOSX matplotlib backend. Switch to the TkAgg
 or QtAgg backends to enable all interactive plotting commands.
@@ -624,6 +622,13 @@ or QtAgg backends to enable all interactive plotting commands.
         Use linetools.analysis.interp.AkimaSpline to regenerate the
         continuum from the the knots.
         """
+        import matplotlib.pyplot as plt
+        if plt.get_backend() == 'MacOSX':
+            warnings.warn("""\
+Looks like you're using the MacOSX matplotlib backend. Switch to the TkAgg
+or QtAgg backends to enable all interactive plotting commands.
+""")
+            return 
 
         wa = self.dispersion.value
 
