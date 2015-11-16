@@ -5,13 +5,14 @@ python:
     - 2.7
     #- 3.3
     - 3.4
+    - 3.5
     # This is just for "egg_info".  All other builds are explicitly given in the matrix
 env:
     global:
         # The following versions are the 'default' for tests, unless
         # overidden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
-        - NUMPY_VERSION=1.9
+        - NUMPY_VERSION=1.10
         - ASTROPY_VERSION=stable
         - CONDA_INSTALL='conda install -c astropy-ci-extras --yes'
         - PIP_INSTALL='pip install'
@@ -45,8 +46,13 @@ matrix:
         #  env: SETUP_CMD='test'
         - python: 3.4
           env: SETUP_CMD='test'
+        - python: 3.5
+          env: SETUP_CMD='test'
 
-        # Try older numpy versions. Skip these, because the require astroy versions < 1.0
+        # Try older numpy versions.
+        - python: 2.7
+          env: NUMPY_VERSION=1.9 SETUP_CMD='test'
+        # Skip these, because the require astropy versions < 1.0
         #- python: 2.7
         #  env: NUMPY_VERSION=1.8 SETUP_CMD='test'
         #- python: 2.7
@@ -64,7 +70,7 @@ before_install:
     - ./miniconda.sh -b -p $HOME/miniconda
     - export PATH=$HOME/miniconda/bin:$PATH
     - hash -r
-    - conda config --set always_yes yes --set changeps1 no 
+    - conda config --set always_yes yes --set changeps1 no
     - conda update --yes conda
 
     # UPDATE APT-GET LISTINGS
