@@ -8,8 +8,8 @@ linetool Scripts
 Quick Plots
 ===========
 
-linet_absline
--------------
+lt_absline
+----------
 
 Simple script to plot a single absoprtion line.  
 Requires the rest wavelength (Ang), log10 column density, and 
@@ -17,7 +17,7 @@ Doppler parameter (km/s).
 
 Here is a simple example::
 
-	linet_absline 1215.6701 14.0 30
+	lt_absline 1215.6701 14.0 30
 
 A plot will appear and the line info and EW as well, i.e. ::
 
@@ -26,6 +26,6 @@ A plot will appear and the line info and EW as well, i.e. ::
 
 Try:: 
 
-	linet_absline -h
+	lt_absline -h
 
 for the full set of options.
