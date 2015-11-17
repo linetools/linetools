@@ -133,8 +133,8 @@ class XSpectrum1D(Spectrum1D):
         #
         self.flux = self.flux + (rand * sig)*self.flux.unit
 
-    #  Add a dummy sigma array via uncertainty
-    def dummy_sig(self,sigv=0.):
+    #  Add a constant sigma array via uncertainty
+    def constant_sig(self,sigv=0.):
         """Add a dummy sig array via uncertainty
 
         Parameters
