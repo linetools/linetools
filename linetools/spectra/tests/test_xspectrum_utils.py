@@ -3,6 +3,7 @@ from __future__ import print_function, absolute_import, \
      division, unicode_literals
 import os
 import pytest
+import pdb
 from astropy import units as u
 import numpy as np
 from astropy.io import fits, ascii
@@ -37,6 +38,15 @@ def test_box_smooth():
 
     newspec5 = spec.box_smooth(5)
     np.testing.assert_allclose(newspec5.flux[3000], 1.086308240890503)
+
+# Diagnostics
+def test_diagnostics():
+    spec = io.readspec(data_path('UM184_nF.fits'))
+    # 
+    diag = spec.diagnostics()
+    #
+    np.testing.assert_allclose(diag['wave_min'].value, 3056.6673905210096)
+    np.testing.assert_allclose(diag['med_s2n'],18.383451461791992)
 
 # Gaussian smooth
 def test_gauss_smooth():

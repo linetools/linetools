@@ -133,9 +133,8 @@ class XSpectrum1D(Spectrum1D):
         #
         self.flux = self.flux + (rand * sig)*self.flux.unit
 
-    #  Add a constant sigma array via uncertainty
     def constant_sig(self,sigv=0.):
-        """Add a dummy sig array via uncertainty
+        """Add a constant sigma array via uncertainty
 
         Parameters
         ----------
@@ -143,6 +142,37 @@ class XSpectrum1D(Spectrum1D):
           scalar sigma value to use
         """
         self.uncertainty=StdDevUncertainty(np.ones(self.flux.size)*sigv)
+
+    def diagnostics(self):
+        """Generate simple diagnositics on the spectrum.  As a default,
+        the method cuts on `good' pixels.
+        Useful for plotting, quick comparisons, etc.
+        Might make this a default property of the Class
+
+        Returns
+        -------
+        diag_dict : dict  
+         A dict containing basic info on the spectrum
+          wave_min : Quantity
+            minimum wavelength
+          wave_max : Quantity
+            maximum wavelength
+          med_flux : Quantity
+            median flux
+          med_s2n : Quantity
+            median S/N
+        """
+        # Cut on good pixels
+        gdpx = self.sig > 0.
+        # Generate
+        diag_dict = dict(
+            wave_min=np.min(self.dispersion[gdpx]),
+            wave_max=np.max(self.dispersion[gdpx]),
+            med_flux=np.median(self.flux[gdpx]),
+            med_s2n=np.median(self.flux[gdpx]/self.sig[gdpx]).value,
+            )
+        # Return
+        return diag_dict
 
     #  Normalize
     def normalize(self, conti=None, verbose=False, no_check=False):
