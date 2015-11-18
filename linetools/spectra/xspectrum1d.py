@@ -159,7 +159,7 @@ class XSpectrum1D(Spectrum1D):
             maximum wavelength
           med_flux : Quantity
             median flux
-          med_s2n : Quantity
+          med_s2n : float
             median S/N
         """
         # Cut on good pixels
