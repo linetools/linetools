@@ -111,11 +111,11 @@ class XSpectrum1D(Spectrum1D):
         Uses the uncertainty array unless otherwise specified
         Converts flux to float64
 
-        Parameters:
-        -----------
-        seed: int, optional
+        Parameters
+        ----------
+        seed : int, optional
           Seed for the random number generator [not yet functional]
-        s2n: float, optional
+        s2n : float, optional
           S/N per pixel for the output spectrum
         '''
         # Seed
@@ -132,6 +132,17 @@ class XSpectrum1D(Spectrum1D):
             sig = self.sig
         #
         self.flux = self.flux + (rand * sig)*self.flux.unit
+
+    #  Add a constant sigma array via uncertainty
+    def constant_sig(self,sigv=0.):
+        """Add a dummy sig array via uncertainty
+
+        Parameters
+        ----------
+        sigv : float, optional
+          scalar sigma value to use
+        """
+        self.uncertainty=StdDevUncertainty(np.ones(self.flux.size)*sigv)
 
     #  Normalize
     def normalize(self, conti=None, verbose=False, no_check=False):

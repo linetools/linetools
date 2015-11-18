@@ -201,7 +201,7 @@ class SpectralLine(object):
 
     # EW 
     def measure_ew(self, flg=1, initial_guesses=None):
-        """  EW calculation
+        """EW calculation
         Default is simple boxcar integration
         Observer frame, not rest-frame (use measure_restew below)
           wvlim must be set!
@@ -209,17 +209,17 @@ class SpectralLine(object):
 
         Parameters
         ----------
-        flg: int, optional
-          1: Boxcar integration
-          2: Gaussian fit
+        flg : int, optional
+          1-- Boxcar integration
+          2-- Gaussian fit
         
         initial_guesses, optional: tuple of floats
           if a model is chosen (e.g. flg=2, Gaussian) a tuple of (amplitude, mean, stddev)
           can be specified. 
 
-        Fills:
-        -------
-        self.attrib[ 'EW', 'sigEW' ] : 
+        Fills
+        -----
+        self.attrib[ 'EW', 'sigEW' ]
           EW and error in observer frame
         """
         imp.reload(lau)
