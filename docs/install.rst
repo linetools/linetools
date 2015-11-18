@@ -27,7 +27,7 @@ If you're missing any, install them with (for example)::
 
   conda install astropy pyyaml matplotlib
 
-If their versions are too old, update them with::
+If their versions are too old, update them with (for example)::
 
   conda update astropy
 
