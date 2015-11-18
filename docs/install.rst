@@ -13,7 +13,7 @@ Linetools depends on these packages:
 * `numpy <http://www.numpy.org/>`_ version 1.9 or later
 * `astropy <http://www.astropy.org>`_ version 1.0 or later
 * `scipy <http://www.scipy.org/>`_ version 0.16 or later
-* `matplotlib <http://matplotlib.org/>`_  version 2 or later
+* `matplotlib <http://matplotlib.org/>`_  version 1.4 or later
 * `pyyaml <http://pyyaml.org/wiki/PyYAML>`_ version 3.11 or later
 * `specutils <https://github.com/astropy/specutils>`_ version 0.2 or later
 
@@ -36,7 +36,7 @@ installed using `pip <https://pip.pypa.io/en/latest/>`_::
   
   pip install --no-deps specutils
 
-If you aren't using Anaconda then all of the dependencies can be
+If you aren't using Anaconda then all of the dependencies can also be
 installed with pip.
 
 
@@ -44,7 +44,8 @@ Installing Linetools
 ====================
 
 If you plan to play around with the code and possibly contribute
-changes, then follow the instructions below. Otherwise simply use::
+changes, then follow the instructions in the section below,
+:ref:`installsource`. Otherwise simply use::
 
     pip install --no-deps git+https://github.com/linetools/linetools.git
 
@@ -74,6 +75,20 @@ modules to see those changes in an existing Python session, though).
 
 Fantastic! In that case, follow the `Astropy developer guidelines
 <http://docs.astropy.org/en/stable/development/workflow/development_workflow.html>`_,
-, replacing every instance of `astropy` in those instructions with
+replacing every instance of `astropy` in those instructions with
 `linetools`. This will install a 'fork' of linetools that you can use
 to submit code changes to the main repository.
+
+
+Running Tests
+=============
+
+If you install linetools from source, then you can run tests to see
+whether your installation works correctly. From the source directory
+run::
+
+    python setup.py test
+
+This takes a couple of minutes to run. If you notice any failures,
+we'd love you to report them on the `linetools issue tracker
+<http://github.com/linetools/linetools/issues>`_.
