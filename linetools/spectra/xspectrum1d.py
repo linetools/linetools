@@ -91,6 +91,14 @@ class XSpectrum1D(Spectrum1D):
         else:
             return None
 
+    @property
+    def wvmin(self):
+        ''' Minimum wavelength '''
+        if self._wvmin is None:
+            self.set_diagnostics()
+        else:
+            return self._wvmin
+
     #  Add noise
     def add_noise(self,seed=None,s2n=None):
         '''Add noise to the existing spectrum
