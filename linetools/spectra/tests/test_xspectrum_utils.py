@@ -39,15 +39,6 @@ def test_box_smooth():
     newspec5 = spec.box_smooth(5)
     np.testing.assert_allclose(newspec5.flux[3000], 1.086308240890503)
 
-# Diagnostics
-def test_diagnostics():
-    spec = io.readspec(data_path('UM184_nF.fits'))
-    # 
-    diag = spec.diagnostics()
-    #
-    np.testing.assert_allclose(diag['wave_min'].value, 3056.6673905210096)
-    np.testing.assert_allclose(diag['med_s2n'],18.383451461791992)
-
 # Gaussian smooth
 def test_gauss_smooth():
     spec = io.readspec(data_path('UM184_nF.fits'))
@@ -78,6 +69,11 @@ def test_relvel():
     # Test
     np.testing.assert_allclose(velo[6600].value, -3716.441360213781)
     assert velo.unit == (u.km/u.s)
+
+# Rel vel
+def test_repr():
+    spec = io.readspec(data_path('UM184_nF.fits'))
+    print(spec)
 
 # Write FITS
 def test_write_ascii():

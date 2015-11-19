@@ -46,19 +46,28 @@ class XSpectrum1D(Spectrum1D):
     '''
 
     @classmethod
-    def from_file(self, file):
+    def from_file(self, ifile):
         ''' From file
+
+        Parameters
+        ----------
+        ifile : str
+          Filename
         '''
-        return lsio.readspec(file)
+        slf = lsio.readspec(ifile)
+        slf.set_diagnostics()
+        return slf
 
     @classmethod
     def from_spec1d(cls, spec1d):
         ''' Input Spectrum1D
         '''
         # Giddy up
-        return cls(flux=spec1d.flux, wcs=spec1d.wcs, unit=spec1d.unit,
+        slf = cls(flux=spec1d.flux, wcs=spec1d.wcs, unit=spec1d.unit,
                    uncertainty=spec1d.uncertainty, mask=spec1d.mask,
                    meta=spec1d.meta.copy())
+        slf.set_diagnostics()
+        return slf
 
     @classmethod
     def from_tuple(cls,ituple):
@@ -82,6 +91,7 @@ class XSpectrum1D(Spectrum1D):
                 uncertainty=StdDevUncertainty(ituple[2]))
         spec.filename = 'none'
         # Return
+        spec.set_diagnostics()
         return spec
 
     @property
@@ -104,6 +114,38 @@ class XSpectrum1D(Spectrum1D):
             out.value[0] = self.wcs.lookup_table_parameter.value[0]
         return out
 
+    def set_diagnostics(self):
+        """Generate simple diagnositics on the spectrum.  As a default,
+        the method cuts on `good' pixels.
+        Useful for plotting, quick comparisons, etc.
+        Might make this a default property of the Class
+
+        Returns
+        -------
+        diag_dict : dict  
+         A dict containing basic info on the spectrum
+          wave_min : Quantity
+            minimum wavelength
+          wave_max : Quantity
+            maximum wavelength
+          med_flux : Quantity
+            median flux
+          med_s2n : float
+            median S/N
+        """
+        # Cut on good pixels
+        if self.sig is not None:
+            gdpx = self.sig > 0.
+        else:
+            gdpx = np.array([True]*self.flux.size)
+        # Fill in attributes
+        self.wvmin=np.min(self.dispersion[gdpx])
+        self.wvmax=np.max(self.dispersion[gdpx])
+        self.median_flux=np.median(self.flux[gdpx])
+        if self.sig is not None:
+            self.median_s2n=np.median(self.flux[gdpx].value/self.sig[gdpx])
+        else:
+            self.median_s2n=0.
 
     #  Add noise
     def add_noise(self,seed=None,s2n=None):
@@ -143,36 +185,7 @@ class XSpectrum1D(Spectrum1D):
         """
         self.uncertainty=StdDevUncertainty(np.ones(self.flux.size)*sigv)
 
-    def diagnostics(self):
-        """Generate simple diagnositics on the spectrum.  As a default,
-        the method cuts on `good' pixels.
-        Useful for plotting, quick comparisons, etc.
-        Might make this a default property of the Class
 
-        Returns
-        -------
-        diag_dict : dict  
-         A dict containing basic info on the spectrum
-          wave_min : Quantity
-            minimum wavelength
-          wave_max : Quantity
-            maximum wavelength
-          med_flux : Quantity
-            median flux
-          med_s2n : float
-            median S/N
-        """
-        # Cut on good pixels
-        gdpx = self.sig > 0.
-        # Generate
-        diag_dict = dict(
-            wave_min=np.min(self.dispersion[gdpx]),
-            wave_max=np.max(self.dispersion[gdpx]),
-            med_flux=np.median(self.flux[gdpx]),
-            med_s2n=np.median(self.flux[gdpx]/self.sig[gdpx]).value,
-            )
-        # Return
-        return diag_dict
 
     #  Normalize
     def normalize(self, conti=None, verbose=False, no_check=False):
@@ -722,3 +735,18 @@ or QtAgg backends to enable all interactive plotting commands.
         self.meta['contpoints'].extend(
             [tuple(pts) for pts in wrapper.contpoints])
         self.meta['contpoints'].sort()
+
+    # Output
+    def __repr__(self):
+        txt = '[{:s}: '.format(self.__class__.__name__)
+        # Name
+        try:
+            txt = txt+' file={:s},'.format(self.filename)
+        except:
+            pass
+        # wrest
+        txt = txt + ' wvmin={:g}, wvmax={:g}, median_flux={:g}'.format(
+            self.wvmin,self.wvmax,self.median_flux)
+        txt = txt + ']'
+        return (txt)
+

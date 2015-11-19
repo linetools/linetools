@@ -8,6 +8,7 @@ from astropy import units as u
 import numpy as np
 from astropy.io import fits
 
+from linetools.spectra import io
 from linetools.spectra.xspectrum1d import XSpectrum1D
 
 
@@ -37,3 +38,12 @@ def test_from_file():
     np.testing.assert_allclose(spec.sig, idl['sig'], atol=2e-3, rtol=0)
 
     assert spec.dispersion.unit == u.Unit('AA')
+
+# Diagnostics
+def test_diagnostics():
+    spec = io.readspec(data_path('UM184_nF.fits'))
+    # 
+    np.testing.assert_allclose(spec.wvmin.value, 3056.6673905210096)
+    np.testing.assert_allclose(spec.median_s2n,18.383451461791992)
+
+

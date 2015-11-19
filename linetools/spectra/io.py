@@ -279,6 +279,8 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
 
     # Add in the header
     xspec1d.head = head0
+    # Diagnostics
+    xspec1d.set_diagnostics()
 
     # Return
     return xspec1d
