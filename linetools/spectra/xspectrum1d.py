@@ -325,7 +325,7 @@ class XSpectrum1D(Spectrum1D):
 
         show = kwargs.pop('show', True)
 
-        kwargs.update(color='0.6')
+        kwargs.update(color='0.8')
         artists['fl'] = ax.plot(self.dispersion, self.flux,
                                 drawstyle='steps-mid', **kwargs)[0]
 
