@@ -94,6 +94,7 @@ package_info['package_data'][PACKAGENAME] += data_files
 # Define entry points for command-line scripts
 entry_points = {}
 entry_points['console_scripts'] = [
+    'lt_absline = linetools.scripts.linet_absline:main',
 #    'astropy-package-template-example = packagename.example_mod:main',
 ]
 

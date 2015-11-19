@@ -5,8 +5,9 @@ Module for utilites related to spectra
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import os
+import os, pdb
 import json
+import warnings
 
 import astropy as apy
 from astropy import units as u
@@ -25,6 +26,7 @@ from ..analysis.interactive_plot import InteractiveCoFit
 from ..analysis.continuum import prepare_knots
 from ..analysis.continuum import find_continuum
 
+eps = np.finfo(float).eps
 
 try:
     from specutils import Spectrum1D
@@ -42,19 +44,26 @@ class XSpectrum1D(Spectrum1D):
     '''
 
     @classmethod
-    def from_file(self, file):
+    def from_file(self, ifile):
         ''' From file
+
+        Parameters
+        ----------
+        ifile : str
+          Filename
         '''
-        return lsio.readspec(file)
+        slf = lsio.readspec(ifile)
+        return slf
 
     @classmethod
     def from_spec1d(cls, spec1d):
         ''' Input Spectrum1D
         '''
         # Giddy up
-        return cls(flux=spec1d.flux, wcs=spec1d.wcs, unit=spec1d.unit,
+        slf = cls(flux=spec1d.flux, wcs=spec1d.wcs, unit=spec1d.unit,
                    uncertainty=spec1d.uncertainty, mask=spec1d.mask,
                    meta=spec1d.meta.copy())
+        return slf
 
     @classmethod
     def from_tuple(cls,ituple):
@@ -70,8 +79,6 @@ class XSpectrum1D(Spectrum1D):
             if wv_unit is None:
                 wv_unit = u.AA
         uwave = u.Quantity(ituple[0], unit=wv_unit)
-        #import pdb
-        #pdb.set_trace()
         # Generate
         if len(ituple) == 2: # wave, flux
             spec = cls.from_array(uwave, u.Quantity(ituple[1]))
@@ -93,11 +100,60 @@ class XSpectrum1D(Spectrum1D):
 
     @property
     def wvmin(self):
-        ''' Minimum wavelength '''
-        if self._wvmin is None:
+        '''Minimum wavelength '''
+        try:
+            return self._wvmin 
+        except AttributeError:
             self.set_diagnostics()
-        else:
             return self._wvmin
+
+    @property
+    def wvmax(self):
+        '''Maximum wavelength '''
+        try:
+            return self._wvmax 
+        except AttributeError:
+            self.set_diagnostics()
+            return self._wvmax
+
+    # overload dispersion to work around a bug in specutils that sets
+    # the first dispersion value to NaN for wavelength lookup tables.
+    @property
+    def dispersion(self):
+        #returning the disp
+        pixel_indices = np.arange(len(self.flux))
+        out = self.wcs(self.indexer(pixel_indices))
+        if abs(pixel_indices[0]) < eps:
+            out.value[0] = self.wcs.lookup_table_parameter.value[0]
+        return out
+
+    def set_diagnostics(self):
+        """Generate simple diagnositics on the spectrum.  As a default,
+        the method cuts on `good' pixels.
+        Useful for plotting, quick comparisons, etc.
+        Might make this a default property of the Class
+
+        Returns
+        -------
+        diag_dict : dict  
+         A dict containing basic info on the spectrum
+          wave_min : Quantity
+            minimum wavelength
+          wave_max : Quantity
+            maximum wavelength
+          med_flux : Quantity
+            median flux
+          med_s2n : float
+            median S/N
+        """
+        # Cut on good pixels
+        if self.sig is not None:
+            gdpx = self.sig > 0.
+        else:
+            gdpx = np.array([True]*self.flux.size)
+        # Fill in attributes
+        self._wvmin=np.min(self.dispersion[gdpx])
+        self._wvmax=np.max(self.dispersion[gdpx])
 
     #  Add noise
     def add_noise(self,seed=None,s2n=None):
@@ -105,11 +161,11 @@ class XSpectrum1D(Spectrum1D):
         Uses the uncertainty array unless otherwise specified
         Converts flux to float64
 
-        Parameters:
-        -----------
-        seed: int, optional
+        Parameters
+        ----------
+        seed : int, optional
           Seed for the random number generator [not yet functional]
-        s2n: float, optional
+        s2n : float, optional
           S/N per pixel for the output spectrum
         '''
         # Seed
@@ -126,6 +182,18 @@ class XSpectrum1D(Spectrum1D):
             sig = self.sig
         #
         self.flux = self.flux + (rand * sig)*self.flux.unit
+
+    def constant_sig(self,sigv=0.):
+        """Add a constant sigma array via uncertainty
+
+        Parameters
+        ----------
+        sigv : float, optional
+          scalar sigma value to use
+        """
+        self.uncertainty=StdDevUncertainty(np.ones(self.flux.size)*sigv)
+
+
 
     #  Normalize
     def normalize(self, conti=None, verbose=False, no_check=False):
@@ -160,8 +228,6 @@ class XSpectrum1D(Spectrum1D):
                 raise ValueError('normalize: Continuum needs to be same length as flux array')
 
         # Adjust the flux
-        import pdb
-        pdb.set_trace()
         self.flux /= conti
         if self.uncertainty is not None:
             self.uncertainty.array /= conti
@@ -276,7 +342,6 @@ class XSpectrum1D(Spectrum1D):
 
 
         if plt.get_backend() == 'MacOSX':
-            import warnings
             warnings.warn("""\
 Looks like you're using the MacOSX matplotlib backend. Switch to the TkAgg
 or QtAgg backends to enable all interactive plotting commands.
@@ -302,7 +367,7 @@ or QtAgg backends to enable all interactive plotting commands.
 
         Parameters
         ----------
-        new_wv: Quantity array
+        new_wv : Quantity array
           New wavelength array
 
         Returns:
@@ -619,6 +684,13 @@ or QtAgg backends to enable all interactive plotting commands.
         Use linetools.analysis.interp.AkimaSpline to regenerate the
         continuum from the the knots.
         """
+        import matplotlib.pyplot as plt
+        if plt.get_backend() == 'MacOSX':
+            warnings.warn("""\
+Looks like you're using the MacOSX matplotlib backend. Switch to the TkAgg
+or QtAgg backends to enable all interactive plotting commands.
+""")
+            return 
 
         wa = self.dispersion.value
 
@@ -671,3 +743,18 @@ or QtAgg backends to enable all interactive plotting commands.
         self.meta['contpoints'].extend(
             [tuple(pts) for pts in wrapper.contpoints])
         self.meta['contpoints'].sort()
+
+    # Output
+    def __repr__(self):
+        txt = '[{:s}: '.format(self.__class__.__name__)
+        # Name
+        try:
+            txt = txt+' file={:s},'.format(self.filename)
+        except:
+            pass
+        # wrest
+        txt = txt + ' wvmin={:g}, wvmax={:g}, median_flux={:g}'.format(
+            self.wvmin,self.wvmax,self.median_flux)
+        txt = txt + ']'
+        return (txt)
+

@@ -130,13 +130,16 @@ class SpectralLine(object):
             raise ValueError('ismatch: Bad input')
 
         # Queries
-        answer = ( np.allclose(self.wrest, wrest) &
+        answer = ( np.allclose(self.wrest.to(u.AA).value,
+                               wrest.to(u.AA).value) &
             np.allclose(self.attrib['z'], z, rtol=1e-6))
         if Zion is not None:
             answer = answer & (self.data['Z'] == Zion[0]) & (self.data['ion'] == Zion[1])
         if RADec is not None:
-            answer = (answer & np.allclose(self.attrib['RA'], RADec[0]) &
-                np.allclose(self.attrib['Dec'], RADec[1]) )
+            answer = (answer & np.allclose(self.attrib['RA'].to(u.deg).value,
+                                           RADec[0].to(u.deg).value) &
+                      np.allclose(self.attrib['Dec'].to(u.deg).value,
+                                  RADec[1].to(u.deg).value) )
 
         # Return
         return answer
@@ -198,7 +201,7 @@ class SpectralLine(object):
 
     # EW 
     def measure_ew(self, flg=1, initial_guesses=None):
-        """  EW calculation
+        """EW calculation
         Default is simple boxcar integration
         Observer frame, not rest-frame (use measure_restew below)
           wvlim must be set!
@@ -206,17 +209,17 @@ class SpectralLine(object):
 
         Parameters
         ----------
-        flg: int, optional
-          1: Boxcar integration
-          2: Gaussian fit
+        flg : int, optional
+          1-- Boxcar integration
+          2-- Gaussian fit
         
         initial_guesses, optional: tuple of floats
           if a model is chosen (e.g. flg=2, Gaussian) a tuple of (amplitude, mean, stddev)
           can be specified. 
 
-        Fills:
-        -------
-        self.attrib[ 'EW', 'sigEW' ] : 
+        Fills
+        -----
+        self.attrib[ 'EW', 'sigEW' ]
           EW and error in observer frame
         """
         imp.reload(lau)
@@ -324,6 +327,40 @@ class AbsLine(SpectralLine):
         self.attrib.update({'N': 0., 'Nsig': 0., 'flagN': 0, # Column
                        'b': 0.*u.km/u.s, 'bsig': 0.*u.km/u.s  # Doppler
                        } )
+    # Voigt
+    def generate_voigt(self, wave=None, **kwargs):
+        """  Generate a Voigt profile model for the absorption line
+        in a given spectrum.
+
+        Parameters:
+        ----------
+        wave: Quantity array
+          Wavelength array on which to calculate the line
+          Must be set if self.analy['spec'] is not filled
+
+        Returns:
+        ----------
+        spec: XSpectrum1D
+          Spectrum with the input wavelength and the absorbed flux
+        """
+        from linetools.analysis import voigt as lav
+        reload(lav)
+        # Checks
+        if self.attrib['N'] < 1.:
+            raise ValueError("Need to initialize log column density in attrib['N']")
+        if self.attrib['b'] < 1.*u.km/u.s:
+            raise ValueError("Need to initialize Doppler parameter in attrib['b']")
+        if wave is None:
+            # Assume a spectrum has been loaded already
+            try:
+                wave = self.analy['spec'].dispersion
+            except:
+                raise ('You must provide a wavelength array in generate_voigt')
+
+        # Main call
+        spec = lav.voigt_from_abslines(wave, self, **kwargs)
+        return spec
+
     # AODM
     def measure_aodm(self, nsig=3.):
         """  AODM calculation

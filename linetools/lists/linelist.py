@@ -10,7 +10,7 @@ except NameError:
     basestring = str
 
 import numpy as np
-import os, imp
+import os, pdb
 import copy
 
 from astropy import units as u
@@ -20,6 +20,8 @@ from astropy.io import fits
 from astropy.table import QTable, Table, vstack, Column
 
 #from xastropy.xutils import xdebug as xdb
+
+CACHE = {'full_table' : {}, 'data' : {}}
 
 from linetools.lists import parse as lilp
 
@@ -76,12 +78,16 @@ class LineList(object):
         if subset is not None:
             self.subset_lines(subset, verbose=verbose, sort=sort_subset)
 
-    # 
-    def load_data(self, tol=1e-3*u.AA):
+
+    def load_data(self, tol=1e-3*u.AA, use_cache=True):
         """Grab the data for the lines of interest
         """
-        # Import
-        imp.reload(lilp)
+
+        global CACHE
+        key = tuple(self.lists + [tol])
+        if use_cache and key in CACHE['full_table']:
+            self._fulltable = CACHE['full_table'][key]
+            return
 
         # Define datasets: In order of Priority
         dataset = {
@@ -147,6 +153,7 @@ class LineList(object):
                     # Save to avoid repeating
                     all_func.append(func)
 
+
         # Save as QTable
         self._fulltable = QTable(full_table)
 
@@ -162,11 +169,21 @@ class LineList(object):
         if flag_gamma:
             lilp.update_gamma(self._fulltable)
 
+        CACHE['full_table'][key] = self._fulltable
+
+
+
     #####
-    def set_lines(self, verbose=True):#, gd_lines=None):
+    def set_lines(self, verbose=True, use_cache=True):#, gd_lines=None):
         ''' Parse the lines of interest
         '''
         import warnings
+
+        global CACHE
+        key = tuple(self.lists)
+        if use_cache and key in CACHE['data']:
+            self._data = CACHE['data'][key]
+            return
 
         indices = []
         set_flags = []
@@ -235,6 +252,8 @@ class LineList(object):
 
         #
         self._data = tmp_tab
+        CACHE['data'][key] = self._data
+
 
     def subset_lines(self, subset, sort=False, reset_data=False, verbose=False):
         '''
@@ -301,31 +320,34 @@ class LineList(object):
 
     def unknown_line(self):
         """Returns a dictionary of line properties set to an unknown
-        line. Currently using the default value from linetools.lists.parse()."""     
+        line. Currently using the default value from
+        linetools.lists.parse()."""     
         ldict , _ = lilp.line_data()
         ldict['name'] = 'unknown'
         return ldict
 
     def all_transitions(self,line):
         """For a given single line transition, this function returns
-        all transitions of the ion containing such single line found in 
-        the linelist.
+        all transitions of the ion containing such single line found
+        in the linelist.
 
         Parameters
         ----------
         line: str or Quantity
             Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII', 1215.6700*u.AA)
         
-            [Note: when string contains spaces it only considers the first
-             part of it, so 'HI' and 'HI 1215' and 'HI 1025' are all equivalent]
+            [Note: when string contains spaces it only considers the
+             first part of it, so 'HI' and 'HI 1215' and 'HI 1025' are
+             all equivalent]
             [Note: to retrieve an unknown line use string 'unknown']
 
         Returns
         -------
-        dict (if only 1 transition found) or QTable (if > 1 transitions are found)
+
+        dict (if only 1 transition found) or QTable (if > 1
+        transitions are found)
 
         """
-
         if isinstance(line, basestring): # Name
             line = line.split(' ')[0] # keep only the first part of input name
         elif isinstance(line, Quantity): # Rest wavelength (with units)
@@ -474,6 +496,11 @@ class LineList(object):
         dict (if only 1 transition found) or QTable (if > 1
         transitions are found) or None (if no transition is found)
         """
+        # Init
+        from linetools.abund.solar import SolarAbund
+        from linetools.abund import ions as laions
+        solar = SolarAbund()
+        #
         if all((isinstance(n,int) or (n is None)) for n in [n_max,n_max_tuple]):
             if (n_max is not None) and (n_max < 1):
                 return None
@@ -493,13 +520,19 @@ class LineList(object):
         ion_name = []
         strength = []
         for ion in unique_ion_names: #This loop is necesary to have a non trivial but convinient order in the final output
+            # Abundance
+            Zion = laions.name_ion(ion)
+            if ion == 'DI':
+                abundance = 12.-4.8 # Approximate for Deuterium
+            else:
+                abundance = solar[Zion[0]]
+            #
             aux = self.strongest_transitions(ion,wvlims,n_max=1) #only the strongest
             if aux is not None:
                 if isinstance(aux,dict):#this should always be True given n_max=1
                     name = aux['name']
                 else:
                     name = aux['name'][0]
-                abundance = get_abundance(name)[0]
                 ion_name += [name]
                 strength += [np.log10(aux['wrest'].value * aux['f']) + abundance]
         if len(ion_name)==0:
@@ -563,19 +596,27 @@ class LineList(object):
         return tab
     
     #####
-    def __getattr__(self,k):
+    def __getattr__(self, k):
         ''' Passback an array or Column of the data 
         k must be a Column name in the data Table
         '''
         # Deal with QTable
-        colm = self._data[k]
-        if isinstance(colm[0], Quantity):
-            return self._data[k]
+        try:
+            # First try to access __getitem__ in the parent class.
+            # This is needed to avoid an infinite loop which happens
+            # when trying to assign self._fulldata to the cache
+            # dictionary.
+            out = object.__getattr__(k)
+        except AttributeError:
+            colm = self._data[k]
+            if isinstance(colm[0], Quantity):
+                return self._data[k]
+            else:
+                return np.array(self._data[k])
         else:
-            return np.array(self._data[k])
+            return out
 
-    #####
-    def __getitem__(self,k, tol=1e-3*u.AA):
+    def __getitem__(self, k, tol=1e-3*u.AA):
         ''' Passback data as a dict (from the table) for the input line
 
         Parameters:
@@ -639,56 +680,3 @@ class LineList(object):
                 sstr = sstr + ',' + llist
         return '[LineList: {:s}]'.format(sstr)
 
-
-def get_abundance(transitions_names): #please remove this function later 
-    """Temporary function to obtain an array of abundances from 
-    a given array of ion names. The abundance scheme should be 
-    implemented in a better way!!! This is only a temporary function"""
-
-    #Create a dictionary of abundances [temporary, until abundances 
-    # is implemented at a higher level somewhere]
-
-    if isinstance(transitions_names,basestring):
-        transitions_names = [transitions_names]
-
-    transitions_names = np.array(transitions_names)
-    
-
-    abundance = {
-    'H': 12.00,
-    'He': 10.9,
-    'Li': 1.05,
-    'Be': 1.38,
-    'B': 2.70,
-    'C': 8.43,
-    'N': 7.83,
-    'O': 8.69,
-    'F': 4.56,
-    'Ne': 7.93,
-    'Na': 6.24,
-    'Mg': 7.60,
-    'Al': 6.45,
-    'Si': 7.51,
-    'P': 5.41,
-    'S': 7.12,
-    'Cl': 5.50,
-    'Ar': 6.40,#jump to Fe
-    'Fe': 7.50
-    } #assume the rest are very small for now; see below
-
-    abund = []
-    #create abundance array
-    for name in transitions_names: 
-        #keep only the element
-        ion = name.split(' ')[0]
-        #get atom name
-        if ion[1].islower():
-            atom = ion[:2]
-        else:
-            atom = ion[0]
-        #check whether atom is in abundance dictionary
-        if atom in abundance.keys():
-            abund += [abundance[atom]]
-        else: #if not in key, use a very low abundance [Temporary!!!]
-            abund += [1.00]
-    return np.array(abund)

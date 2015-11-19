@@ -14,6 +14,7 @@ except NameError:
 
 # Import libraries
 import numpy as np
+import warnings
 import os, pdb
 import json
 
@@ -113,7 +114,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
                          'FLUXSTIS', 'FLUX_OPT', 'fl', 'flux']
         fx, fx_tag = get_table_column(flux_tags, hdulist)
         if fx is None:
-            print('spec.readwrite: Binary FITS Table but no Flux tag')
+            print('Binary FITS Table but no Flux tag')
             return
         # Error
         if sig_tags is None:
@@ -124,7 +125,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             ivar_tags = ['IVAR', 'IVAR_OPT']
             ivar, ivar_tag = get_table_column(ivar_tags, hdulist)
             if ivar is None:
-                print('spec.readwrite: Binary FITS Table but no error tags')
+                print('Binary FITS Table but no error tags')
                 return
             else:
                 sig = np.zeros(ivar.size)
@@ -137,7 +138,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         if wave_tag == 'LOGLAM':
             wave = 10.**wave
         if wave is None:
-            print('spec.readwrite: Binary FITS Table but no wavelength tag')
+            print('Binary FITS Table but no wavelength tag')
             return
         co_tags = ['CONT', 'CO', 'CONTINUUM', 'co', 'cont']
         co, co_tag = get_table_column(co_tags, hdulist)
@@ -218,7 +219,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
 
         else:  # ASSUMING MULTI-EXTENSION
             if len(hdulist) <= 2:
-                raise RuntimeError('spec.readwrite: No wavelength info but only 2 extensions!')
+                raise RuntimeError('No wavelength info but only 2 extensions!')
             fx = hdulist[0].data.flatten()
             try:
                 sig = hdulist[1].data.flatten()
@@ -242,7 +243,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         sig = hdulist[0].data[2,:].flatten()
         wave = setwave(head0)
     else:  # Should not be here
-        print('spec.readwrite: Looks like an image')
+        print('Looks like an image')
         return
 
     # Generate, as needed
@@ -254,13 +255,14 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             uwave = u.Quantity(wave, unit=u.AA)
         else:
             uwave = u.Quantity(wave)
-        import pdb
-        pdb.set_trace()
         if sig is not None:
             xspec1d = XSpectrum1D.from_array(uwave, u.Quantity(fx),
                                              uncertainty=StdDevUncertainty(sig))
         else:
             xspec1d = XSpectrum1D.from_array(uwave, u.Quantity(fx))
+
+    if np.any(np.isnan(xspec1d.dispersion)):
+        warnings.warn('WARNING: Some wavelengths are NaN')
 
     # Filename
     xspec1d.filename = datfil
