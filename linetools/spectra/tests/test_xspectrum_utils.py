@@ -70,7 +70,7 @@ def test_relvel():
     np.testing.assert_allclose(velo[6600].value, -3716.441360213781)
     assert velo.unit == (u.km/u.s)
 
-# Rel vel
+# Repr
 def test_repr():
     spec = io.readspec(data_path('UM184_nF.fits'))
     print(spec)
