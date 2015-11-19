@@ -26,6 +26,7 @@ import copy, imp
 from astropy import constants as const
 from astropy import units as u
 from astropy.units import Quantity
+from astropy.coordinates import SkyCoord
 
 from linetools.analysis import utils as lau
 from linetools.analysis import absline as laa
@@ -89,7 +90,7 @@ class SpectralLine(object):
             'do_analysis': 1 # Analyze
             }
         self.attrib = {   # Properties (e.g. column, EW, centroid)
-                       'RA': 0.*u.deg, 'Dec': 0.*u.deg,  #  Coords
+                       'coord': SkyCoord(ra=0.*u.deg, dec=0.*u.deg),  #  Coords
                        'z': z, 'zsig': 0.,  #  Redshift
                        'v': 0.*u.km/u.s, 'vsig': 0.*u.km/u.s,  #  Velocity relative to z
                        'EW': 0.*u.AA, 'EWsig': 0.*u.AA, 'flgEW': 0 # EW
@@ -122,7 +123,7 @@ class SpectralLine(object):
             if Zion is None:
                 Zion = (inp.data['Z'], inp.data['ion'])
             if RADec is None:
-                RADec = (inp.attrib['RA'], inp.attrib['Dec'])
+                coord = inp.attrib['coord']
         elif isinstance(inp,tuple):
             z = inp[0]
             wrest = inp[1]
@@ -135,11 +136,10 @@ class SpectralLine(object):
             np.allclose(self.attrib['z'], z, rtol=1e-6))
         if Zion is not None:
             answer = answer & (self.data['Z'] == Zion[0]) & (self.data['ion'] == Zion[1])
-        if RADec is not None:
-            answer = (answer & np.allclose(self.attrib['RA'].to(u.deg).value,
-                                           RADec[0].to(u.deg).value) &
-                      np.allclose(self.attrib['Dec'].to(u.deg).value,
-                                  RADec[1].to(u.deg).value) )
+        if (coord is not None) or (RADec is not None):
+            if coord is None:
+                coord = SkyCoord(ra=RADec[0], dec=RADec[1])
+            answer = (answer & (coord.separation(self.attrib['coord']) < 0.1*u.arcsec))
 
         # Return
         return answer
@@ -434,7 +434,8 @@ def many_abslines(all_wrest, llist):
 
     Returns:
     ----------
-    abs_lines: list of AbsLine Objects
+    abs_lines : list 
+      of AbsLine Objects
     '''
     # Find unique lines
     wrestv =  np.array([iwrest.value for iwrest in all_wrest]) 
