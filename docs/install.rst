@@ -98,18 +98,18 @@ Building Documentation
 ======================
 
 Only do this if you're a developer! If you want build the
-documentation, you also need to install Sphinx (version 1.3+),
+documentation, you also need to install Sphinx (version 1.3+) and
 astropy_helpers::
 
   conda install sphinx
   pip install astropy-helpers
 
-If you want generate inheritance diagrams, then you also need to
-install graphviz (`MacOSX
+If you want the generate inheritance diagrams in the docs then you
+also need to install graphviz (`MacOSX
 <http://www.graphviz.org/Download_macos.php>`_, `Ubuntu
 <http://www.graphviz.org/Download_linux_ubuntu.php>`_), but this isn't
-required. Then change to the /docs directory under the source
-directory and run::
+required. Once you've installed the dependencies, change to the
+`/docs` directory under the source directory and run::
 
   make html
 
