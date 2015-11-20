@@ -37,12 +37,18 @@ class SpectralLine(object):
 
     Attributes
     ----------
-    ltype : str
-      type of line, e.g.  Abs, Emiss
+    ltype : {'Abs', 'Emiss'}
+      type of line
     wrest : Quantity
       Rest wavelength
     z : float
       Redshift
+    attrib : dict
+      Line properties (e.g. column, EW, centroid, RA, Dec)
+    analy : dict
+      Analysis inputs (e.g. a spectrum, wavelength limits)
+    data : dict
+      Line atomic/molecular data ((e.g. f-value, A coefficient, Elow)
     """
 
     # Initialize with wavelength
