@@ -99,7 +99,7 @@ Building Documentation
 
 Only do this if you're a developer! If you want build the
 documentation, you also need to install Sphinx (version 1.3+),
-astropy_helpers:
+astropy_helpers::
 
   conda install sphinx
   pip install astropy-helpers

@@ -185,8 +185,8 @@ class SpectralLine(object):
         Default is simple boxcar integration. Observer frame, not
         rest-frame (use measure_restew below for rest-frame).
 
-        It sets the following attributes:
-           * self.attrib['EW'], self.attrib['sigEW']:
+        It sets these attributes:
+           * self.attrib[ 'EW', 'sigEW' ]:
              The EW and error in observer frame
 
         Parameters
@@ -345,17 +345,14 @@ class AbsLine(SpectralLine):
     def measure_aodm(self, nsig=3.):
         """ AODM calculation
 
+        It sets these attributes:
+          * self.attrib[ 'N', 'sigN', 'logN', 'sig_logN' ]:
+            Column densities and errors, linear and log
+
         Parameters
         ----------
         nsig : float, optional
           Number of sigma significance required for a "detection"
-
-        Notes  
-        -----
-        Sets attributes:
-
-        self.attrib[ 'N', 'sigN', 'logN', 'sig_logN' ]  
-          Column densities and errors, linear and log
         """
         # Cut spectrum
         fx, sig, xdict = self.cut_spec(normalize=True)
