@@ -3,6 +3,7 @@ from __future__ import print_function, absolute_import, \
      division, unicode_literals
 import os
 import pytest
+import pdb
 from astropy import units as u
 import numpy as np
 from astropy.io import fits, ascii
@@ -68,6 +69,11 @@ def test_relvel():
     # Test
     np.testing.assert_allclose(velo[6600].value, -3716.441360213781)
     assert velo.unit == (u.km/u.s)
+
+# Repr
+def test_repr():
+    spec = io.readspec(data_path('UM184_nF.fits'))
+    print(spec)
 
 # Write FITS
 def test_write_ascii():
