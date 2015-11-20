@@ -92,3 +92,25 @@ run::
 This takes a couple of minutes to run. If you notice any failures,
 we'd love you to report them on the `linetools issue tracker
 <http://github.com/linetools/linetools/issues>`_.
+
+
+Building Documentation
+======================
+
+Only do this if you're a developer! If you want build the
+documentation, you also need to install Sphinx (version 1.3+),
+astropy_helpers:
+
+  conda install sphinx
+  pip install astropy-helpers
+
+If you want generate inheritance diagrams, then you also need to
+install graphviz (`MacOSX
+<http://www.graphviz.org/Download_macos.php>`_, `Ubuntu
+<http://www.graphviz.org/Download_linux_ubuntu.php>`_), but this isn't
+required. Then change to the /docs directory under the source
+directory and run::
+
+  make html
+
+The documentation should now be in _build/html.
