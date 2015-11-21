@@ -19,6 +19,7 @@ except NameError:
     basestring = str
 
 import pdb
+import numpy as np
 
 from astropy import constants as const
 from astropy import units as u
@@ -26,6 +27,8 @@ from astropy.coordinates import SkyCoord
 from astropy.table import QTable, Column
 
 from specutils import Spectrum1D
+
+from linetools.analysis import absline as ltaa
 
 #import xastropy.atomic as xatom
 #from xastropy.stats import basic as xsb
@@ -117,7 +120,11 @@ class AbsComponent(object):
         if Ntup is not None:
             self.flgN = Ntup[0]
             self.logN = Ntup[1]
-            self.sigN = Ntup[2]
+            self.sig_logN = Ntup[2]
+            self.N = 10**self.logN
+            self.sigN = 10**self.logN
+        else:
+            self.flgN = 0
 
         # Other
         self._abslines = []
@@ -133,10 +140,10 @@ class AbsComponent(object):
         absline : AbsLine
         """
         # Perform easy checks
-        test = self.coord.separation(absline.attrib['coord']) < 0.1*u.arcsec
-        test = test & self.Zion[0] == absline.data['Z']
-        test = test & self.Zion[1] == absline.data['ion']
-        test = test & bool(self.Ej == absline.data['Ej'])
+        test = bool(self.coord.separation(absline.attrib['coord']) < 0.1*u.arcsec)
+        test = test & (self.Zion[0] == absline.data['Z'])
+        test = test & (self.Zion[1] == absline.data['ion'])
+        test = test & (bool(self.Ej == absline.data['Ej']))
         # Now redshift/velocity
         zlim_line = (1+absline.attrib['z'])*absline.analy['vlim']/const.c.to('km/s')
         zlim_comp = (1+self.zcomp)*self.vlim/const.c.to('km/s')
@@ -166,6 +173,73 @@ class AbsComponent(object):
             comp_tbl.add_column(Column([iline.attrib[attrib] for iline in self._abslines], name=attrib))
         # Return
         return comp_tbl
+
+    def measure_colm(self, clobber=False, redo_indiv=False, **kwargs):
+        """Measure the column density of the component.
+        Default is to use the current AbsLine values, but the user can
+        request that those be re-calculated
+
+        Parameters
+        ----------
+        clobber : bool, optional
+          Clobber any previous measurement
+        redo_indiv : bool, optional
+          Redo the individual column density measurements (likely AODM)
+
+        Returns
+        -------
+        None
+          Fills the component attributes instead
+        """
+        reload(ltaa)
+        # Check
+        if (self.flgN != 0) and (not clobber):
+            raise IOError("Column densities already set.  Use clobber=True to redo.")
+        # Redo?
+        if redo_indiv:
+            for aline in self._abslines:
+                aline.measure_aodm(**kwargs)
+        # Collate
+        self.flgN = 0
+        for aline in self._abslines:
+            if aline.attrib['flagN'] == 1: # Good value?
+                if self.flgN == 1: # Weighted mean
+                    # Original
+                    weight = 1. / self.sigN**2
+                    mu= self.N * weight
+                    # Update
+                    weight += 1./aline.attrib['sigN']**2
+                    self.N = (mu + aline.attrib['N']/aline.attrib['sigN']**2) / weight
+                    self.sigN = np.sqrt(1./weight)
+                else: # Fill
+                    self.N = aline.attrib['N']
+                    self.sigN = aline.attrib['sigN']
+                    self.flgN = 1
+            elif aline.attrib['flagN'] == 2: # Lower limit
+                if self.flgN in [0,3]:
+                    self.N = aline.attrib['N']
+                    self.sigN = 99.
+                    self.flgN = 2
+                elif self.flgN == 2:
+                    self.N = max(self.N,aline.attrib['N'])
+                    self.sigN = 99.
+                elif self.flgN == 1:
+                    pass
+            elif aline.attrib['flagN'] == 3: # Upper limit
+                if self.flgN == 0:
+                    self.N = aline.attrib['N']
+                    self.sigN = aline.attrib['sigN']
+                    self.flgN = 3
+                elif self.flgN in [1,2]:
+                    pass
+                elif self.flgN == 3:
+                    if aline.attrib['N'] < self.N:
+                        self.N = aline.attrib['N']
+                        self.sigN = aline.attrib['sigN']
+            else:
+                raise ValueError("Bad flagN value")
+        # Log values
+        self.logN, self.sig_logN = ltaa.log_clm(self)
 
     def stack_plot(self, nrow=6, show=True):
         """Show a stack plot of the component, if spec are loaded
@@ -225,8 +299,19 @@ class AbsComponent(object):
 
     # Output
     def __repr__(self):
-        return ('[AbsComponent: {:s} {:s}, Zion=({:d},{:d}), z={:g}]'.format(
-                self.coord.ra.to_string(unit=u.hour,sep=':',pad=True),
-                self.coord.dec.to_string(sep=':',pad=True,alwayssign=True),
-                self.Zion[0], self.Zion[1], self.zcomp))
+        txt = '[{:s}: {:s} {:s}, Zion=({:d},{:d}), z={:g}'.format(
+            self.__class__.__name__,
+            self.coord.ra.to_string(unit=u.hour,sep=':',pad=True),
+            self.coord.dec.to_string(sep=':',pad=True,alwayssign=True),
+            self.Zion[0], self.Zion[1], self.zcomp)
+        # Column?
+        try:
+            txt = txt+', logN={:g}'.format(self.logN)
+        except KeyError:
+            pass
+        else:
+            txt = txt+', sigN={:g}'.format(self.sig_logN)
+        # Finish
+        txt = txt + ']'
+        return (txt)
 
