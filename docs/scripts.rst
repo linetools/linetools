@@ -11,7 +11,7 @@ Quick Plots
 lt_absline
 ----------
 
-Simple script to plot a single absoprtion line.  
+Simple script to plot a single absorption line.
 Requires the rest wavelength (Ang), log10 column density, and 
 Doppler parameter (km/s). 
 

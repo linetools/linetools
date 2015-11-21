@@ -117,6 +117,7 @@ class SpectralLine(object):
         answer: bool
           True if a match, else False
         '''
+        coord = None
         if isinstance(inp,SpectralLine):
             wrest = inp.wrest
             z = inp.attrib['z']

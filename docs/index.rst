@@ -4,7 +4,7 @@
    contain the root `toctree` directive.
 
 Welcome to the documentation for linetools!
-=================================
+===========================================
 
 linetools is an astropy-affiliated package developed to provide software
 related to 1D spectra (wavelength vs. flux) with emphasis on spectral line
@@ -28,6 +28,7 @@ Contents
 
    linelist
    spectralline
+   AbsComponent <abscomp>
    xspectrum1d
 
 **Methods and Scripts**

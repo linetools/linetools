@@ -167,13 +167,15 @@ class AbsComponent(object):
         # Return
         return comp_tbl
 
-    def stack_plot(self, nrow=6):
+    def stack_plot(self, nrow=6, show=True):
         """Show a stack plot of the component, if spec are loaded
         Assumes the data are normalized.
         Parameters
         ----------
         nrow : int, optional  
           Maximum number of rows per column
+        show : bool, optional
+          Show the plot?
         """
         import matplotlib.pyplot as plt
         import matplotlib.gridspec as gridspec
@@ -216,7 +218,8 @@ class AbsComponent(object):
             ax.text(0.1, 0.1, iline.data['name'], transform=ax.transAxes, ha='left', va='center', fontsize='x-large')#, bbox={'facecolor':'white'})
 
         plt.tight_layout(pad=0.2,h_pad=0.,w_pad=0.1)
-        plt.show()
+        if show:
+            plt.show()
         plt.close()
 
 
