@@ -18,17 +18,14 @@ try:
 except NameError:
     basestring = str
 
-import numpy as np
 import pdb
-import copy, imp
 
 from astropy import constants as const
 from astropy import units as u
 from astropy.coordinates import SkyCoord
+from astropy.table import QTable, Column
 
-from linetools.analysis import utils as lau
-from linetools.analysis import absline as laa
-from linetools.lists.linelist import LineList
+from specutils import Spectrum1D
 
 #import xastropy.atomic as xatom
 #from xastropy.stats import basic as xsb
@@ -128,6 +125,8 @@ class AbsComponent(object):
     def add_absline(self,absline):
         """Add an AbsLine object to the component if it satisfies
         all of the rules.
+        For velocities, we demands that the new line has a velocity
+          range that is fully encompassed by the component.
 
         Parameters
         ----------
@@ -139,6 +138,10 @@ class AbsComponent(object):
         test = test & self.Zion[1] == absline.data['ion']
         test = test & bool(self.Ej == absline.data['Ej'])
         # Now redshift/velocity
+        zlim_line = (1+absline.attrib['z'])*absline.analy['vlim']/const.c.to('km/s')
+        zlim_comp = (1+self.zcomp)*self.vlim/const.c.to('km/s')
+        test = test & (zlim_line[0]>=zlim_comp[0]) & (zlim_line[1]>=zlim_comp[1]) 
+        
         # Isotope
         if self.A is not None:
             raise ValueError('Not ready for this yet')
@@ -148,6 +151,74 @@ class AbsComponent(object):
         else:
             print('Input absline with wrest={:g} does not match component rules'.format(absline.wrest))
             print('Not appending')
+
+    def build_table(self):
+        """Generate an astropy QTable out of the component.
+        Returns
+        -------
+        comp_tbl : QTable
+        """
+        if len(self._abslines) == 0:
+            return
+        comp_tbl = QTable()
+        comp_tbl.add_column(Column([iline.wrest.to(u.AA).value for iline in self._abslines]*u.AA,name='wrest'))
+        for attrib in ['z', 'flagN', 'N', 'Nsig']:
+            comp_tbl.add_column(Column([iline.attrib[attrib] for iline in self._abslines], name=attrib))
+        # Return
+        return comp_tbl
+
+    def stack_plot(self, nrow=6):
+        """Show a stack plot of the component, if spec are loaded
+        Assumes the data are normalized.
+        Parameters
+        ----------
+        nrow : int, optional  
+          Maximum number of rows per column
+        """
+        import matplotlib.pyplot as plt
+        import matplotlib.gridspec as gridspec
+        import matplotlib as mpl
+        mpl.rcParams['font.family'] = 'stixgeneral'
+        mpl.rcParams['font.size'] = 15.
+        # Check for spec
+        gdiline = []
+        for iline in self._abslines:
+            if isinstance(iline.analy['spec'],Spectrum1D):
+                gdiline.append(iline)
+        nplt = len(gdiline)
+        if nplt == 0:
+            print("Load spectra into the absline.analy['spec']")
+            return
+        # Setup plot
+        nrow = min(nplt,nrow)
+        ncol = nplt // nrow + (nplt % nrow > 0)
+        plt.clf()
+        gs = gridspec.GridSpec(nrow, ncol)
+        ymnx = (-0.1,1.1)
+
+        for qq,iline in enumerate(gdiline):
+            ax = plt.subplot(gs[qq%nrow, qq//nrow])
+            # Plot
+            velo = iline.analy['spec'].relative_vel((1+iline.attrib['z'])*iline.wrest)
+            ax.plot(velo, iline.analy['spec'].flux, 'k-', linestyle='steps-mid')
+            ax.plot(velo, iline.analy['spec'].sig, 'r:')
+            # Lines
+            ax.plot([0]*2, ymnx, 'g--')
+            # Axes
+            ax.set_xlim(self.vlim.value)
+            ax.set_ylim(ymnx)
+            ax.minorticks_on()
+            if ((qq+1) % nrow == 0) or ((qq+1) == nplt):
+                ax.set_xlabel('Relative Velocity (km/s)')
+            else:
+                ax.get_xaxis().set_ticks([])
+            # Label
+            ax.text(0.1, 0.1, iline.data['name'], transform=ax.transAxes, ha='left', va='center', fontsize='x-large')#, bbox={'facecolor':'white'})
+
+        plt.tight_layout(pad=0.2,h_pad=0.,w_pad=0.1)
+        plt.show()
+        plt.close()
+
 
     # Output
     def __repr__(self):
