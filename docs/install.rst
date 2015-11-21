@@ -1,25 +1,79 @@
 .. highlight:: rest
 
-****************
-Installing linetools
-****************
-
-
-Source Code
-===========
-
-linetools is available on github: <https://github.com/linetools/linetools>
-
-Standard installation should be as simple as::
-
-    git clone https://github.com/linetools/linetools.git
-    python setup.py install
+************
+Installation
+************
 
 Dependencies
 ============
 
-You will need to have installed both `astropy <http://www.astropy.org>` and `specutils <https://github.com/astropy/specutils>`.  
-We generally recommend that you use Anaconda for installation, although
-there are occasions where its distribution is somewhat out-of-date or (worse)
-has bugs due to new/old versions of numpy, scipy, etc.
+Linetools depends on these packages:
 
+* `python <http://www.python.org/>`_ versions 2.7, or 3.3 or later
+* `numpy <http://www.numpy.org/>`_ version 1.9 or later
+* `astropy <http://www.astropy.org>`_ version 1.0 or later
+* `scipy <http://www.scipy.org/>`_ version 0.16 or later
+* `matplotlib <http://matplotlib.org/>`_  version 2 or later
+* `pyyaml <http://pyyaml.org/wiki/PyYAML>`_ version 3.11 or later
+* `specutils <https://github.com/astropy/specutils>`_ version 0.2 or later
+
+We strongly recommend that you use `Anaconda
+<https://www.continuum.io/downloads>`_ to install them. With Anaconda
+you can check for the presence and versions of the dependencies with::
+
+  conda list "^python$|numpy|astropy$|scipy$|matplotlib|pyyaml|specutils"
+
+If you're missing any, install them with (for example)::
+
+  conda install astropy pyyaml matplotlib
+
+If their versions are too old, update them with (for example)::
+
+  conda update astropy
+
+Specutils can't be installed with conda; instead it needs to be
+installed using `pip <https://pip.pypa.io/en/latest/>`_::
+  
+  pip install --no-deps specutils
+
+If you aren't using Anaconda then all of the dependencies can be
+installed with pip.
+
+
+Installing Linetools
+====================
+
+If you plan to play around with the code and possibly contribute
+changes, then follow the instructions below. Otherwise simply use::
+
+    pip install --no-deps git+https://github.com/linetools/linetools.git
+
+and you're done!
+
+
+.. _installsource:
+
+Installing Linetools from Source
+================================
+
+*I just want to play with the code*
+-----------------------------------
+
+Install the development version like this::
+
+    git clone https://github.com/linetools/linetools.git
+    cd linetools
+    python setup.py develop
+
+Now you can easily make tweaks to the code, which are immediately
+applied to your installed version (you'll have to reload the relevant
+modules to see those changes in an existing Python session, though).
+
+*I want to make a code contribution to linetools*
+-------------------------------------------------
+
+Fantastic! In that case, follow the `Astropy developer guidelines
+<http://docs.astropy.org/en/stable/development/workflow/development_workflow.html>`_,
+, replacing every instance of `astropy` in those instructions with
+`linetools`. This will install a 'fork' of linetools that you can use
+to submit code changes to the main repository.

@@ -30,12 +30,13 @@ Contents
    spectralline
    xspectrum1d
 
-**Methods**
+**Methods and Scripts**
 
 .. toctree::
    :maxdepth: 1
 
    voigt
+   Scripts <scripts>
 
 **Project details**
 
