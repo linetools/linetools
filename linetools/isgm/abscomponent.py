@@ -1,14 +1,4 @@
-"""
-#;+ 
-#; NAME:
-#; spectralline
-#;    Version 1.0
-#;
-#; PURPOSE:
-#;    Module for SpectralLine class
-#;   23-Jun-2015 by JXP
-#;-
-#;------------------------------------------------------------------------------
+""" Classes for absorption line component
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
