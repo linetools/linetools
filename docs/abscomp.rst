@@ -18,7 +18,7 @@ absorption lines specified by:
 =============== ========   ============== ============================================
 Property        Variable   Type           Description
 =============== ========   ============== ============================================
-RA, DEC         radec      tuple          RA,DEC in deg
+RA, DEC         radec      tuple or coord RA,DEC in deg or astropy.coordinate
 Z, ion          Zion       tuple          Atomic Number (Z) and ionization state (ion)
 Redshift        z          float          absorption redshift
 Velocity limits vlim       Quantity array -/+ velocity limits of the component

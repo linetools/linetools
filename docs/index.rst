@@ -27,26 +27,26 @@ Contents
    :maxdepth: 1
 
    linelist
-   spectralline
    AbsComponent <abscomp>
+   spectralline
    xspectrum1d
 
-**Methods and Scripts**
+   **Methods and Scripts**
 
-.. toctree::
-   :maxdepth: 1
+   .. toctree::
+      :maxdepth: 1
 
-   voigt
-   Scripts <scripts>
+      voigt
+      Scripts <scripts>
 
-**Project details**
+   **Project details**
 
-.. toctree::
-   :maxdepth: 1
+   .. toctree::
+      :maxdepth: 1
 
-   whatsnew
-   credits
-   license
+      whatsnew
+      credits
+      license
 
 
 Indices and tables

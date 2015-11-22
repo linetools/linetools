@@ -19,6 +19,7 @@ except NameError:
     basestring = str
 
 import pdb
+import warnings
 
 from astropy import constants as const
 from astropy import units as u
@@ -27,13 +28,17 @@ from astropy.table import QTable, Column
 
 from specutils import Spectrum1D
 
+from linetools.spectralline import AbsLine
+
 #import xastropy.atomic as xatom
 #from xastropy.stats import basic as xsb
 #from xastropy.xutils import xdebug as xdb
 
 # Class for Components
 class AbsComponent(object):
-    """Class for a spectral line.  Emission or absorption 
+    """
+    Class for an absorption component
+
     Attributes
     ----------
     coord : SkyCoord
@@ -61,6 +66,8 @@ class AbsComponent(object):
         # Check
         if not isinstance(abslines,list):
             raise IOError('Need a list of AbsLine objects')
+        if not isinstance(abslines[0],AbsLine):
+            raise IOError('List needs to contain AbsLine objects')
         # Instantiate with the first line
         init_line = abslines[0]
         slf = cls( init_line.attrib['coord'],
@@ -122,25 +129,27 @@ class AbsComponent(object):
         # Other
         self._abslines = []
 
-    def add_absline(self,absline):
+    def add_absline(self,absline, toler=0.1*u.arcsec):
         """Add an AbsLine object to the component if it satisfies
         all of the rules.
-        For velocities, we demands that the new line has a velocity
+        For velocities, we demand that the new line has a velocity
           range that is fully encompassed by the component.
 
         Parameters
         ----------
         absline : AbsLine
+        toler : Angle, optional
+          Tolerance on matching coordinates
         """
         # Perform easy checks
-        test = self.coord.separation(absline.attrib['coord']) < 0.1*u.arcsec
+        test = self.coord.separation(absline.attrib['coord']) < toler
         test = test & self.Zion[0] == absline.data['Z']
         test = test & self.Zion[1] == absline.data['ion']
         test = test & bool(self.Ej == absline.data['Ej'])
         # Now redshift/velocity
         zlim_line = (1+absline.attrib['z'])*absline.analy['vlim']/const.c.to('km/s')
         zlim_comp = (1+self.zcomp)*self.vlim/const.c.to('km/s')
-        test = test & (zlim_line[0]>=zlim_comp[0]) & (zlim_line[1]>=zlim_comp[1]) 
+        test = test & (zlim_line[0]>=zlim_comp[0]) & (zlim_line[1]<=zlim_comp[1])
         
         # Isotope
         if self.A is not None:
@@ -149,8 +158,7 @@ class AbsComponent(object):
         if test:
             self._abslines.append(absline)
         else:
-            print('Input absline with wrest={:g} does not match component rules'.format(absline.wrest))
-            print('Not appending')
+            warngings.warn('Input absline with wrest={:g} does not match component rules. Not appending'.format(absline.wrest))
 
     def build_table(self):
         """Generate an astropy QTable out of the component.

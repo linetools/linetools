@@ -1,9 +1,8 @@
-================
+=================
 The linetools API
-================
+=================
 
-.. automodule:: spectralline
-    :members:
+.. automodapi:: linetools.spectralline
+		:skip: Quantity
+		:skip: LineList
 
-.. automodule:: utils
-    :members:
