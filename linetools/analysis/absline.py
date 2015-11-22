@@ -5,10 +5,11 @@ Module related to analysis of absorption lines
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import os
+import pdb
 
 from astropy import units as u
 from astropy import constants as const
+
 
 # Atomic constant
 atom_cst = (const.m_e.cgs*const.c.cgs / (np.pi * 
@@ -72,6 +73,7 @@ def aodm(spec,idata):
 
     # Return
     return ntot, np.sqrt(tvar), flg_sat
+
 
 def log_clm(obj):
     """Return logN and sig_logN given linear N, sigN

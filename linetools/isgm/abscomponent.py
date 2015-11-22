@@ -1,14 +1,4 @@
-"""
-#;+ 
-#; NAME:
-#; spectralline
-#;    Version 1.0
-#;
-#; PURPOSE:
-#;    Module for SpectralLine class
-#;   23-Jun-2015 by JXP
-#;-
-#;------------------------------------------------------------------------------
+""" Classes for absorption line component
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -21,6 +11,7 @@ except NameError:
 import pdb
 import numpy as np
 import warnings
+
 
 from astropy import constants as const
 from astropy import units as u
@@ -149,8 +140,8 @@ class AbsComponent(object):
         """
         # Perform easy checks
         test = bool(self.coord.separation(absline.attrib['coord']) < toler)
-        test = test & self.Zion[0] == absline.data['Z']
-        test = test & self.Zion[1] == absline.data['ion']
+        test = test & (self.Zion[0] == absline.data['Z'])
+        test = test & (self.Zion[1] == absline.data['ion'])
         test = test & bool(self.Ej == absline.data['Ej'])
         # Now redshift/velocity
         zlim_line = (1+absline.attrib['z'])*absline.analy['vlim']/const.c.to('km/s')
@@ -164,7 +155,7 @@ class AbsComponent(object):
         if test:
             self._abslines.append(absline)
         else:
-            warngings.warn('Input absline with wrest={:g} does not match component rules. Not appending'.format(absline.wrest))
+            warnings.warn('Input absline with wrest={:g} does not match component rules. Not appending'.format(absline.wrest))
 
     def build_table(self):
         """Generate an astropy QTable out of the component.
@@ -180,6 +171,43 @@ class AbsComponent(object):
             comp_tbl.add_column(Column([iline.attrib[attrib] for iline in self._abslines], name=attrib))
         # Return
         return comp_tbl
+
+    def cog(self, redo_indiv=False, show_plot=True, **kwargs):
+        """Perform a COG analysis on the component
+
+        Parameters
+        ----------
+        redo_indiv : bool, optional
+          Re-analyze each line for its EW
+        show_plot : bool, optional
+          Generate plot and show
+
+        Returns
+        -------
+        logN : float
+          COG column density
+        b : Quantity
+          COG Doppler parameter (km/s)
+        """
+        from linetools.analysis import cog as ltcog
+        reload(ltcog)
+        # Redo EWs?
+        if redo_indiv:
+            for aline in self._abslines:
+                aline.measure_restew(**kwargs)
+        # COG setup
+        wrest = np.array([aline.wrest.to('AA').value for aline in self._abslines])*u.AA
+        f = np.array([aline.data['f'] for aline in self._abslines])
+        EW = np.array([aline.attrib['EW'].to('AA').value for aline in self._abslines])*u.AA
+        sigEW=np.array([aline.attrib['sigEW'].to('AA').value for aline in self._abslines])*u.AA
+        # COG analysis
+        COG_dict = ltcog.single_cog_analysis(wrest, f, EW, sigEW=sigEW)
+        # COG plot
+        if show_plot:
+            ltcog.cog_plot(COG_dict)
+        # Return
+        return #logN, b
+
 
     def measure_colm(self, clobber=False, redo_indiv=False, **kwargs):
         """Measure the column density of the component.
@@ -198,7 +226,6 @@ class AbsComponent(object):
         None
           Fills the component attributes instead
         """
-        reload(ltaa)
         # Check
         if (self.flgN != 0) and (not clobber):
             raise IOError("Column densities already set.  Use clobber=True to redo.")
