@@ -21,15 +21,15 @@ Contents
    install
    api
 
-..
-   **Core classes**
+**Core classes**
 
-   .. toctree::
-      :maxdepth: 1
+.. toctree::
+   :maxdepth: 1
 
-      linelist
-      spectralline
-      xspectrum1d
+   linelist
+   AbsComponent <abscomp>
+   spectralline
+   xspectrum1d
 
    **Methods and Scripts**
 

@@ -247,15 +247,17 @@ class XSpectrum1D(Spectrum1D):
             wvmin, wvmax in spectral units
 
         Option 2: zabs, wrest, vmnx  [not as a tuple or list!]
-          zabs: Absorption redshift
-          wrest: Rest wavelength  (with Units!)
-          vmnx: Tuple/array/list of 2 Quantities
+          zabs : Absorption redshift
+          wrest : Rest wavelength  (with Units!)
+          vmnx : Tuple/array/list of 2 Quantities
             vmin, vmax in km/s
 
-        Returns:
-        ----------
-        pix: array
-          Integer list of pixels
+        Returns
+        -------
+        pix : ndarray
+          Integer array of pixels satisfying the cut
+        wvmnx : tuple
+        pixmnx : tuple
         """
         if len(args) == 1: # Option 1
             wvmnx = args[0]
@@ -269,7 +271,7 @@ class XSpectrum1D(Spectrum1D):
         pixmin = np.argmin( np.fabs( self.dispersion-wvmnx[0] ) )
         pixmax = np.argmin( np.fabs( self.dispersion-wvmnx[1] ) )
 
-        gdpix = np.arange(pixmin,pixmax+1)
+        gdpix = np.arange(pixmin,pixmax+1, dtype=int)
 
         # Fill + Return
         self.sub_pix = gdpix
@@ -429,9 +431,9 @@ or QtAgg backends to enable all interactive plotting commands.
           Wavelength to set the zero of the velocity array.
           Often (1+z)*wrest
 
-        Returns:
-        ---------
-        velo: Quantity array (km/s)
+        Returns
+        -------
+        velo : Quantity array (km/s)
         '''
         if not isinstance(wv_obs, Quantity):
             raise ValueError('Input wavelength needs to be a Quantity')
