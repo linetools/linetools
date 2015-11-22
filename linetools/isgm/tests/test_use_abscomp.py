@@ -9,8 +9,8 @@ from astropy import units as u
 from astropy.table import QTable
 import numpy as np
 
-import matplotlib
-matplotlib.use('Agg')
+#import matplotlib
+#matplotlib.use('Agg')
 
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.spectralline import AbsLine
