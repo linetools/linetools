@@ -59,7 +59,7 @@ class AbsComponent(object):
         # Check
         if not isinstance(abslines,list):
             raise IOError('Need a list of AbsLine objects')
-        if not isinstance(abslines[0],AbsLine):
+        if not all(isinstance(x,AbsLine) for x in abslines):
             raise IOError('List needs to contain AbsLine objects')
         # Instantiate with the first line
         init_line = abslines[0]
