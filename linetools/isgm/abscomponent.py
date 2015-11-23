@@ -51,6 +51,7 @@ class AbsComponent(object):
     @classmethod
     def from_abslines(cls, abslines):
         """Instantiate from a list of AbsLine objects
+
         Parameters
         ----------
         abslines : list 
@@ -129,8 +130,9 @@ class AbsComponent(object):
     def add_absline(self,absline, toler=0.1*u.arcsec):
         """Add an AbsLine object to the component if it satisfies
         all of the rules.
+
         For velocities, we demand that the new line has a velocity
-          range that is fully encompassed by the component.
+        range that is fully encompassed by the component.
 
         Parameters
         ----------
@@ -278,6 +280,7 @@ class AbsComponent(object):
     def stack_plot(self, nrow=6, show=True):
         """Show a stack plot of the component, if spec are loaded
         Assumes the data are normalized.
+
         Parameters
         ----------
         nrow : int, optional  
