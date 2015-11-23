@@ -211,6 +211,64 @@ class AbsComponent(object):
         return COG_dict
 
 
+    def plot_Na(self, show=True, **kwargs):
+        """Plot apparent column density Na profiles
+        """
+        import matplotlib.pyplot as plt
+        import matplotlib.gridspec as gridspec
+        import matplotlib as mpl
+        try: # Nicer view, especially in notebook
+            import seaborn as sns; sns.set(context="notebook",font_scale=2)
+        except:
+            pass
+        mpl.rcParams['font.family'] = 'stixgeneral'
+        mpl.rcParams['font.size'] = 15.
+        # Check for spec
+        gdiline = []
+        for iline in self._abslines:
+            if isinstance(iline.analy['spec'],Spectrum1D):
+                gdiline.append(iline)
+        nplt = len(gdiline)
+        if nplt == 0:
+            print("Load spectra into the absline.analy['spec']")
+            return
+        atom_cst = (const.m_e.cgs*const.c.cgs / (np.pi * (const.e.esu**2).cgs)).to(u.AA*u.s/(u.km*u.cm**2))
+        # Setup plot
+        plt.clf()
+        ax = plt.gca()
+
+        fw_sv = 0.*u.AA
+        ymax = 0.
+        for qq,iline in enumerate(gdiline):
+            # Calculate
+            velo = iline.analy['spec'].relative_vel((1+iline.attrib['z'])*iline.wrest)
+            cst = atom_cst/(iline.data['f']*iline.wrest) #/ (u.km/u.s) / u.cm * (u.AA/u.cm)
+            Na = np.log(1./np.maximum(iline.analy['spec'].flux,
+                                      iline.analy['spec'].sig))*cst
+            # Figure out ymnx
+            pixmnx = (velo > self.vlim[0]) & (velo < self.vlim[1])
+            if iline.data['f']*iline.wrest > fw_sv:
+                ymax = max(np.max(Na[pixmnx].value),ymax)
+                fw_sv = iline.data['f']*iline.wrest
+            # Plot
+            ax.plot(velo, Na, '-', linestyle='steps-mid', label=iline.data['name'])
+            #ax.plot(velo, iline.analy['spec'].sig, 'r:')
+        # Axes
+        ax.set_xlim(self.vlim.value)
+        ax.set_ylim(-0.2*ymax, 5*ymax)
+        #ax.set_ylim(ymnx)
+        ax.minorticks_on()
+        ax.set_xlabel('Relative Velocity (km/s)')
+        ax.set_ylabel(r'Apparent Column (cm$^{-2}$ per km/s)')
+        # Legend
+        legend = ax.legend(loc='upper left', scatterpoints=1, borderpad=0.3,
+                               handletextpad=0.3, fontsize='large')
+
+        plt.tight_layout(pad=0.2,h_pad=0.,w_pad=0.1)
+        if show:
+            plt.show()
+        plt.close()
+
     def synthesize_colm(self, clobber=False, redo_aodm=False, **kwargs):
         """Synthesize column density measurements of the component.
         Default is to use the current AbsLine values, but the user can
