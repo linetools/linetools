@@ -5,7 +5,9 @@ The linetools API
 .. automodapi:: linetools.spectralline
 		:skip: Quantity
 		:skip: LineList
-        :skip: SkyCoord
+		:skip: SkyCoord
+
+.. automodapi:: linetools.utils
 
 .. automodapi:: linetools.isgm.abscomponent
         :skip: QTable
