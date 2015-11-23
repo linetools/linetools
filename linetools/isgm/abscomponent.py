@@ -172,12 +172,12 @@ class AbsComponent(object):
         # Return
         return comp_tbl
 
-    def cog(self, redo_indiv=False, show_plot=False, **kwargs):
+    def cog(self, redo_EW=False, show_plot=False, **kwargs):
         """Perform a COG analysis on the component
 
         Parameters
         ----------
-        redo_indiv : bool, optional
+        redo_EW : bool, optional
           Re-analyze each line for its EW
         show_plot : bool, optional
           Generate plot and show
@@ -192,7 +192,7 @@ class AbsComponent(object):
         from linetools.analysis import cog as ltcog
         reload(ltcog)
         # Redo EWs?
-        if redo_indiv:
+        if redo_EW:
             for aline in self._abslines:
                 aline.measure_restew(**kwargs)
         # COG setup

@@ -16,6 +16,9 @@ from linetools.isgm.abscomponent import AbsComponent
 from linetools.spectralline import AbsLine
 from linetools.spectra import io as lsio
 
+import imp
+lt_path = imp.find_module('linetools')[1]
+
 #import pdb
 #pdb.set_trace()
 # Set of Input lines
@@ -34,10 +37,47 @@ def test_build_table():
     # Test
     assert isinstance(comp_tbl,QTable)
 
+
+def test_synthesize_colm():
+    # Read a spectrum Spec
+    xspec = lsio.readspec(lt_path+'/spectra/tests/files/UM184_nF.fits')
+    # AbsLines
+    SiIItrans = ['SiII 1260', 'SiII 1304', 'SiII 1526', 'SiII 1808']
+    abslines = []
+    for trans in SiIItrans:
+        iline = AbsLine(trans)
+        iline.attrib['z'] = 2.92939
+        iline.analy['vlim'] = [-250.,80.]*u.km/u.s
+        iline.analy['spec'] = xspec
+        abslines.append(iline)
+    # Component
+    abscomp = AbsComponent.from_abslines(abslines)
+    # Column
+    abscomp.synthesize_colm(redo_aodm=True)
+    # Test
+    assert isinstance(abscomp.logN,13.594447075294818)
+
+def test_cog():
+    # Read a spectrum Spec
+    xspec = lsio.readspec(lt_path+'/spectra/tests/files/UM184_nF.fits')
+    # AbsLines
+    SiIItrans = ['SiII 1260', 'SiII 1304', 'SiII 1526', 'SiII 1808']
+    abslines = []
+    for trans in SiIItrans:
+        iline = AbsLine(trans)
+        iline.attrib['z'] = 2.92939
+        iline.analy['vlim'] = [-250.,80.]*u.km/u.s
+        iline.analy['spec'] = xspec
+        abslines.append(iline)
+    # Component
+    abscomp = AbsComponent.from_abslines(abslines)
+    # COG
+    COG_dict = abscomp.cog(redo_EW=True)
+    # Test
+    assert isinstance(COG_dict['logN'],13.693355878125537)
+
 """
 def test_stack_plot():
-    import imp
-    lt_path = imp.find_module('linetools')[1]
     # AbsLine(s)
     lya = AbsLine(1215.670*u.AA)
     lya.analy['vlim'] = [-300.,300.]*u.km/u.s
