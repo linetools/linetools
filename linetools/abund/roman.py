@@ -1,22 +1,28 @@
+"""Convert to and from Roman numerals.
+
+This code was originally written by Mark Pilgrim
+(f8dy@diveintopython.org), and released under a Python 2.1.1 license,
+available at https://www.python.org/download/releases/2.1.1/license
+
+
+"""
 from __future__ import print_function, absolute_import, division, unicode_literals
 
-"""Convert to and from Roman numerals"""
+# __author__ = "Mark Pilgrim (f8dy@diveintopython.org)"
+# __version__ = "1.4"
+# __date__ = "8 August 2001"
+# __copyright__ = """Copyright (c) 2001 Mark Pilgrim
 
-__author__ = "Mark Pilgrim (f8dy@diveintopython.org)"
-__version__ = "1.4"
-__date__ = "8 August 2001"
-__copyright__ = """Copyright (c) 2001 Mark Pilgrim
+# This program is part of "Dive Into Python", a free Python tutorial for
+# experienced programmers.  Visit http://diveintopython.org/ for the
+# latest version.
 
-This program is part of "Dive Into Python", a free Python tutorial for
-experienced programmers.  Visit http://diveintopython.org/ for the
-latest version.
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the Python 2.1.1 license, available at
+# http://www.python.org/2.1.1/license.html
 
-This program is free software; you can redistribute it and/or modify
-it under the terms of the Python 2.1.1 license, available at
-http://www.python.org/2.1.1/license.html
+# Modified by JXP
 
-Modified by JXP
-"""
 
 import re
 
@@ -42,7 +48,7 @@ romanNumeralMap = (('M',  1000),
                    ('I',  1))
 
 def toRoman(n):
-    """convert integer to Roman numeral"""
+    """ Convert an integer to Roman numeral."""
     if not (0 < n < 5000):
         raise OutOfRangeError, "number out of range (must be 1..4999)"
     if int(n) != n:
@@ -69,7 +75,7 @@ romanNumeralPattern = re.compile("""
     """ ,re.VERBOSE)
 
 def fromRoman(s):
-    """convert Roman numeral to integer"""
+    """Convert a Roman numeral to an integer."""
     if not s:
         raise InvalidRomanNumeralError, 'Input can not be blank'
     if not romanNumeralPattern.search(s):
