@@ -25,7 +25,7 @@ l_path = imp.find_module('linetools')[1]
 class SolarAbund(object):
     """Class to handle simple Solar Abundance calculations
 
-    Parameters:
+    Parameters
     ----------
     ref: str, optional
        'Asplund2009' :: Asplund et al. 2009, ARA&A, 47, 481 meteoritic
