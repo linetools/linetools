@@ -1,3 +1,4 @@
+""" Utilities for working with ionized atoms.
 """
 #;+ 
 #; NAME:
@@ -9,22 +10,11 @@
 #;   03-Nov-2014 by JXP
 #;-
 #;------------------------------------------------------------------------------
-"""
 from __future__ import print_function, absolute_import, division, unicode_literals
-
-import numpy as np
-import os, imp
-from astropy.io import fits, ascii
-from astropy import units as u 
-#from astropy import constants as const
-
-from astropy.utils.misc import isiterable
 
 from linetools.abund.elements import ELEMENTS
 from linetools.abund import roman 
 
-#def ion_name(ion):
-#def name_ion(ion):
 
 ########################## ##########################
 ########################## ##########################
