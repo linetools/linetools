@@ -55,7 +55,7 @@ def test_synthesize_colm():
     # Column
     abscomp.synthesize_colm(redo_aodm=True)
     # Test
-    assert isinstance(abscomp.logN,13.594447075294818)
+    np.testing.assert_allclose(abscomp.logN,13.594447075294818)
 
 def test_cog():
     # Read a spectrum Spec
@@ -74,7 +74,7 @@ def test_cog():
     # COG
     COG_dict = abscomp.cog(redo_EW=True)
     # Test
-    assert isinstance(COG_dict['logN'],13.693355878125537)
+    np.testing.assert_allclose(COG_dict['logN'],13.693355878125537)
 
 """
 def test_stack_plot():
