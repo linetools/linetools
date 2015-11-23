@@ -172,7 +172,7 @@ class AbsComponent(object):
         # Return
         return comp_tbl
 
-    def cog(self, redo_indiv=False, show_plot=True, **kwargs):
+    def cog(self, redo_indiv=False, show_plot=False, **kwargs):
         """Perform a COG analysis on the component
 
         Parameters
@@ -206,19 +206,19 @@ class AbsComponent(object):
         if show_plot:
             ltcog.cog_plot(COG_dict)
         # Return
-        return #logN, b
+        return COG_dict
 
 
-    def measure_colm(self, clobber=False, redo_indiv=False, **kwargs):
-        """Measure the column density of the component.
+    def synthesize_colm(self, clobber=False, redo_aodm=False, **kwargs):
+        """Synthesize column density measurements of the component.
         Default is to use the current AbsLine values, but the user can
-        request that those be re-calculated
+        request that those be re-calculated with AODM
 
         Parameters
         ----------
         clobber : bool, optional
           Clobber any previous measurement
-        redo_indiv : bool, optional
+        redo_aodm : bool, optional
           Redo the individual column density measurements (likely AODM)
 
         Returns
@@ -230,7 +230,7 @@ class AbsComponent(object):
         if (self.flgN != 0) and (not clobber):
             raise IOError("Column densities already set.  Use clobber=True to redo.")
         # Redo?
-        if redo_indiv:
+        if redo_aodm:
             for aline in self._abslines:
                 aline.measure_aodm(**kwargs)
         # Collate

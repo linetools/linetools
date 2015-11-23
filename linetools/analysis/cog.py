@@ -13,7 +13,6 @@ from scipy import integrate
 from scipy.interpolate import interp1d
 
 from astropy import units as u
-from astropy.units import Quantity
 from astropy.modeling import FittableModel, Parameter
 from astropy.modeling import fitting
 
@@ -63,13 +62,14 @@ def cog_plot(COG_dict):
     # Model
     xval = np.log10(COG_dict['f']*COG_dict['wrest'].to('cm').value)
     xmod = np.linspace(np.min(xval), np.max(xval), 200)
-    tau0 = 1.497e-15*(10**xmod)*(10.**COG_dict['logN'])/COG_dict['b'].to('km/s').value
+    tau0 = 1.497e-15*(10**(xmod+8))*(10.**COG_dict['logN'])/COG_dict['b'].to('km/s').value
     Ftau0 = intFtau0(tau0)
     ymod = np.log10(2*COG_dict['b'].to('km/s').value*Ftau0/3e5)
-    ax.plot(xmod,ymod,'g-')
+    #pdb.set_trace()
+    ax.plot(xmod,ymod,'g--')
     # Axes
-    ax.set_xlabel(r'$\log_{10} f \, \lambda$')
-    ax.set_ylabel(r'$\log_{10} W / \lambda$')
+    ax.set_xlabel(r'$\log_{10} \, (f \, \lambda)$')
+    ax.set_ylabel(r'$\log_{10} \, (W / \lambda)$')
     # Finish
     plt.show()
 
@@ -118,7 +118,7 @@ def single_cog_analysis(wrest, f, EW, sigEW=None, guesses=None):
     # Generate COG dict
     COG_dict = dict(wrest=wrest,f=f,EW=EW,sigEW=sigEW,
                     redEW=redEW,logN=parm.logN.value,
-                    b=parm.b.value*u.km/u.s)
+                    b=parm.b.value*u.km/u.s, parm=parm)
     # Return
     return COG_dict
 

@@ -70,3 +70,27 @@ a stack plot (aka velocity plot) is generated with::
 
     abscomp.stack_plot()
 
+
+Analysis
+--------
+
+Here are some methods related to analysis.
+
+Synthesize Columns
+++++++++++++++++++
+
+If one inputs a set of AbsLine(s) with column density measurements,
+the synthesize_colm method collates these.  Positive, unsaturated detections
+are combined in a weighted mean whereas limits are compared
+and the most sensitive one is adopted.::
+
+    abscomp.synthesize_colm()
+
+Curve of Growth
++++++++++++++++
+
+A standard, single-component curve-of-growth (COG) analysis may be
+performed on the set of AbsLines::
+
+    abscomp.cog(show_plot=True)
+
