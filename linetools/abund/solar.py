@@ -28,7 +28,8 @@ class SolarAbund(object):
     Parameters:
     ----------
     ref: str, optional
-       'Asplund2009' :: Asplund et al. 2009, ARA&A, 47, 481 meteoritic table (several photometric)
+       'Asplund2009' :: Asplund et al. 2009, ARA&A, 47, 481 meteoritic
+       table (several photometric)
     """
     # Init
     def __init__(self, ref='Asplund2009', verbose=False):
@@ -59,10 +60,13 @@ class SolarAbund(object):
         self._data = table
 
 
-    def get_ratio(self,rtio):
+    def get_ratio(self, rtio):
         ''' Passback abundance ratio
-        rtio: str 
-          Element ratio (e.g. 'Si/Fe')
+
+        Parameters
+        ----------
+        rtio : str 
+          Element ratio (e.g. 'Si/Fe')        
         '''
         # Elements
         elm1,elm2 = rtio.split('/')
@@ -75,14 +79,14 @@ class SolarAbund(object):
     def __getitem__(self, k):
         ''' Passback abundance value as a float given an element input
  
-        Parameters:
+        Parameters
         ----------
         k: overloaded
-          int -- Atomic number (6)
-          str -- Element name (e.g. 'C')
+          * int -- Atomic number (6)
+          * str -- Element name (e.g. 'C')
 
-        Returns:
-        ----------
+        Returns
+        -------
         Abund or Abund difference for the ratio
         '''
         # Iterate?
