@@ -108,5 +108,22 @@ Curve of Growth
 A standard, single-component curve-of-growth (COG) analysis may be
 performed on the set of AbsLines::
 
-    abscomp.cog(show_plot=True)
+    COG_dict = abscomp.cog(show_plot=True)
+
+The output dict includes:
+
+========== ============== =====================================
+Key        Type           Description
+========== ============== =====================================
+EW         Quantity array Input equivalent widths
+sigEW      Quantity array Input error in equivalent widths
+f          ndarray        Input f-values
+wrest      Quantity array Input rest wavelengths
+logN       float          Output fitted column density (log10)
+sig_logN   float          Output error in fitted logN
+b          Quantity       Output b-value (km/s)
+sig_b      Quantity       Output error in b-value (km/s)
+========== ============== =====================================
+
+
 
