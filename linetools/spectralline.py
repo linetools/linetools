@@ -382,9 +382,7 @@ class AbsLine(SpectralLine):
         self.attrib['sigN'] = sigN
 
         # Log
-        logN = np.log10( self.attrib['N'].value ) 
-        lgvar = ((1. / (np.log(10.)*self.attrib['N'].value))**2) * self.attrib['sigN'].value**2
-        sig_logN = np.sqrt(lgvar)
+        logN, sig_logN = laa.log_clm(self.attrib)
         self.attrib['logN'] = logN # Dimensionless
         self.attrib['sig_logN'] = sig_logN # Dimensionless
 

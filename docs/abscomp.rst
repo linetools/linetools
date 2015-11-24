@@ -49,6 +49,8 @@ or multiple::
     lyb.attrib['z'] = lya.attrib['z']
     abscomp = AbsComponent.from_abslines([lya,lyb])
 
+::::
+
 Inspecting
 ----------
 
@@ -69,4 +71,42 @@ If the AbsLine have spectra attached to them (in attrib['spec']),
 a stack plot (aka velocity plot) is generated with::
 
     abscomp.stack_plot()
+
+Apparent Column Densitities
++++++++++++++++++++++++++++
+
+Show a plot of the apparent column density profiles, :math:`N_a`::
+
+    abscomp.plot_Na()
+
+::::
+
+Analysis
+--------
+
+Here are some methods related to analysis.
+
+Synthesize Columns
+++++++++++++++++++
+
+If one inputs a set of AbsLine(s) with column density measurements,
+the synthesize_colm method collates these.  Positive, unsaturated detections
+are combined in a weighted mean whereas limits are compared
+and the most sensitive one is adopted.::
+
+    abscomp.synthesize_colm()
+
+Here is the set of rules:
+
+1.  If all measurements are upper limits, take the lowest value and flag as an upper limit (*flgN=3*).
+2.  If all measurements are a mix of upper and lower limits, take the highest lower limit and flag as a lower limit (*flgN=2*).
+3.  If one or more measurements are a proper detection, take the weighted mean of these and flag as a detection (*flgN=1*).
+
+Curve of Growth
++++++++++++++++
+
+A standard, single-component curve-of-growth (COG) analysis may be
+performed on the set of AbsLines::
+
+    abscomp.cog(show_plot=True)
 
