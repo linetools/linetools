@@ -71,6 +71,9 @@ def cog_plot(COG_dict):
     # Axes
     ax.set_xlabel(r'$\log_{10} \, (f \, \lambda)$')
     ax.set_ylabel(r'$\log_{10} \, (W / \lambda)$')
+    # Label
+    ax.text(0.1, 0.9, r'$\log N = ${:.2f}$\pm${:.2f}'.format(COG_dict['logN'],COG_dict['sig_logN']), transform=ax.transAxes, ha='left', va='center', fontsize='large')#, bbox={'facecolor':'white'})
+    ax.text(0.1, 0.8, r'$b = ${:.1f}$\pm${:.2f}'.format(COG_dict['b'].value,COG_dict['sig_b']), transform=ax.transAxes, ha='left', va='center', fontsize='large')#, bbox={'facecolor':'white'})
     # Finish
     plt.show()
 
@@ -116,10 +119,17 @@ def single_cog_analysis(wrest, f, EW, sigEW=None, guesses=None):
     fitter = fitting.LevMarLSQFitter()
     # Fit
     parm = fitter(cog_model, wrest.to('AA').value*f, redEW, weights=weights)
+    # Error
+    covar = fitter.fit_info['param_cov']
+    sigma = np.zeros(covar.shape[0])
+    for ii in range(sigma.size):
+        sigma[ii] = np.sqrt(covar[ii,ii])
     # Generate COG dict
     COG_dict = dict(wrest=wrest,f=f,EW=EW,sigEW=sigEW,
-                    redEW=redEW,logN=parm.logN.value,
-                    b=parm.b.value*u.km/u.s, parm=parm)
+                    redEW=redEW,
+                    logN=parm.logN.value, sig_logN=sigma[0],
+                    b=parm.b.value*u.km/u.s, sig_b=sigma[1]*u.km/u.s,
+                    parm=parm)
     # Return
     return COG_dict
 
