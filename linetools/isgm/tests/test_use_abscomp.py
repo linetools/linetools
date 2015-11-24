@@ -75,6 +75,7 @@ def test_cog():
     COG_dict = abscomp.cog(redo_EW=True)
     # Test
     np.testing.assert_allclose(COG_dict['logN'],13.693355878125537)
+    np.testing.assert_allclose(COG_dict['sig_logN'],0.054323725737309987)
 
 """
 def test_stack_plot():
