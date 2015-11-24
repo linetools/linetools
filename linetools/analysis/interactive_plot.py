@@ -24,16 +24,24 @@ def savejson(filename, obj, overwrite=False, indent=None):
     if os.path.lexists(filename) and not overwrite:
         raise IOError('%s exists' % filename)
     if filename.endswith('.gz'):
-        fh = gzip.open(filename, 'wb')
+        fh = gzip.open(filename, 'wt')
     else:
-        fh = open(filename, 'wb')
-    json.dump(obj, fh, indent=indent)
+        fh = open(filename, 'wt')
+    try:
+        json.dump(obj, fh, indent=indent)
+    except:
+        import pdb; pdb.set_trace()
+
     fh.close()
 
 def loadjson(filename):
     """ Load a python object saved with savejson."""
-    fh = open(filename, 'rb')
-    obj = json.load(fh)
+    fh = open(filename, 'rt')
+    try:
+        obj = json.load(fh)
+    except:
+        import pdb; pdb.set_trace()
+        
     fh.close()
     return obj
 
@@ -488,7 +496,7 @@ q        : quit
                 return
             # add a point to contpoints
             x, y = event.xdata, event.ydata
-            if not self.contpoints or x not in zip(*self.contpoints)[0]:
+            if not self.contpoints or x not in list(zip(*self.contpoints))[0]:
                 self.contpoints.append((x, y))
                 self.contpoints.sort()
                 self.update()
@@ -498,7 +506,7 @@ q        : quit
                 print('Outside fitting region')
                 return
             x = event.xdata
-            if not self.contpoints or x not in zip(*self.contpoints)[0]:
+            if not self.contpoints or x not in list(zip(*self.contpoints))[0]:
                 y = local_median(self.wa, self.fl, self.er, x,
                                  default=event.ydata)
                 self.contpoints.append((x, y))
@@ -545,7 +553,8 @@ q        : quit
             x, y = event.xdata, event.ydata
             # if M, get y value from a local_median
             if event.key == 'M' and \
-                   (not self.contpoints or x not in zip(*self.contpoints)[0]):
+                   (not self.contpoints or
+                    x not in list(zip(*self.contpoints))[0]):
                 y = local_median(self.wa, self.fl, self.er, x,
                                  default=event.ydata)
             self.contpoints[ind] = x, y

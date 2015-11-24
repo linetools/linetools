@@ -114,3 +114,9 @@ def test_readwrite_metadata():
     np.testing.assert_allclose(spec2.meta['c'], d['c'])
     np.testing.assert_allclose(spec2.meta['d'], d['d'])
     assert spec2.meta['e'] == d['e']
+
+def test_copy():
+    spec = io.readspec(data_path('UM184_nF.fits'))
+    spec2 = spec.copy()
+    assert spec.wavelength[0] == spec2.wavelength[0]
+    assert spec.flux[-1] == spec2.flux[-1]
