@@ -100,7 +100,7 @@ Here is the set of rules:
 
 1.  If all measurements are upper limits, take the lowest value and flag as an upper limit (*flgN=3*).
 2.  If all measurements are a mix of upper and lower limits, take the highest lower limit and flag as a lower limit (*flgN=2*).
-3.  If one or measurements are a proper detection, take the weighted mean of these and flag as a detection (*flgN=1*).
+3.  If one or more measurements are a proper detection, take the weighted mean of these and flag as a detection (*flgN=1*).
 
 Curve of Growth
 +++++++++++++++

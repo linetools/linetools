@@ -18,6 +18,7 @@ atom_cst = (const.m_e.cgs*const.c.cgs / (np.pi *
 # Perform AODM on the line
 def aodm(spec,idata):
     """  AODM calculation on an absorption line
+
     See Savage & Sembach 1991, ApJ, 379, 245
 
     Parameters
@@ -77,8 +78,9 @@ def aodm(spec,idata):
 
 def log_clm(obj):
     """Return logN and sig_logN given linear N, sigN
+
     Parameters
-    ---------
+    ----------
     obj : object
       An object with tags appropriate for the analysis
       Assumes 'logN' for column and 'sig_logN' for error for now
@@ -125,13 +127,14 @@ def log_clm(obj):
 
 def sum_logN(obj1,obj2):
     """Add log columns and return value and errors
+
     Parameters
     ----------
     obj 1: object
-      An object with tags appropriate for the analysis
+      An object with keys appropriate for the analysis
       Assumes 'logN' for column and 'sig_logN' for error for now
     obj2 : object
-      Another object with tags appropriate for the analysis
+      Another object with keys appropriate for the analysis
 
     Returns
     -------

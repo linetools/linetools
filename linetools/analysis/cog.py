@@ -37,10 +37,11 @@ intFtau0 = interp1d(all_tau0, xFtau0, bounds_error=False,fill_value=0.)
 ##############################
 def cog_plot(COG_dict):
     """Generate a plot for COG solution
+
     Parameters
     ----------
     COG_dict : dict
-      dict containing the COG inputs and solution
+      dict containing the COG inputs and solution from single_cog_analysis
     """
     import matplotlib.pyplot as plt
     import matplotlib as mpl

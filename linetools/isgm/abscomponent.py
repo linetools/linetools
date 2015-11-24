@@ -219,7 +219,7 @@ class AbsComponent(object):
         import matplotlib as mpl
         try: # Nicer view, especially in notebook
             import seaborn as sns; sns.set(context="notebook",font_scale=2)
-        except:
+        except ImportError:
             pass
         mpl.rcParams['font.family'] = 'stixgeneral'
         mpl.rcParams['font.size'] = 15.
@@ -269,14 +269,14 @@ class AbsComponent(object):
             plt.show()
         plt.close()
 
-    def synthesize_colm(self, clobber=False, redo_aodm=False, **kwargs):
+    def synthesize_colm(self, overwrite=False, redo_aodm=False, **kwargs):
         """Synthesize column density measurements of the component.
         Default is to use the current AbsLine values, but the user can
         request that those be re-calculated with AODM
 
         Parameters
         ----------
-        clobber : bool, optional
+        overwrite : bool, optional
           Clobber any previous measurement
         redo_aodm : bool, optional
           Redo the individual column density measurements (likely AODM)
@@ -287,7 +287,7 @@ class AbsComponent(object):
           Fills the component attributes instead
         """
         # Check
-        if (self.flgN != 0) and (not clobber):
+        if (self.flgN != 0) and (not overwrite):
             raise IOError("Column densities already set.  Use clobber=True to redo.")
         # Redo?
         if redo_aodm:
