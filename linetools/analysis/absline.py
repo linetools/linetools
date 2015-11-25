@@ -10,7 +10,6 @@ import pdb
 from astropy import units as u
 from astropy import constants as const
 
-
 # Atomic constant
 atom_cst = (const.m_e.cgs*const.c.cgs / (np.pi * 
     (const.e.esu**2).cgs)).to(u.AA*u.s/(u.km*u.cm**2))
