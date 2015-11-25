@@ -82,7 +82,7 @@ class AbsComponent(object):
         Parameters
         ----------
         radec : tuple or SkyCoord
-          (RA,DEC) in deg
+          (RA,DEC) in deg or astropy.coordinate
         Zion : tuple 
           Atomic number, ion -- (int,int) 
              e.g. (8,1) for OI
@@ -402,7 +402,7 @@ class AbsComponent(object):
         # Column?
         try:
             txt = txt+', logN={:g}'.format(self.logN)
-        except KeyError:
+        except AttributeError:
             pass
         else:
             txt = txt+', sigN={:g}'.format(self.sig_logN)
