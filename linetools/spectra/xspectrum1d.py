@@ -65,11 +65,9 @@ class XSpectrum1D(Spectrum1D):
                    meta=spec1d.meta.copy())
         return slf
 
-
     @classmethod
-    def from_tuple(cls, ituple):
-        '''tuple -- (wave,flux), (wave,flux,sig) or (wave,flux,sig,cont)
-
+    def from_tuple(cls,ituple):
+        '''tuple -- (wave,flux) or (wave,flux,sig)
         If wave is unitless, Angstroms are assumed
         '''
         # Units
@@ -84,32 +82,11 @@ class XSpectrum1D(Spectrum1D):
         # Generate
         if len(ituple) == 2: # wave, flux
             spec = cls.from_array(uwave, u.Quantity(ituple[1]))
-        elif len(ituple) == 3:
-            spec = cls.from_array(uwave, u.Quantity(ituple[1]),
-                uncertainty=StdDevUncertainty(ituple[2]))
         else:
             spec = cls.from_array(uwave, u.Quantity(ituple[1]),
                 uncertainty=StdDevUncertainty(ituple[2]))
-            spec.co = ituple[3]
-
         spec.filename = 'none'
         # Return
-        return spec
-
-    def copy(self):
-        flux = np.array(self.flux.value, copy=True)
-        uncer = StdDevUncertainty(self.uncertainty, copy=True)
-        mask = np.array(self.mask, copy=True)
-
-        # don't make a copy of the wcs. I think this should be ok...
-        spec = XSpectrum1D(flux=flux, wcs=self.wcs, unit=self.flux.unit,
-                   uncertainty=uncer, mask=mask,
-                   meta=self.meta.copy())
-        if hasattr(self, 'co'):
-            spec.co = self.co
-        if spec.co is not None:
-            spec.co = np.array(spec.co, copy=True)
-
         return spec
 
     @property
@@ -125,7 +102,7 @@ class XSpectrum1D(Spectrum1D):
     def wvmin(self):
         '''Minimum wavelength '''
         try:
-            return self._wvmin
+            return self._wvmin 
         except AttributeError:
             self.set_diagnostics()
             return self._wvmin
@@ -134,7 +111,7 @@ class XSpectrum1D(Spectrum1D):
     def wvmax(self):
         '''Maximum wavelength '''
         try:
-            return self._wvmax
+            return self._wvmax 
         except AttributeError:
             self.set_diagnostics()
             return self._wvmax
@@ -158,16 +135,12 @@ class XSpectrum1D(Spectrum1D):
 
         Returns
         -------
-        diag_dict : dict
+        diag_dict : dict  
          A dict containing basic info on the spectrum
           wave_min : Quantity
             minimum wavelength
           wave_max : Quantity
             maximum wavelength
-          med_flux : Quantity
-            median flux
-          med_s2n : float
-            median S/N
         """
         # Cut on good pixels
         if self.sig is not None:
@@ -227,8 +200,8 @@ class XSpectrum1D(Spectrum1D):
         ----------
         conti: numpy array
           Continuum. Use XSpectrum1D.co if None is given
-        verbose : bool, optional (False)
-        no_check : bool, optional (False)
+        verbose: bool, optional (False)
+        no_check: bool, optional (False)
           Check size of array?
         """
         # Sanity check
@@ -270,9 +243,9 @@ class XSpectrum1D(Spectrum1D):
             wvmin, wvmax in spectral units
 
         Option 2: zabs, wrest, vmnx  [not as a tuple or list!]
-          * zabs : Absorption redshift
-          * wrest : Rest wavelength  (with Units!)
-          * vmnx : Tuple/array/list of 2 Quantities
+          zabs : Absorption redshift
+          wrest : Rest wavelength  (with Units!)
+          vmnx : Tuple/array/list of 2 Quantities
             vmin, vmax in km/s
 
         Returns
@@ -582,8 +555,8 @@ or QtAgg backends to enable all interactive plotting commands.
         --------
         Outputs an ASCII file
         '''
-        # Convert to astropy Table
-        table = QTable([self.dispersion, self.flux, self.sig],
+        # Convert to astropy Table 
+        table = QTable([self.dispersion, self.flux, self.sig], 
             names=('WAVE','FLUX','ERROR'))
 
         # Write
@@ -683,12 +656,6 @@ or QtAgg backends to enable all interactive plotting commands.
                       kind=None, **kwargs):
         """ Interactively fit a continuum.
 
-        Updates these attributes:
-          * `self.co` with the new continuum
-          * `self.meta['contpoints']` with the knots defining the continuum
-        Use linetools.analysis.interp.AkimaSpline to regenerate the
-        continuum from the knots.
-
         Parameters
         ----------
         spec : Spectrum1D
@@ -706,9 +673,14 @@ or QtAgg backends to enable all interactive plotting commands.
         kind : {'QSO', None}, default None
           If given, generate spline knots using
           linetools.analysis.continuum.find_continuum.
-        **kwargs
-          Other keywords which passed to find_continuum.
 
+        Updates
+        -------
+        spec.co with the new continuum
+        spec.meta['contpoints'] with the knots defining the continuum
+
+        Use linetools.analysis.interp.AkimaSpline to regenerate the
+        continuum from the the knots.
         """
         import matplotlib.pyplot as plt
         if plt.get_backend() == 'MacOSX':
@@ -716,7 +688,7 @@ or QtAgg backends to enable all interactive plotting commands.
 Looks like you're using the MacOSX matplotlib backend. Switch to the TkAgg
 or QtAgg backends to enable all interactive plotting commands.
 """)
-            return
+            return 
 
         wa = self.dispersion.value
 
@@ -728,7 +700,7 @@ or QtAgg backends to enable all interactive plotting commands.
             if wmax < wmin:
                 wmin, wmax = wmax, wmin
             anchor = True
-
+                
         if kind is not None:
             _, knots = find_continuum(self, kind=kind, **kwargs)
             # only keep knots between wmin and wmax
@@ -737,20 +709,20 @@ or QtAgg backends to enable all interactive plotting commands.
             if edges is None:
                 nchunks = max(3, (wmax - wmin) / float(dw))
                 edges = np.linspace(wmin, wmax, nchunks + 1)
-
+    
         if knots is None:
             knots, indices, masked = prepare_knots(
                 wa, self.flux.value, self.uncertainty.array, edges)
         else:
             knots = [list(k) for k in knots]
-
+    
         co = (self.co if hasattr(self, 'co') else None)
         if co is not None:
             x = [k[0] for k in knots]
             ynew = np.interp(x, wa, co)
             for i in range(len(knots)):
                 knots[i][1] = ynew[i]
-
+    
         contpoints = [k[:2] for k in knots]
         import matplotlib.pyplot as plt
         fig = plt.figure(figsize=(11, 7))
@@ -779,7 +751,8 @@ or QtAgg backends to enable all interactive plotting commands.
         except:
             pass
         # wrest
-        txt = txt + ' wvmin={:g}, wvmax={:g}, median_flux={:g}'.format(
-            self.wvmin,self.wvmax,self.median_flux)
+        txt = txt + ' wvmin={:g}, wvmax={:g}'.format(
+            self.wvmin,self.wvmax)
         txt = txt + ']'
         return (txt)
+
