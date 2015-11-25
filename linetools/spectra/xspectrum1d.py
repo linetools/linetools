@@ -1,6 +1,4 @@
-"""
-Module for utilites related to spectra
-  -- Main item is a Class XSpectrum1D which overloads Spectrum1D
+"""Module containing the XSpectrum1D class which overloads Spectrum1D
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -67,8 +65,12 @@ class XSpectrum1D(Spectrum1D):
 
     @classmethod
     def from_tuple(cls,ituple):
-        '''tuple -- (wave,flux) or (wave,flux,sig)
-        If wave is unitless, Angstroms are assumed
+        '''Make an XSpectrum1D from a tuple of arrays.
+
+        Parameters
+        ----------
+        ituple : (wave,flux), (wave,flux,sig) or (wave,flux,sig,cont)
+          If wave is unitless, Angstroms are assumed
         '''
         # Units
         try:
@@ -82,11 +84,32 @@ class XSpectrum1D(Spectrum1D):
         # Generate
         if len(ituple) == 2: # wave, flux
             spec = cls.from_array(uwave, u.Quantity(ituple[1]))
+        elif len(ituple) == 3:
+            spec = cls.from_array(uwave, u.Quantity(ituple[1]),
+                uncertainty=StdDevUncertainty(ituple[2]))
         else:
             spec = cls.from_array(uwave, u.Quantity(ituple[1]),
                 uncertainty=StdDevUncertainty(ituple[2]))
+            spec.co = ituple[3]
+
         spec.filename = 'none'
         # Return
+        return spec
+
+    def copy(self):
+        flux = np.array(self.flux.value, copy=True)
+        uncer = StdDevUncertainty(self.uncertainty, copy=True)
+        mask = np.array(self.mask, copy=True)
+
+        # don't make a copy of the wcs. I think this should be ok...
+        spec = XSpectrum1D(flux=flux, wcs=self.wcs, unit=self.flux.unit,
+                   uncertainty=uncer, mask=mask,
+                   meta=self.meta.copy())
+        if hasattr(self, 'co'):
+            spec.co = self.co
+            if spec.co is not None:
+                spec.co = np.array(spec.co, copy=True)
+
         return spec
 
     @property
