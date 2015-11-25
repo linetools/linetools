@@ -12,8 +12,14 @@ from .interp import AkimaSpline
 
 def make_chunks_qso(wa, redshift, divmult=1, forest_divmult=1, debug=False):
     """ Generate a series of wavelength chunks for use by
-    prepare_knots, assuming a QSO spectrum
+    prepare_knots, assuming a QSO spectrum.
     """
+
+    cond = np.isnan(wa)
+    if np.any(cond):
+        warnings.warn('Some wavelengths are NaN, ignoring these pixels.')
+        wa = wa[~cond]
+        assert len(wa) > 0
 
     zp1 = 1 + redshift
     #reflines = np.array([1025.72, 1215.6701, 1240.14, 1398.0,
@@ -25,7 +31,8 @@ def make_chunks_qso(wa, redshift, divmult=1, forest_divmult=1, debug=False):
 
     # for S/N = 15ish and resolution = 2000ish
 
-    div = np.rec.fromrecords([(500. , 800. , 25),
+    div = np.rec.fromrecords([(200. , 500. , 25),
+                              (500. , 800. , 25),
                               (800. , 1190., 25),
                               (1190., 1213.,  4),
                               (1213., 1230.,  6),
@@ -199,9 +206,9 @@ def prepare_knots(wa, fl, er, edges, ax=None, debug=False):
 
 def unmask(masked, indices, wa, fl, er, minpix=3):
     """ Sometimes all pixels can become masked in a chunk. We don't
-     want this!
-
-     This forces there to be at least minpix pixels used in each chunk.
+    want this!
+    
+    This forces there to be at least minpix pixels used in each chunk.
      """
     for iknot,(i,j) in enumerate(indices):
         #print(iknot, wa[i], wa[j], (~masked[i:j]).sum())
@@ -336,7 +343,7 @@ def find_continuum(spec, edges=None, ax=None, debug=False, kind='QSO',
 
 
     if ax is not None:
-        ax.plot(s.wa, s.fl, '-', color='0.7', drawstyle='steps-mid')
+        ax.plot(s.wa, s.fl, '-', color='0.4', drawstyle='steps-mid')
         ax.plot(s.wa, s.er, 'g')
 
     knots, indices, masked = prepare_knots(s.wa, s.fl, s.er, edges,

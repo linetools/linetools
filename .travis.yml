@@ -5,13 +5,14 @@ python:
     - 2.7
     #- 3.3
     - 3.4
+    - 3.5
     # This is just for "egg_info".  All other builds are explicitly given in the matrix
 env:
     global:
         # The following versions are the 'default' for tests, unless
         # overidden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
-        - NUMPY_VERSION=1.9
+        - NUMPY_VERSION=1.10
         - ASTROPY_VERSION=stable
         - CONDA_INSTALL='conda install -c astropy-ci-extras --yes'
         - PIP_INSTALL='pip install'
@@ -22,8 +23,8 @@ matrix:
     include:
 
         # Do a coverage test in Python 2.
-        #- python: 2.7
-        #  env: SETUP_CMD='test --coverage'
+        - python: 2.7
+          env: SETUP_CMD='test --coverage'
 
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
@@ -45,8 +46,13 @@ matrix:
         #  env: SETUP_CMD='test'
         - python: 3.4
           env: SETUP_CMD='test'
+        - python: 3.5
+          env: SETUP_CMD='test'
 
-        # Try older numpy versions. Skip these, because the require astroy versions < 1.0
+        # Try older numpy versions.
+        - python: 2.7
+          env: NUMPY_VERSION=1.9 SETUP_CMD='test'
+        # Skip these, because the require astropy versions < 1.0
         #- python: 2.7
         #  env: NUMPY_VERSION=1.8 SETUP_CMD='test'
         #- python: 2.7
@@ -61,8 +67,10 @@ before_install:
     - export PYTHONIOENCODING=UTF8
     - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
     - chmod +x miniconda.sh
-    - ./miniconda.sh -b
-    - export PATH=/home/travis/miniconda/bin:$PATH
+    - ./miniconda.sh -b -p $HOME/miniconda
+    - export PATH=$HOME/miniconda/bin:$PATH
+    - hash -r
+    - conda config --set always_yes yes --set changeps1 no
     - conda update --yes conda
 
     # UPDATE APT-GET LISTINGS
@@ -102,7 +110,8 @@ install:
     - if [[ $SETUP_CMD == build_sphinx* ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION Sphinx=1.2; fi
 
     # COVERAGE DEPENDENCIES
-    - if [[ $SETUP_CMD == 'test --coverage' ]]; then $PIP_INSTALL coverage coveralls; fi
+    #- if [[ $SETUP_CMD == 'test --coverage' ]]; then $PIP_INSTALL coverage coveralls; fi
+    - if [[ $SETUP_CMD == 'test --coverage' ]]; then $PIP_INSTALL coverage==3.7.1 coveralls; fi
 
 script:
    - python setup.py $SETUP_CMD

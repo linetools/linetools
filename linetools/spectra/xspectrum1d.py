@@ -1,12 +1,11 @@
-"""
-Module for utilites related to spectra
-  -- Main item is a Class XSpectrum1D which overloads Spectrum1D
+"""Module containing the XSpectrum1D class which overloads Spectrum1D
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import os
+import os, pdb
 import json
+import warnings
 
 import astropy as apy
 from astropy import units as u
@@ -25,6 +24,7 @@ from ..analysis.interactive_plot import InteractiveCoFit
 from ..analysis.continuum import prepare_knots
 from ..analysis.continuum import find_continuum
 
+eps = np.finfo(float).eps
 
 try:
     from specutils import Spectrum1D
@@ -42,24 +42,35 @@ class XSpectrum1D(Spectrum1D):
     '''
 
     @classmethod
-    def from_file(self, file):
+    def from_file(self, ifile):
         ''' From file
+
+        Parameters
+        ----------
+        ifile : str
+          Filename
         '''
-        return lsio.readspec(file)
+        slf = lsio.readspec(ifile)
+        return slf
 
     @classmethod
     def from_spec1d(cls, spec1d):
         ''' Input Spectrum1D
         '''
         # Giddy up
-        return cls(flux=spec1d.flux, wcs=spec1d.wcs, unit=spec1d.unit,
+        slf = cls(flux=spec1d.flux, wcs=spec1d.wcs, unit=spec1d.unit,
                    uncertainty=spec1d.uncertainty, mask=spec1d.mask,
                    meta=spec1d.meta.copy())
+        return slf
 
     @classmethod
     def from_tuple(cls,ituple):
-        '''tuple -- (wave,flux) or (wave,flux,sig)
-        If wave is unitless, Angstroms are assumed
+        '''Make an XSpectrum1D from a tuple of arrays.
+
+        Parameters
+        ----------
+        ituple : (wave,flux), (wave,flux,sig) or (wave,flux,sig,cont)
+          If wave is unitless, Angstroms are assumed
         '''
         # Units
         try:
@@ -70,16 +81,35 @@ class XSpectrum1D(Spectrum1D):
             if wv_unit is None:
                 wv_unit = u.AA
         uwave = u.Quantity(ituple[0], unit=wv_unit)
-        #import pdb
-        #pdb.set_trace()
         # Generate
         if len(ituple) == 2: # wave, flux
             spec = cls.from_array(uwave, u.Quantity(ituple[1]))
+        elif len(ituple) == 3:
+            spec = cls.from_array(uwave, u.Quantity(ituple[1]),
+                uncertainty=StdDevUncertainty(ituple[2]))
         else:
             spec = cls.from_array(uwave, u.Quantity(ituple[1]),
                 uncertainty=StdDevUncertainty(ituple[2]))
+            spec.co = ituple[3]
+
         spec.filename = 'none'
         # Return
+        return spec
+
+    def copy(self):
+        flux = np.array(self.flux.value, copy=True)
+        uncer = StdDevUncertainty(self.uncertainty, copy=True)
+        mask = np.array(self.mask, copy=True)
+
+        # don't make a copy of the wcs. I think this should be ok...
+        spec = XSpectrum1D(flux=flux, wcs=self.wcs, unit=self.flux.unit,
+                   uncertainty=uncer, mask=mask,
+                   meta=self.meta.copy())
+        if hasattr(self, 'co'):
+            spec.co = self.co
+            if spec.co is not None:
+                spec.co = np.array(spec.co, copy=True)
+
         return spec
 
     @property
@@ -91,17 +121,70 @@ class XSpectrum1D(Spectrum1D):
         else:
             return None
 
+    @property
+    def wvmin(self):
+        '''Minimum wavelength '''
+        try:
+            return self._wvmin 
+        except AttributeError:
+            self.set_diagnostics()
+            return self._wvmin
+
+    @property
+    def wvmax(self):
+        '''Maximum wavelength '''
+        try:
+            return self._wvmax 
+        except AttributeError:
+            self.set_diagnostics()
+            return self._wvmax
+
+    # overload dispersion to work around a bug in specutils that sets
+    # the first dispersion value to NaN for wavelength lookup tables.
+    @property
+    def dispersion(self):
+        #returning the disp
+        pixel_indices = np.arange(len(self.flux))
+        out = self.wcs(self.indexer(pixel_indices))
+        if abs(pixel_indices[0]) < eps:
+            out.value[0] = self.wcs.lookup_table_parameter.value[0]
+        return out
+
+    def set_diagnostics(self):
+        """Generate simple diagnositics on the spectrum.  As a default,
+        the method cuts on `good' pixels.
+        Useful for plotting, quick comparisons, etc.
+        Might make this a default property of the Class
+
+        Returns
+        -------
+        diag_dict : dict  
+         A dict containing basic info on the spectrum
+          wave_min : Quantity
+            minimum wavelength
+          wave_max : Quantity
+            maximum wavelength
+        """
+        # Cut on good pixels
+        if self.sig is not None:
+            gdpx = self.sig > 0.
+        else:
+            gdpx = np.array([True]*self.flux.size)
+        # Fill in attributes
+        self._wvmin=np.min(self.dispersion[gdpx])
+        self._wvmax=np.max(self.dispersion[gdpx])
+
     #  Add noise
     def add_noise(self,seed=None,s2n=None):
         '''Add noise to the existing spectrum
         Uses the uncertainty array unless otherwise specified
         Converts flux to float64
 
-        Parameters:
-        -----------
-        seed: int, optional
+        Parameters
+        ----------
+        seed : int, optional
           Seed for the random number generator [not yet functional]
-        s2n: float, optional
+        s2n : float, optional
           S/N per pixel for the output spectrum
         '''
         # Seed
@@ -118,6 +201,18 @@ class XSpectrum1D(Spectrum1D):
             sig = self.sig
         #
         self.flux = self.flux + (rand * sig)*self.flux.unit
+
+    def constant_sig(self,sigv=0.):
+        """Add a constant sigma array via uncertainty
+
+        Parameters
+        ----------
+        sigv : float, optional
+          scalar sigma value to use
+        """
+        self.uncertainty=StdDevUncertainty(np.ones(self.flux.size)*sigv)
+
+
 
     #  Normalize
     def normalize(self, conti=None, verbose=False, no_check=False):
@@ -171,15 +266,17 @@ class XSpectrum1D(Spectrum1D):
             wvmin, wvmax in spectral units
 
         Option 2: zabs, wrest, vmnx  [not as a tuple or list!]
-          zabs: Absorption redshift
-          wrest: Rest wavelength  (with Units!)
-          vmnx: Tuple/array/list of 2 Quantities
+          zabs : Absorption redshift
+          wrest : Rest wavelength  (with Units!)
+          vmnx : Tuple/array/list of 2 Quantities
             vmin, vmax in km/s
 
-        Returns:
-        ----------
-        pix: array
-          Integer list of pixels
+        Returns
+        -------
+        pix : ndarray
+          Integer array of pixels satisfying the cut
+        wvmnx : tuple
+        pixmnx : tuple
         """
         if len(args) == 1: # Option 1
             wvmnx = args[0]
@@ -193,7 +290,7 @@ class XSpectrum1D(Spectrum1D):
         pixmin = np.argmin( np.fabs( self.dispersion-wvmnx[0] ) )
         pixmax = np.argmin( np.fabs( self.dispersion-wvmnx[1] ) )
 
-        gdpix = np.arange(pixmin,pixmax+1)
+        gdpix = np.arange(pixmin,pixmax+1, dtype=int)
 
         # Fill + Return
         self.sub_pix = gdpix
@@ -249,7 +346,7 @@ class XSpectrum1D(Spectrum1D):
 
         show = kwargs.pop('show', True)
 
-        kwargs.update(color='0.6')
+        kwargs.update(color='0.8')
         artists['fl'] = ax.plot(self.dispersion, self.flux,
                                 drawstyle='steps-mid', **kwargs)[0]
 
@@ -266,7 +363,6 @@ class XSpectrum1D(Spectrum1D):
 
 
         if plt.get_backend() == 'MacOSX':
-            import warnings
             warnings.warn("""\
 Looks like you're using the MacOSX matplotlib backend. Switch to the TkAgg
 or QtAgg backends to enable all interactive plotting commands.
@@ -292,7 +388,7 @@ or QtAgg backends to enable all interactive plotting commands.
 
         Parameters
         ----------
-        new_wv: Quantity array
+        new_wv : Quantity array
           New wavelength array
 
         Returns:
@@ -354,9 +450,9 @@ or QtAgg backends to enable all interactive plotting commands.
           Wavelength to set the zero of the velocity array.
           Often (1+z)*wrest
 
-        Returns:
-        ---------
-        velo: Quantity array (km/s)
+        Returns
+        -------
+        velo : Quantity array (km/s)
         '''
         if not isinstance(wv_obs, Quantity):
             raise ValueError('Input wavelength needs to be a Quantity')
@@ -609,6 +705,13 @@ or QtAgg backends to enable all interactive plotting commands.
         Use linetools.analysis.interp.AkimaSpline to regenerate the
         continuum from the the knots.
         """
+        import matplotlib.pyplot as plt
+        if plt.get_backend() == 'MacOSX':
+            warnings.warn("""\
+Looks like you're using the MacOSX matplotlib backend. Switch to the TkAgg
+or QtAgg backends to enable all interactive plotting commands.
+""")
+            return 
 
         wa = self.dispersion.value
 
@@ -661,3 +764,18 @@ or QtAgg backends to enable all interactive plotting commands.
         self.meta['contpoints'].extend(
             [tuple(pts) for pts in wrapper.contpoints])
         self.meta['contpoints'].sort()
+
+    # Output
+    def __repr__(self):
+        txt = '[{:s}: '.format(self.__class__.__name__)
+        # Name
+        try:
+            txt = txt+' file={:s},'.format(self.filename)
+        except:
+            pass
+        # wrest
+        txt = txt + ' wvmin={:g}, wvmax={:g}'.format(
+            self.wvmin,self.wvmax)
+        txt = txt + ']'
+        return (txt)
+

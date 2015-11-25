@@ -1,4 +1,4 @@
-""" Module for general utilities which don't belong in a sub-package.
+""" Module for general utilities which don't belong in another sub-package.
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -29,12 +29,15 @@ def between(a, vmin, vmax):
     c &= a >= vmin
     return c
 
-#
+
 def scipy_rebin(a, *args):
-    """ Simple script to rebin an input array to a new shape.  Akin to IDL's routine
-    Taken from scipy documentation: http://wiki.scipy.org/Cookbook/Rebinning
-    As in IDL, the new shape must be a factor of the old one.
-    The ugly 'evList trick' builds and executes a python command 
+    """ Simple script to rebin an input array to a new shape.
+
+    Akin to IDL's routine Taken from scipy documentation:
+    http://wiki.scipy.org/Cookbook/Rebinning As in IDL, the new shape
+    must be a factor of the old one.  The ugly 'evList trick' builds
+    and executes a python command.
+
     """
     shape = a.shape
     lenShape = len(shape)
@@ -49,7 +52,7 @@ def scipy_rebin(a, *args):
 def jsonify_dict(d):
     """ Process a dictionary so it can be serialised in json format.
 
-    Currently simply converts arrays to lists.
+    Currently this simply converts array values to lists.
 
     Parameters
     ----------
