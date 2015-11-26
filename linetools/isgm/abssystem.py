@@ -78,7 +78,7 @@ class AbsSystem(object):
         if not isinstance(components,list):
             raise IOError('Need a list of AbsComponent objects')
         if not all(isinstance(x,AbsComponent) for x in components):
-            raise IOError('List needs to contain AbsLine objects')
+            raise IOError('List needs to contain AbsComponent objects')
         # Instantiate with the first component
         init_comp = components[0]
         slf = cls(init_comp.coord, init_comp.zcomp, init_comp.vlim)
@@ -129,9 +129,9 @@ class AbsSystem(object):
         self.Refs = []
 
     def add_component(self, abscomp, toler=0.1*u.arcsec):
-        """Add an AbsComponent object it satisfies all of the rules.
+        """Add an AbsComponent object if it satisfies all of the rules.
 
-        For velocities, we demand that the new line has a velocity
+        For velocities, we demand that the new component has a velocity
         range that is fully encompassed by the AbsSystem.
 
         Parameters
@@ -154,7 +154,7 @@ class AbsSystem(object):
         if test:
             self._components.append(abscomp)
         else:
-            warnings.warn('Input AbsComponent with does not match system rules. Not appending')
+            warnings.warn('Input AbsComponent with does not match AbsSystem rules. Not appending')
 
     # #############
     def __repr__(self):

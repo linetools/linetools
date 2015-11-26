@@ -23,7 +23,7 @@ Property        Variable   Type           Description
 =============== ========   ============== ============================================
 RA, DEC         radec      tuple or coord RA,DEC in deg or astropy.coordinate
 Redshift        z          float          absorption redshift
-Velocity limits vlim       Quantity array -/+ velocity limits of the component
+Velocity limits vlim       Quantity array -/+ velocity limits of the system
 =============== ========   ============== ============================================
 
 
@@ -38,6 +38,7 @@ The default sets the properties listed above::
 More commonly, one will instantiate with one or more AbsComponent objects::
 
     # HI Lya, Lyb
+    radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
     lya = AbsLine(1215.670*u.AA)
     lya.analy['vlim'] = [-300.,300.]*u.km/u.s
     lya.attrib['z'] = 2.92939
