@@ -77,6 +77,7 @@ def iontable_from_components(components):
     components : list
       list of AbsComponent objects
     """
+    from collections import OrderedDict
     # Checks
     assert chk_components(components,chk_A_none=True)
 
@@ -84,24 +85,46 @@ def iontable_from_components(components):
     ztbl = np.mean([comp.zcomp for comp in components])
 
     # Construct the QTable
-    iontbl = QTable()
+    cols = OrderedDict()  # Keeps columns in order
+    cols['Z']=int
+    cols['ion']=int
+    cols['A']=int
+    cols['Ej']=float
+    cols['vmin']=float
+    cols['vmax']=float
+    cols['flag_N']=int
+    cols['logN']=float
+    cols['sig_logN']=float
+    names = cols.keys()
+    dtypes = [cols[key] for key in names]
+    iontbl = QTable(names=names,dtype=dtypes)
+    iontbl['vmin'].unit=u.km/u.s
+    iontbl['vmax'].unit=u.km/u.s
 
     # Identify unique Zion, Ej (not ready for A)
     uZiE = np.array([comp.Zion[0]*1000000+comp.Zion[1]*10000+
-                      comp.Ej.to('1/u.cm').value for comp in components])
+                      comp.Ej.to('1/cm').value for comp in components])
     uniZi, auidx = np.unique(uZiE, return_index=True)
 
     # Loop
     for uidx in auidx:
         # Synthesize components with like Zion, Ej
-        mtZiE = uZiE == uZiE[idx]
-        synthcomp = synthesize_comps(components[idx[mtZiE]],zcomp=ztbl)
+        mtZiE = np.where(uZiE == uZiE[uidx])[0]
+        comps = [components[ii] for ii in mtZiE] # Need a list
+        synth_comp = synthesize_components(comps,zcomp=ztbl)
         # Add a row to QTable
-
+        row = dict(Z=synth_comp.Zion[0],ion=synth_comp.Zion[1],
+                   Ej=synth_comp.Ej,vmin=synth_comp.vlim[0],
+                   vmax=synth_comp.vlim[1],logN=synth_comp.logN,
+                   flag_N=synth_comp.flag_N,sig_logN=synth_comp.sig_logN)
+        iontbl.add_row(row)
 
     # Add zlim to metadata
+    meta = OrderedDict()
+    meta['zcomp'] = ztbl
 
     # Return
+    return iontbl
 
 def synthesize_components(components, zcomp=None, vbuff=10*u.km/u.s):
     """Synthesize a list of components into one
