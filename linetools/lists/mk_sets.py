@@ -1,6 +1,4 @@
-"""
-Module for making set lists
-  INTERNAL USE ONLY
+""" Used to make set lists. Only intended for developer use.
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -20,9 +18,11 @@ xa_path = imp.find_module('xastropy')[1]
 #
 def mk_ism(outfil=None, overwrite=False):
     ''' Make the ISM list from grb.lst in xastropy
+
     SHOULD BE DEPRECATED AFTER v0.0
-    Parameters:
-    -----------
+
+    Parameters
+    ----------
     outfil: str, optional
       Outfil
     '''
@@ -57,12 +57,14 @@ def mk_ism(outfil=None, overwrite=False):
 
 def mk_strong(infil=None, outfil=None):
     ''' Make the Strong ISM list from lls.lst in xastropy
+
     SHOULD BE DEPRECATED AFTER v0.0
-    Parameters:
-    -----------
-    infil: str, optional
+
+    Parameters
+    ----------
+    infil : str, optional
       Starting file.  Should use latest llist_vX.X.ascii
-    outfil: str, optional
+    outfil : str, optional
       Outfil
     '''
     if infil is None:
@@ -96,11 +98,12 @@ def mk_strong(infil=None, outfil=None):
 
 def mk_hi(infil=None, outfil=None):
     ''' Make the HI list ISM + HI
-    Parameters:
-    -----------
-    infil: str, optional
+
+    Parameters
+    ----------
+    infil : str, optional
       Starting file.  Should use latest llist_vX.X.ascii
-    outfil: str, optional
+    outfil : str, optional
       Output file.  Default is to use infil
     '''
     if infil is None:

@@ -1,6 +1,4 @@
-"""
-Module related to analysis of absorption lines
-  -- Methods
+""" Utlities for the analysis of absorption lines
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -16,7 +14,7 @@ atom_cst = (const.m_e.cgs*const.c.cgs / (np.pi *
 
 # Perform AODM on the line
 def aodm(spec,idata):
-    """  AODM calculation on an absorption line
+    """ AODM calculation on an absorption line
 
     See Savage & Sembach 1991, ApJ, 379, 245
 
@@ -33,10 +31,11 @@ def aodm(spec,idata):
       Column and error in linear space (cm^-2)
     flg_sat : bool
       Set to True if saturated pixels exist
-
-    ToDo: 
-      -- Generate a function for nndt alone
     """
+    # ToDo: 
+    #   -- Generate a function for nndt alone
+
+
     flg_sat = False
 
     # Cut spectrum

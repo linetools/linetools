@@ -1,10 +1,10 @@
-""" Classes useful for making interactive plots.
+""" Classes for making interactive plots.
 """
 from __future__ import division, print_function, unicode_literals, absolute_import
 
 import os
 import numpy as np
-from ..utils import between
+from ..utils import between, loadjson, savejson
 from ..spectra.convolve import convolve_psf
 from ..spectra.plotting import get_flux_plotrange
 from .interp import AkimaSpline
@@ -14,36 +14,6 @@ import astropy.units as u
 
 import matplotlib.transforms as mtran
 import matplotlib.pyplot as plt
-
-
-import json
-
-def savejson(filename, obj, overwrite=False, indent=None):
-    """ Save a python object to filename using using the JSON encoder."""
-
-    if os.path.lexists(filename) and not overwrite:
-        raise IOError('%s exists' % filename)
-    if filename.endswith('.gz'):
-        fh = gzip.open(filename, 'wt')
-    else:
-        fh = open(filename, 'wt')
-    try:
-        json.dump(obj, fh, indent=indent)
-    except:
-        import pdb; pdb.set_trace()
-
-    fh.close()
-
-def loadjson(filename):
-    """ Load a python object saved with savejson."""
-    fh = open(filename, 'rt')
-    try:
-        obj = json.load(fh)
-    except:
-        import pdb; pdb.set_trace()
-        
-    fh.close()
-    return obj
 
 
 def local_median(wa, fl, er, x, npix=10, default=None):
@@ -62,26 +32,27 @@ class PlotWrapBase(object):
     """ A base class that has all the navigation and smoothing
     keypress events.
 
+    Notes
+    -----
     These attributes must be defined in a subclass:
 
-    self.wa, self.fl    Spectrum wavelength and flux
-    self.nsmooth        integer > 0 that determines the smoothing
-    self.ax             Axes where spectrum is plotted
-    self.fig            Figure which holds the axes.
-    self.artists['fl']  The Matplotlib line artist that represents the flux.
-
+     * self.wa, self.fl    Spectrum wavelength and flux
+     * self.nsmooth        integer > 0 that determines the smoothing
+     * self.ax             Axes where spectrum is plotted
+     * self.fig            Figure which holds the axes.
+     * self.artists['fl']  The Matplotlib line artist that represents the flux.
 
     The keypress events need to be connected to the figure with
-    something like:
+    something like::
 
-    def connect(self, fig):
-        cids = dict(key=[])
-        # the top two are methods of PlotWrapBase
-        cids['key'].append(fig.canvas.mpl_connect(
-            'key_press_event', self.on_keypress_navigate))
-        cids['key'].append(fig.canvas.mpl_connect(
-            'key_press_event', self.on_keypress_smooth))
-        self.cids.update(cids)
+      def connect(self, fig):
+          cids = dict(key=[])
+          # the top two are methods of PlotWrapBase
+          cids['key'].append(fig.canvas.mpl_connect(
+              'key_press_event', self.on_keypress_navigate))
+          cids['key'].append(fig.canvas.mpl_connect(
+              'key_press_event', self.on_keypress_smooth))
+          self.cids.update(cids)
     """
     _help_string = """
 i,o          Zoom in/out x limits
@@ -181,22 +152,21 @@ class PlotWrapNav(PlotWrapBase):
 
     For example, i and o for zooming in y direction, [ and ] for
     panning, S and U for smoothing and unsmoothing.
+
+    Parameters
+    ----------
+    fig : matplotlib Figure
+    ax : matplotlib axes
+      The Axes where the spectrum is plotted.
+    wa, fl : array
+      Wavelength and flux arrays
+    artists : dict
+      A dictionary which must contain a key 'fl', which is the
+      matplotlib artist corresponding to the flux line.
+    printhelp : bool, optional
+      Whether to print a help message when first called.
     """
     def __init__(self, fig, ax, wa, fl, artists, printhelp=True):
-        """
-        Parameters
-        ----------
-        fig : matplotlib Figure
-        ax : matplotlib axes
-          The Axes where the spectrum is plotted.
-        wa, fl : array
-          Wavelength and flux arrays
-        artists : dict
-          A dictionary which must contain a key 'fl', which is the
-          matplotlib artist corresponding to the flux line.
-        printhelp : bool, optional
-          Whether to print a help message when first called.
-        """
         self.artists = artists
         self.fig = fig
         self.ax = ax
@@ -216,7 +186,6 @@ class PlotWrapNav(PlotWrapBase):
         if printhelp:
             print(self._help_string)
 
-
     def on_keypress(self, event):
         """ Print a help message"""
         if event.key == '?':
@@ -234,6 +203,34 @@ class PlotWrapNav(PlotWrapBase):
         self.cids.update(cids)
 
 class InteractiveCoFit(PlotWrapBase):
+    """ Class for interactively fitting a continuum
+    
+    Parameters
+    ----------
+    wa : Wavelengths
+    fl : Fluxes
+    er : One sigma errors
+    contpoints : list of x,y tuple pairs (None)
+        The points through which a cubic spline is passed,
+        defining the continuum.
+    co : Continuum, optional  
+        The existing continuum, if one is already defined.
+    anchor : bool
+        Whether to prevent modification of the first and last
+        spline knots. Default is None, which means anchor only if
+        co is given.
+
+    Notes
+    -----
+    Updates the following attributes:
+
+      * self.wa, self.fl, self.er :  wa, fl, er
+      * self.contpoints :  Points used to define the continuum.
+      * self.artists :  Dictionary of matplotlib plotting artists.
+      * self.connections :  Callback connections.
+      * self.fig :  The plotting figure instance.
+
+    """
     help_message = PlotWrapBase._help_string + """
 a        : add a new spline knot
 A        : add a new spline knot, and use a flux median to guess y position
@@ -248,31 +245,6 @@ q        : quit
     def __init__(self, wa, fl, er, contpoints, co=None,
                  fig=None, anchor=None):
         """ Initialise figure, plots and variables.
-
-        Parameters
-        ----------
-        wa : Wavelengths
-        fl : Fluxes
-        er : One sigma errors
-        contpoints : list of x,y tuple pairs (None)
-            The points through which a cubic spline is passed,
-            defining the continuum.
-        co : Continuum, optional  
-            The existing continuum, if one is already defined.
-        anchor : bool
-            Whether to prevent modification of the first and last
-            spline knots. Default is None, which means anchor only if
-            co is given.
-
-        Notes
-        -----
-        Updates the following attributes:
-
-         self.wa, self.fl, self.er :  wa, fl, er
-         self.contpoints :  Points used to define the continuum.
-         self.artists :  Dictionary of matplotlib plotting artists.
-         self.connections :  Callback connections.
-         self.fig :  The plotting figure instance.
         """
         #setup
 
@@ -352,8 +324,7 @@ q        : quit
         """ Set up the figure and do initial plots.
 
         Updates the following attributes:
-
-          self.artists
+          * self.artists
         """
         wa,fl,er = self.wa, self.fl, self.er
 
@@ -410,9 +381,8 @@ q        : quit
         """ Calculates the new continuum, residuals and updates the plots.
 
         Updates the following attributes:
-
-          self.artists
-          self.continuum
+          * self.artists
+          * self.continuum
         """
         wa,fl,er = self.wa, self.fl, self.er
         co = self.continuum
@@ -458,8 +428,7 @@ q        : quit
         """ Interactive fiddling via the keyboard
 
         Updates:
-
-         self.contpoints
+         * self.contpoints
         """
         if event.key == 'q':
             self.finished = True

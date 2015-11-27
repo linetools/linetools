@@ -1,6 +1,7 @@
-"""
-Module for utilites related to analysis of lines
-  -- Intended to be methods generic to emission and absorption (e.g. EW)
+""" Line analysis tools
+
+These are intended to be methods generic to emission and absorption
+(e.g. Equivalent width)
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -11,22 +12,22 @@ from astropy import units as u
 from astropy import constants as const
 from astropy.modeling import models, fitting
 
-#from xastropy.xutils import xdebug as xdb
-
 # EW 
 def box_ew(spec):
     """  Boxcar EW calculation
+
     Observer frame, not rest-frame
 
     Parameters
     ----------
-    spec -- Tuple of (wave, fx, sig)
+    spec : Tuple of (wave, fx, sig)
 
-    Returns:
-    ----------
-      EW, sigEW : EW and error in observer frame
-    Note: Tested in test_absline_anly
+    Returns
+    -------
+    EW, sigEW : EW and error in observer frame
     """
+    # Note: Tested in test_absline_anly
+
     # Grab
     wv,fx,sig = spec
 
@@ -44,27 +45,26 @@ def box_ew(spec):
     # Return
     return EW, sigEW
 
-#Gaussian EW
 def gaussian_ew(spec, ltype, initial_guesses=None):
     """  EW calculation using Gaussian fit
-    Observer frame, not rest-frame
-    wvlim must be set!
-    spec must be set!
+
+    Observer frame, not rest-frame. wvlim and spec must be set!
 
     Parameters
     ----------
-    spec: Tuple of (wave, fx, sig)
-    ltype: string
-        whether this is for absorption or emission line (see SpectralLine Class)
-    initial_guesses, optional: Tuple of (amplitude, mean, stddev) 
-        Initial guesses of the Gaussian fit (unitless)
+    spec : Tuple of (wave, fx, sig)
+    ltype : string
+      whether this is for absorption or emission line (see SpectralLine Class)
+    initial_guesses, optional : Tuple of (amplitude, mean, stddev) 
+      Initial guesses of the Gaussian fit (unitless)
 
-    Returns:
-    ----------
+    Returns
+    -------
     EW, sigEW : EW and error in observer frame
     
-    Note: Tested in test_absline_anly
     """
+    # Note: Tested in test_absline_anly
+
     # Grab
     wv,fx,sig = spec
 
@@ -121,5 +121,4 @@ def gaussian_ew(spec, ltype, initial_guesses=None):
     y = g.parameters[2] # stddev
     sigEW = EW * np.sqrt(cov[0,0] / x**2 + cov[2,2] / y**2 + 2 * cov[0,2] / (x*y))
 
-    #Return
     return EW, sigEW
