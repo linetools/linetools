@@ -6,6 +6,15 @@ AbsComponent Class
 
 .. index:: AbsComponent
 
+Notebooks
+=========
+
+.. toctree::
+   :maxdepth: 1
+
+   Simple Examples <AbsComponent_examples>
+   Column Densities <AbsComponent_ColumnDensities>
+
 Overview
 ========
 

@@ -18,6 +18,7 @@ from astropy import constants as const
 from astropy.coordinates import SkyCoord
 
 from linetools.isgm.abscomponent import AbsComponent
+from linetools.isgm import abscomponent as ltabsc
 
 class AbsSystem(object):
     """
@@ -37,7 +38,7 @@ class AbsSystem(object):
       Emission redshift of background source
     NHI :  float, optional
       Log10 of the HI column density
-    sigNHI :  np.array(2), optional
+    sig_NHI :  np.array(2), optional
       Log10 error of the HI column density (-/+)
     name : str, optional
       Name for the system
@@ -55,7 +56,7 @@ class AbsSystem(object):
           Velocity limits of the system
         NHI :  float
           Log10 of the HI column density
-        sigNHI :  np.array(2)
+        sig_NHI :  np.array(2)
           Log10 error of the HI column density (-/+)
         MH :  float
           Metallicity (log10)
@@ -75,10 +76,7 @@ class AbsSystem(object):
           List of AbsComponent objects
         """
         # Check
-        if not isinstance(components,list):
-            raise IOError('Need a list of AbsComponent objects')
-        if not all(isinstance(x,AbsComponent) for x in components):
-            raise IOError('List needs to contain AbsComponent objects')
+        assert ltabsc.chk_components(components)
         # Instantiate with the first component
         init_comp = components[0]
         slf = cls(init_comp.coord, init_comp.zcomp, init_comp.vlim)
@@ -93,13 +91,13 @@ class AbsSystem(object):
         # Return
         return slf
 
-    def __init__(self, abs_type, radec, zabs, vlim, zem=0., NHI=0., sigNHI=np.zeros(2), name=''):
+    def __init__(self, abs_type, radec, zabs, vlim, zem=0., NHI=0., sig_NHI=np.zeros(2), name=''):
 
         self.zabs = zabs
         self.zem = zem
         self.vlim = vlim
         self.NHI = NHI
-        self.sigNHI = sigNHI
+        self.sig_NHI = sig_NHI
         # RA/DEC
         if isinstance(radec,(tuple)):
             self.coord = SkyCoord(ra=radec[0], dec=radec[1])
@@ -128,7 +126,7 @@ class AbsSystem(object):
         # Refs (list of references)
         self.Refs = []
 
-    def add_component(self, abscomp, toler=0.1*u.arcsec):
+    def add_component(self, abscomp, toler=0.2*u.arcsec):
         """Add an AbsComponent object if it satisfies all of the rules.
 
         For velocities, we demand that the new component has a velocity
