@@ -25,3 +25,9 @@ The linetools API
    :skip: AbsLine
    :skip: Column
    :skip: SkyCoord
+
+.. automodapi:: linetools.spectra.xspectrum1d
+
+.. automodapi:: linetools.spectra.convolve
+
+.. automodapi:: linetools.spectra.io
