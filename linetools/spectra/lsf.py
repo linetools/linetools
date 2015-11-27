@@ -15,7 +15,6 @@ from linetools.analysis.interp import interp_Akima
 lt_path = imp.find_module('linetools')[1]
 
 class LSF(object):
-
     """Class to deal with line-spread-functions (LSFs) from
     various different astronomical spectrographs.
 
@@ -65,6 +64,12 @@ class LSF(object):
         the LSF kernel at the central wavelength of the array, 
         using the same pixel scale and extent of `wv_array`. 
 
+        Method: First, tabulated LSF are linearly interpolated
+        to the center of `wv_array` (see LSF.interpolate_to_wv0() for
+        details); then, the LSF is interpolated to match the `wv_array`
+        scale and extent using Akima interpolation (see 
+        LSF.interpolate_to_wv_array() for details).
+
         Parameters
         ----------
         wv_array : Quantity numpy.ndarray, shape(N,)
@@ -76,28 +81,22 @@ class LSF(object):
             Specifies the kind of interpolation as a string either 
             ('cubic', 'Akima')
 
-        Output
-        ------
+        Returns
+        -------
         lsf_array : numpy.ndarray, shape(N,)
             The lsf kernel.
 
-
-        Method: First, tabulated LSF are linearly interpolated
-        to the center of `wv_array` (see LSF.interpolate_to_wv0() for
-        details); then, the LSF is interpolated to match the `wv_array`
-        scale and extent using Akima interpolation (see 
-        LSF.interpolate_to_wv_array() for details).
         """
         lsf_array = self.interpolate_to_wv_array(wv_array,kind=kind)
         return lsf_array['kernel'].data
 
     def check_and_reformat_data(self):
         """Any reformating of self._data should happen here. 
-        At the moment this function does the following:
 
-        - Make sure that relative pixels of the LSF are given as odd integers
-        - Impose the middle value to define the 0 relative pixel
-        - Normalize tabulated LSFs
+        At the moment this function does the following:
+         - Make sure that relative pixels of the LSF are given as odd integers
+         - Impose the middle value to define the 0 relative pixel
+         - Normalize tabulated LSFs
         """
         
         rel_pix_array = self._data['rel_pix']
@@ -205,20 +204,22 @@ class LSF(object):
         return pixel_scale , data
 
     def interpolate_to_wv0(self,wv0):
-        """This function retrieves a unique LSF valid at wavelength 
-        wv0, by linearly interpolating from tabulated values at different wavelengths
-        (this tabulated values (stored in self._data) are usually given as 
-        calibration products by intrument developers and should be loaded by 
-        self.load_XX_data() in the initialization stage of LSF(), where XX 
-        is the name of the instrument)
+        """Retrieves a unique LSF valid at wavelength wv0
+
+        This is done by linearly interpolating from tabulated values
+        at different wavelengths (this tabulated values (stored in
+        self._data) are usually given as calibration products by
+        intrument developers and should be loaded by
+        self.load_XX_data() in the initialization stage of LSF(),
+        where XX is the name of the instrument)
 
         Parameters
         ----------
         wv0 : Quantity 
             Wavelenght at which an LSF solution is required
 
-        Output
-        ------
+        Returns
+        -------
         lsf_table : Table
             The interpolated lsf at wv0. This table has two 
             columns: 'wv' and 'kernel' 
@@ -258,7 +259,8 @@ class LSF(object):
         return lsf
 
     def interpolate_to_wv_array(self,wv_array, kind='Akima'):
-        """
+        """ Interpolate an LSF to a wavelength array.
+        
         Given `wv_array` this function interpolates an LSF
         to match both scale and extent of `wv_array` using the 
         Akima or cubic-spline interpolators (default is Akima). 
@@ -275,8 +277,8 @@ class LSF(object):
             Specifies the kind of interpolation as a string either 
             ('cubic', 'Akima'); default is `Akima`.
 
-        Output
-        ------
+        Returns
+        -------
         lsf_table : Table
             The interpolated lsf using at the central wavelength of 
             `wv_array`, using the same pixel scale as `wv_array`. 

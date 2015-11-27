@@ -1,7 +1,4 @@
 """ Functions related to convolution.
-      Taken from Barak by JXP
-      May replace with scipy functions
-      NT: replace barak routines with astropy.convolution equivalents
 """ 
 
 # py2.6+ compatibility

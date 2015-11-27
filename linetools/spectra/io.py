@@ -1,6 +1,4 @@
-"""
-Module for read/write of spectra FITS files
-  -- Offers greater flexibility than the code in specutils
+""" Reading and writing of spectra
 """
 
 from __future__ import print_function, absolute_import, division, unicode_literals
@@ -32,34 +30,36 @@ from astropy.io.fits.hdu.table import BinTableHDU
 #
 def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
     sig_tags=None, multi_ivar=False, format='ascii'):
-    ''' Read a FITS file (or astropy Table or ASCII file) into a Spectrum1D class
+    """ Read a FITS file (or astropy Table or ASCII file) into a
+    Spectrum1D class
 
-    Parameters:
-    -----------
-    specfil: str or Table
-      Input file
-      If str,
-        FITS file must include in '.fit'
-        ASCII must either have a proper Table format
+    Parameters
+    ----------
+    specfil : str or Table
+      Input file. If str:
+        * FITS file must include in '.fit'
+        * ASCII must either have a proper Table format
           or be 3 columns with WAVE,FLUX,ERROR
-    efil: string, optional
+    efil : string, optional
       Explicit filename for Error array.  Code will attempt to find this
       file on its own.
-    flux_tags: list of strings, optional
-      Tags for flux in Binary FITS table
-      Default: flux_tags = ['SPEC', 'FLUX','FLAM','FX', 'FLUXSTIS', 'FLUX_OPT', 'fl']
-    sig_tags: list of strings, optional
-      Tags for error in Binary FITS table
-      Default: sig_tags = ['ERROR','ERR','SIGMA_FLUX','FLAM_SIG', 'SIGMA_UP', 'ERRSTIS', 'FLUXERR', 'er']
-    multi_ivar: bool, optional
-      If True, assume BOSS format of  flux, ivar, log10(wave) in multi-extension FITS
-    format: str, optional
+    flux_tags : list of strings, optional
+      Tags for flux in Binary FITS table. Default: flux_tags = ['SPEC',
+      'FLUX','FLAM','FX', 'FLUXSTIS', 'FLUX_OPT', 'fl']
+    sig_tags : list of strings, optional
+      Tags for error in Binary FITS table. Default : sig_tags =
+      ['ERROR','ERR','SIGMA_FLUX','FLAM_SIG', 'SIGMA_UP', 'ERRSTIS',
+      'FLUXERR', 'er']
+    multi_ivar : bool, optional
+      If True, assume BOSS format of flux, ivar, log10(wave) in
+      multi-extension FITS.
+    format : str, optional
       Format for ASCII table input ['ascii']
 
-    Returns:
-    -----------
-    A Spectrum1D class (or XSpectrum1D which is an overloaded variant)
-    '''
+    Returns
+    -------
+    An XSpectrum1D class
+    """
     from specutils.io import read_fits as spec_read_fits
     from linetools.spectra.xspectrum1d import XSpectrum1D
 
@@ -287,23 +287,25 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
 #### ###############################
 #  Grab values from the Binary FITS Table or Table
 def get_table_column(tags, hdulist, idx=1):
-    '''Simple script to return values from a FITS table
-    Function used to return flux/error/wave values from
-    a binary FITS table from a list of tags
+    """ Find a column in a FITS binary table
 
-    Parameters:
-    -----------
-    tags: list
+    Used to return flux/error/wave values from a binary FITS table
+    from a list of tags.
+
+    Parameters
+    ----------
+    tags : list
      List of string tag names
-    idx: int, optional
+    hdulist : fits header data unit list  
+    idx : int, optional
      Index of list for Table input [Default: 1]
 
-    Returns:
-    -----------
-    dat: float array
+    Returns
+    -------
+    dat : float array
       Data values corresponding to the first tag found
       Returns None if no match
-    '''
+    """
     dat = None
     # Use Table
     if isinstance(hdulist[idx],BinTableHDU):
@@ -327,14 +329,15 @@ def get_table_column(tags, hdulist, idx=1):
 #### ###############################
 #  Set wavelength array using Header cards
 def setwave(hdr):
-    ''' Generate wavelength array from header
-    Parameters:
-    -----------
-    hdr: FITS header
+    ''' Generate wavelength array from a header
 
-    Returns:
-    --------
-    wave: ndarray
+    Parameters
+    ----------
+    hdr : FITS header
+
+    Returns
+    -------
+    wave : ndarray
       No units yet
     '''
 
@@ -357,11 +360,11 @@ def get_cdelt_dcflag(hd):
 
     Parameters
     ----------
-    hd: astropy.io.fits header instance
+    hd : astropy.io.fits header instance
 
     Returns
     -------
-    cdelt, dc_flag: float, int
+    cdelt, dc_flag : float, int
       Wavelength stepsize and dcflag (1 if log-linear scale, 0 if linear).
     """
     cdelt = None
@@ -386,27 +389,28 @@ def get_cdelt_dcflag(hd):
 #   See if filenm exists, if so pass it back
 #
 def chk_for_gz(filenm):
-    '''Checks for .gz extension to an input filename and returns file
+    """ Checks for .gz extension to an input filename and returns file
+
     Also parses the ~ if given
 
-    Parameters:
-    -----------
-    filenm: string
+    Parameters
+    ----------
+    filenm : string
      Filename to query
 
-    Returns:
-    -----------
-    filenm+XX: string
+    Returns
+    -------
+    filenm+XX : string
       Returns in this order:
         i. Input filename if it exists
         ii. Input filename if it has .gz extension already
         iii. Input filename.gz if that exists
         iv. Input filename.gz if that exists
-    chk: bool or int
-      True if file exists
-      0 if No check was performed
-      False if no file exists
-    '''
+    chk : bool or int
+      * True if file exists
+      * 0 if No check was performed
+      * False if no file exists
+    """
     import os, pdb
     from os.path import expanduser
     filenm = expanduser(filenm)
@@ -430,7 +434,7 @@ def chk_for_gz(filenm):
         return None, chk
 
 def is_UVES_popler(hd):
-    """ Check if UVES_popler output.
+    """ Check if this header is UVES_popler output.
     """
     if 'history' not in hd:
         return False

@@ -18,17 +18,17 @@ from linetools.abund import roman
 
 ########################## ##########################
 ########################## ##########################
-def ion_name(ion,flg=0,nspace=None):
+def ion_name(ion, flg=0, nspace=None):
     """ Convert ion tuple into a string
 
     Parameters
     ----------
-    ion: tuple (Z,ion)
-         dict with tags of 'Z' and 'ion'
-    flg: int, optional (0)
-      0: Roman numeral
-      1: Latex with ion notation (e.g C^+)
-    nspace: int, optional  (0)
+    ion : tuple (Z, ion)
+      dict with tags of 'Z' and 'ion'
+    flg : int, optional (0)
+      * 0: Roman numeral
+      * 1: Latex with ion notation (e.g C^+)
+    nspace : int, optional  (0)
       Number of spaces to insert
 
     Returns
