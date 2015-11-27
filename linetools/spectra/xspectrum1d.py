@@ -391,9 +391,9 @@ or QtAgg backends to enable all interactive plotting commands.
         new_wv : Quantity array
           New wavelength array
 
-        Returns:
-        ----------
-          XSpectrum1D of the rebinned spectrum (without error array)
+        Returns
+        -------
+        XSpectrum1D of the rebinned spectrum (without error array)
         """
         from scipy.interpolate import interp1d
 

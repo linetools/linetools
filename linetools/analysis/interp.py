@@ -1,10 +1,9 @@
-""" Module for interpolation-related tools.
+""" Interpolation-related tools.
 """ 
 
 # p2.6+ compatibility
 from __future__ import division, print_function, unicode_literals
 import numpy as np
-
 
 class AkimaSpline(object):
     """ Describes an Akima Spline through a set of points.
@@ -13,6 +12,11 @@ class AkimaSpline(object):
     and then can be called with a new set of x values `x`. This is
     used by `interp_Akima`, see its documentation for more
     information.
+
+    Parameters
+    ----------
+    xvals, yvals : array_like, shape (N,)
+      Reference values. xvals should not contain duplicates.
 
     References
     ----------
@@ -32,10 +36,6 @@ class AkimaSpline(object):
     """
     def __init__(self, xvals, yvals):
         """
-        Parameters
-        ----------
-        xvals, yvals : array_like, shape (N,)
-          Reference values. xvals cannot contain duplicates.
         """
 
         x = np.asarray(xvals, dtype=np.float64)

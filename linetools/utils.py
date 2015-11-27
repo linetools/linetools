@@ -2,6 +2,8 @@
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
+import json
+
 import numpy as np
 
 def between(a, vmin, vmax):
@@ -73,3 +75,31 @@ def jsonify_dict(d):
         else:
             dout[key] = value
     return dout
+
+def savejson(filename, obj, overwrite=False, indent=None):
+    """ Save a python object to filename using using the JSON encoder."""
+
+    if os.path.lexists(filename) and not overwrite:
+        raise IOError('%s exists' % filename)
+    if filename.endswith('.gz'):
+        fh = gzip.open(filename, 'wt')
+    else:
+        fh = open(filename, 'wt')
+    try:
+        json.dump(obj, fh, indent=indent)
+    except:
+        import pdb; pdb.set_trace()
+
+    fh.close()
+
+def loadjson(filename):
+    """ Load a python object saved with savejson."""
+    fh = open(filename, 'rt')
+    try:
+        obj = json.load(fh)
+    except:
+        import pdb; pdb.set_trace()
+        
+    fh.close()
+    return obj
+

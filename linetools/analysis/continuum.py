@@ -68,10 +68,12 @@ def make_chunks_qso(wa, redshift, divmult=1, forest_divmult=1, debug=False):
 
 
 def update_knots(knots, indices, fl, masked):
-    """ Calculate the y position of each knot. Updates inplace.
+    """ Calculate the y position of each knot.
+
+    Updates `knots` inplace.
 
     Parameters
-    ---------
+    ----------
     knots: list of [xpos, ypos, bool] with length N
       bool says whether the knot should kept unchanged.
     indices: list of (i0,i1) index pairs
@@ -169,14 +171,11 @@ def prepare_knots(wa, fl, er, edges, ax=None, debug=False):
     Returns
     -------
     knots, indices, masked
-
-      knots: A list of [x, y, flag] lists giving the x and y position
-      of each knot.
-
-      indices: A list of tuples (i,j) giving the start and end index
-      of each chunk.
-
-      masked: An array the same shape as wa.
+      * knots: A list of [x, y, flag] lists giving the x and y position
+        of each knot.
+      * indices: A list of tuples (i,j) giving the start and end index
+        of each chunk.
+      * masked: An array the same shape as wa.
     """
     indices = wa.searchsorted(edges)
     indices = [(i0,i1) for i0,i1 in zip(indices[:-1],indices[1:])]
@@ -205,10 +204,11 @@ def prepare_knots(wa, fl, er, edges, ax=None, debug=False):
 
 
 def unmask(masked, indices, wa, fl, er, minpix=3):
-    """ Sometimes all pixels can become masked in a chunk. We don't
-    want this!
-    
-    This forces there to be at least minpix pixels used in each chunk.
+    """ Forces each chunk to use at least minpix pixels.
+
+    Sometimes all pixels can become masked in a chunk. We don't want
+    this! This forces there to be at least minpix pixels used in each
+    chunk.
      """
     for iknot,(i,j) in enumerate(indices):
         #print(iknot, wa[i], wa[j], (~masked[i:j]).sum())

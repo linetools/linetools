@@ -1,5 +1,4 @@
-"""
-Module on Curve of Growth
+""" Curve of Growth calculations
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -19,7 +18,7 @@ from astropy.modeling import fitting
 #from xastropy.xutils import xdebug as xdb
 
 # Begin
-def ftau_intgrnd(x,tau0=0.1):
+def _ftau_intgrnd(x,tau0=0.1):
     return 1 - np.exp(-tau0 * np.exp(-x**2))
 
 # Generate Ftau (could archive, but this is reasonably fast)
@@ -29,7 +28,7 @@ all_tau0 = 10.**lgt
 #
 xFtau0 = np.zeros(neval)
 for jj,tau0 in enumerate(all_tau0):
-    xFtau0[jj], ferr = integrate.quad(ftau_intgrnd, 0, np.inf, args=(tau0,))
+    xFtau0[jj], ferr = integrate.quad(_ftau_intgrnd, 0, np.inf, args=(tau0,))
 
 # Now interpolate
 intFtau0 = interp1d(all_tau0, xFtau0, bounds_error=False,fill_value=0.)
@@ -94,13 +93,13 @@ def single_cog_analysis(wrest, f, EW, sigEW=None, guesses=None):
     guesses : tuple of float,float
       Guesses for logN, b
 
-    Return
-    ------
+    Returns
+    -------
     COG_dict : dict
       dict containing inputs and solution, e.g.
-       logN : float
-       b : Quantity
-         Doppler parameter (km/s)
+       * logN : float
+       * b : Quantity
+           Doppler parameter (km/s)
     """
     if guesses is None:
         logN=14.
@@ -135,6 +134,7 @@ def single_cog_analysis(wrest, f, EW, sigEW=None, guesses=None):
 
 class single_cog_model(FittableModel):
     """Generate a single COG model
+
     Parameters
     ----------
     logN

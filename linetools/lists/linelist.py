@@ -1,5 +1,4 @@
-"""
-Module for LineList Class
+""" Contains the LineList class
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -29,26 +28,26 @@ from linetools.lists import parse as lilp
 class LineList(object):
     '''Class to over-load Spectrum1D for new functionality not yet in specutils
 
-    Parameters:
+    Parameters
     ----------
-    llst_keys: str or list  
+    llst_keys : str or list  
       Input to grab line list.  Current options are:
-       'ISM'     :: "All" ISM lines (can be overwhelming!)
-       'Strong'  :: Strong ISM lines
-       'HI'      :: HI Lyman series
-       'H2'      :: H2 (Lyman-Werner)
-       'CO'      :: CO UV band-heads
-       'EUV'     :: EUV lines (for CASBAH project)
+       * 'ISM'     :: "All" ISM lines (can be overwhelming!)
+       * 'Strong'  :: Strong ISM lines
+       * 'HI'      :: HI Lyman series
+       * 'H2'      :: H2 (Lyman-Werner)
+       * 'CO'      :: CO UV band-heads
+       * 'EUV'     :: EUV lines (for CASBAH project)
        ---- NOT IMPLEMENTED YET -----
-       'Gal_E'   :: Galaxy emission lines (HII)
-       'Gal_A'   :: Galaxy absorption lines (stellar)
-       'AGN'     :: Key AGN lines
-    subset: list, optional
+       * 'Gal_E'   :: Galaxy emission lines (HII)
+       * 'Gal_A'   :: Galaxy absorption lines (stellar)
+       * 'AGN'     :: Key AGN lines
+    subset : list, optional
       List of subset of lines to use (drawn from input linelist)
       Needs to be Quantity or str (e.g. [1215.6700*u.AA] or ['HI 1215'])
-    sort_subset: bool, optional
+    sort_subset : bool, optional
       Sort the subset? [False]
-    verbose: bool, optional
+    verbose : bool, optional
       Give info galore if True
     '''
     # Init
@@ -175,8 +174,8 @@ class LineList(object):
 
     #####
     def set_lines(self, verbose=True, use_cache=True):#, gd_lines=None):
-        ''' Parse the lines of interest
-        '''
+        """ Parse the lines of interest
+        """
         import warnings
 
         global CACHE
@@ -243,7 +242,6 @@ class LineList(object):
                                 set_data[igd]['name']))
 
         # Collate (should grab unique ones!)
-        #all_idx = np.unique( np.concatenate( [np.array(itt) for itt in indices] ) )
         all_idx = np.unique( np.array(indices) )
 
         # Parse and sort (consider masking instead)
@@ -256,23 +254,22 @@ class LineList(object):
 
 
     def subset_lines(self, subset, sort=False, reset_data=False, verbose=False):
-        '''
-        Select a user-specific subset of the lines from the LineList for usage
+        """ Select a user-specific subset of the lines from the LineList
 
-        Parameters:
-        -------------
-        subset: list, optional
+        Parameters
+        ----------
+        subset : list, optional
           List of wrest for lines to use (drawn from input linelist)
           Quantity or str
-        reset_data: bool, optional
+        reset_data : bool, optional
           Reset self._data QTable based on the original list at the 
           initialization (i.e. the default list). This is useful for 
           changing subsets of lines without the need to initialize a 
           different LineList() object. [False]
-        sort: bool, optional 
+        sort : bool, optional 
           Sort this subset? [False]
 
-        '''
+        """
         
         # Reset _data (useful for changing subsets)
         if reset_data:
@@ -299,11 +296,6 @@ class LineList(object):
                     indices.append(mt[0])
                 elif len(mt) > 1:
                     raise ValueError('Should have been only one line with name {:s}!'.format(str(gdlin)))
-                    #warnings.warn('Found more than one line for {:s}'.format(str(gdlin)))
-                    #warnings.warn('Taking the first one from Ref={:s}'.format(
-                    #        self._data['Ref'][mt[0]]))
-                    #indices.append(mt[0])
-                    #raise ValueError('Need unique name entries!')
                 else:
                     if verbose:
                         print('subset_lines: Did not find {:s} in data Tables'.format(gdlin))
@@ -320,16 +312,20 @@ class LineList(object):
 
     def unknown_line(self):
         """Returns a dictionary of line properties set to an unknown
-        line. Currently using the default value from
-        linetools.lists.parse()."""     
+        line.
+
+        Currently using the default value from
+        linetools.lists.parse().
+        """     
         ldict , _ = lilp.line_data()
         ldict['name'] = 'unknown'
         return ldict
 
-    def all_transitions(self,line):
-        """For a given single line transition, this function returns
-        all transitions of the ion containing such single line found
-        in the linelist.
+    def all_transitions(self, line):
+        """ Get all the transitions corresponding to a line.
+
+        For a given single line transition, this function returns
+        all transitions from the linelist containing that line.
 
         Parameters
         ----------
@@ -343,7 +339,6 @@ class LineList(object):
 
         Returns
         -------
-
         dict (if only 1 transition found) or QTable (if > 1
         transitions are found)
 
@@ -389,9 +384,11 @@ class LineList(object):
                 raise ValueError('Line {} not found in the linelist'.format(line))
 
     def strongest_transitions(self,line, wvlims, n_max=3,verbose=False):
-        """For a given single line transition, this function returns
+        """ Find the strongest transition for an ion
+
+        For a given single line transition, this function returns
         the n_max strongest transitions of the ion species found in
-        the linelist, within the wavelenght range wlims.
+        the linelist, within the wavelength range wlims.
 
         Parameters
         ----------
@@ -467,7 +464,9 @@ class LineList(object):
                 return data
 
     def available_transitions(self, wvlims, n_max=None,n_max_tuple=None, min_strength=1.):
-        """For a given wavelength range, wvlims=(wv_min,wv_max), this
+        """ Find the strongest transitions in a wavelength interval.
+
+        For a given wavelength range, wvlims=(wv_min,wv_max), this
         function retrieves the n_max_tuple strongest transitions per
         each ion species in the LineList available at such a
         wavelength range and having strength larger than min_strength.
@@ -580,7 +579,9 @@ class LineList(object):
                 return QTable(output)
 
     def from_dict_to_qtable(self,a):
-        """Converts dictionary `a` to its QTable version"""
+        """Converts dictionary `a` to its QTable version.
+        """
+
         if isinstance(a,dict):
             pass
         else:
@@ -597,9 +598,10 @@ class LineList(object):
     
     #####
     def __getattr__(self, k):
-        ''' Passback an array or Column of the data 
+        """ Passback an array or Column of the data 
+
         k must be a Column name in the data Table
-        '''
+        """
         # Deal with QTable
         try:
             # First try to access __getitem__ in the parent class.
@@ -619,18 +621,18 @@ class LineList(object):
     def __getitem__(self, k, tol=1e-3*u.AA):
         ''' Passback data as a dict (from the table) for the input line
 
-        Parameters:
+        Parameters
         ----------
         k: overloaded
-          float,Quantity -- Wavelength (e.g. 1215.6700)
-          str -- Name (e.g. 'CII 1334')
-          tuple -- Zion, e.g. (6,2)
+          * float, Quantity -- Wavelength (e.g. 1215.6700)
+          * str -- Name (e.g. 'CII 1334')
+          * tuple -- Zion, e.g. (6,2)
           [Note: to retrieve an unknown line use string 'unknown']
 
-        Returns:
-        ----------
-        dict (from row in the data table if only 1 line is found) or QTable (tuple
-          when more than 1 lines are found)
+        Returns
+        -------
+        dict (from row in the data table if only 1 line is found) or
+          QTable (tuple when more than 1 lines are found)
         '''
         if isinstance(k,(float,Quantity)): # Wavelength
             if isinstance(k,float): # Assuming Ang
