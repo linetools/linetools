@@ -18,7 +18,7 @@ from astropy import constants as const
 from astropy.coordinates import SkyCoord
 
 from linetools.isgm.abscomponent import AbsComponent
-from linetools.isgm import abscomponent as ltabsc
+from linetools.isgm import utils as ltiu
 
 class AbsSystem(object):
     """
@@ -76,7 +76,7 @@ class AbsSystem(object):
           List of AbsComponent objects
         """
         # Check
-        assert ltabsc.chk_components(components)
+        assert ltiu.chk_components(components)
         # Instantiate with the first component
         init_comp = components[0]
         slf = cls(init_comp.coord, init_comp.zcomp, init_comp.vlim)
