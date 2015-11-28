@@ -126,6 +126,7 @@ def iontable_from_components(components):
     cols['ion']=int
     cols['A']=int
     cols['Ej']=float
+    cols['z']=float
     cols['vmin']=float
     cols['vmax']=float
     cols['flag_N']=int
@@ -150,6 +151,7 @@ def iontable_from_components(components):
         synth_comp = synthesize_components(comps,zcomp=ztbl)
         # Add a row to QTable
         row = dict(Z=synth_comp.Zion[0],ion=synth_comp.Zion[1],
+                   z=ztbl,
                    Ej=synth_comp.Ej,vmin=synth_comp.vlim[0],
                    vmax=synth_comp.vlim[1],logN=synth_comp.logN,
                    flag_N=synth_comp.flag_N,sig_logN=synth_comp.sig_logN)

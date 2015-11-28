@@ -431,135 +431,13 @@ class AbsComponent(object):
             self.vlim[0],self.vlim[1])
         # Column?
         try:
-            txt = txt+', logN={:g}'.format(self.logN)
+            txt = txt+', flag_N={:d}'.format(self.flag_N)
         except AttributeError:
             pass
         else:
+            txt = txt+', logN={:g}'.format(self.logN)
             txt = txt+', sig_N={:g}'.format(self.sig_logN)
         # Finish
         txt = txt + ']'
         return (txt)
 
-def chk_components(components, chk_match=False, chk_A_none=False, toler=0.2*u.arcsec):
-    """ Performs checks on a list of components
-
-    Parameters
-    ----------
-    components : list
-      list of AbsComponent objects
-    chk_match : bool, optional
-      if True, require that the components match in RA/DEC, Zion, Ej, A but not velocity
-    chk_A_none : bool, optional
-      if True, require that A *not* be set
-    toler : Angle, optional
-      Tolerance on matching coordinates
-    """
-    tests = True
-    # List
-    if not isinstance(components,list):
-        tests = False
-        raise IOError('Need a list of AbsComponent objects')
-    # Object
-    if not all(isinstance(x,AbsComponent) for x in components):
-        tests = False
-        raise IOError('List needs to contain only AbsComponent objects')
-    # A None
-    if chk_A_none:
-        if not all(x.A is None for x in components):
-            tests = False
-            raise IOError('Not ready for components with A set')
-    # Matching?
-    if chk_match:
-        match = True
-        comp0 = components[0]
-        for comp in components[1:]:
-            # RA/DEC
-            match = match & bool(comp0.coord.separation(comp.coord) < toler)
-            # Zion
-            match = match & (comp0.Zion == comp.Zion)
-            # Ej
-            match = match & np.testing.assert_almost_equal(comp0.Ej.to('1/cm').value,comp.Ej.to('1/cm').value)
-            # A
-            match = match & (comp0.A == comp.A)
-        tests = tests & match
-    # Return
-    return tests
-
-def iontable_from_components(components):
-    """Generate a QTable from a list of components
-
-    Method does *not* perform logic on redshifts or vlim.
-    Includes rules for adding components of like ion
-    Not ready for varying atomic mass (e.g. Deuterium)
-
-    Parameters
-    ----------
-    components : list
-      list of AbsComponent objects
-    """
-    # Checks
-    assert chk_components(components,chk_A_none=True)
-
-    # Set z from mean
-    ztbl = np.mean(comp.zcomp for comp in components)
-
-    # Construct the QTable
-    iontbl = QTable()
-
-    # Identify unique Zion, Ej (not ready for A)
-    uZiE = np.array([comp.Zion[0]*1000000+comp.Zion[1]*10000+
-                      comp.Ej.to('1/u.cm').value for comp in components])
-    uniZi, auidx = np.unique(uZiE, return_index=True)
-
-    # Loop
-    for uidx in auidx:
-        # Synthesize components with like Zion, Ej
-        mtZiE = uZiE == uZiE[idx]
-        synthcomp = synthesize_comps(components[idx[mtZiE]],zcomp=ztbl)
-        # Add a row to QTable
-
-
-    # Add zlim to metadata
-
-    # Return
-
-def synthesize_components(components, zcomp=None):
-    """Synthesize a list of components into one
-
-    Requires consistent RA/DEC, Zion, Ej, (A; future)
-    Is agnostic about z+vlim
-    Melds column densities
-    Melds velocities with a small buffer (10 km/s)
-
-    Note: Could make this a way to instantiate AbsComponent
-
-    Parameters
-    ----------
-    components : list
-      list of AbsComponent objects
-    zcomp : float, optional
-      Input z to reference the synthesized component
-      If not input, the mean of the input components is used
-    """
-    reload(ltaa)
-    # Checks
-    assert chk_components(components,chk_A_none=True,chk_match=True)
-
-
-    # Final component
-    synth_comp = AbsComponent.from_component(components[0])
-    synth_comp.logN = 0.
-    synth_comp.sig_logN = 0.
-
-    # Meld column densities
-    for comp in components[1:]:
-        synth_comp.flag_N, synth_comp.logN, synth_comp.sig_logN = ltaa.sum_logN(synth_comp,comp)
-
-    # Meld z, vlim
-    # zcomp
-    if zcomp is None:
-        zcomp = np.mean(comp.zcomp for comp in components)
-    synth_comp.zcomp = zcomp
-    # Set vlim by min/max  [Using non-relativistic + buffer]
-    v = [(comp.zcomp-zcomp)/(1+zcomp)*3e5 for comp in components]
-    synth_comp.vlim = [np.min(v)-10.,np.max(v)+10.]*u.km/u.s
