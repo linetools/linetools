@@ -50,25 +50,33 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False):
         abslines.append(iline)
     # Component
     abscomp = AbsComponent.from_abslines(abslines)
-    return abscomp
+    return abscomp, abslines
 
 def test_build_table():
-    abscomp = mk_comp('HI')
+    abscomp,_ = mk_comp('HI')
     # Instantiate
     comp_tbl = abscomp.build_table()
     # Test
     assert isinstance(comp_tbl,QTable)
 
 def test_synthesize_colm():
-    abscomp = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True)
+    abscomp,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True)
     # Column
     abscomp.synthesize_colm(redo_aodm=True)
     # Test
     np.testing.assert_allclose(abscomp.logN,13.594447075294818)
 
+def test_build_components_from_lines():
+    # Lines
+    abscomp,HIlines = mk_comp('HI')
+    abscomp,SiIIlines = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True)
+    # Components
+    comps = ltiu.build_components_from_abslines([HIlines[0],HIlines[1],SiIIlines[0],SiIIlines[1]])
+    assert len(comps) == 2
+
 def test_cog():
     # Component
-    abscomp = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True)
+    abscomp,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True)
     # COG
     COG_dict = abscomp.cog(redo_EW=True)
     # Test
@@ -77,10 +85,10 @@ def test_cog():
 
 def test_synthesize_components():
     #
-    SiIIcomp1 = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s, add_spec=True)
+    SiIIcomp1,_ = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s, add_spec=True)
     SiIIcomp1.synthesize_colm(redo_aodm=True)
     #
-    SiIIcomp2 = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s, add_spec=True)
+    SiIIcomp2,_ = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s, add_spec=True)
     SiIIcomp2.synthesize_colm(redo_aodm=True)
     #
     synth_SiII = ltiu.synthesize_components([SiIIcomp1,SiIIcomp2])

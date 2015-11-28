@@ -132,6 +132,8 @@ class AbsSystem(object):
         For velocities, we demand that the new component has a velocity
         range that is fully encompassed by the AbsSystem.
 
+        Should check for duplicates..
+
         Parameters
         ----------
         comp : AbsComponent
@@ -198,3 +200,43 @@ class LymanAbsSystem(AbsSystem):
     def print_abs_type(self):
         """"Return a string representing the type of vehicle this is."""
         return 'HILyman'
+
+class AbsSubSystem(object):
+    """
+    Sub system.  Most frequently used in LLS
+
+    Used to analyze a portion of an AbsSystem
+    Must be tied to an AbsSystem
+
+    Parameters
+    ----------
+    parent : AbsSystem
+      Link
+    zabs : float
+      Absorption redshift
+    vlim : Quantity array (2)
+      Velocity limits of the system
+    lbl : str
+      Label for the SubSystem, e.g. 'A', 'B'
+    """
+    def __init__(self, parent, zabs, vlim, lbl):
+        self.parent = parent
+        self.zabs = zabs
+        self.vlim = vlim
+        self.lbl = lbl
+
+    def print_abs_type(self):
+        """"Return a string representing the type of vehicle this is."""
+        return 'SubSystem'
+
+        # #############
+    def __repr__(self):
+        txt = '[{:s}: name={:s}{:s} type={:s}, {:s} {:s}, z={:g}, vlim={:g},{:g}'.format(
+            self.__class__.__name__, self.parent.name, self.lbl,
+            self.parent.abs_type,
+            self.parent.coord.ra.to_string(unit=u.hour,sep=':',pad=True),
+            self.parent.coord.dec.to_string(sep=':',pad=True,alwayssign=True),
+            self.zabs, self.vlim[0],self.vlim[1])
+        # Finish
+        txt = txt + ']'
+        return (txt)

@@ -37,7 +37,7 @@ Isotope         A          int            Atomic Mass number (optional)
 
 
 Instantiation
--------------
+=============
 
 The AbsComponent Class may be instantiated in a few ways.
 The default sets the properties listed above::
@@ -61,7 +61,7 @@ or multiple::
 ::::
 
 Inspecting
-----------
+==========
 
 Here are a few simple methods to explore/inspect the class.
 
@@ -91,7 +91,7 @@ Show a plot of the apparent column density profiles, :math:`N_a`::
 ::::
 
 Analysis
---------
+========
 
 Here are some methods related to analysis.
 
@@ -134,6 +134,9 @@ b          Quantity       Output b-value (km/s)
 sig_b      Quantity       Output error in b-value (km/s)
 ========== ============== =====================================
 
+Misc
+====
+
 Synthesize Components
 +++++++++++++++++++++
 
@@ -148,3 +151,12 @@ velocities of the input components.::
    synth_SiII = ltiu.synthesize_components([SiIIcomp1,SiIIcomp2])
 
 See the :doc:`AbsComponent_examples` notebook for a complete example.
+
+Generate Multiple Components
+++++++++++++++++++++++++++++
+
+This method generates multiple components from a list of
+AbsLines.::
+
+   comps = ltiu.build_components_from_abslines([lya,lyb,SiIIlines[0],SiIIlines[1]])
+

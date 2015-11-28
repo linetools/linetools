@@ -65,6 +65,42 @@ def chk_components(components, chk_match=False, chk_A_none=False, toler=0.2*u.ar
     # Return
     return tests
 
+def build_components_from_abslines(abslines):
+    """ Generate a list of AbsComponent from a list of abslines
+
+    Groups lines with like Zion, Ej, (and A; future)
+
+    Parameters
+    ----------
+    abslines : list
+     List of AbsLine objects
+
+    Returns
+    -------
+    components :
+      list of AbsComponent objects
+    """
+    if not isinstance(abslines,list):
+        raise IOError('Need a list of AbsLine objects')
+
+    # Identify unique Zion, Ej combinations in the lines
+    uZiE = np.array([iline.data['Z']*1000000+iline.data['ion']*10000+
+                     iline.data['Ej'].to('1/cm').value for iline in abslines])
+    uniZi, auidx = np.unique(uZiE, return_index=True)
+
+    # Loop to build components
+    components = []
+    for uidx in auidx:
+        # Synthesize lines with like Zion, Ej
+        mtZiE = np.where(uZiE == uZiE[uidx])[0]
+        lines = [abslines[ii] for ii in mtZiE] # Need a list
+        # Generate component
+        components.append(AbsComponent.from_abslines(lines))
+
+    return components
+
+
+
 def iontable_from_components(components):
     """Generate a QTable from a list of components
 
@@ -170,3 +206,4 @@ def synthesize_components(components, zcomp=None, vbuff=10*u.km/u.s):
 
     # Return
     return synth_comp
+
