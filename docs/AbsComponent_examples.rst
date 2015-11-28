@@ -1,5 +1,5 @@
 
-Examples for the AbsComopnent Class (v0.2)
+Examples for the AbsComponent Class (v0.2)
 ==========================================
 
 .. code:: python
@@ -14,19 +14,14 @@ Examples for the AbsComopnent Class (v0.2)
     except:
         pass
     
-    from linetools.isgm import abscomponent as lt_abscomp
     from linetools.spectralline import AbsLine
+    from linetools.isgm import utils as ltiu
+    from linetools.analysis import absline as laa
     from linetools.spectra import io as lsio
+    from linetools.isgm.abscomponent import AbsComponent
     #
     import imp
     lt_path = imp.find_module('linetools')[1]
-
-
-.. parsed-literal::
-
-    /Users/xavier/anaconda/lib/python2.7/site-packages/matplotlib/__init__.py:872: UserWarning: axes.color_cycle is deprecated and replaced with axes.prop_cycle; please use the latter.
-      warnings.warn(self.msg_depr % (key, alt_key))
-
 
 Instantiate
 -----------
@@ -36,7 +31,7 @@ Standard
 
 .. code:: python
 
-    abscomp = lt_abscomp.AbsComponent((10.0*u.deg, 45*u.deg), (14,2), 1.0, [-300,300]*u.km/u.s)
+    abscomp = AbsComponent((10.0*u.deg, 45*u.deg), (14,2), 1.0, [-300,300]*u.km/u.s)
     abscomp
 
 
@@ -44,7 +39,7 @@ Standard
 
 .. parsed-literal::
 
-    [AbsComponent: 00:40:00 +45:00:00, Zion=(14,2), z=1]
+    [AbsComponent: 00:40:00 +45:00:00, Zion=(14,2), z=1, vlim=-300 km / s,300 km / s]
 
 
 
@@ -93,15 +88,14 @@ From one line
 
 .. code:: python
 
-    reload(lt_abscomp)
-    abscomp = lt_abscomp.AbsComponent.from_abslines([lya])
+    abscomp = AbsComponent.from_abslines([lya])
     print(abscomp)
     abscomp._abslines
 
 
 .. parsed-literal::
 
-    [AbsComponent: 00:00:00 +00:00:00, Zion=(1,1), z=2.92939]
+    [AbsComponent: 00:00:00 +00:00:00, Zion=(1,1), z=2.92939, vlim=-300 km / s,300 km / s]
 
 
 
@@ -123,15 +117,14 @@ From multiple
 
 .. code:: python
 
-    reload(lt_abscomp)
-    abscomp = lt_abscomp.AbsComponent.from_abslines([lya,lyb])
+    abscomp = AbsComponent.from_abslines([lya,lyb])
     print(abscomp)
     abscomp._abslines
 
 
 .. parsed-literal::
 
-    [AbsComponent: 00:00:00 +00:00:00, Zion=(1,1), z=2.92939]
+    [AbsComponent: 00:00:00 +00:00:00, Zion=(1,1), z=2.92939, vlim=-300 km / s,300 km / s]
 
 
 
@@ -151,17 +144,28 @@ Generate a Component Table
 
 .. code:: python
 
+    reload(laa)
     lya.attrib['logN'] = 14.1
     lya.attrib['sig_logN'] = 0.15
-    lya.attrib['flagN'] = 1
+    lya.attrib['flag_N'] = 1
+    laa.linear_clm(lya.attrib)
     lyb.attrib['logN'] = 14.15
     lyb.attrib['sig_logN'] = 0.19
-    lyb.attrib['flagN'] = 1
+    lyb.attrib['flag_N'] = 1
+    laa.linear_clm(lyb.attrib)
+
+
+
+
+.. parsed-literal::
+
+    (<Quantity 141253754462275.53 1 / cm2>, <Quantity 61797269977312.6 1 / cm2>)
+
+
 
 .. code:: python
 
-    reload(lt_abscomp)
-    abscomp = lt_abscomp.AbsComponent.from_abslines([lya,lyb])
+    abscomp = AbsComponent.from_abslines([lya,lyb])
     comp_tbl = abscomp.build_table()
     comp_tbl
 
@@ -171,8 +175,8 @@ Generate a Component Table
 .. raw:: html
 
     &lt;QTable length=2&gt;
-    <table id="table4557201808">
-    <thead><tr><th>wrest</th><th>z</th><th>flagN</th><th>logN</th><th>sig_logN</th></tr></thead>
+    <table id="table4544220880">
+    <thead><tr><th>wrest</th><th>z</th><th>flag_N</th><th>logN</th><th>sig_logN</th></tr></thead>
     <thead><tr><th>Angstrom</th><th></th><th></th><th></th><th></th></tr></thead>
     <thead><tr><th>float64</th><th>float64</th><th>int64</th><th>float64</th><th>float64</th></tr></thead>
     <tr><td>1215.67</td><td>2.92939</td><td>1</td><td>14.1</td><td>0.15</td></tr>
@@ -192,11 +196,13 @@ Synthesize multiple components
         iline = AbsLine(trans)
         iline.attrib['logN'] = 12.8 + np.random.rand()
         iline.attrib['sig_logN'] = 0.15
-        iline.attrib['flagN'] = 1
-        iline.attrib['z'] = 1.2
+        iline.attrib['flag_N'] = 1
+        iline.attrib['z'] = 2.92939
         iline.analy['vlim'] = [-300.,50.]*u.km/u.s
+        _,_ = laa.linear_clm(iline.attrib)
         SiIIlines.append(iline)
-    SiIIcomp = lt_abscomp.AbsComponent.from_abslines(SiIIlines)
+    SiIIcomp = AbsComponent.from_abslines(SiIIlines)
+    SiIIcomp.synthesize_colm()
 
 .. code:: python
 
@@ -205,117 +211,70 @@ Synthesize multiple components
         iline = AbsLine(trans)
         iline.attrib['logN'] = 13.3 + np.random.rand()
         iline.attrib['sig_logN'] = 0.15
-        iline.attrib['flagN'] = 1
-        iline.attrib['z'] = 1.2
+        iline.attrib['flag_N'] = 1
+        iline.attrib['z'] = 2.92939
         iline.analy['vlim'] = [50.,300.]*u.km/u.s
+        _,_ = laa.linear_clm(iline.attrib)
         SiIIlines2.append(iline)
-    SiIIcomp2 = lt_abscomp.AbsComponent.from_abslines(SiIIlines2)
+    SiIIcomp2 = AbsComponent.from_abslines(SiIIlines2)
+    SiIIcomp2.synthesize_colm()
 
 .. code:: python
 
-    reload(lt_abscomp)
-    
-    synthSiII = 
+    abscomp.synthesize_colm()
+    [abscomp,SiIIcomp,SiIIcomp2]
+
+
+
+
+.. parsed-literal::
+
+    [[AbsComponent: 00:00:00 +00:00:00, Zion=(1,1), z=2.92939, vlim=-300 km / s,300 km / s, logN=14.1172, sig_N=0.117912],
+     [AbsComponent: 00:00:00 +00:00:00, Zion=(14,2), z=2.92939, vlim=-300 km / s,50 km / s, logN=13.0996, sig_N=0.103427],
+     [AbsComponent: 00:00:00 +00:00:00, Zion=(14,2), z=2.92939, vlim=50 km / s,300 km / s, logN=13.4226, sig_N=0.0997983]]
+
+
+
+.. code:: python
+
+    synth_SiII = ltiu.synthesize_components([SiIIcomp,SiIIcomp2])
+    synth_SiII
+
+
+
+
+.. parsed-literal::
+
+    [AbsComponent: 00:00:00 +00:00:00, Zion=(14,2), z=2.92939, vlim=-60 km / s,310 km / s, logN=13.5915, sig_N=0.075406]
+
+
 
 Generate an Ion Table
 ~~~~~~~~~~~~~~~~~~~~~
 
-
 .. code:: python
 
-    comps = [abscomp,SiIIcomp,abscomp]
-
-.. code:: python
-
-    dum = AbsLine('CII* 1335')
-    dum.data
+    reload(ltiu)
+    tbl = ltiu.iontable_from_components([abscomp,SiIIcomp,SiIIcomp2])
+    tbl
 
 
 
 
-.. parsed-literal::
+.. raw:: html
 
-    {'A': <Quantity 288000000.0 1 / s>,
-     'Am': 0,
-     'Ej': <Quantity 63.42 1 / cm>,
-     'Ek': <Quantity 74930.1 1 / cm>,
-     'Ex': <Quantity 0.0 1 / cm>,
-     'Jj': 0.0,
-     'Jk': 0.0,
-     'Ref': 'Morton2003',
-     'Z': 6,
-     'col0': masked,
-     'col6': masked,
-     'el': 0,
-     'f': 0.115,
-     'gamma': <Quantity 288000000.0 1 / s>,
-     'gj': 4,
-     'gk': 6,
-     'group': 1,
-     'ion': 2,
-     'mol': '',
-     'name': 'CII* 1335',
-     'nj': 0,
-     'nk': 0,
-     'wrest': <Quantity 1335.7077 Angstrom>}
+    &lt;QTable length=2&gt;
+    <table id="table4544220368">
+    <thead><tr><th>Z</th><th>ion</th><th>A</th><th>Ej</th><th>vmin</th><th>vmax</th><th>flag_N</th><th>logN</th><th>sig_logN</th></tr></thead>
+    <thead><tr><th></th><th></th><th></th><th></th><th>km / s</th><th>km / s</th><th></th><th></th><th></th></tr></thead>
+    <thead><tr><th>int64</th><th>int64</th><th>int64</th><th>float64</th><th>float64</th><th>float64</th><th>int64</th><th>float64</th><th>float64</th></tr></thead>
+    <tr><td>1</td><td>1</td><td>0</td><td>0.0</td><td>290.0</td><td>310.0</td><td>1</td><td>14.1172024817</td><td>0.117911610801</td></tr>
+    <tr><td>14</td><td>2</td><td>0</td><td>0.0</td><td>-60.0</td><td>310.0</td><td>1</td><td>13.5914585752</td><td>0.0754059797591</td></tr>
+    </table>
 
 
 
-
-.. code:: python
-
-    all(x.A is None for x in comps)
-
-
-
-
-.. parsed-literal::
-
-    True
-
-
-
-.. code:: python
-
-    print(SiIIcomp.Ej)
-
-
-.. parsed-literal::
-
-    0.0 1 / cm
-
-
-.. code:: python
-
-    tmp = np.array([comp.Zion[0]*100+comp.Zion[1] for comp in comps])
-    tmp
-
-
-
-
-.. parsed-literal::
-
-    array([ 101, 1402,  101])
-
-
-
-.. code:: python
-
-    uni,idx = np.unique(tmp,return_index=True)
-    print(uni,idx)
-    print('Z', [iuni//100 for iuni in uni])
-    print('ion', [iuni%100 for iuni in uni])
-
-
-.. parsed-literal::
-
-    (array([ 101, 1402]), array([0, 1]))
-    ('Z', [1, 14])
-    ('ion', [1, 2])
-
-
-
-Stack Plot
+Stack plot
 ~~~~~~~~~~
 
 Load a spectrum
@@ -332,11 +291,11 @@ Show
 
 .. code:: python
 
-    reload(lt_abscomp)
-    abscomp = lt_abscomp.AbsComponent.from_abslines([lya,lyb])
+    abscomp = AbsComponent.from_abslines([lya,lyb])
     abscomp.stack_plot()
 
 
 
-.. image:: AbsComponent_examples_files/AbsComponent_examples_35_0.png
+.. image:: AbsComponent_examples_files/AbsComponent_examples_28_0.png
+
 

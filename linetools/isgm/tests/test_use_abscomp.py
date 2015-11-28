@@ -8,6 +8,7 @@ import pytest
 from astropy import units as u
 from astropy.table import QTable
 import numpy as np
+import pdb
 
 #import matplotlib
 #matplotlib.use('Agg')
@@ -16,6 +17,7 @@ from linetools.isgm.abscomponent import AbsComponent
 from linetools.spectralline import AbsLine
 from linetools.spectra import io as lsio
 from linetools.analysis import absline as ltaa
+from linetools.isgm import utils as ltiu
 
 import imp
 lt_path = imp.find_module('linetools')[1]
@@ -44,6 +46,7 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False):
         iline.attrib['flag_N'] = 1
         iline.analy['spec'] = xspec
         iline.analy['vlim'] = vlim
+        _,_ = ltaa.linear_clm(iline.attrib) # Loads N, sig_N
         abslines.append(iline)
     # Component
     abscomp = AbsComponent.from_abslines(abslines)
@@ -52,13 +55,12 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False):
 def test_build_table():
     abscomp = mk_comp('HI')
     # Instantiate
-    abscomp = AbsComponent.from_abslines([lya,lyb])
     comp_tbl = abscomp.build_table()
     # Test
     assert isinstance(comp_tbl,QTable)
 
 def test_synthesize_colm():
-    abscomp = mk_comp('SiII', add_spec=True)
+    abscomp = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True)
     # Column
     abscomp.synthesize_colm(redo_aodm=True)
     # Test
@@ -66,7 +68,7 @@ def test_synthesize_colm():
 
 def test_cog():
     # Component
-    abscomp = mk_comp('SiII', add_spec=True)
+    abscomp = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True)
     # COG
     COG_dict = abscomp.cog(redo_EW=True)
     # Test
@@ -75,15 +77,15 @@ def test_cog():
 
 def test_synthesize_components():
     #
-    SiIIcomp1 = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s)
-    SiIIcomp1.synthesize_colm()
+    SiIIcomp1 = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s, add_spec=True)
+    SiIIcomp1.synthesize_colm(redo_aodm=True)
     #
-    SiIIcomp2 = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s)
-    SiIIcomp2.synthesize_colm()
+    SiIIcomp2 = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s, add_spec=True)
+    SiIIcomp2.synthesize_colm(redo_aodm=True)
     #
     synth_SiII = ltiu.synthesize_components([SiIIcomp1,SiIIcomp2])
-    np.testing.assert_allclose(synth_SiII.logN,13.5915)
-    np.testing.assert_allclose(synth_SiII.sig_N,0.075406)
+    np.testing.assert_allclose(synth_SiII.logN,13.862456155250918)
+    np.testing.assert_allclose(synth_SiII.sig_logN,0.010146948602759272)
 """
 def test_stack_plot():
     # AbsLine(s)

@@ -6,6 +6,14 @@ AbsSystem Class
 
 .. index:: AbsSystem
 
+Notebooks
+=========
+
+.. toctree::
+   :maxdepth: 1
+
+   Simple Examples <AbsSystem_examples>
+
 Overview
 ========
 

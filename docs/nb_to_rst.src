@@ -4,3 +4,4 @@
 
 ipython nbconvert examples/AbsComponent_examples.ipynb --to rst
 ipython nbconvert examples/AbsComponent_ColumnDensities.ipynb --to rst
+ipython nbconvert examples/AbsSystem_examples.ipynb --to rst

@@ -197,10 +197,10 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'], skip_wveval=Fals
     for iline in lines:
         if debug:
             print(iline)
-        par = [iline.attrib['N'], iline.attrib['z'], 
-            iline.attrib['b'].to('cm/s').value, 
-            iline.wrest.to('cm').value, iline.data['f'], 
-            iline.data['gamma'].value]
+        par = [np.log10(iline.attrib['N'].value),
+               iline.attrib['z'], iline.attrib['b'].to('cm/s').value,
+               iline.wrest.to('cm').value, iline.data['f'],
+               iline.data['gamma'].value]
         tau += voigt_tau(wavecm, par) 
 
     # Only tau?

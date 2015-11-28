@@ -134,5 +134,17 @@ b          Quantity       Output b-value (km/s)
 sig_b      Quantity       Output error in b-value (km/s)
 ========== ============== =====================================
 
+Synthesize Components
++++++++++++++++++++++
 
+This method combines a list of two or more components into a new one.
+It checks first for consistent RA/DEC, Zion, and Ej.  It does
+not place any constraints on z and vlim.  The column density of
+the new component is the sum of the input ones (with rules for
+limits).  And the redshift and vlim are set to encompass the
+velocities of the input components.::
 
+   from linetools.isgm import utils as ltiu
+   synth_SiII = ltiu.synthesize_components([SiIIcomp1,SiIIcomp2])
+
+See the :doc:`AbsComponent_examples` notebook for a complete example.
