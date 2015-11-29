@@ -101,7 +101,7 @@ def build_components_from_abslines(abslines):
 
 
 
-def iontable_from_components(components):
+def iontable_from_components(components,ztbl=None):
     """Generate a QTable from a list of components
 
     Method does *not* perform logic on redshifts or vlim.
@@ -112,13 +112,16 @@ def iontable_from_components(components):
     ----------
     components : list
       list of AbsComponent objects
+    ztbl : float, optional
+      Redshift for the table
     """
     from collections import OrderedDict
     # Checks
     assert chk_components(components,chk_A_none=True)
 
     # Set z from mean
-    ztbl = np.mean([comp.zcomp for comp in components])
+    if ztbl is None:
+        ztbl = np.mean([comp.zcomp for comp in components])
 
     # Construct the QTable
     cols = OrderedDict()  # Keeps columns in order
@@ -164,7 +167,7 @@ def iontable_from_components(components):
     # Return
     return iontbl
 
-def synthesize_components(components, zcomp=None, vbuff=10*u.km/u.s):
+def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
     """Synthesize a list of components into one
 
     Requires consistent RA/DEC, Zion, Ej, (A; future)
@@ -202,7 +205,7 @@ def synthesize_components(components, zcomp=None, vbuff=10*u.km/u.s):
         zcomp = np.mean([comp.zcomp for comp in components])
     synth_comp.zcomp = zcomp
     # Set vlim by min/max  [Using non-relativistic + buffer]
-    vmin = u.Quantity([(comp.zcomp-zcomp)/(1+zcomp)*const.c.to('km/s')-comp.vlim[0] for comp in components])
+    vmin = u.Quantity([(comp.zcomp-zcomp)/(1+zcomp)*const.c.to('km/s')+comp.vlim[0] for comp in components])
     vmax = u.Quantity([(comp.zcomp-zcomp)/(1+zcomp)*const.c.to('km/s')+comp.vlim[1] for comp in components])
     synth_comp.vlim = u.Quantity([np.min(vmin)-vbuff,np.max(vmax)+vbuff])
 
