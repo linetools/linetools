@@ -30,9 +30,9 @@ def test_generic():
     gensys2 = GenericAbsSystem(coord2, 1.744, [-300,300.]*u.km/u.s, NHI=17.)
     gensys2.name = 'Sys2'
     # Combine
-    gensurvey.nsys = 2
-    gensurvey._abs_sys.append(gensys1)
-    gensurvey._abs_sys.append(gensys2)
+    gensurvey.add_abs_sys(gensys1)
+    gensurvey.add_abs_sys(gensys2)
+    assert gensurvey.nsys == 2
 
     # Attribute
     aNHI = gensurvey.NHI

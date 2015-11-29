@@ -14,6 +14,7 @@ from astropy.table import QTable, Column
 from astropy.units.quantity import Quantity
 
 from linetools.spectra import io as lsio
+from linetools.isgm.abssystem import AbsSystem
 
 #
 
@@ -73,6 +74,11 @@ class AbslineSurvey(object):
         """Generate the Survey from a summary FITS file
 
         Handles SPEC_FILES too.
+
+        Parameters
+        ----------
+        summ_fits : str
+          Summary FITS file
         """
         # Read
         systems = QTable.read(summ_fits)
@@ -117,7 +123,7 @@ class AbslineSurvey(object):
         # Return
         return slf
 
-    def __init__(self, abs_type, nsys=0, ref=''):
+    def __init__(self, abs_type, ref=''):
         # Expecting a list of files describing the absorption systems
         """  Initiator
 
@@ -134,13 +140,21 @@ class AbslineSurvey(object):
         self.ref = ref
         self._abs_sys = []
         self.mask = None
-        self.nsys = nsys
 
         # Mask
         self.init_mask()
 
         # Init
         self.flist = None
+
+    @property
+    def nsys(self):
+        """ Number of systems
+        Returns
+        -------
+        nsys : int
+        """
+        return len(self._abs_sys)
 
     def init_mask(self):
         """ Initialize the mask for abs_sys
@@ -149,9 +163,36 @@ class AbslineSurvey(object):
             self.mask = np.array([True]*self.nsys)
 
     def abs_sys(self):
-        lst = self._abs_sys
         # Recast as an array
-        return lst_to_array(lst,mask=self.mask)
+        return lst_to_array(self._abs_sys,mask=self.mask)
+
+    def add_abs_sys(self,abs_sys):
+        """ Add an AbsSys to the Survey
+
+        Enables one to add checks
+        """
+        assert self.chk_abs_sys(abs_sys)
+        # Might check to see if a duplicate exists..
+
+        # Append
+        self._abs_sys.append(abs_sys)
+
+    def chk_abs_sys(self,abs_sys):
+        """ Preform checks on input abs_sys
+
+        Parameters
+        ----------
+        abs_sys : AbsSystem
+
+        Returns
+        -------
+        bool
+
+        """
+        if not isinstance(abs_sys,AbsSystem):
+            raise IOError("Must be an AbsSystem object")
+        return True
+
 
     def __getattr__(self, k):
         """ Generate an array of attribute 'k' from the AbsSystems
@@ -245,7 +286,7 @@ class AbslineSurvey(object):
         return t[1:]
 
     # Mask
-    def upd_mask(self, msk, increment=False):
+    def update_mask(self, msk, increment=False):
         """ Update the Mask for the abs_sys
 
         Parameters
