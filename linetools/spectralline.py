@@ -74,9 +74,9 @@ class SpectralLine(object):
             }
         self.attrib = {   # Properties (e.g. column, EW, centroid)
                        'coord': SkyCoord(ra=0.*u.deg, dec=0.*u.deg),  #  Coords
-                       'z': z, 'zsig': 0.,  #  Redshift
-                       'v': 0.*u.km/u.s, 'vsig': 0.*u.km/u.s,  #  Velocity relative to z
-                       'EW': 0.*u.AA, 'EWsig': 0.*u.AA, 'flgEW': 0 # EW
+                       'z': z, 'sig_z': 0.,  #  Redshift
+                       'v': 0.*u.km/u.s, 'sig_v': 0.*u.km/u.s,  #  Velocity relative to z
+                       'EW': 0.*u.AA, 'sig_EW': 0.*u.AA, 'flag_EW': 0 # EW
                        }
 
         # Fill data
@@ -193,7 +193,7 @@ class SpectralLine(object):
         rest-frame (use measure_restew below for rest-frame).
 
         It sets these attributes:
-           * self.attrib[ 'EW', 'sigEW' ]:
+           * self.attrib[ 'EW', 'sig_EW' ]:
              The EW and error in observer frame
 
         Parameters
@@ -212,15 +212,15 @@ class SpectralLine(object):
 
         # Calculate
         if flg == 1: # Boxcar
-            EW, sigEW = lau.box_ew( (wv, fx, sig) )
+            EW, sig_EW = lau.box_ew( (wv, fx, sig) )
         elif flg == 2: #Gaussian
-            EW, sigEW = lau.gaussian_ew( (wv, fx, sig), self.ltype, initial_guesses=initial_guesses)
+            EW, sig_EW = lau.gaussian_ew( (wv, fx, sig), self.ltype, initial_guesses=initial_guesses)
         else:
             raise ValueError('measure_ew: Not ready for this flag {:d}'.format(flg))
 
         # Fill
         self.attrib['EW'] = EW 
-        self.attrib['sigEW'] = sigEW 
+        self.attrib['sig_EW'] = sig_EW
 
     # EW 
     def measure_restew(self, **kwargs):
@@ -233,7 +233,7 @@ class SpectralLine(object):
 
         # Push to rest-frame
         self.attrib['EW'] = self.attrib['EW'] / (self.attrib['z']+1)
-        self.attrib['sigEW'] = self.attrib['sigEW'] / (self.attrib['z']+1)
+        self.attrib['sig_EW'] = self.attrib['sig_EW'] / (self.attrib['z']+1)
 
     # Output
     def __repr__(self):
@@ -311,9 +311,9 @@ class AbsLine(SpectralLine):
             'name': self.data['name']
             })
 
-        # Additional attributes for Absorption Line
-        self.attrib.update({'N': 0., 'Nsig': 0., 'flagN': 0, # Column
-                       'b': 0.*u.km/u.s, 'bsig': 0.*u.km/u.s  # Doppler
+        # Additional fundamental attributes for Absorption Line
+        self.attrib.update({'N': 0./u.cm**2, 'sig_N': 0./u.cm**2, 'flag_N': 0, # Column
+                       'b': 0.*u.km/u.s, 'sig_b': 0.*u.km/u.s  # Doppler
                        } )
     # Voigt
     def generate_voigt(self, wave=None, **kwargs):
@@ -333,7 +333,7 @@ class AbsLine(SpectralLine):
         """
         from linetools.analysis import voigt as lav
         # Checks
-        if self.attrib['N'] < 1.:
+        if self.attrib['N'] < 1./u.cm**2:
             raise ValueError("Need to initialize log column density in attrib['N']")
         if self.attrib['b'] < 1.*u.km/u.s:
             raise ValueError("Need to initialize Doppler parameter in attrib['b']")
@@ -353,7 +353,7 @@ class AbsLine(SpectralLine):
         """ AODM calculation
 
         It sets these attributes:
-          * self.attrib[ 'N', 'sigN', 'logN', 'sig_logN' ]:
+          * self.attrib[ 'N', 'sig_N', 'logN', 'sig_logN' ]:
             Column densities and errors, linear and log
 
         Parameters
@@ -366,26 +366,23 @@ class AbsLine(SpectralLine):
         velo = xdict['velo']
 
         # Calculate
-        N,sigN,flg_sat = laa.aodm( (velo, fx, sig), (self.wrest,self.data['f']) )
+        N,sig_N,flg_sat = laa.aodm( (velo, fx, sig), (self.wrest,self.data['f']) )
 
         # Flag
         if flg_sat:
-            self.attrib['flagN'] = 2
+            self.attrib['flag_N'] = 2
         else:
-            if N > nsig*sigN:
-                self.attrib['flagN'] = 1
+            if N > nsig*sig_N:
+                self.attrib['flag_N'] = 1
             else:
-                self.attrib['flagN'] = 3
+                self.attrib['flag_N'] = 3
 
         # Values
         self.attrib['N'] = N
-        self.attrib['sigN'] = sigN
+        self.attrib['sig_N'] = sig_N
 
         # Log
-        logN, sig_logN = laa.log_clm(self.attrib)
-        self.attrib['logN'] = logN # Dimensionless
-        self.attrib['sig_logN'] = sig_logN # Dimensionless
-
+        laa.log_clm(self.attrib)
 
     # Output
     def __repr__(self):

@@ -75,7 +75,27 @@ class AbsComponent(object):
         # Return
         return slf
 
-    # Initialize with wavelength
+    @classmethod
+    def from_component(cls, component, **kwargs):
+        """ Instantiate from an AbsComponent object
+
+        Uses RA/DEC, Zion, Ej, A, z, vlim
+
+        Parameters
+        ----------
+        component : AbsComponent
+           An AbsComponent object
+
+        Returns
+        -------
+        AbsComponent
+        """
+        # Check
+        if not isinstance(component,AbsComponent):
+            raise IOError('Need an AbsComponent object')
+        # Return
+        return cls(component.coord, component.Zion, component.zcomp, component.vlim, Ej=component.Ej, A=component.A, **kwargs)
+
     def __init__(self, radec, Zion, z, vlim, Ej=0./u.cm, A=None, Ntup=None):
         """  Initiator
 
@@ -95,10 +115,10 @@ class AbsComponent(object):
           Atomic mass -- used to distinguish isotopes
         Ntup : tuple
           (int,float,float)
-          (flgN,logN,sigN)
-          flgN : Flag describing N measurement
+          (flag_N,logN,sig_N)
+          flag_N : Flag describing N measurement
           logN : log10 N column density
-          sigN : Error in log10 N
+          sig_logN : Error in log10 N
         Ej : Quantity, optional
            Energy of lower level (1/cm)
         """
@@ -116,18 +136,17 @@ class AbsComponent(object):
         self.A = A
         self.Ej = Ej
         if Ntup is not None:
-            self.flgN = Ntup[0]
+            self.flag_N = Ntup[0]
             self.logN = Ntup[1]
             self.sig_logN = Ntup[2]
-            self.N = 10**self.logN
-            self.sigN = 10**self.logN
+            _,_ = ltaa.linear_clm(self) # Set linear quantities
         else:
-            self.flgN = 0
+            self.flag_N = 0
 
         # Other
         self._abslines = []
 
-    def add_absline(self,absline, toler=0.1*u.arcsec):
+    def add_absline(self,absline,toler=0.1*u.arcsec):
         """Add an AbsLine object to the component if it satisfies
         all of the rules.
 
@@ -149,7 +168,6 @@ class AbsComponent(object):
         zlim_line = (1+absline.attrib['z'])*absline.analy['vlim']/const.c.to('km/s')
         zlim_comp = (1+self.zcomp)*self.vlim/const.c.to('km/s')
         test = test & (zlim_line[0]>=zlim_comp[0]) & (zlim_line[1]<=zlim_comp[1])
-        
         # Isotope
         if self.A is not None:
             raise ValueError('Not ready for this yet')
@@ -169,7 +187,7 @@ class AbsComponent(object):
             return
         comp_tbl = QTable()
         comp_tbl.add_column(Column([iline.wrest.to(u.AA).value for iline in self._abslines]*u.AA,name='wrest'))
-        for attrib in ['z', 'flagN', 'N', 'Nsig']:
+        for attrib in ['z', 'flag_N', 'logN', 'sig_logN']:
             comp_tbl.add_column(Column([iline.attrib[attrib] for iline in self._abslines], name=attrib))
         # Return
         return comp_tbl
@@ -201,9 +219,9 @@ class AbsComponent(object):
         wrest = np.array([aline.wrest.to('AA').value for aline in self._abslines])*u.AA
         f = np.array([aline.data['f'] for aline in self._abslines])
         EW = np.array([aline.attrib['EW'].to('AA').value for aline in self._abslines])*u.AA
-        sigEW=np.array([aline.attrib['sigEW'].to('AA').value for aline in self._abslines])*u.AA
+        sig_EW=np.array([aline.attrib['sig_EW'].to('AA').value for aline in self._abslines])*u.AA
         # COG analysis
-        COG_dict = ltcog.single_cog_analysis(wrest, f, EW, sigEW=sigEW)
+        COG_dict = ltcog.single_cog_analysis(wrest, f, EW, sig_EW=sig_EW)
         # COG plot
         if show_plot:
             ltcog.cog_plot(COG_dict)
@@ -287,51 +305,53 @@ class AbsComponent(object):
           Fills the component attributes instead
         """
         # Check
-        if (self.flgN != 0) and (not overwrite):
+        if (self.flag_N != 0) and (not overwrite):
             raise IOError("Column densities already set.  Use clobber=True to redo.")
         # Redo?
         if redo_aodm:
             for aline in self._abslines:
                 aline.measure_aodm(**kwargs)
         # Collate
-        self.flgN = 0
+        self.flag_N = 0
         for aline in self._abslines:
-            if aline.attrib['flagN'] == 1: # Good value?
-                if self.flgN == 1: # Weighted mean
+            if np.allclose(aline.attrib['N'].value,0.):
+                raise ValueError("Need to set N in attrib.  \n Consider linear_clm in linetools.analysis.absline")
+            if aline.attrib['flag_N'] == 1: # Good value?
+                if self.flag_N == 1: # Weighted mean
                     # Original
-                    weight = 1. / self.sigN**2
+                    weight = 1. / self.sig_N**2
                     mu= self.N * weight
                     # Update
-                    weight += 1./aline.attrib['sigN']**2
-                    self.N = (mu + aline.attrib['N']/aline.attrib['sigN']**2) / weight
-                    self.sigN = np.sqrt(1./weight)
+                    weight += 1./aline.attrib['sig_N']**2
+                    self.N = (mu + aline.attrib['N']/aline.attrib['sig_N']**2) / weight
+                    self.sig_N = np.sqrt(1./weight)
                 else: # Fill
                     self.N = aline.attrib['N']
-                    self.sigN = aline.attrib['sigN']
-                    self.flgN = 1
-            elif aline.attrib['flagN'] == 2: # Lower limit
-                if self.flgN in [0,3]:
+                    self.sig_N = aline.attrib['sig_N']
+                    self.flag_N = 1
+            elif aline.attrib['flag_N'] == 2: # Lower limit
+                if self.flag_N in [0,3]:
                     self.N = aline.attrib['N']
-                    self.sigN = 99.
-                    self.flgN = 2
-                elif self.flgN == 2:
+                    self.sig_N = 99.
+                    self.flag_N = 2
+                elif self.flag_N == 2:
                     self.N = max(self.N,aline.attrib['N'])
-                    self.sigN = 99.
-                elif self.flgN == 1:
+                    self.sig_N = 99.
+                elif self.flag_N == 1:
                     pass
-            elif aline.attrib['flagN'] == 3: # Upper limit
-                if self.flgN == 0:
+            elif aline.attrib['flag_N'] == 3: # Upper limit
+                if self.flag_N == 0:
                     self.N = aline.attrib['N']
-                    self.sigN = aline.attrib['sigN']
-                    self.flgN = 3
-                elif self.flgN in [1,2]:
+                    self.sig_N = aline.attrib['sig_N']
+                    self.flag_N = 3
+                elif self.flag_N in [1,2]:
                     pass
-                elif self.flgN == 3:
+                elif self.flag_N == 3:
                     if aline.attrib['N'] < self.N:
                         self.N = aline.attrib['N']
-                        self.sigN = aline.attrib['sigN']
+                        self.sig_N = aline.attrib['sig_N']
             else:
-                raise ValueError("Bad flagN value")
+                raise ValueError("Bad flag_N value")
         # Log values
         self.logN, self.sig_logN = ltaa.log_clm(self)
 
@@ -391,21 +411,32 @@ class AbsComponent(object):
             plt.show()
         plt.close()
 
+    def __getitem__(self, attrib):
+        """Passback attribute, if it exists
 
-    # Output
+        Useful for columns
+
+        Parameters
+        ----------
+        attrib : str
+        """
+        return getattr(self,attrib)
+
     def __repr__(self):
-        txt = '[{:s}: {:s} {:s}, Zion=({:d},{:d}), z={:g}'.format(
+        txt = '[{:s}: {:s} {:s}, Zion=({:d},{:d}), z={:g}, vlim={:g},{:g}'.format(
             self.__class__.__name__,
             self.coord.ra.to_string(unit=u.hour,sep=':',pad=True),
             self.coord.dec.to_string(sep=':',pad=True,alwayssign=True),
-            self.Zion[0], self.Zion[1], self.zcomp)
+            self.Zion[0], self.Zion[1], self.zcomp,
+            self.vlim[0],self.vlim[1])
         # Column?
         try:
-            txt = txt+', logN={:g}'.format(self.logN)
+            txt = txt+', flag_N={:d}'.format(self.flag_N)
         except AttributeError:
             pass
         else:
-            txt = txt+', sigN={:g}'.format(self.sig_logN)
+            txt = txt+', logN={:g}'.format(self.logN)
+            txt = txt+', sig_N={:g}'.format(self.sig_logN)
         # Finish
         txt = txt + ']'
         return (txt)

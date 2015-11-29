@@ -24,7 +24,7 @@ def test_aodm_absline():
     abslin.analy['wvlim'] = [6080.78, 6087.82]*u.AA
     #
     abslin.measure_aodm()
-    N, sigN, flgN = [abslin.attrib[key] for key in ['N','sigN','flagN']]
+    N, sig_N, flgN = [abslin.attrib[key] for key in ['N','sig_N','flag_N']]
 
     np.testing.assert_allclose(N.value, 300009659372018.7)
     assert N.unit == 1/u.cm**2
@@ -36,7 +36,7 @@ def test_aodm_absline():
     abslin.attrib['z'] = 2.92929
     #
     abslin.measure_aodm()
-    N, sigN, flgN = [abslin.attrib[key] for key in ['N','sigN','flagN']]
+    N, sig_N, flgN = [abslin.attrib[key] for key in ['N','sig_N','flag_N']]
     np.testing.assert_allclose(N.value, 80369196079224.42)
 
 def test_boxew_absline():

@@ -27,7 +27,7 @@ def aodm(spec,idata):
 
     Returns
     -------
-    N, sigN : float, float
+    N, sig_N : float, float
       Column and error in linear space (cm^-2)
     flg_sat : bool
       Set to True if saturated pixels exist
@@ -75,14 +75,16 @@ def aodm(spec,idata):
 
 
 def log_clm(obj):
-    """Return logN and sig_logN given linear N, sigN
+    """Return logN and sig_logN given linear N, sig_N
+
+    Also fills the attributes
 
     Parameters
     ----------
     obj : object
       An object with tags appropriate for the analysis
       Assumes 'logN' for column and 'sig_logN' for error for now
-      Or .N and .sigN
+      Or .N and .sig_N
 
     Returns
     -------
@@ -100,36 +102,96 @@ def log_clm(obj):
         except:
             raise IOError("Bad input to log_clm")
         else:
-            isigN = obj.sigN
+            isig_N = obj.sig_N
     else:
-        isigN = obj['sigN']
+        isig_N = obj['sig_N']
 
     # Strip units
     try:
         N = iN.value
     except AttributeError:
         N = iN
-        sigN = isigN
+        sig_N = isig_N
     else:
-        sigN = isigN.value
+        sig_N = isig_N.value
 
     # Operate
     if N <= 0.:
         logN = 0.
     else:
         logN = np.log10(N)
-    lgvar = ((1.0 / (np.log(10.0)*N))**2)*sigN**2
+    lgvar = ((1.0 / (np.log(10.0)*N))**2)*sig_N**2
     sig_logN = np.sqrt(lgvar)
+
+    # Fill
+    try:
+        obj['logN'] = logN
+    except:
+        obj.logN = logN
+        obj.sig_logN = sig_logN
+    else:
+        obj['sig_logN'] = sig_logN
     # Return
     return logN, sig_logN
 
-def sum_logN(obj1,obj2):
-    """Add log columns and return value and errors
+
+def linear_clm(obj):
+    """Return N and sig_N given logN, sig_logN in an object
+
+    Also fills the attributes
 
     Parameters
     ----------
-    obj 1: object
-      An object with keys appropriate for the analysis
+    obj : object
+      An object with tags appropriate for the analysis
+      Assumes 'logN' for column and 'sig_logN' for error
+      Or .logN and .sig_logN
+
+    Returns
+    -------
+    N : Quantity
+      column in cm^-2
+    sig_N : Quantity
+      error in column in cm^-2
+    """
+    # Grab
+    try:
+        logN = obj['logN']
+    except TypeError:
+        try:
+            logN = obj.logN
+        except:
+            raise IOError("Bad input to linear_clm")
+        else:
+            sig_logN = obj.sig_logN
+    else:
+        sig_logN = obj['sig_logN']
+
+
+    # Operate
+    N = 10**logN / u.cm**2
+    sig_N = sig_logN * np.log(10.) * N
+
+    # Fill
+    try:
+        obj['sig_N'] = sig_N
+    except:
+        obj.N = N
+        obj.sig_N = sig_N
+    else:
+        obj['N'] = N
+    # Return
+    return N, sig_N
+
+def sum_logN(obj1,obj2):
+    """Add log columns and return value and errors, with logic
+
+    Adds two column density objects, taking into account the flags
+
+    Parameters
+    ----------
+    obj1 : object
+      An object with keys or attributes appropriate for the analysis
       Assumes 'logN' for column and 'sig_logN' for error for now
     obj2 : object
       Another object with keys appropriate for the analysis
@@ -138,10 +200,28 @@ def sum_logN(obj1,obj2):
     -------
     logN, siglogN
     """
-    # Calculate
+    # Check
+    if not (obj1['flag_N'] in [1,2,3]):
+        raise ValueError("flag_N in obj1 must be 1,2,3")
+    if not (obj2['flag_N'] in [1,2,3]):
+        raise ValueError("flag_N in obj2 must be 1,2,3")
+    # Unpack Obj1
+    flag_N, logN1, sig_logN1 = [obj1[key] for key in ['flag_N','logN','sig_logN']]
+    # Sum
     logN = np.log10(np.sum(10.**np.array([obj1['logN'],obj2['logN']])))
-    siglogN = np.sqrt(
-        np.sum([(obj1['sig_logN']*(10.**obj1['logN']))**2,
-        (obj2['sig_logN']*(10.**obj2['logN']))**2]))/(10.**logN)
+    sig_logN = np.sqrt( np.sum([(obj1['sig_logN']*(10.**obj1['logN']))**2,
+                                (obj2['sig_logN']*(10.**obj2['logN']))**2]))/(10.**logN)
+    if flag_N in [1,2]: # Detection or saturated
+        if obj2['flag_N'] == 2:
+            flag_N = 2
+        elif obj2['flag_N'] == 3:
+            # No change to logN, only sig_logN
+            logN = logN1
+    elif flag_N == 3:
+        if obj2['flag_N'] in [1,2]:
+            logN = obj2['logN']
+            flag_N = obj2['flag_N']
+        else:
+            pass # Take sums
     # Return
-    return logN, siglogN
+    return flag_N, logN, sig_logN

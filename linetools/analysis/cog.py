@@ -51,14 +51,14 @@ def cog_plot(COG_dict):
     ax = plt.gca()
     # Data with values
     gdv = COG_dict['redEW'] > 0.
-    yerr=(COG_dict['sigEW'][gdv]/COG_dict['wrest'][gdv])/COG_dict['redEW'][gdv]
+    yerr=(COG_dict['sig_EW'][gdv]/COG_dict['wrest'][gdv])/COG_dict['redEW'][gdv]
     ax.errorbar(np.log10(COG_dict['f'][gdv]*COG_dict['wrest'][gdv].to('cm').value),
                 np.log10(COG_dict['redEW'][gdv]),
                 yerr=yerr, fmt='o')
     # Upper limit
     upper = COG_dict['redEW'] <= 0.
     ax.scatter(np.log10(COG_dict['f'][upper]*COG_dict['wrest'][upper].to('cm').value),
-               np.log10(3*COG_dict['sigEW'][upper]/COG_dict['wrest'][upper]), color='red', marker='v')
+               np.log10(3*COG_dict['sig_EW'][upper]/COG_dict['wrest'][upper]), color='red', marker='v')
     # Model
     xval = np.log10(COG_dict['f']*COG_dict['wrest'].to('cm').value)
     xmod = np.linspace(np.min(xval), np.max(xval), 200)
@@ -77,7 +77,7 @@ def cog_plot(COG_dict):
     plt.show()
 
 
-def single_cog_analysis(wrest, f, EW, sigEW=None, guesses=None):
+def single_cog_analysis(wrest, f, EW, sig_EW=None, guesses=None):
     """Perform COG analysis on a single component
 
     Parameters
@@ -88,8 +88,8 @@ def single_cog_analysis(wrest, f, EW, sigEW=None, guesses=None):
       f-values
     EW : Quantity array
       Measured EWs
-    sigEW : Quantity array, optional
-      Measured sigEWs
+    sig_EW : Quantity array, optional
+      Measured sig_EWs
     guesses : tuple of float,float
       Guesses for logN, b
 
@@ -110,8 +110,8 @@ def single_cog_analysis(wrest, f, EW, sigEW=None, guesses=None):
     # Reduced EW
     redEW = (EW / wrest).value
     # Weights
-    if sigEW is not None:
-        weights = (wrest/sigEW)**2
+    if sig_EW is not None:
+        weights = (wrest/sig_EW)**2
     # COG model
     cog_model = single_cog_model(logN=logN, b=b)
     # Fitter
@@ -124,7 +124,7 @@ def single_cog_analysis(wrest, f, EW, sigEW=None, guesses=None):
     for ii in range(sigma.size):
         sigma[ii] = np.sqrt(covar[ii,ii])
     # Generate COG dict
-    COG_dict = dict(wrest=wrest,f=f,EW=EW,sigEW=sigEW,
+    COG_dict = dict(wrest=wrest,f=f,EW=EW,sig_EW=sig_EW,
                     redEW=redEW,
                     logN=parm.logN.value, sig_logN=sigma[0],
                     b=parm.b.value*u.km/u.s, sig_b=sigma[1]*u.km/u.s,

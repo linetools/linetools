@@ -13,7 +13,7 @@ def test_voigt_sngl_line():
     imn = np.argmin(np.abs(wave.value-3647))
     # HI line
     abslin = AbsLine(1215.670*u.AA)
-    abslin.attrib['N'] = 14.  # log N
+    abslin.attrib['N'] = 10**14./u.cm**2
     abslin.attrib['b'] = 25.*u.km/u.s
     abslin.attrib['z'] = 2.0
     # Voigt
@@ -26,12 +26,12 @@ def test_voigt_multi_line():
     imn = np.argmin(np.abs(wave.value-3646.2))
     # HI line
     abslin = AbsLine(1215.670*u.AA)
-    abslin.attrib['N'] = 17.5  # log N
+    abslin.attrib['N'] = 10**17.5/u.cm**2
     abslin.attrib['b'] = 20.*u.km/u.s
     abslin.attrib['z'] = 2.0
     # DI line
     abslin2 = AbsLine('DI 1215')
-    abslin2.attrib['N'] = 13.  # log N
+    abslin2.attrib['N'] = 10**13./u.cm**2
     abslin2.attrib['b'] = 15.*u.km/u.s
     abslin2.attrib['z'] = 2.0
     # Voigt
@@ -44,7 +44,7 @@ def test_voigt_sngl_tau():
     imn = np.argmin(np.abs(wave.value-3647))
     # HI line
     abslin = AbsLine(1215.670*u.AA)
-    abslin.attrib['N'] = 14.  # log N
+    abslin.attrib['N'] = 10**14./u.cm**2
     abslin.attrib['b'] = 25.*u.km/u.s
     abslin.attrib['z'] = 2.0
     # Tau
