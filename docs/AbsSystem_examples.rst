@@ -52,6 +52,37 @@ One component
     abscomp = AbsComponent.from_abslines([lya,lyb])
     abscomp.coord = radec
 
+
+.. parsed-literal::
+
+    WARNING: UnitsWarning: The unit 'Angstrom' has been deprecated in the FITS standard. Suggested: 10**-1 nm. [astropy.units.format.utils]
+    WARNING:astropy:UnitsWarning: The unit 'Angstrom' has been deprecated in the FITS standard. Suggested: 10**-1 nm.
+
+
+.. parsed-literal::
+
+    linetools.lists.parse: Reading linelist --- 
+       /Users/xavier/local/Python/linetools/linetools/data/lines/morton03_table2.fits.gz
+    linetools.lists.parse: Reading linelist --- 
+       /Users/xavier/local/Python/linetools/linetools/data/lines/morton00_table2.fits.gz
+    linetools.lists.parse: Reading linelist --- 
+       /Users/xavier/local/Python/linetools/linetools/data/lines/verner94_tab6.fits
+
+.. parsed-literal::
+
+    WARNING: UnitsWarning: '0.1nm' did not parse as fits unit: Numeric factor not supported by FITS [astropy.units.core]
+    WARNING:astropy:UnitsWarning: '0.1nm' did not parse as fits unit: Numeric factor not supported by FITS
+
+
+.. parsed-literal::
+
+    
+    linetools.lists.parse: Reading linelist --- 
+       /Users/xavier/local/Python/linetools/linetools/data/lines/EUV_lines.ascii
+    read_sets: Using set file -- 
+      /Users/xavier/local/Python/linetools/linetools/lists/sets/llist_v0.3.ascii
+
+
 .. code:: python
 
     # HILyman system
@@ -64,7 +95,7 @@ One component
 .. parsed-literal::
 
     [LymanAbsSystem: name= type=HILyman, 08:12:27.432 -12:25:55.56, z=2.92939, NHI=0]
-    [[AbsComponent: 08:12:27.432 -12:25:55.56, Zion=(1,1), z=2.92939]]
+    [[AbsComponent: 08:12:27.432 -12:25:55.56, Zion=(1,1), z=2.92939, vlim=-300 km / s,300 km / s]]
 
 
 Multiple
@@ -96,6 +127,41 @@ Multiple
 .. parsed-literal::
 
     [GenericAbsSystem: name=Foo type=Generic, 08:12:27.432 -12:25:55.56, z=2.92939, NHI=0]
-    [[AbsComponent: 08:12:27.432 -12:25:55.56, Zion=(1,1), z=2.92939], [AbsComponent: 08:12:27.432 -12:25:55.56, Zion=(14,2), z=2.92939]]
+    [[AbsComponent: 08:12:27.432 -12:25:55.56, Zion=(1,1), z=2.92939, vlim=-300 km / s,300 km / s], [AbsComponent: 08:12:27.432 -12:25:55.56, Zion=(14,2), z=2.92939, vlim=-250 km / s,80 km / s]]
+
+
+.. code:: python
+
+    lya.data
+
+
+
+
+.. parsed-literal::
+
+    {'A': <Quantity 626500000.0 1 / s>,
+     'Am': 0,
+     'Ej': <Quantity 0.0 1 / cm>,
+     'Ek': <Quantity 2259.163 1 / cm>,
+     'Ex': <Quantity 0.0 1 / cm>,
+     'Jj': 0.0,
+     'Jk': 0.0,
+     'Ref': 'Morton2003',
+     'Z': 1,
+     'col0': masked,
+     'col6': masked,
+     'el': 0,
+     'f': 0.41639999999999999,
+     'gamma': <Quantity 626500000.0 1 / s>,
+     'gj': 2,
+     'gk': 6,
+     'group': 1,
+     'ion': 1,
+     'mol': '',
+     'name': 'HI 1215',
+     'nj': 0,
+     'nk': 0,
+     'wrest': <Quantity 1215.67 Angstrom>}
+
 
 

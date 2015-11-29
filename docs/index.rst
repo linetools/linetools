@@ -29,6 +29,7 @@ Contents
    linelist
    AbsComponent <abscomp>
    AbsSystem <abssys>
+   AbsSurvey <abssurvey>
    spectralline
    xspectrum1d
 
