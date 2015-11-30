@@ -13,6 +13,7 @@ Notebooks
    :maxdepth: 1
 
    Simple Examples <AbsSystem_examples>
+   LLS <LLSSystem_examples>
 
 Overview
 ========
@@ -36,7 +37,7 @@ Velocity limits vlim       Quantity array -/+ velocity limits of the system
 
 
 Instantiation
--------------
+=============
 
 The AbsSystem Class may be instantiated in a few ways.
 The default sets the properties listed above::
@@ -59,16 +60,39 @@ More commonly, one will instantiate with one or more AbsComponent objects::
     HIsys = LymanAbsSystem.from_components([abscomp])
 
 
-::::
 
 Attributes
-----------
+==========
 
-Plots
------
+Sub Classes
+===========
 
-Methods
+Generic
 -------
 
+A catch-all subclass for AbsSystem.
+
+LymanAbs
+--------
+
+A subclass for HI systems.  All of the components are
+required to have Zion=(1,1).
+
+LLS
+---
+
+An AbsSystem class for LLS.  One is required to set the
+NHI keyword upon instantiation.  See the :doc:`LLSSystem_examples`
+notebook for more.
+
+DLA
+---
+
+Plots
+=====
+
+Methods
+=======
+
 Output
-------
+======

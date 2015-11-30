@@ -13,6 +13,7 @@ Notebooks
    :maxdepth: 1
 
    Simple Examples <AbsSurvey_examples>
+   LLS <LLSSurvey_examples>
 
 Overview
 ========
@@ -28,7 +29,7 @@ systems and the references.
 
 
 Instantiation
--------------
+=============
 
 The AbsSystem Class may be instantiated in a few ways.
 The default sets the properties listed above::
@@ -45,16 +46,38 @@ More commonly, one will instantiate with one or more AbsSystem objects::
     gensys2 = GenericAbsSystem(coord2, 1.744, [-300,300.]*u.km/u.s, NHI=17.)
     gensys2.name = 'Sys2'
 
-::::
 
-Attributes
-----------
+Attributes/Properties
+=====================
+
+========   ============== ============================================
+Variable   Type           Description
+========   ============== ============================================
+nsys       int            Number of systems in the survey
+========   ============== ============================================
+
+Sub Classes
+===========
+
+LLS
++++
+
+Subclass for LLS survey.  Presently handles the .dat and .lst files used
+by JXP.   See :doc:`LLSSurvey_examples` for more.
+
+HDLLS DR1
+---------
+
+One can also read in the HD-LLS survey (DR1) from the internet::
+
+   from linetools.isgm.lls import LLSSurvey
+   hdlls = LLSSurvey.load_HDLLS()
 
 Plots
------
+=====
 
 Methods
--------
+=======
 
 Output
-------
+======

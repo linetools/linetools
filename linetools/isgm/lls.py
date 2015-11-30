@@ -10,11 +10,12 @@ import warnings
 from astropy import units as u
 from astropy.table import Table, Column
 
+from linetools.spectralline import AbsLine
 from linetools.analysis import absline as ltaa
 from linetools.lists.linelist import LineList
 from linetools.isgm.abssystem import AbsSystem, AbsSubSystem
 from linetools.isgm import utils as ltiu
-from linetools.isgm.abssurvey import AbsSurvey
+from linetools.isgm.abssurvey import AbslineSurvey
 from linetools.abund import ions as ltai
 
 #from xastropy.igm.abs_sys import ionclms as xiai
@@ -196,8 +197,8 @@ class LLSSystem(AbsSystem):
                     table = Table(lst, names=tkeys)
                     # Extra columns
                     if 'Z' not in tkeys:
-                        table.add_column(Column([Zion[0]],name='Z'))
-                        table.add_column(Column([Zion[1]],name='ion'))
+                        table.add_column(Column([Zion[0]], name='Z'))
+                        table.add_column(Column([Zion[1]], name='ion'))
                 else:
                     tdict = idict[ion]
                     tkeys = idict[ion].keys()
@@ -208,12 +209,12 @@ class LLSSystem(AbsSystem):
                     table.add_row(tdict)
             # Finish
             try:  # Historical keys
-                table.rename_column('clm','logN')
+                table.rename_column('clm', 'logN')
             except:
                 pass
             else:
-                table.rename_column('sig_clm','sig_logN')
-                table.rename_column('flg_clm','flag_N')
+                table.rename_column('sig_clm', 'sig_logN')
+                table.rename_column('flg_clm', 'flag_N')
             self._ionclms = table
         elif use_clmfile:
             # Subsystems
@@ -222,7 +223,7 @@ class LLSSystem(AbsSystem):
             for lbl in self.subsys.keys():
                 clm_fil = self.tree+self.subsys[lbl]._datdict['clm_file']
                 # Parse .clm file
-                self.subsys[lbl]._clmdict = xiai.read_clmfile(clm_fil,linelist=linelist)
+                self.subsys[lbl]._clmdict = ltiu.read_clmfile(clm_fil, linelist=linelist)
                 # Build components from lines
                 abslines = []
                 vmin,vmax = 9999., -9999.
@@ -235,14 +236,14 @@ class LLSSystem(AbsSystem):
                 # Update z, vlim
                 if update_zvlim:
                     self.subsys[lbl].zabs = self.subsys[lbl]._clmdict['zsys']
-                    self.subsys[lbl].vlim = [vmin,vmax]*u.km/u.s
+                    self.subsys[lbl].vlim = [vmin, vmax]*u.km/u.s
                 # Read .ion file and fill in components
                 ion_fil = self.tree+self.subsys[lbl]._clmdict['ion_fil']
                 self.subsys[lbl]._indiv_ionclms = ltiu.read_ion_file(ion_fil, components)
                 # Parse .all file
                 all_file = ion_fil.split('.ion')[0]+'.all'
                 self.subsys[lbl].all_file=all_file #MF: useful to have
-                _ = ltiu.read_all_file(all_file,components=components)
+                _ = ltiu.read_all_file(all_file, components=components)
                 # Build table
                 self.subsys[lbl]._ionclms = ltiu.iontable_from_components(components,ztbl=self.subsys[lbl].zabs)
                 # Add to AbsSystem
@@ -274,7 +275,6 @@ class LLSSystem(AbsSystem):
           Doppler parameter in km/s
         """
         from linetools.lists import linelist as lll
-        from linetools.spectralline import AbsLine
 
         # May be replaced by component class (as NT desires)
         HIlines = lll.LineList('HI')
@@ -384,7 +384,7 @@ class LLSSystem(AbsSystem):
                     flgs = self.clm_analy.clm_lines[wrest].analy['FLAGS']
                     spec_file = self.clm_analy.fits_files[flgs[1] % 64]
                     # Generate an Abs_Line with spectrum
-                    line = Abs_Line(wrest, z=self.clm_analy.zsys, spec_file=spec_file)
+                    line = AbsLine(wrest, z=self.clm_analy.zsys, spec_file=spec_file)
                     # vpeak
                     from linetools import utils as ltu
                     vpeak = line.vpeak()
@@ -440,7 +440,7 @@ class LLSSurvey(AbslineSurvey):
             url = 'http://www.ucolick.org/~xavier/HD-LLS/DR1/HD-LLS_DR1.fits'
             print('LLSSurvey: Grabbing summary file from {:s}'.format(url))
             f = urllib2.urlopen(url)
-            summ_fil = lt_path+"/data/LLS/HD-LLS_DR1.fits"
+            summ_fil = lt_path+"/data/HD-LLS_DR1.fits"
             with open(summ_fil, "wb") as code:
                 code.write(f.read())
 
@@ -452,7 +452,7 @@ class LLSSurvey(AbslineSurvey):
             url = 'http://www.ucolick.org/~xavier/HD-LLS/DR1/HD-LLS_ions.json'
             print('LLSSurvey: Grabbing JSON ion file from {:s}'.format(url))
             f = urllib2.urlopen(url)
-            ions_fil = lt_path+"/data/LLS/HD-LLS_ions.json"
+            ions_fil = lt_path+"/data/HD-LLS_ions.json"
             with open(ions_fil, "wb") as code:
                 code.write(f.read())
 
@@ -530,8 +530,8 @@ def tau_multi_lls(wave, all_lls, **kwargs):
         tau_model = tau_LL + tau_Lyman
 
         # Kludge around the limit
-        pix_LL = np.argmin( np.fabs( wv_rest- 911.3*u.AA ) )
-        pix_kludge = np.where( (wv_rest > 911.5*u.AA) & (wv_rest < 912.8*u.AA) )[0]
+        pix_LL = np.argmin(np.fabs( wv_rest- 911.3*u.AA ))
+        pix_kludge = np.where((wv_rest > 911.5*u.AA) & (wv_rest < 912.8*u.AA))[0]
         tau_model[pix_kludge] = tau_model[pix_LL]
         # Add
         all_tau_model += tau_model

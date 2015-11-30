@@ -5,12 +5,10 @@
 import numpy as np
 import glob, os, imp, pdb
 import pytest
-#from astropy import units as u
-#from astropy.coordinates import SkyCoord
 
-from xastropy.igm.abs_sys.lls_utils import LLSSurvey
+from linetools.isgm.lls import LLSSurvey
 
-xa_path = imp.find_module('xastropy')[1]
+lt_path = imp.find_module('linetools')[1]
 
 '''
 def data_path(filename):
@@ -20,7 +18,7 @@ def data_path(filename):
 
 def test_read_hdlls_dr1():
     # Read Summary
-    summ_fil = glob.glob(xa_path+"/data/LLS/HD-LLS_DR1.fits")
+    summ_fil = glob.glob(lt_path+"/data/LLS/HD-LLS_DR1.fits")
     if len(summ_fil) > 0:
         summ_fil = summ_fil[0]
     else:
@@ -30,7 +28,7 @@ def test_read_hdlls_dr1():
     assert lls.nsys == 157
 
     # Read ions
-    ions_fil = glob.glob(xa_path+"/data/LLS/HD-LLS_ions.json")
+    ions_fil = glob.glob(lt_path+"/data/LLS/HD-LLS_ions.json")
     if len(ions_fil) > 0:
         ions_fil = ions_fil[0]
     else:
@@ -42,8 +40,8 @@ def test_read_hdlls_dr1():
     assert len(gdCII) == 103
 
 def test_dat_list():
-    '''JXP format :: Likely to be Deprecated
-    '''
+    """JXP format :: Likely to be Deprecated
+    """
     # LLS Survey
     if os.getenv('LLSTREE') is None:
         assert True

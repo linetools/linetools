@@ -7,8 +7,7 @@ import os, pdb
 from astropy import units as u
 
 from linetools.spectra.xspectrum1d import XSpectrum1D
-
-from xastropy.igm.abs_sys.lls_utils import LLSSystem
+from linetools.isgm.lls import LLSSystem
 
 '''
 def data_path(filename):

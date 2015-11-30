@@ -274,6 +274,99 @@ def read_all_file(all_file, components=None, verbose=False):
     return table
 
 
+def read_clmfile(clm_file, linelist=None):
+    """ Read in a .CLM file in an appropriate manner
+
+    NOTE: If program breaks in this function, check the clm to see if it is properly formatted.
+
+
+    RETURNS two dictionaries CLM and LINEDIC. CLM contains the contents of CLM
+    for the given DLA. THe LINEDIC that is passed (when not None) is updated appropriately.
+
+    Keys in the CLM dictionary are:
+      INST - Instrument used
+      FITS - a list of fits files
+      ZABS - absorption redshift
+      ION - .ION file location
+      HI - THe HI column and error; [HI, HIerr]
+      FIX - Any abundances that need fixing from the ION file
+      VELS - Dictioanry of velocity limits, which is keyed by
+        FLAGS - Any measurment flags assosicated with VLIM
+        VLIM - velocity limits in km/s [vmin,vmax]
+        ELEM - ELement (from get_elem)
+
+    See get_elem for properties of LINEDIC
+
+    Parameters
+    ----------
+    clm_file : str
+      Full path to the .clm file
+    linelist : LineList
+      can speed up performance
+    """
+    clm_dict = {}
+    # Read file
+    f=open(clm_file, 'r')
+    arr=f.readlines()
+    f.close()
+    nline = len(arr)
+    # Data files
+    clm_dict['flg_data'] = int(arr[1][:-1])
+    clm_dict['fits_files']={}
+    ii = 2
+    for jj in range(0,6):
+        if (clm_dict['flg_data'] % (2**(jj+1))) > (2**jj - 1):
+            clm_dict['fits_files'][2**jj] = arr[ii].strip()
+            ii += 1
+
+    # Redshift
+    clm_dict['zsys']=float(arr[ii][:-1]) ; ii += 1
+    clm_dict['ion_fil']=arr[ii].strip() ; ii += 1
+    # NHI
+    tmp = arr[ii].split(','); ii += 1
+    if len(tmp) != 2:
+        raise ValueError('ionic_clm: Bad formatting {:s} in {:s}'.format(arr[ii-1], clm_file))
+    clm_dict['NHI']=float(tmp[0])
+    clm_dict['sigNHI']=float(tmp[1])
+    # Abundances by hand
+    numhand=int(arr[ii][:-1]); ii += 1
+    clm_dict['fixabund'] = {}
+    if numhand > 0:
+        for jj in range(numhand):
+            # Atomic number
+            atom = int(arr[ii][:-1]) ; ii += 1
+            # Values
+            tmp = arr[ii].strip().split(',') ; ii += 1
+            clm_dict['fixabund'][atom] = float(tmp[0]), float(tmp[1]), int(tmp[2])
+    # Loop on lines
+    clm_dict['lines'] = {}
+    while ii < (nline-1):
+        # No empty lines allowed
+        if len(arr[ii].strip()) == 0:
+           break
+        # Read flag
+        ionflg = int(arr[ii].strip()); ii += 1
+        # Read the rest
+        tmp = arr[ii].split(',') ; ii += 1
+        if len(tmp) != 4:
+            raise ValueError('ionic_clm: Bad formatting {:s} in {:s}'.format(arr[ii-1],clm_file))
+        vmin = float(tmp[1].strip())
+        vmax = float(tmp[2].strip())
+        key = float(tmp[0].strip()) # Using a float not string!
+        # Generate
+        clm_dict['lines'][key] = AbsLine(key*u.AA,closest=True,linelist=linelist)
+        clm_dict['lines'][key].attrib['z'] = clm_dict['zsys']
+        clm_dict['lines'][key].analy['FLAGS'] = ionflg, int(tmp[3].strip())
+        # By-hand
+        if ionflg >= 8:
+            clm_dict['lines'][key].attrib['N'] = 10.**vmin / u.cm**2
+            clm_dict['lines'][key].attrib['sig_N'] = (10.**(vmin+vmax) - 10.**(vmin-vmax))/2/u.cm**2
+        else:
+            clm_dict['lines'][key].analy['vlim']= [vmin,vmax]*u.km/u.s
+    # Return
+    return clm_dict
+
+
 def read_dat_file(dat_file):
     """ Read an ASCII ".dat" file from JXP format 'database'
 

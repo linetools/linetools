@@ -6,7 +6,7 @@ import numpy as np
 import os, pdb
 from astropy import units as u
 
-from xastropy.igm.abs_sys.lls_utils import LLSSystem
+from linetools.isgm.lls import LLSSystem
 
 '''
 def data_path(filename):
@@ -18,6 +18,7 @@ def test_simple_init():
 	# Init 
     lls = LLSSystem((0.*u.deg, 0.*u.deg), 2.0, None, NHI=17.9)
     #
+    np.testing.assert_allclose(lls.vlim[0].value,-500.)
     np.testing.assert_allclose(lls.NHI, 17.9)
     np.testing.assert_allclose(lls.tau_LL, 5.03537353413629)
 

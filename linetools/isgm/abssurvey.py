@@ -50,17 +50,17 @@ class AbslineSurvey(object):
         # Load up (if possible)
         data = ascii.read(tree+flist, data_start=0,
                           guess=False, format='no_header')
-        slf = cls(nsys=len(data), **kwargs)
+        slf = cls(**kwargs)
         slf.tree = tree
         slf.flist = flist
 
         # Load up
         slf.dat_files = list(data['col1'])
-        print('Read {:d} files from {:s} in the tree {:s}'.format(
-            slf.nsys, slf.flist, slf.tree))
         # Generate AbsSys list
         for dat_file in slf.dat_files:
             slf._abs_sys.append(set_absclass(slf.abs_type).from_datfile(dat_file, tree=slf.tree))
+        print('Read {:d} files from {:s} in the tree {:s}'.format(
+            slf.nsys, slf.flist, slf.tree))
 
         return slf
 
@@ -77,9 +77,11 @@ class AbslineSurvey(object):
         **kwargs : dict
           passed to __init__
         """
+        # Init
+        slf = cls(**kwargs)
         # Read
         systems = QTable.read(summ_fits)
-        slf = cls(nsys=len(systems), **kwargs)
+        nsys = len(systems)
         # Dict
         kdict = dict(NHI=['NHI', 'logNHI'],
                      sig_NHI=['sig(logNHI)'],
@@ -95,9 +97,9 @@ class AbslineSurvey(object):
         # vlim
         if 'vlim' not in inputs.keys():
             default_vlim = [-500, 500.]* u.km / u.s
-            inputs['vlim'] = [default_vlim]*slf.nsys
+            inputs['vlim'] = [default_vlim]*nsys
         # Generate
-        for kk in range(slf.nsys):
+        for kk in range(nsys):
             # Generate keywords
             kwargs = {}
             args = {}
@@ -327,8 +329,8 @@ def set_absclass(abstype):
     -------
     Class name
     """
-    from xastropy.igm.abs_sys.lls_utils import LLSSystem
     from xastropy.igm.abs_sys.dla_utils import DLASystem
+    from linetools.isgm.lls import LLSSystem
     from linetools.isgm.abssystem import GenericAbsSystem
 
     cdict = dict(LLS=LLSSystem, DLA=DLASystem)
