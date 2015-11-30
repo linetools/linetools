@@ -11,12 +11,15 @@ except NameError:
 
 import pdb
 import numpy as np
+from collections import OrderedDict
 
 from astropy import constants as const
 from astropy import units as u
-#from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord
 from astropy.table import QTable
+from astropy.io import ascii
 
+from linetools.spectralline import AbsLine
 from linetools.analysis import absline as ltaa
 from linetools.isgm.abscomponent import AbsComponent
 
@@ -167,6 +170,190 @@ def iontable_from_components(components,ztbl=None):
     # Return
     return iontbl
 
+
+def parse_datdict(datdict):
+    """ Parse a datdict
+
+    Parameters
+    ----------
+    datdict : OrderedDict
+      dict from .dat file
+
+    Returns
+    -------
+    tuple of coord, zabs, name, NHI, sigNHI, clmfil
+    """
+    # RA/DEC
+    try:
+        ras, decs = (datdict['RA (2000)'], datdict['DEC (2000)'])
+    except KeyError:
+        ras, decs = ('00 00 00', '+00 00 00')
+    coord = SkyCoord(ras, decs, frame='icrs', unit=(u.hour, u.deg))
+
+    # zabs
+    try:
+        zabs = float(datdict['zabs'])
+    except KeyError:
+        zabs = 0.
+
+    # Name
+    name = ('J' +
+                 coord.ra.to_string(unit=u.hour, sep='', pad=True) +
+                 coord.dec.to_string(sep='', pad=True, alwayssign=True) +
+                 '_z{:0.3f}'.format(zabs))
+
+    # NHI
+    try:
+        NHI = float(datdict['NHI'])  # DLA format
+    except KeyError:
+        try:
+            NHI = float(datdict['NHI tot'])  # LLS format
+        except KeyError:
+            NHI = 0.
+
+    # NHIsig
+    try:
+        key_sigNHI = datdict['sig(NHI)']  # DLA format
+    except KeyError:
+        try:
+            key_sigNHI = datdict['NHI sig']  # LLS format
+        except KeyError:
+            key_sigNHI = '0.0 0.0'
+    sigNHI = np.array(map(float,key_sigNHI.split()))
+
+    # Abund file
+    try:
+        key_clmfil = datdict['Abund file']  # DLA format
+    except KeyError:
+        key_clmfil = ''
+    clm_fil = key_clmfil.strip()
+
+    # Return
+    return coord, zabs, name, NHI, sigNHI, clm_fil
+
+
+def read_all_file(all_file, components=None, verbose=False):
+    """Read in JXP-style .all file in an appropriate manner
+
+    NOTE: If program breaks in this function, check the all file
+    to see if it is properly formatted.
+
+    Fills components if inputted
+
+    Parameters
+    ----------
+    all_file : str
+      Full path to the .all file
+    components : list, optional
+      List of AbsComponent objects
+    verbose : bool, optional
+    """
+    # Read
+    if verbose:
+        print('Reading {:s}'.format(all_file))
+    names = ('Z', 'ion', 'logN', 'sig_logN', 'flag_N', 'flg_inst')  # was using flg_clm
+    table = ascii.read(all_file, format='no_header', names=names)
+
+    # Fill components
+    if components is not None:
+        allZ = np.array([comp.Zion[0] for comp in components])
+        allion = np.array([comp.Zion[1] for comp in components])
+        # Loop
+        for row in table:
+            mt = np.where((allZ == row['Z']) & (allion == row['ion']))[0]
+            if len(mt) == 0:
+                pass
+            elif len(mt) == 1:
+                # Fill
+                components[mt[0]].flag_N = row['flag_N']
+                components[mt[0]].logN = row['logN']
+                components[mt[0]].sig_logN = row['sig_logN']
+            else:
+                raise ValueError("Found multiple component matches in read_all_file")
+    # Write
+    return table
+
+
+def read_dat_file(dat_file):
+    """ Read an ASCII ".dat" file from JXP format 'database'
+
+    Parameters
+    ----------
+    dat_file : str
+     filename
+
+    Returns
+    -------
+    dat_dict : OrderedDict
+      A dict containing the info in the .dat file
+    """
+    # Define
+    datdict = OrderedDict()
+    # Open
+    f = open(dat_file, 'r')
+    for line in f:
+        tmp = line.split('! ')
+        tkey = tmp[1].strip()
+        key = tkey
+        val = tmp[0].strip()
+        datdict[key] = val
+    f.close()
+
+    return datdict
+
+
+def read_ion_file(ion_fil, components, lines=None, linelist=None, toler=0.05*u.AA):
+    """ Read in JXP-style .ion file in an appropriate manner
+
+    NOTE: If program breaks in this function, check the .ion file
+    to see if it is properly formatted.
+
+    If components is passed in, these are filled as applicable.
+
+    Parameters
+    ----------
+    ion_fil : str
+      Full path to .ion file
+    components : list
+      List of AbsComponent objects
+    lines : list, optional
+      List of AbsLine objects [used for historical reasons, mainly]
+    linelist : LineList
+      May speed up performance
+    toler : Quantity, optional
+      Tolerance for matching wrest
+    """
+    # Read
+    names = ('wrest', 'logN', 'sig_logN', 'flag_N', 'flg_inst')
+    table = ascii.read(ion_fil, format='no_header', names=names)
+
+    # Generate look-up table for quick searching
+    all_wv = []
+    all_idx = []
+    for jj,comp in enumerate(components):
+        for kk,iline in enumerate(comp._abslines):
+            all_wv.append(iline.wrest)
+            all_idx.append((jj,kk))
+    all_wv = u.Quantity(all_wv)
+    # Loop now
+    for row in table:
+        mt = np.where(np.abs(all_wv-row['wrest']*u.AA)<toler)[0]
+        if len(mt) == 0:
+            pass
+        elif len(mt) == 1:
+            # Fill
+            jj = all_idx[mt[0]][0]
+            kk = all_idx[mt[0]][1]
+            components[jj]._abslines[kk].attrib['flag_N'] = row['flag_N']
+            components[jj]._abslines[kk].attrib['logN'] = row['logN']
+            components[jj]._abslines[kk].attrib['sig_logN'] = row['sig_logN']
+            components[jj]._abslines[kk].analy['flg_inst'] = row['flg_inst']
+        else:
+            raise ValueError("Matched multiple lines in read_ion_file")
+    # Return
+    return table
+
+
 def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
     """Synthesize a list of components into one
 
@@ -187,17 +374,15 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
     vbuff : Quantity, optional
       Buffer for synthesizing velocities.  Deals with round off, c, etc.
     """
-    reload(ltaa)
     # Checks
-    assert chk_components(components,chk_A_none=True,chk_match=True)
-
+    assert chk_components(components, chk_A_none=True, chk_match=True)
 
     # Init final component
     synth_comp = AbsComponent.from_component(components[0], Ntup=(components[0].flag_N, components[0].logN, components[0].sig_logN))
 
     # Meld column densities
     for comp in components[1:]:
-        synth_comp.flag_N, synth_comp.logN, synth_comp.sig_logN = ltaa.sum_logN(synth_comp,comp)
+        synth_comp.flag_N, synth_comp.logN, synth_comp.sig_logN = ltaa.sum_logN(synth_comp, comp)
 
     # Meld z, vlim
     # zcomp
@@ -207,8 +392,7 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
     # Set vlim by min/max  [Using non-relativistic + buffer]
     vmin = u.Quantity([(comp.zcomp-zcomp)/(1+zcomp)*const.c.to('km/s')+comp.vlim[0] for comp in components])
     vmax = u.Quantity([(comp.zcomp-zcomp)/(1+zcomp)*const.c.to('km/s')+comp.vlim[1] for comp in components])
-    synth_comp.vlim = u.Quantity([np.min(vmin)-vbuff,np.max(vmax)+vbuff])
+    synth_comp.vlim = u.Quantity([np.min(vmin)-vbuff, np.max(vmax)+vbuff])
 
     # Return
     return synth_comp
-

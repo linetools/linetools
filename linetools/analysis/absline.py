@@ -4,9 +4,11 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import pdb
+import warnings
 
 from astropy import units as u
 from astropy import constants as const
+from astropy.io import ascii
 
 # Atomic constant
 atom_cst = (const.m_e.cgs*const.c.cgs / (np.pi * 
@@ -183,7 +185,64 @@ def linear_clm(obj):
     # Return
     return N, sig_N
 
-def sum_logN(obj1,obj2):
+
+def photo_cross(Z, ion, E, datfil=None, silent=False):
+    """ Estimate photo-ionization cross-section using Fit parameters
+
+    from Verner et al. 1996, ApJ, 465, 487
+    JXP on 04 Nov 2014
+
+    Parameters
+    ----------
+    Z : int
+      Atomic number
+    ion : int
+      Ionization state (1=Neutral)
+    E : Quantity
+      Energy to calculate at [eV]
+
+    Returns
+    -------
+    sigma : Quantity
+      Cross-section (cm^2)
+    """
+    import imp
+    lt_path = imp.find_module('linetools')[1]
+    # Read data
+    if datfil is None:
+        datfil = lt_path+'/data/atomic/verner96_photoion_table1.dat'
+    dat = ascii.read(datfil)
+
+    # Deal with Units
+    if not isinstance(E, u.quantity.Quantity):
+        if silent is False:
+            warnings.warn('photo_cross: Assuming eV for input energy')
+        E = E * u.eV
+
+    # Match
+    mt = np.where((Z == dat['Z']) & (ion == dat['N']))[0]
+    nmt = len(mt)
+    if nmt == 0:
+        raise ValueError('photo_cross: {:d},{:d} pair not in our table'.format(Z, ion))
+    idx = mt[0]
+    #
+    x = E/(dat['E0'][idx]*u.eV) - dat['y0'][idx]
+    y = np.sqrt(x**2 + dat['y1'][idx]**2)
+
+    F = (((x-1.)**2 + dat['yw'][idx]**2) * y**(0.5*dat['P'][idx] - 5.5) *
+            (1 + np.sqrt(y/dat['ya'][idx]) )**(-1.*dat['P'][idx]))
+
+    sigma = dat['s0'][idx] * F * 1e-18 * u.cm**2
+
+    # Energy threshold
+    low = np.where(E < dat['Eth'][idx]*u.eV)[0]
+    if len(low) > 0:
+        sigma[low] = 0.
+    # Return
+    return sigma
+
+
+def sum_logN(obj1, obj2):
     """Add log columns and return value and errors, with logic
 
     Adds two column density objects, taking into account the flags
@@ -201,9 +260,9 @@ def sum_logN(obj1,obj2):
     logN, siglogN
     """
     # Check
-    if not (obj1['flag_N'] in [1,2,3]):
+    if not (obj1['flag_N'] in [1, 2, 3]):
         raise ValueError("flag_N in obj1 must be 1,2,3")
-    if not (obj2['flag_N'] in [1,2,3]):
+    if not (obj2['flag_N'] in [1, 2, 3]):
         raise ValueError("flag_N in obj2 must be 1,2,3")
     # Unpack Obj1
     flag_N, logN1, sig_logN1 = [obj1[key] for key in ['flag_N','logN','sig_logN']]
