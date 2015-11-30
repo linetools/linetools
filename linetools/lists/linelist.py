@@ -322,7 +322,7 @@ class LineList(object):
         return ldict
 
     def all_transitions(self, line):
-        """ Get all the transitions corresponding to a line.
+        """ Get all the transitions corresponding to a line..
 
         For a given single line transition, this function returns
         all transitions from the linelist containing that line.
