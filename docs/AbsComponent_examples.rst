@@ -1,5 +1,5 @@
 
-Examples for the AbsComponent Class (v0.2)
+Examples for the AbsComponent Class (v0.3)
 ==========================================
 
 .. code:: python
@@ -22,6 +22,13 @@ Examples for the AbsComponent Class (v0.2)
     #
     import imp
     lt_path = imp.find_module('linetools')[1]
+
+
+.. parsed-literal::
+
+    /Users/xavier/anaconda/lib/python2.7/site-packages/matplotlib/__init__.py:872: UserWarning: axes.color_cycle is deprecated and replaced with axes.prop_cycle; please use the latter.
+      warnings.warn(self.msg_depr % (key, alt_key))
+
 
 Instantiate
 -----------
@@ -175,7 +182,7 @@ Generate a Component Table
 .. raw:: html
 
     &lt;QTable length=2&gt;
-    <table id="table4544220880">
+    <table id="table4566175568">
     <thead><tr><th>wrest</th><th>z</th><th>flag_N</th><th>logN</th><th>sig_logN</th></tr></thead>
     <thead><tr><th>Angstrom</th><th></th><th></th><th></th><th></th></tr></thead>
     <thead><tr><th>float64</th><th>float64</th><th>int64</th><th>float64</th><th>float64</th></tr></thead>
@@ -230,8 +237,8 @@ Synthesize multiple components
 .. parsed-literal::
 
     [[AbsComponent: 00:00:00 +00:00:00, Zion=(1,1), z=2.92939, vlim=-300 km / s,300 km / s, logN=14.1172, sig_N=0.117912],
-     [AbsComponent: 00:00:00 +00:00:00, Zion=(14,2), z=2.92939, vlim=-300 km / s,50 km / s, logN=13.0996, sig_N=0.103427],
-     [AbsComponent: 00:00:00 +00:00:00, Zion=(14,2), z=2.92939, vlim=50 km / s,300 km / s, logN=13.4226, sig_N=0.0997983]]
+     [AbsComponent: 00:00:00 +00:00:00, Zion=(14,2), z=2.92939, vlim=-300 km / s,50 km / s, logN=13.4438, sig_N=0.0916346],
+     [AbsComponent: 00:00:00 +00:00:00, Zion=(14,2), z=2.92939, vlim=50 km / s,300 km / s, logN=13.7373, sig_N=0.0913882]]
 
 
 
@@ -245,7 +252,26 @@ Synthesize multiple components
 
 .. parsed-literal::
 
-    [AbsComponent: 00:00:00 +00:00:00, Zion=(14,2), z=2.92939, vlim=-60 km / s,310 km / s, logN=13.5915, sig_N=0.075406]
+    [AbsComponent: 00:00:00 +00:00:00, Zion=(14,2), z=2.92939, vlim=-60 km / s,310 km / s, logN=13.9159, sig_N=0.0679991]
+
+
+
+Generate multiple components from abslines
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code:: python
+
+    reload(ltiu)
+    comps = ltiu.build_components_from_abslines([lya,lyb,SiIIlines[0],SiIIlines[1]])
+    comps
+
+
+
+
+.. parsed-literal::
+
+    [[AbsComponent: 00:00:00 +00:00:00, Zion=(1,1), z=2.92939, vlim=-300 km / s,300 km / s],
+     [AbsComponent: 00:00:00 +00:00:00, Zion=(14,2), z=2.92939, vlim=-300 km / s,50 km / s]]
 
 
 
@@ -264,12 +290,12 @@ Generate an Ion Table
 .. raw:: html
 
     &lt;QTable length=2&gt;
-    <table id="table4544220368">
+    <table id="table4565810512">
     <thead><tr><th>Z</th><th>ion</th><th>A</th><th>Ej</th><th>vmin</th><th>vmax</th><th>flag_N</th><th>logN</th><th>sig_logN</th></tr></thead>
     <thead><tr><th></th><th></th><th></th><th></th><th>km / s</th><th>km / s</th><th></th><th></th><th></th></tr></thead>
     <thead><tr><th>int64</th><th>int64</th><th>int64</th><th>float64</th><th>float64</th><th>float64</th><th>int64</th><th>float64</th><th>float64</th></tr></thead>
     <tr><td>1</td><td>1</td><td>0</td><td>0.0</td><td>290.0</td><td>310.0</td><td>1</td><td>14.1172024817</td><td>0.117911610801</td></tr>
-    <tr><td>14</td><td>2</td><td>0</td><td>0.0</td><td>-60.0</td><td>310.0</td><td>1</td><td>13.5914585752</td><td>0.0754059797591</td></tr>
+    <tr><td>14</td><td>2</td><td>0</td><td>0.0</td><td>-60.0</td><td>310.0</td><td>1</td><td>13.9159106165</td><td>0.0679990910669</td></tr>
     </table>
 
 
@@ -293,9 +319,4 @@ Show
 
     abscomp = AbsComponent.from_abslines([lya,lyb])
     abscomp.stack_plot()
-
-
-
-.. image:: AbsComponent_examples_files/AbsComponent_examples_28_0.png
-
 
