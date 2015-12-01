@@ -3,7 +3,7 @@
 
 from __future__ import print_function, absolute_import, division, unicode_literals
 
-import os, copy, imp, glob
+import os, imp, glob
 import numpy as np
 import warnings
 
@@ -17,10 +17,6 @@ from linetools.isgm.abssystem import AbsSystem, AbsSubSystem
 from linetools.isgm import utils as ltiu
 from linetools.isgm.abssurvey import AbslineSurvey
 from linetools.abund import ions as ltai
-
-#from xastropy.igm.abs_sys import ionclms as xiai
-
-#xa_path = imp.find_module('xastropy')[1]
 
 class LLSSystem(AbsSystem):
     """
@@ -173,7 +169,7 @@ class LLSSystem(AbsSystem):
         """Parse the ions for each Subsystem
 
         And put them together for the full system
-        Fills ._ionclms with a QTable
+        Fills ._ionN with a QTable
 
         Parameters
         ----------
@@ -215,7 +211,7 @@ class LLSSystem(AbsSystem):
             else:
                 table.rename_column('sig_clm', 'sig_logN')
                 table.rename_column('flg_clm', 'flag_N')
-            self._ionclms = table
+            self._ionN = table
         elif use_clmfile:
             # Subsystems
             if self.nsub > 0:  # This speeds things up (but is rarely used)
@@ -245,20 +241,20 @@ class LLSSystem(AbsSystem):
                 self.subsys[lbl].all_file=all_file #MF: useful to have
                 _ = ltiu.read_all_file(all_file, components=components)
                 # Build table
-                self.subsys[lbl]._ionclms = ltiu.iontable_from_components(components,ztbl=self.subsys[lbl].zabs)
+                self.subsys[lbl]._ionN = ltiu.iontable_from_components(components,ztbl=self.subsys[lbl].zabs)
                 # Add to AbsSystem
                 for comp in components:
                     self.add_component(comp)
 
             # Combine
             if self.nsub == 1:
-                self._ionclms = self.subsys['A']._ionclms
+                self._ionN = self.subsys['A']._ionN
                 self._clmdict = self.subsys['A']._clmdict
                 #xdb.set_trace()
             elif self.nsub == 0:
                 raise ValueError('lls_utils.get_ions: Cannot have 0 subsystems..')
             else:
-                self._ionclms = self.subsys['A']._ionclms
+                self._ionN = self.subsys['A']._ionN
                 self._clmdict = self.subsys['A']._clmdict
                 warnings.warn('lls_utils.get_ions: Need to update multiple subsystems!! Taking A.')
         else:
@@ -329,7 +325,7 @@ class LLSSystem(AbsSystem):
         tau_model[pix_kludge] = tau_model[pix_LL]
         
         # Fill in flux
-        model = copy.deepcopy(spec)
+        model = spec.copy()
         model.flux = np.exp(-1. * tau_model).value
 
         # Smooth?
@@ -347,8 +343,8 @@ class LLSSystem(AbsSystem):
             return
 
         # Ions for analysis
-        low_ions = [ (14,2), (6,2), (13,2), (26,2), (13,3)]
-        high_ions= [(14,4), (6,4)]
+        low_ions = [ (14,2), (6,2), (13,2), (26,2), (13,3)]  # SiII,CII,AlII,FeII,AlIII
+        high_ions= [(14,4), (6,4)]  # SiIV, CIV
 
         for tt in range(4):
             if tt == 0:
@@ -373,11 +369,11 @@ class LLSSystem(AbsSystem):
                 except KeyError:
                     continue
                 # Measurement?
-                if t['flg_clm'] == iflg:
+                if t['flag_N'] == iflg:
                 # Identify the transition
                     gdi = np.where( (self.ions.trans['Z'] == ion[0]) &
                                 (self.ions.trans['ion'] == ion[1]) &
-                                (self.ions.trans['flg_clm'] <= iflg) )[0]
+                                (self.ions.trans['flag_N'] <= iflg) )[0]
                     # Take the first one
                     gdt = self.ions.trans[gdi[0]]
                     wrest = gdt['wrest']
@@ -406,7 +402,7 @@ class LLSSystem(AbsSystem):
 
     # Output
     def __repr__(self):
-        return ('[{:s}: {:s} {:s}, zabs={:g}, NHI={:g}, tau_LL={:g}, [M/H]={:g} dex]'.format(
+        return ('[{:s}: {:s} {:s}, zabs={:g}, NHI={:g}, tau_LL={:g}, [Z/H]={:g} dex]'.format(
                 self.__class__.__name__,
                  self.coord.ra.to_string(unit=u.hour,sep=':',pad=True),
                  self.coord.dec.to_string(sep=':',pad=True,alwayssign=True),

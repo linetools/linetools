@@ -252,17 +252,17 @@ class AbslineSurvey(object):
         -------
         Table of values for the Survey
         """
-        keys = [u'name', ] + self.abs_sys()[0]._ionclms.keys()
-        t = copy.deepcopy(self.abs_sys()[0]._ionclms[0:1])
+        keys = [u'name', ] + self.abs_sys()[0]._ionN.keys()
+        t = copy.deepcopy(self.abs_sys()[0]._ionN[0:1])
         t.add_column(Column(['dum'], name='name', dtype='<U32'))
         t = t[keys]
 
         # Loop on systems (Masked)
         for abs_sys in self.abs_sys():
             # Grab
-            mt = (abs_sys._ionclms['Z'] == iZion[0]) & (abs_sys._ionclms['ion'] == iZion[1])
+            mt = (abs_sys._ionN['Z'] == iZion[0]) & (abs_sys._ionN['ion'] == iZion[1])
             if np.sum(mt) == 1:
-                irow = abs_sys._ionclms[mt]
+                irow = abs_sys._ionN[mt]
                 # Cut on flg_clm
                 if irow['flag_N'] > 0:
                     row = [abs_sys.name] + [irow[key] for key in keys[1:]]

@@ -120,7 +120,7 @@ class AbsSystem(object):
 
         # Abundances
         self._EW = QTable()
-        self._ionclms = QTable()
+        self._ionN = QTable()
         self._ionstate = {}
         self._abund = QTable()
 

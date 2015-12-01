@@ -43,4 +43,4 @@ def test_parse_ion():
     lls = LLSSystem.from_datfile(datfil, tree=os.getenv('LLSTREE'))
     #    
     lls.get_ions(use_clmfile=True)
-    assert len(lls._ionclms) == 13
+    assert len(lls._ionN) == 13
