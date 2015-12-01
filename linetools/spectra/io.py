@@ -182,8 +182,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             # Read
             if dc_flag == 0:
                 # Read FITS file
-                spec1d = spec_read_fits.read_fits_spectrum1d(os.path.expanduser(datfil),
-                                                             dispersion_unit='AA')
+                spec1d = spec_read_fits.read_fits_spectrum1d(os.path.expanduser(datfil), dispersion_unit='AA')
                 spec1d.uncertainty = uncertainty
                 xspec1d = XSpectrum1D.from_spec1d(spec1d)
             elif dc_flag == 1: # Generate wavelengths and use array approach
@@ -411,7 +410,7 @@ def chk_for_gz(filenm):
       * 0 if No check was performed
       * False if no file exists
     """
-    import os, pdb
+    import os
     from os.path import expanduser
     filenm = expanduser(filenm)
 

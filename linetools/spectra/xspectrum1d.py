@@ -83,8 +83,8 @@ class XSpectrum1D(Spectrum1D):
 
     @classmethod
     def from_spec1d(cls, spec1d):
-        ''' Input Spectrum1D
-        '''
+        """ Input Spectrum1D
+        """
         # Giddy up
         slf = cls(flux=spec1d.flux, wcs=spec1d.wcs, unit=spec1d.unit,
                    uncertainty=spec1d.uncertainty, mask=spec1d.mask,
@@ -93,13 +93,13 @@ class XSpectrum1D(Spectrum1D):
 
     @classmethod
     def from_tuple(cls,ituple):
-        '''Make an XSpectrum1D from a tuple of arrays.
+        """Make an XSpectrum1D from a tuple of arrays.
 
         Parameters
         ----------
         ituple : (wave,flux), (wave,flux,sig) or (wave,flux,sig,cont)
           If wave is unitless, Angstroms are assumed
-        '''
+        """
         # Units
         try:
             wv_unit = ituple[0].unit
@@ -110,7 +110,7 @@ class XSpectrum1D(Spectrum1D):
                 wv_unit = u.AA
         uwave = u.Quantity(ituple[0], unit=wv_unit)
         # Generate
-        if len(ituple) == 2: # wave, flux
+        if len(ituple) == 2:  # wave, flux
             spec = cls.from_array(uwave, u.Quantity(ituple[1]))
         elif len(ituple) == 3:
             spec = cls.from_array(uwave, u.Quantity(ituple[1]),
@@ -142,8 +142,8 @@ class XSpectrum1D(Spectrum1D):
 
     @property
     def sig(self):
-        ''' Return a standard 1sigma error array
-        '''
+        """ Return a standard 1sigma error array
+        """
         if isinstance(self.uncertainty,StdDevUncertainty):
             return self.uncertainty.array
         else:
@@ -174,8 +174,11 @@ class XSpectrum1D(Spectrum1D):
         #returning the disp
         pixel_indices = np.arange(len(self.flux))
         out = self.wcs(self.indexer(pixel_indices))
-        if abs(pixel_indices[0]) < eps:
-            out.value[0] = self.wcs.lookup_table_parameter.value[0]
+        if (abs(pixel_indices[0]) < eps):
+            try:
+                out.value[0] = self.wcs.lookup_table_parameter.value[0]
+            except AttributeError:
+                pass
         return out
 
     def set_diagnostics(self):
