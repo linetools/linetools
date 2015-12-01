@@ -20,13 +20,14 @@ from astropy.coordinates import SkyCoord
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.isgm import utils as ltiu
 
+
 class AbsSystem(object):
     """
     Class for an absorption line system
 
     Parameters
     ----------
-    abs_type : str
+    abs_type : str or unicode
       Type of absorption system, e.g. MgII, DLA, LLS
     radec : tuple or coordinate
         RA/Dec of the sightline or astropy.coordinate
@@ -119,7 +120,7 @@ class AbsSystem(object):
 
         # Abundances
         self._EW = QTable()
-        self._ionclms = QTable()
+        self._ionN = QTable()
         self._ionstate = {}
         self._abund = QTable()
 
