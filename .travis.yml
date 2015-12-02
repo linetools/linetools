@@ -1,11 +1,20 @@
 language: python
 
+
+# The apt packages below are needed for sphinx builds, which can no longer
+# be installed with sudo apt-get.
+addons:
+    apt:
+        packages:
+            - graphviz
+            - texlive-latex-extra
+            - dvipng
+
 python:
-    #- 2.6
     - 2.7
-    #- 3.3
     - 3.4
     - 3.5
+
     # This is just for "egg_info".  All other builds are explicitly given in the matrix
 env:
     global:
@@ -16,6 +25,7 @@ env:
         - ASTROPY_VERSION=stable
         - CONDA_INSTALL='conda install -c astropy-ci-extras --yes'
         - PIP_INSTALL='pip install'
+
     matrix:
         - SETUP_CMD='egg_info'
 
@@ -27,9 +37,12 @@ matrix:
           env: SETUP_CMD='test --coverage'
 
         # Check for sphinx doc build warnings - we do this first because it
-        # may run for a long time
+        # may run for a long time. Add -w flag to fail on any warning.
         #- python: 2.7
-        #  env: SETUP_CMD='build_sphinx -w'
+        #  env: SETUP_CMD='build_sphinx'
+        - python: 3.4
+          env: SETUP_CMD='build_sphinx'
+
 
         # Try Astropy development version
         #- python: 2.7
