@@ -33,14 +33,14 @@ Contents
    spectralline
    xspectrum1d
 
-   **Methods and Scripts**
+**Methods and Scripts**
 
-   .. toctree::
-      :maxdepth: 1
+.. toctree::
+   :maxdepth: 1
 
-      voigt
-      Scripts <scripts>
+   Scripts <scripts>
 
+..
    **Project details**
 
    .. toctree::
