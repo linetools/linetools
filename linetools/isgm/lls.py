@@ -221,14 +221,7 @@ class LLSSystem(AbsSystem):
                 # Parse .clm file
                 self.subsys[lbl]._clmdict = ltiu.read_clmfile(clm_fil, linelist=linelist)
                 # Build components from lines
-                abslines = []
-                vmin,vmax = 9999., -9999.
-                for wrest in self.subsys[lbl]._clmdict['lines']:
-                    vmin = min(vmin, self.subsys[lbl]._clmdict['lines'][wrest].analy['vlim'][0].value)
-                    vmax = max(vmax, self.subsys[lbl]._clmdict['lines'][wrest].analy['vlim'][1].value)
-                    self.subsys[lbl]._clmdict['lines'][wrest].attrib['coord'] = self.coord
-                    abslines.append(self.subsys[lbl]._clmdict['lines'][wrest])
-                components = ltiu.build_components_from_abslines(abslines)
+                components = ltiu.build_components_from_abslines(abslines, clmdict=self.subsys[lbl]._clmdict, coord=self.coord)
                 # Update z, vlim
                 if update_zvlim:
                     self.subsys[lbl].zabs = self.subsys[lbl]._clmdict['zsys']

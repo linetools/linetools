@@ -68,7 +68,7 @@ def chk_components(components, chk_match=False, chk_A_none=False, toler=0.2*u.ar
     # Return
     return tests
 
-def build_components_from_abslines(abslines):
+def build_components_from_abslines(iabslines, clmdict=None, coord=None):
     """ Generate a list of AbsComponent from a list of abslines
 
     Groups lines with like Zion, Ej, (and A; future)
@@ -76,13 +76,29 @@ def build_components_from_abslines(abslines):
     Parameters
     ----------
     abslines : list
-     List of AbsLine objects
+      List of AbsLine objects
+      May be ignored if clmdict is passed in
+    clmdict : dict, optional
+      If present, build the abslines list from this dict
+    coord : SkyCoord, optional
+      Required if clmdict is used
 
     Returns
     -------
     components :
       list of AbsComponent objects
     """
+    if clmdict is None:
+        abslines = iabslines
+    else:
+        abslines = []
+        vmin,vmax = 9999., -9999.
+        for wrest in clmdict['lines']:
+            vmin = min(vmin, clmdict['lines'][wrest].analy['vlim'][0].value)
+            vmax = max(vmax, clmdict['lines'][wrest].analy['vlim'][1].value)
+            clmdict['lines'][wrest].attrib['coord'] = coord
+            abslines.append(clmdict['lines'][wrest])
+    # Test
     if not isinstance(abslines,list):
         raise IOError('Need a list of AbsLine objects')
 
@@ -239,6 +255,7 @@ def read_all_file(all_file, components=None, verbose=False):
     to see if it is properly formatted.
 
     Fills components if inputted
+    May need to worry more about CII*
 
     Parameters
     ----------

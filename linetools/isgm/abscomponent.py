@@ -64,9 +64,7 @@ class AbsComponent(object):
             raise IOError('List needs to contain AbsLine objects')
         # Instantiate with the first line
         init_line = abslines[0]
-        slf = cls( init_line.attrib['coord'],
-           (init_line.data['Z'],init_line.data['ion']),
-           init_line.attrib['z'], init_line.analy['vlim']) 
+        slf = cls( init_line.attrib['coord'], (init_line.data['Z'],init_line.data['ion']), init_line.attrib['z'], init_line.analy['vlim'], Ej=init_line.data['Ej'])
         slf._abslines.append(init_line)
         # Append with component checking
         if len(abslines) > 1:
@@ -142,6 +140,8 @@ class AbsComponent(object):
             _,_ = ltaa.linear_clm(self) # Set linear quantities
         else:
             self.flag_N = 0
+            self.logN = 0.
+            self.sig_logN = 0.
 
         # Other
         self._abslines = []
@@ -423,20 +423,17 @@ class AbsComponent(object):
         return getattr(self,attrib)
 
     def __repr__(self):
-        txt = '[{:s}: {:s} {:s}, Zion=({:d},{:d}), z={:g}, vlim={:g},{:g}'.format(
+        txt = '[{:s}: {:s} {:s}, Zion=({:d},{:d}), Ej={:g}, z={:g}, vlim={:g},{:g}'.format(
             self.__class__.__name__,
             self.coord.ra.to_string(unit=u.hour,sep=':',pad=True),
             self.coord.dec.to_string(sep=':',pad=True,alwayssign=True),
-            self.Zion[0], self.Zion[1], self.zcomp,
+            self.Zion[0], self.Zion[1], self.Ej, self.zcomp,
             self.vlim[0],self.vlim[1])
         # Column?
-        try:
-            txt = txt+', flag_N={:d}'.format(self.flag_N)
-        except AttributeError:
-            pass
-        else:
+        if self.flag_N > 0:
             txt = txt+', logN={:g}'.format(self.logN)
             txt = txt+', sig_N={:g}'.format(self.sig_logN)
+            txt = txt+', flag_N={:d}'.format(self.flag_N)
         # Finish
         txt = txt + ']'
         return (txt)
