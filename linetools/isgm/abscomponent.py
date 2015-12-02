@@ -12,7 +12,6 @@ import pdb
 import numpy as np
 import warnings
 
-
 from astropy import constants as const
 from astropy import units as u
 from astropy.coordinates import SkyCoord
@@ -34,19 +33,24 @@ class AbsComponent(object):
 
     Attributes
     ----------
+    name : str
+        Name of the component, e.g. `Si II`
     coord : SkyCoord
-    Zion : tuple 
-       Atomic number, ion -- (int,int) 
-       e.g. (8,1) for OI
+        Sky coordinate
+    Zion : tuple
+        Atomic number, ion -- (int,int)
+        e.g. (8,1) for OI
     zcomp : float
-       Component redshift
+        Component redshift
     vlim : Quantity array
-       Velocity limits of the component
-       e.g.  [-300,300]*u.km/u.s
+        Velocity limits of the component
+        e.g.  [-300,300]*u.km/u.s
     A : int
         Atomic mass -- used to distinguish isotopes
     Ej : Quantity
-       Energy of lower level (1/cm)
+        Energy of lower level (1/cm)
+    comment : str
+        A comment, default is ``
     """
     @classmethod
     def from_abslines(cls, abslines):
@@ -59,9 +63,10 @@ class AbsComponent(object):
         """
         # Check
         if not isinstance(abslines,list):
-            raise IOError('Need a list of AbsLine objects')
+            raise IOError("Need a list of AbsLine objects")
         if not all(isinstance(x,AbsLine) for x in abslines):
-            raise IOError('List needs to contain AbsLine objects')
+            raise IOError("List needs to contain only AbsLine objects")
+
         # Instantiate with the first line
         init_line = abslines[0]
         slf = cls( init_line.attrib['coord'], (init_line.data['Z'],init_line.data['ion']), init_line.attrib['z'], init_line.analy['vlim'], Ej=init_line.data['Ej'])
@@ -94,31 +99,33 @@ class AbsComponent(object):
         # Return
         return cls(component.coord, component.Zion, component.zcomp, component.vlim, Ej=component.Ej, A=component.A, **kwargs)
 
-    def __init__(self, radec, Zion, z, vlim, Ej=0./u.cm, A=None, Ntup=None):
+    def __init__(self, radec, Zion, z, vlim, Ej=0./u.cm, A=None, Ntup=None,comment=''):
         """  Initiator
 
         Parameters
         ----------
         radec : tuple or SkyCoord
-          (RA,DEC) in deg or astropy.coordinate
+            (RA,DEC) in deg or astropy.coordinate
         Zion : tuple 
-          Atomic number, ion -- (int,int) 
-             e.g. (8,1) for OI
+            Atomic number, ion -- (int,int)
+            e.g. (8,1) for OI
         z : float
-          Absorption redshift
+            Absorption component redshift
         vlim : Quantity array
-          Velocity limits of the component
-          e.g.  [-300,300]*u.km/u.s
+            Velocity limits of the component w/r to `z`
+            e.g.  [-300,300]*u.km/u.s
         A : int, optional
-          Atomic mass -- used to distinguish isotopes
+            Atomic mass -- used to distinguish isotopes
         Ntup : tuple
-          (int,float,float)
-          (flag_N,logN,sig_N)
-          flag_N : Flag describing N measurement
-          logN : log10 N column density
-          sig_logN : Error in log10 N
+            (int,float,float)
+            (flag_N,logN,sig_N)
+            flag_N : Flag describing N measurement
+            logN : log10 N column density
+            sig_logN : Error in log10 N
         Ej : Quantity, optional
-           Energy of lower level (1/cm)
+            Energy of lower level (1/cm)
+        comment : str, optional
+            A comment, default is ``
         """
 
         # Required
@@ -133,6 +140,7 @@ class AbsComponent(object):
         # Optional
         self.A = A
         self.Ej = Ej
+        self.comment = comment
         if Ntup is not None:
             self.flag_N = Ntup[0]
             self.logN = Ntup[1]
@@ -144,9 +152,10 @@ class AbsComponent(object):
             self.sig_logN = 0.
 
         # Other
+        self.name = ion_name(self.Zion, nspace=1)
         self._abslines = []
 
-    def add_absline(self,absline,toler=0.1*u.arcsec):
+    def add_absline(self,absline,tol=0.1*u.arcsec):
         """Add an AbsLine object to the component if it satisfies
         all of the rules.
 
@@ -156,11 +165,11 @@ class AbsComponent(object):
         Parameters
         ----------
         absline : AbsLine
-        toler : Angle, optional
+        tol : Angle, optional
           Tolerance on matching coordinates
         """
         # Perform easy checks
-        test = bool(self.coord.separation(absline.attrib['coord']) < toler)
+        test = bool(self.coord.separation(absline.attrib['coord']) < tol)
         test = test & (self.Zion[0] == absline.data['Z'])
         test = test & (self.Zion[1] == absline.data['ion'])
         test = test & bool(self.Ej == absline.data['Ej'])
@@ -280,7 +289,7 @@ class AbsComponent(object):
         ax.set_ylabel(r'Apparent Column (cm$^{-2}$ per km/s)')
         # Legend
         legend = ax.legend(loc='upper left', scatterpoints=1, borderpad=0.3,
-                               handletextpad=0.3, fontsize='large')
+                           handletextpad=0.3, fontsize='large')
 
         plt.tight_layout(pad=0.2,h_pad=0.,w_pad=0.1)
         if show:
@@ -411,6 +420,32 @@ class AbsComponent(object):
             plt.show()
         plt.close()
 
+
+    def repr_vpfit(self, b=10.):
+        """
+        String representation for VPFIT in its fort.26 format
+
+        Parameters
+        ----------
+        b : float, optional
+            Doppler parameter of the component
+
+        Returns
+        -------
+        repr_vpfit : str
+        """
+        name = self.name.replace(' ','')
+        try:
+            logN = self.logN
+        except:
+            logN = 0.
+
+        s = '{} {:.5f} {:.5f} {:.2f} {:.2f} {:.2f} {:.2f}'.format(name,self.zcomp,0,b,0,logN,0)
+        if len(self.comment)>0:
+            s += '! {}'.format(self.comment)
+        return s
+
+
     def __getitem__(self, attrib):
         """Passback attribute, if it exists
 
@@ -423,11 +458,14 @@ class AbsComponent(object):
         return getattr(self,attrib)
 
     def __repr__(self):
+        txt = '[{:s}: {:s} {:s}, Name={}, Zion=({:d},{:d}), z={:g}, vlim={:g},{:g}'.format(
         txt = '[{:s}: {:s} {:s}, Zion=({:d},{:d}), Ej={:g}, z={:g}, vlim={:g},{:g}'.format(
             self.__class__.__name__,
             self.coord.ra.to_string(unit=u.hour,sep=':',pad=True),
             self.coord.dec.to_string(sep=':',pad=True,alwayssign=True),
             self.Zion[0], self.Zion[1], self.Ej, self.zcomp,
+            self.name,
+            self.Zion[0], self.Zion[1], self.zcomp,
             self.vlim[0],self.vlim[1])
         # Column?
         if self.flag_N > 0:
