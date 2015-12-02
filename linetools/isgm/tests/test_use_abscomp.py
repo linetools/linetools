@@ -116,11 +116,24 @@ def test_stack_plot():
 def test_repr_vpfit():
     abscomp,HIlines = mk_comp('HI')
     s = abscomp.repr_vpfit()
-    assert s == 'HI 2.92939 0.00000 10.00 0.00 0.00 0.00'
+    assert s == 'HI 2.92939 0.00000 10.00 0.00 0.00 0.00\n'
 
     s = abscomp.repr_vpfit(b=15)
-    assert s == 'HI 2.92939 0.00000 15.00 0.00 0.00 0.00'
+    assert s == 'HI 2.92939 0.00000 15.00 0.00 0.00 0.00\n'
 
     abscomp.comment = 'Something'
     s = abscomp.repr_vpfit()
-    assert s == 'HI 2.92939 0.00000 10.00 0.00 0.00 0.00! Something'
+    assert s == 'HI 2.92939 0.00000 10.00 0.00 0.00 0.00! Something\n'
+
+def test_repr_alis():
+    abscomp,HIlines = mk_comp('HI')
+    s = abscomp.repr_alis()
+    assert s == 'voigt   ion=1H_I 0.00 redshift=2.92939 0.00 10000.00\n'
+
+    abscomp,SiIIlines = mk_comp('SiII')
+    s = abscomp.repr_alis(T_kin=10**5)
+    assert s == 'voigt   ion=28Si_II 0.00 redshift=2.92939 0.00 100000.00\n'
+
+    abscomp.comment = 'Something'
+    s = abscomp.repr_alis()
+    assert s == 'voigt   ion=28Si_II 0.00 redshift=2.92939 0.00 10000.00# Something\n'

@@ -430,11 +430,15 @@ class AbsComponent(object):
         Parameters
         ----------
         b : float, optional
-            Doppler parameter of the component
+            Doppler parameter of the component (km/s)
+            Default is 10.
 
         Returns
         -------
         repr_vpfit : str
+
+
+        [todo: consider add optional `tie` and `fix` keys]
         """
         name = self.name.replace(' ','')
         try:
@@ -445,8 +449,47 @@ class AbsComponent(object):
         s = '{} {:.5f} {:.5f} {:.2f} {:.2f} {:.2f} {:.2f}'.format(name,self.zcomp,0,b,0,logN,0)
         if len(self.comment)>0:
             s += '! {}'.format(self.comment)
+        s += '\n'
         return s
 
+    def repr_alis(self, T_kin=1e4,bturb=0.):
+        """
+        String representation for ALIS
+
+        Parameters
+        ----------
+        T_kin : float, optional
+            Kinetic temperature (K)
+            Default is 1e4
+        bturb : float, optional
+            Turbulent Doppler parameter (km/s)
+            Default is 0.
+
+        Returns
+        -------
+        repr_alis : str
+
+
+        [todo: consider add optional `tie` and `fix` keys]
+        """
+
+        # A patch for nucleons; todo: come up with a better way to do this using ELEMENTS?
+        if self.Zion[0]==1:
+            nucleons = 1
+        elif self.Zion[0]>1:
+            nucleons = 2*self.Zion[0]
+
+        name = '{}'.format(nucleons)+self.name.replace(' ','_')
+
+        try:
+            logN = self.logN
+        except:
+            logN = 0.
+        s = 'voigt   ion={} {:.2f} redshift={:.5f} {:.2f} {:.2f}'.format(name,logN,self.zcomp,bturb,T_kin)
+        if len(self.comment)>0:
+            s += '# {}'.format(self.comment)
+        s += '\n'
+        return s
 
     def __getitem__(self, attrib):
         """Passback attribute, if it exists
