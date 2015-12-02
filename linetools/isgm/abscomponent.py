@@ -425,7 +425,7 @@ class AbsComponent(object):
 
     def repr_vpfit(self, b=10.):
         """
-        String representation for VPFIT
+        String representation for VPFIT in its fort.26 format
 
         Parameters
         ----------
@@ -442,7 +442,7 @@ class AbsComponent(object):
         except:
             logN = 0.
 
-        s = '{} {} 0.0 {} 0.0 {} 0.0'.format(name,self.zcomp,b,logN)
+        s = '{} {:.5f} {:.5f} {:.2f} {:.2f} {:.2f} {:.2f}'.format(name,self.zcomp,0,b,0,logN,0)
         if len(self.comment)>0:
             s += '! {}'.format(self.comment)
         return s
@@ -460,10 +460,11 @@ class AbsComponent(object):
         return getattr(self,attrib)
 
     def __repr__(self):
-        txt = '[{:s}: {:s} {:s}, Zion=({:d},{:d}), z={:g}, vlim={:g},{:g}'.format(
+        txt = '[{:s}: {:s} {:s}, Name={}, Zion=({:d},{:d}), z={:g}, vlim={:g},{:g}'.format(
             self.__class__.__name__,
             self.coord.ra.to_string(unit=u.hour,sep=':',pad=True),
             self.coord.dec.to_string(sep=':',pad=True,alwayssign=True),
+            self.name,
             self.Zion[0], self.Zion[1], self.zcomp,
             self.vlim[0],self.vlim[1])
         # Column?

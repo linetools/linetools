@@ -112,3 +112,15 @@ def test_stack_plot():
     # Plot
     abscomp.stack_plot(show=False)
 """
+
+def test_repr_vpfit():
+    abscomp,HIlines = mk_comp('HI')
+    s = abscomp.repr_vpfit()
+    assert s == 'HI 2.92939 0.00000 10.00 0.00 0.00 0.00'
+
+    s = abscomp.repr_vpfit(b=15)
+    assert s == 'HI 2.92939 0.00000 15.00 0.00 0.00 0.00'
+
+    abscomp.comment = 'Something'
+    s = abscomp.repr_vpfit()
+    assert s == 'HI 2.92939 0.00000 10.00 0.00 0.00 0.00! Something'
