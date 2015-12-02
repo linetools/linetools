@@ -134,7 +134,7 @@ class AbsComponent(object):
 
         # Required
         if isinstance(radec,(tuple)):
-            self.coord = SkyCoord(ra=radec[0], dec=radec[1])
+            self.coord = SkyCoord(ra=radec[0]*u.deg, dec=radec[1]*u.deg)
         elif isinstance(radec,SkyCoord):
             self.coord = radec
         self.Zion = Zion
