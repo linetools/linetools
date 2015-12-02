@@ -21,6 +21,7 @@ from specutils import Spectrum1D
 
 from linetools.analysis import absline as ltaa
 from linetools.spectralline import AbsLine
+from linetools.abund import ions
 
 #import xastropy.atomic as xatom
 #from xastropy.stats import basic as xsb
@@ -152,7 +153,7 @@ class AbsComponent(object):
             self.sig_logN = 0.
 
         # Other
-        self.name = ion_name(self.Zion, nspace=1)
+        self.name = ions.ion_name(self.Zion, nspace=1)
         self._abslines = []
 
     def add_absline(self,absline,tol=0.1*u.arcsec):
@@ -458,20 +459,15 @@ class AbsComponent(object):
         return getattr(self,attrib)
 
     def __repr__(self):
-        txt = '[{:s}: {:s} {:s}, Name={}, Zion=({:d},{:d}), z={:g}, vlim={:g},{:g}'.format(
-        txt = '[{:s}: {:s} {:s}, Zion=({:d},{:d}), Ej={:g}, z={:g}, vlim={:g},{:g}'.format(
-            self.__class__.__name__,
-            self.coord.ra.to_string(unit=u.hour,sep=':',pad=True),
-            self.coord.dec.to_string(sep=':',pad=True,alwayssign=True),
-            self.Zion[0], self.Zion[1], self.Ej, self.zcomp,
-            self.name,
-            self.Zion[0], self.Zion[1], self.zcomp,
-            self.vlim[0],self.vlim[1])
+        txt = '[{:s}: {:s} {:s}, Name={:s}, Zion=({:d},{:d}), Ej={:g}, z={:g}, vlim={:g},{:g}'.format(
+            self.__class__.__name__, self.coord.ra.to_string(unit=u.hour,sep=':', pad=True), self.coord.dec.to_string(sep=':',pad=True,alwayssign=True), self.name, self.Zion[0], self.Zion[1], self.Ej, self.zcomp, self.vlim[0], self.vlim[1])
+
         # Column?
         if self.flag_N > 0:
-            txt = txt+', logN={:g}'.format(self.logN)
-            txt = txt+', sig_N={:g}'.format(self.sig_logN)
-            txt = txt+', flag_N={:d}'.format(self.flag_N)
+            txt = txt + ', logN={:g}'.format(self.logN)
+            txt = txt + ', sig_N={:g}'.format(self.sig_logN)
+            txt = txt + ', flag_N={:d}'.format(self.flag_N)
+
         # Finish
         txt = txt + ']'
         return (txt)

@@ -6,7 +6,7 @@ import numpy as np
 import os, pdb
 from astropy import units as u
 
-from linetools.isgm.lls import DLASystem
+from linetools.isgm.dla import DLASystem, DLASurvey
 
 '''
 def data_path(filename):
@@ -23,7 +23,7 @@ def test_simple_dla_init():
 
 def test_dat_init():
     # JXP .dat files
-    if os.getenv('LLSTREE') is None:
+    if os.getenv('DLA') is None:
         assert True
         return
     # Read
@@ -35,12 +35,32 @@ def test_dat_init():
 
 def test_parse_ion():
     # JXP .ion file
-    if os.getenv('LLSTREE') is None:
+    if os.getenv('DLA') is None:
         assert True
         return
     # Read
-    datfil = 'Data/UM184.z2929.dat'
-    lls = LLSSystem.from_datfile(datfil, tree=os.getenv('LLSTREE'))
+    datfil = 'Data/PH957.z2309.dat'
+    dla = DLASystem.from_datfile(datfil, tree=os.environ.get('DLA'))
     #
     dla.get_ions(use_clmfile=True)
-    assert len(lls._ionN) == 13
+    assert len(dla._ionN) == 13
+
+def test_default_dla_sample():
+    if os.getenv('DLA') is None:
+        assert True
+        return
+    # Load
+    dlas = DLASurvey.default_sample()
+    assert len(dlas._abs_sys) == 100
+
+def test_default_dla_sample_with_ions():
+    if os.getenv('DLA') is None:
+        assert True
+        return
+    # Load
+    dlas = DLASurvey.default_sample()
+    dlas.fill_ions(use_clmfile=True)
+    CIV_clms = dlas.ions((6,4))
+    gdCIV = np.where(CIV_clms['flag_N']>0)[0]
+    assert len(gdCIV) == 74
+

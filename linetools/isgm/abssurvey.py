@@ -11,7 +11,7 @@ import pdb
 
 from astropy.io import ascii 
 from astropy import units as u
-from astropy.table import QTable, Column
+from astropy.table import QTable, Column, Table
 from astropy.units.quantity import Quantity
 
 from linetools.spectra import io as lsio
@@ -212,7 +212,7 @@ class AbslineSurvey(object):
         # Recast as an array
         return lst_to_array(lst, mask=self.mask)
 
-    def fill_ions(self, jfile=None):  # This may be overloaded!
+    def fill_ions(self, use_clmfile=False,jfile=None):  # This may be overloaded!
         """ Loop on systems to fill in ions
 
         Parameters
@@ -227,13 +227,11 @@ class AbslineSurvey(object):
             # Loop on systems
             for abs_sys in self._abs_sys:
                 abs_sys.get_ions(idict=ions_dict[abs_sys.name])
-        else:
+        elif use_clmfile:
             for abs_sys in self._abs_sys:
-                # Line list
-                if (abs_sys.linelist is None) & (self.linelist is not None):
-                    abs_sys.linelist = self.linelist
-                #
-                abs_sys.get_ions()
+                abs_sys.get_ions(use_clmfile=True)
+        else:
+            raise ValueError("Not sure how to load the ions")
 
     # Get ions
     def ions(self, iZion, skip_null=False):
@@ -253,7 +251,7 @@ class AbslineSurvey(object):
         Table of values for the Survey
         """
         keys = [u'name', ] + self.abs_sys()[0]._ionN.keys()
-        t = copy.deepcopy(self.abs_sys()[0]._ionN[0:1])
+        t = Table(copy.deepcopy(self.abs_sys()[0]._ionN[0:1]))  # Avoids mixin trouble
         t.add_column(Column(['dum'], name='name', dtype='<U32'))
         t = t[keys]
 
@@ -329,7 +327,7 @@ def set_absclass(abstype):
     -------
     Class name
     """
-    from xastropy.igm.abs_sys.dla_utils import DLASystem
+    from linetools.isgm.dla import DLASystem
     from linetools.isgm.lls import LLSSystem
     from linetools.isgm.abssystem import GenericAbsSystem
 

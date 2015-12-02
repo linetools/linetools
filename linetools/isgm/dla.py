@@ -57,6 +57,8 @@ class DLASystem(AbsSystem):
         # QSO keys
         slf.qso = slf._datdict['QSO name']
         slf.zqso = float(slf._datdict['QSO zem'])
+        # Name
+        slf.name = '{:s}_z{:0.3f}'.format(slf.qso,zabs)
 
         # Abund
         slf.flg_ZH = float(slf._datdict['flg_mtl'])
@@ -163,21 +165,26 @@ class DLASurvey(AbslineSurvey):
     Attributes:
         
     """
-    # Initialize with a .dat file
-    def __init__(self, dat_file, tree=None):
-        # Generate with type
-        AbslineSurvey.__init__(self,dat_file,abs_type='DLA', tree=tree)
-
-
-    # Default sample of DLA:  Neeleman
     @classmethod
     def default_sample(cls):
-        # Local
-        dla = cls('Lists/Neeleman13.lst', tree=os.environ.get('DLA'))
-        dla.ref = 'Neeleman+13'
+        """
+        Returns
+        -------
+        dlasurvey : AbslineSurvey
+        """
+        # Default sample of DLA:  Neeleman
+        if os.getenv('DLA') is None:
+            print('Need to grab the DLA tree from JXP')
+            return None
+        dlasurvey = cls.from_flist('Lists/Neeleman13.lst', tree=os.environ.get('DLA'))
+        dlasurvey.ref = 'Neeleman+13'
 
         # Return
-        return dla
+        return dlasurvey
+
+    def __init__(self, **kwargs):
+        # Generate with type
+        AbslineSurvey.__init__(self, 'DLA', **kwargs)
 
 
 
@@ -190,10 +197,12 @@ class DLASurvey(AbslineSurvey):
 
 
 
-## #################################    
-## #################################    
+
+
+## #################################
+## #################################
 ## TESTING
-## #################################    
+## #################################
 if __name__ == '__main__':
 
     flg_test = 0
@@ -217,7 +226,7 @@ if __name__ == '__main__':
         print('Si II: ')
         print(tmp1.ions[(14,2)])
         print(tmp1.ions.trans[15]) # CIV 1550
-    
+
 
 
     # #############################

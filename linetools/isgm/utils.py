@@ -93,7 +93,7 @@ def build_components_from_abslines(iabslines, clmdict=None, coord=None):
     else:
         abslines = []
         vmin,vmax = 9999., -9999.
-        for wrest in clmdict['lines']:
+        for wrest in clmdict['lines'].keys():
             vmin = min(vmin, clmdict['lines'][wrest].analy['vlim'][0].value)
             vmax = max(vmax, clmdict['lines'][wrest].analy['vlim'][1].value)
             clmdict['lines'][wrest].attrib['coord'] = coord
@@ -275,9 +275,10 @@ def read_all_file(all_file, components=None, verbose=False):
     if components is not None:
         allZ = np.array([comp.Zion[0] for comp in components])
         allion = np.array([comp.Zion[1] for comp in components])
+        allEj = np.array([comp.Ej.value for comp in components])
         # Loop
         for row in table:
-            mt = np.where((allZ == row['Z']) & (allion == row['ion']))[0]
+            mt = np.where((allZ == row['Z']) & (allion == row['ion']) & (allEj == 0.))[0]
             if len(mt) == 0:
                 pass
             elif len(mt) == 1:
@@ -369,7 +370,7 @@ def read_clmfile(clm_file, linelist=None):
             raise ValueError('ionic_clm: Bad formatting {:s} in {:s}'.format(arr[ii-1],clm_file))
         vmin = float(tmp[1].strip())
         vmax = float(tmp[2].strip())
-        key = float(tmp[0].strip()) # Using a float not string!
+        key = float(tmp[0].strip()) # Using a numpy float not string!
         # Generate
         clm_dict['lines'][key] = AbsLine(key*u.AA,closest=True,linelist=linelist)
         clm_dict['lines'][key].attrib['z'] = clm_dict['zsys']
@@ -412,7 +413,7 @@ def read_dat_file(dat_file):
     return datdict
 
 
-def read_ion_file(ion_fil, components, lines=None, linelist=None, toler=0.05*u.AA):
+def read_ion_file(ion_fil, components, lines=None, linelist=None, tol=0.05*u.AA):
     """ Read in JXP-style .ion file in an appropriate manner
 
     NOTE: If program breaks in this function, check the .ion file
@@ -430,7 +431,7 @@ def read_ion_file(ion_fil, components, lines=None, linelist=None, toler=0.05*u.A
       List of AbsLine objects [used for historical reasons, mainly]
     linelist : LineList
       May speed up performance
-    toler : Quantity, optional
+    tol : Quantity, optional
       Tolerance for matching wrest
     """
     # Read
@@ -447,7 +448,7 @@ def read_ion_file(ion_fil, components, lines=None, linelist=None, toler=0.05*u.A
     all_wv = u.Quantity(all_wv)
     # Loop now
     for row in table:
-        mt = np.where(np.abs(all_wv-row['wrest']*u.AA)<toler)[0]
+        mt = np.where(np.abs(all_wv-row['wrest']*u.AA)<tol)[0]
         if len(mt) == 0:
             pass
         elif len(mt) == 1:
@@ -459,6 +460,7 @@ def read_ion_file(ion_fil, components, lines=None, linelist=None, toler=0.05*u.A
             components[jj]._abslines[kk].attrib['sig_logN'] = row['sig_logN']
             components[jj]._abslines[kk].analy['flg_inst'] = row['flg_inst']
         else:
+            pdb.set_trace()
             raise ValueError("Matched multiple lines in read_ion_file")
     # Return
     return table
