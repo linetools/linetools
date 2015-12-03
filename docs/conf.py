@@ -87,6 +87,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'astropy_helpers.sphinx.ext.numpydoc',
     'astropy_helpers.sphinx.ext.automodapi',
+    'astropy_helpers.sphinx.ext.viewcode',
 ]
 
 __import__(setup_cfg['package_name'])

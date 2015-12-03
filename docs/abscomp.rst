@@ -1,5 +1,7 @@
 .. highlight:: rest
 
+.. _AbsComponent:
+
 ******************
 AbsComponent Class
 ******************
@@ -19,7 +21,10 @@ Overview
 ========
 
 This Class is designed to organize and analyze a set of
-absorption lines (:ref:`AbsLine Class`).
+absorption lines 
+
+..
+   (:ref:`AbsLine Class`).  add this back in when written
 
 By definition, an AbsComponent is a unique collection of
 absorption lines specified by:
