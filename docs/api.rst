@@ -85,6 +85,7 @@ The linetools API
    :skip: QTable
    :skip: StdDevUncertainty
    :skip: Table
+   :skip: Spectrum1D
 
 .. automodapi:: linetools.spectralline
    :skip: Quantity

@@ -26,10 +26,15 @@ Contents
 .. toctree::
    :maxdepth: 1
 
-   linelist
    AbsComponent <abscomp>
    AbsSystem <abssys>
    AbsSurvey <abssurvey>
+
+
+..
+   To be added:
+
+   linelist
    spectralline
    xspectrum1d
 
