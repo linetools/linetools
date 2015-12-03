@@ -369,7 +369,11 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
 
                 # Deal with Isotope
                 if line[0] in ['0','1','2','3','4','5','6','7','8','9']:
-                    isoi.append(kk)
+                    # Skip ArI !
+                    if 'Ar I' in line:
+                        pass
+                    else:
+                        isoi.append(kk)
                 # Deuterium
                 if line[0] == 'D':
                     Dline = kk

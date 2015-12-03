@@ -8,6 +8,7 @@ try:
 except NameError:
     basestring = str
 
+import pdb
 import numpy as np
 import warnings
 
@@ -20,12 +21,11 @@ from specutils import Spectrum1D
 
 from linetools.analysis import absline as ltaa
 from linetools.spectralline import AbsLine
-from linetools.abund.ions import ion_name
+from linetools.abund import ions
 
-# import xastropy.atomic as xatom
-# from xastropy.stats import basic as xsb
-# from xastropy.xutils import xdebug as xdb
-
+#import xastropy.atomic as xatom
+#from xastropy.stats import basic as xsb
+#from xastropy.xutils import xdebug as xdb
 
 # Class for Components
 class AbsComponent(object):
@@ -53,7 +53,6 @@ class AbsComponent(object):
     comment : str
         A comment, default is ``
     """
-
     @classmethod
     def from_abslines(cls, abslines):
         """Instantiate from a list of AbsLine objects
@@ -71,11 +70,8 @@ class AbsComponent(object):
 
         # Instantiate with the first line
         init_line = abslines[0]
-        slf = cls(init_line.attrib['coord'],
-                  (init_line.data['Z'], init_line.data['ion']),
-                  init_line.attrib['z'], init_line.analy['vlim'])
+        slf = cls( init_line.attrib['coord'], (init_line.data['Z'],init_line.data['ion']), init_line.attrib['z'], init_line.analy['vlim'], Ej=init_line.data['Ej'])
         slf._abslines.append(init_line)
-
         # Append with component checking
         if len(abslines) > 1:
             for absline in abslines[1:]:
@@ -142,7 +138,6 @@ class AbsComponent(object):
         self.Zion = Zion
         self.zcomp = z
         self.vlim = vlim
-        self.logN = 0.
 
         # Optional
         self.A = A
@@ -155,9 +150,11 @@ class AbsComponent(object):
             _, _ = ltaa.linear_clm(self)  # Set linear quantities
         else:
             self.flag_N = 0
+            self.logN = 0.
+            self.sig_logN = 0.
 
         # Other
-        self.name = ion_name(self.Zion, nspace=1)
+        self.name = ions.ion_name(self.Zion, nspace=1)
         self._abslines = []
 
     def add_absline(self, absline, tol=0.1*u.arcsec):
@@ -189,8 +186,7 @@ class AbsComponent(object):
         if test:
             self._abslines.append(absline)
         else:
-            warnings.warn('Input absline with wrest={:g} does not match component rules. \
-            Not appending'.format(absline.wrest))
+            warnings.warn('Input absline with wrest={:g} does not match component rules. Not appending'.format(absline.wrest))
 
     def build_table(self):
         """Generate an astropy QTable out of the component.
@@ -556,22 +552,16 @@ class AbsComponent(object):
         return getattr(self, attrib)
 
     def __repr__(self):
-        txt = '[{:s}: {:s} {:s}, Name={}, Zion=({:d},{:d}), z={:g}, vlim={:g},{:g}'.format(
-            self.__class__.__name__,
-            self.coord.ra.to_string(unit=u.hour, sep=':', pad=True),
-            self.coord.dec.to_string(sep=':', pad=True, alwayssign=True),
-            self.name,
-            self.Zion[0], self.Zion[1], self.zcomp,
-            self.vlim[0], self.vlim[1])
+        txt = '<{:s}: {:s} {:s}, Name={:s}, Zion=({:d},{:d}), Ej={:g}, z={:g}, vlim={:g},{:g}'.format(
+            self.__class__.__name__, self.coord.ra.to_string(unit=u.hour,sep=':', pad=True), self.coord.dec.to_string(sep=':',pad=True,alwayssign=True), self.name, self.Zion[0], self.Zion[1], self.Ej, self.zcomp, self.vlim[0], self.vlim[1])
+
         # Column?
-        try:
-            txt = txt+', flag_N={:d}'.format(self.flag_N)
-            txt = txt+', logN={:g}'.format(self.logN)
-            txt = txt+', sig_N={:g}'.format(self.sig_logN)
-        except AttributeError:
-            pass
+        if self.flag_N > 0:
+            txt = txt + ', logN={:g}'.format(self.logN)
+            txt = txt + ', sig_N={:g}'.format(self.sig_logN)
+            txt = txt + ', flag_N={:d}'.format(self.flag_N)
 
         # Finish
-        txt = txt + ']'
+        txt = txt + '>'
         return (txt)
 
