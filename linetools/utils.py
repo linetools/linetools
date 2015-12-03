@@ -3,8 +3,11 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import json
+import gzip, os
 
 import numpy as np
+from astropy import constants as const
+from astropy import units as u
 
 def between(a, vmin, vmax):
     """ Return a boolean array True where vmin <= a < vmax.

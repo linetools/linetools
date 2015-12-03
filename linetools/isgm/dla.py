@@ -15,6 +15,21 @@ from linetools.isgm import utils as ltiu
 class DLASystem(AbsSystem):
     """
     Class for a DLA absorption system
+
+    Parameters
+    ----------
+    radec : tuple or coordinate
+        RA/Dec of the sightline or astropy.coordinate
+    zabs : float
+      Absorption redshift
+    vlim : Quantity array (2)
+      Velocity limits of the system
+      Defaulted to +/- 500 km/s if None
+    NHI : float, required despite being a keyword
+      log10 of HI column density
+      must be 20.3 or higher
+    **kwargs : keywords
+      passed to AbsSystem.__init__
     """
     @classmethod
     def from_datfile(cls, dat_file, tree=None, **kwargs):
@@ -67,33 +82,12 @@ class DLASystem(AbsSystem):
 
         return slf
 
-    def __init__(self, radec, zabs, vlim, **kwargs):
+    def __init__(self, radec, zabs, vlim, NHI, **kwargs):
         """Standard init
 
         NHI keyword is required
-
-        Parameters
-        ----------
-        radec : tuple or coordinate
-            RA/Dec of the sightline or astropy.coordinate
-        zabs : float
-          Absorption redshift
-        vlim : Quantity array (2)
-          Velocity limits of the system
-          Defaulted to +/- 500 km/s if None
-        NHI : float, required despite being a keyword
-          log10 of HI column density
-          must be 20.3 or higher
-        **kwargs : keywords
-          passed to AbsSystem.__init__
         """
         # NHI
-        try:
-            NHI = kwargs['NHI']
-        except KeyError:
-            raise ValueError("NHI must be specified for LLSSystem")
-        else:
-            kwargs.pop('NHI')
         if NHI < 20.3:
             raise ValueError("This is not a DLA!  Try an LLS (or SLLS)")
         # vlim
@@ -105,7 +99,7 @@ class DLASystem(AbsSystem):
         # Other
         self.ZH = 0.
 
-    def get_ions(self, use_clmfile=False, update_zvlim=True, linelist=None):
+    def get_ions(self, use_Nfile=False, update_zvlim=True, linelist=None):
         """Parse the ions for each Subsystem
 
         And put them together for the full system
@@ -115,14 +109,13 @@ class DLASystem(AbsSystem):
         ----------
         idict : dict, optional
           dict containing the IonClms info
-        use_clmfile : bool, optional
+        use_Nfile : bool, optional
           Parse ions from a .clm file (JXP historical)
         update_zvlim : bool, optional
           Update zvlim from lines in .clm (as applicable)
         linelist : LineList
         """
-        reload(ltiu)
-        if use_clmfile:
+        if use_Nfile:
             clm_fil = self.tree+self._datdict['Abund file']
             # Read
             self._clmdict = ltiu.read_clmfile(clm_fil, linelist=linelist)
@@ -145,7 +138,7 @@ class DLASystem(AbsSystem):
 
     # Output
     def __repr__(self):
-        return ('[{:s}: {:s} {:s}, {:g}, NHI={:g}, Z/H={:g}]'.format(
+        return ('<{:s}: {:s} {:s}, {:g}, NHI={:g}, Z/H={:g}>'.format(
                 self.__class__.__name__,
                  self.coord.ra.to_string(unit=u.hour, sep=':', pad=True),
                  self.coord.dec.to_string(sep=':', pad=True),

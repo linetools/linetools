@@ -42,7 +42,7 @@ def test_parse_ion():
     datfil = 'Data/PH957.z2309.dat'
     dla = DLASystem.from_datfile(datfil, tree=os.environ.get('DLA'))
     #
-    dla.get_ions(use_clmfile=True)
+    dla.get_ions(use_Nfile=True)
     assert len(dla._ionN) == 13
 
 def test_default_dla_sample():
@@ -59,7 +59,7 @@ def test_default_dla_sample_with_ions():
         return
     # Load
     dlas = DLASurvey.default_sample()
-    dlas.fill_ions(use_clmfile=True)
+    dlas.fill_ions(use_Nfile=True)
     CIV_clms = dlas.ions((6,4))
     gdCIV = np.where(CIV_clms['flag_N']>0)[0]
     assert len(gdCIV) == 74

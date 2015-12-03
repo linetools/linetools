@@ -459,7 +459,7 @@ class AbsComponent(object):
         return getattr(self,attrib)
 
     def __repr__(self):
-        txt = '[{:s}: {:s} {:s}, Name={:s}, Zion=({:d},{:d}), Ej={:g}, z={:g}, vlim={:g},{:g}'.format(
+        txt = '<{:s}: {:s} {:s}, Name={:s}, Zion=({:d},{:d}), Ej={:g}, z={:g}, vlim={:g},{:g}'.format(
             self.__class__.__name__, self.coord.ra.to_string(unit=u.hour,sep=':', pad=True), self.coord.dec.to_string(sep=':',pad=True,alwayssign=True), self.name, self.Zion[0], self.Zion[1], self.Ej, self.zcomp, self.vlim[0], self.vlim[1])
 
         # Column?
@@ -469,6 +469,6 @@ class AbsComponent(object):
             txt = txt + ', flag_N={:d}'.format(self.flag_N)
 
         # Finish
-        txt = txt + ']'
+        txt = txt + '>'
         return (txt)
 

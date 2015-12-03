@@ -212,7 +212,7 @@ class AbslineSurvey(object):
         # Recast as an array
         return lst_to_array(lst, mask=self.mask)
 
-    def fill_ions(self, use_clmfile=False,jfile=None):  # This may be overloaded!
+    def fill_ions(self, use_Nfile=False, jfile=None):  # This may be overloaded!
         """ Loop on systems to fill in ions
 
         Parameters
@@ -227,9 +227,9 @@ class AbslineSurvey(object):
             # Loop on systems
             for abs_sys in self._abs_sys:
                 abs_sys.get_ions(idict=ions_dict[abs_sys.name])
-        elif use_clmfile:
+        elif use_Nfile:
             for abs_sys in self._abs_sys:
-                abs_sys.get_ions(use_clmfile=True)
+                abs_sys.get_ions(use_Nfile=True)
         else:
             raise ValueError("Not sure how to load the ions")
 
@@ -251,7 +251,7 @@ class AbslineSurvey(object):
         Table of values for the Survey
         """
         keys = [u'name', ] + self.abs_sys()[0]._ionN.keys()
-        t = Table(copy.deepcopy(self.abs_sys()[0]._ionN[0:1]))  # Avoids mixin trouble
+        t = Table(self.abs_sys()[0]._ionN[0:1]).copy()   # Avoids mixin trouble
         t.add_column(Column(['dum'], name='name', dtype='<U32'))
         t = t[keys]
 

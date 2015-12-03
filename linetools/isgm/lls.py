@@ -165,7 +165,7 @@ class LLSSystem(AbsSystem):
                 self.subsys[lbls[i]].NHI = self.subsys[lbls[i]]._datdict['NHI']
                 self.subsys[lbls[i]].sig_NHI = self.subsys[lbls[i]]._datdict['NHIsig']
 
-    def get_ions(self, use_clmfile=False, idict=None, update_zvlim=True, linelist=None):
+    def get_ions(self, use_Nfile=False, idict=None, update_zvlim=True, linelist=None):
         """Parse the ions for each Subsystem
 
         And put them together for the full system
@@ -175,7 +175,7 @@ class LLSSystem(AbsSystem):
         ----------
         idict : dict, optional
           dict containing the IonClms info
-        use_clmfile : bool, optional
+        use_Nfile : bool, optional
           Parse ions from a .clm file (JXP historical)
         update_zvlim : bool, optional
           Update zvlim from lines in .clm (as applicable)
@@ -212,7 +212,7 @@ class LLSSystem(AbsSystem):
                 table.rename_column('sig_clm', 'sig_logN')
                 table.rename_column('flg_clm', 'flag_N')
             self._ionN = table
-        elif use_clmfile:
+        elif use_Nfile:
             # Subsystems
             if self.nsub > 0:  # This speeds things up (but is rarely used)
                 linelist = LineList('ISM')
