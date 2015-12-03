@@ -195,8 +195,7 @@ class GenericAbsSystem(AbsSystem):
     """
     def __init__(self, radec, zabs, vlim, **kwargs):
         if vlim is None:
-            if vlim is None:
-                vlim = [-500.,500.]*u.km/u.s
+            vlim = [-500.,500.]*u.km/u.s
         AbsSystem.__init__(self, 'Generic', radec, zabs, vlim, **kwargs)
         self.name = 'Foo'
 
