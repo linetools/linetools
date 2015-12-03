@@ -113,14 +113,36 @@ def test_stack_plot():
     abscomp.stack_plot(show=False)
 """
 
-def test_repr_vpfit():
-    abscomp,HIlines = mk_comp('HI')
-    s = abscomp.repr_vpfit()
-    assert s == 'HI 2.92939 0.00000 10.00 0.00 0.00 0.00'
 
-    s = abscomp.repr_vpfit(b=15)
-    assert s == 'HI 2.92939 0.00000 15.00 0.00 0.00 0.00'
+def test_repr_vpfit():
+    abscomp, HIlines = mk_comp('HI')
+    s = abscomp.repr_vpfit()
+    assert s == 'HI 2.92939 0.00000 10.00 0.00 0.00 0.00\n'
+
+    s = abscomp.repr_vpfit(b=15*u.km/u.s)
+    assert s == 'HI 2.92939 0.00000 15.00 0.00 0.00 0.00\n'
 
     abscomp.comment = 'Something'
     s = abscomp.repr_vpfit()
-    assert s == 'HI 2.92939 0.00000 10.00 0.00 0.00 0.00! Something'
+    assert s == 'HI 2.92939 0.00000 10.00 0.00 0.00 0.00! Something\n'
+    s = abscomp.repr_vpfit(tie_strs=('a', 'b', 'CD'),fix_strs=('', 'f', ''))
+    assert s == 'HI 2.92939a 0.00000 10.00F 0.00 0.00cd 0.00! Something\n'
+
+    abscomp, SiIIlines = mk_comp('SiII')
+    s = abscomp.repr_vpfit()
+    assert s == 'SiII 2.92939 0.00000 10.00 0.00 0.00 0.00\n'
+
+def test_repr_alis():
+    abscomp, HIlines = mk_comp('HI')
+    s = abscomp.repr_alis()
+    assert s == 'voigt   ion=1H_I 0.00 redshift=2.92939 0.0 1.0E+04\n'
+
+    abscomp, SiIIlines = mk_comp('SiII')
+    s = abscomp.repr_alis(T_kin=10**5*u.K)
+    assert s == 'voigt   ion=28Si_II 0.00 redshift=2.92939 0.0 1.0E+05\n'
+
+    abscomp.comment = 'Something'
+    s = abscomp.repr_alis()
+    assert s == 'voigt   ion=28Si_II 0.00 redshift=2.92939 0.0 1.0E+04# Something\n'
+    s = abscomp.repr_alis(tie_strs=('a', 'b', 'CD',''),fix_strs=('', 'f', '', ''))
+    assert s == 'voigt   ion=28Si_II 0.00a redshift=2.92939F 0.0cd 1.0E+04# Something\n'
