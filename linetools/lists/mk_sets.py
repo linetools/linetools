@@ -13,7 +13,12 @@ from astropy.table import QTable, Column, Table
 
 
 lt_path = imp.find_module('linetools')[1]
-xa_path = imp.find_module('xastropy')[1]
+
+try:
+    xa_path = imp.find_module('xastropy')[1]
+except ImportError:
+    pass
+
 
 #
 def mk_ism(outfil=None, overwrite=False):

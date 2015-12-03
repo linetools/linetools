@@ -1,5 +1,7 @@
 .. highlight:: rest
 
+.. _AbsSystem:
+
 ******************
 AbsSystem Class
 ******************
@@ -20,7 +22,7 @@ Overview
 
 This Class is designed to organize and analyze an
 absorption system.  This is generally constructed
-of one or more (:ref:`AbsComponent Class`).
+of one or more (:ref:`AbsComponent`).
 The base class is abstract, i.e. one must instantiate
 one of its flavors (e.g. HILyman, MgII, LLS, DLA).
 
