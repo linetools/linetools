@@ -682,6 +682,7 @@ or QtAgg backends to enable all interactive plotting commands.
         This set the following attributes
           * spec.co: the new continuum
           * spec.meta['contpoints']: knots defining the continuum
+
         Use linetools.analysis.interp.AkimaSpline to regenerate the
         continuum from the knots.
 
@@ -702,7 +703,7 @@ or QtAgg backends to enable all interactive plotting commands.
         kind : {'QSO', None}, optional
           If not None, generate spline knots using
           linetools.analysis.continuum.find_continuum.
-        **kwargs
+        **kwargs : dict
           Other keyword arguments are passed to find_continuum.
           For kind='QSO', allowed keywords are `redshift`, `divmult`,
           `forest_divmult`.

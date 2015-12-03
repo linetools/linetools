@@ -1,6 +1,6 @@
 """ Utilities for working with ionized atoms.
 """
-#;+ 
+#;+
 #; NAME:
 #; ionization
 #;    Version 1.0
@@ -13,7 +13,7 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 from linetools.abund.elements import ELEMENTS
-from linetools.abund import roman 
+from linetools.abund import roman
 
 
 ########################## ##########################
@@ -24,28 +24,31 @@ def ion_name(ion, flg=0, nspace=None):
     Parameters
     ----------
     ion : tuple (Z, ion)
-      dict with tags of 'Z' and 'ion'
+      dict with tags of `Z` and `ion`
+
     flg : int, optional (0)
-      * 0: Roman numeral
-      * 1: Latex with ion notation (e.g C^+)
-    nspace : int, optional  (0)
-      Number of spaces to insert
+        * 0: Roman numeral
+        * 1: Latex with ion notation (e.g C^+)
+
+    nspace : int, optional (0)
+      Number of spaces to insert.
 
     Returns
     -------
-    name : string
+    name : str
       e.g. Si II, {\rm Si}^{+}
+
     """
     if isinstance(ion,tuple):
         elm = ELEMENTS[ion[0]]
         str_elm = elm.symbol
-    else: 
+    else:
         return ion_name( (ion['Z'], ion['ion']) )
 
     # Ion state
     if flg == 0: # Roman
         if nspace is None: nspace = 0
-        str_ion = roman.toRoman(ion[1]) 
+        str_ion = roman.toRoman(ion[1])
         spc = ' '*nspace
         outp = str_elm+spc+str_ion
     elif flg == 1: # LaTeX
@@ -69,7 +72,7 @@ def ion_name(ion, flg=0, nspace=None):
 ########################## ##########################
 ########################## ##########################
 def name_ion(ion):
-    """ Convert string into ion tuple 
+    """ Convert string into ion tuple
 
     Parameters
     ----------
@@ -83,7 +86,7 @@ def name_ion(ion):
     """
     if isinstance(ion,basestring):
         pass
-    else: 
+    else:
         raise ValueError('ionization.name_ion: Not ready for this input yet.')
 
     ion = ion.strip('*') # e.g. CII*
@@ -104,5 +107,3 @@ def name_ion(ion):
     ion_state = roman.fromRoman(ion[iion:].strip())
 
     return (Z,ion_state)
-
-
