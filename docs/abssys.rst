@@ -14,6 +14,7 @@ Notebooks
 
    Simple Examples <AbsSystem_examples>
    LLS <LLSSystem_examples>
+   DLA <DLASystem_examples>
 
 Overview
 ========
@@ -87,6 +88,11 @@ notebook for more.
 
 DLA
 ---
+
+An AbsSystem class for DLA.  One is required to set the
+NHI keyword upon instantiation and it must equal or
+exceed 20.3.  See the :doc:`DLASystem_examples`
+notebook for more.
 
 Plots
 =====

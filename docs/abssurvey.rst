@@ -14,6 +14,7 @@ Notebooks
 
    Simple Examples <AbsSurvey_examples>
    LLS <LLSSurvey_examples>
+   DLA <LLSSystem_examples>
 
 Overview
 ========
@@ -72,6 +73,13 @@ One can also read in the HD-LLS survey (DR1) from the internet::
 
    from linetools.isgm.lls import LLSSurvey
    hdlls = LLSSurvey.load_HDLLS()
+
+
+DLA
++++
+
+Subclass for DLA survey.  Presently handles the .dat and .lst files used
+by JXP.   See :doc:`DLASystem_examples` for more.
 
 Plots
 =====
