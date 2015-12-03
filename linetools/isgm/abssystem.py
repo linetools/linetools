@@ -172,10 +172,31 @@ class AbsSystem(object):
         """Additional checks on the component"""
         return True
 
+    def list_of_abslines(self):
+        """ Generate a list of the absorption lines in this system
+
+        Drawn from the components
+
+        Returns
+        -------
+        abslist : list
+
+        """
+        abslist = []
+        for component in self._components:
+            for iline in component._abslines:
+                abslist.append(iline)
+        # Return
+        return abslist
+
+
 class GenericAbsSystem(AbsSystem):
     """Class for Generic Absorption Line System
     """
     def __init__(self, radec, zabs, vlim, **kwargs):
+        if vlim is None:
+            if vlim is None:
+                vlim = [-500.,500.]*u.km/u.s
         AbsSystem.__init__(self, 'Generic', radec, zabs, vlim, **kwargs)
         self.name = 'Foo'
 
