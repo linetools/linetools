@@ -14,6 +14,7 @@ from linetools.spectralline import AbsLine
 from linetools.analysis import absline as ltaa
 from linetools.lists.linelist import LineList
 from linetools.isgm.abssystem import AbsSystem, AbsSubSystem
+from linetools.isgm.abscomponent import AbsComponent
 from linetools.isgm import utils as ltiu
 from linetools.isgm.abssurvey import AbslineSurvey
 from linetools.abund import ions as ltai
@@ -253,15 +254,20 @@ class LLSSystem(AbsSystem):
         else:
             raise ValueError("Need an option in get_ions")
 
-    def fill_lls_lines(self, bval=20.*u.km/u.s):
+    def fill_lls_lines(self, bval=20.*u.km/u.s, do_analysis=1):
         """
         Generate an HI line list for an LLS.
         Goes into self.lls_lines 
+
+        Now generates a component too.
+        Should have it check for an existing HI component..
 
         Parameters
         ----------
         bval : float, optional
           Doppler parameter in km/s
+        do_analysis : int, optional
+          flag for analysis
         """
         from linetools.lists import linelist as lll
 
@@ -275,10 +281,12 @@ class LLSSystem(AbsSystem):
             aline.attrib['N'] = 10**self.NHI / u.cm**2
             aline.attrib['b'] = bval
             aline.attrib['z'] = self.zabs
-            # Could set RA and DEC too
-            aline.attrib['RA'] = self.coord.ra
-            aline.attrib['DEC'] = self.coord.dec
+            aline.analy['vlim'] = self.vlim
+            aline.analy['do_analysis'] = do_analysis
+            aline.attrib['coord'] = self.coord
             self.lls_lines.append(aline)
+        # Generate a component (should remove any previous HI)
+        self.add_component(AbsComponent.from_abslines(self.lls_lines))
 
     def flux_model(self, spec, smooth=0):
         """ Generate a LLS model given an input spectrum

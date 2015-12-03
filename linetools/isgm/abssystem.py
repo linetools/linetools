@@ -172,6 +172,24 @@ class AbsSystem(object):
         """Additional checks on the component"""
         return True
 
+    def list_of_abslines(self):
+        """ Generate a list of the absorption lines in this system
+
+        Drawn from the components
+
+        Returns
+        -------
+        abslist : list
+
+        """
+        abslist = []
+        for component in self._components:
+            for iline in component._abslines:
+                abslist.append(iline)
+        # Return
+        return abslist
+
+
 class GenericAbsSystem(AbsSystem):
     """Class for Generic Absorption Line System
     """
