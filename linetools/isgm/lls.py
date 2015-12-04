@@ -275,10 +275,11 @@ class LLSSystem(AbsSystem):
         HIlines = lll.LineList('HI')
 
         self.lls_lines = []
+        Nval = 10**self.NHI / u.cm**2
         for lline in HIlines._data:
             aline = AbsLine(lline['wrest'], linelist=HIlines)
             # Attributes
-            aline.attrib['N'] = 10**self.NHI / u.cm**2
+            aline.attrib['N'] = Nval
             aline.attrib['b'] = bval
             aline.attrib['z'] = self.zabs
             aline.analy['vlim'] = self.vlim
@@ -403,14 +404,14 @@ class LLSSystem(AbsSystem):
 
     # Output
     def __repr__(self):
-        return ('[{:s}: {:s} {:s}, zabs={:g}, NHI={:g}, tau_LL={:g}, [Z/H]={:g} dex]'.format(
+        return ('[{:s}: {:s} {:s}, zabs={:g}, logNHI={:g}, tau_LL={:g}, [Z/H]={:g} dex]'.format(
                 self.__class__.__name__,
                  self.coord.ra.to_string(unit=u.hour,sep=':',pad=True),
                  self.coord.dec.to_string(sep=':',pad=True,alwayssign=True),
                  self.zabs, self.NHI, self.tau_LL, self.MH))
 
     def print_abs_type(self):
-        """"Return a string representing the type of vehicle this is."""
+        """Return a string representing the type of vehicle this is."""
         return 'LLS'
 
 class LLSSurvey(AbslineSurvey):
