@@ -9,7 +9,8 @@ except NameError:
     basestring = str
 
 import numpy as np
-import os, pdb
+import os
+import pdb
 import copy
 
 from astropy import units as u
@@ -20,11 +21,13 @@ from astropy.table import QTable, Table, vstack, Column
 
 #from xastropy.xutils import xdebug as xdb
 
-CACHE = {'full_table' : {}, 'data' : {}}
+CACHE = {'full_table': {}, 'data': {}}
 
 from linetools.lists import parse as lilp
 
 #
+
+
 class LineList(object):
     '''Class to over-load Spectrum1D for new functionality not yet in specutils
 
@@ -51,8 +54,9 @@ class LineList(object):
       Give info galore if True
     '''
     # Init
+
     def __init__(self, llst_keys, subset=None, verbose=False,
-        sort_subset=False):
+                 sort_subset=False):
 
         # Error catching
         if not isinstance(llst_keys, (list, basestring)):
@@ -77,8 +81,7 @@ class LineList(object):
         if subset is not None:
             self.subset_lines(subset, verbose=verbose, sort=sort_subset)
 
-
-    def load_data(self, tol=1e-3*u.AA, use_cache=True):
+    def load_data(self, tol=1e-3 * u.AA, use_cache=True):
         """Grab the data for the lines of interest
         """
 
@@ -90,18 +93,20 @@ class LineList(object):
 
         # Define datasets: In order of Priority
         dataset = {
-            'ism': [lilp.parse_morton03,lilp.parse_morton00, 
-                lilp.read_verner94, lilp.read_euv], # Morton 2003, Morton 00, Verner 94, Verner 96 [soon]
+            'ism': [lilp.parse_morton03, lilp.parse_morton00,
+                    lilp.read_verner94, lilp.read_euv],  # Morton 2003, Morton 00, Verner 94, Verner 96 [soon]
             'hi': [lilp.parse_morton03],
-            'molecules': [lilp.read_H2,lilp.read_CO],   # H2 (Abrigail), CO (JXP)
-            'euv': [lilp.read_euv]   # EUV lines (by hand for now; soon to be Verner96)
-            }
+            # H2 (Abrigail), CO (JXP)
+            'molecules': [lilp.read_H2, lilp.read_CO],
+            # EUV lines (by hand for now; soon to be Verner96)
+            'euv': [lilp.read_euv]
+        }
 
         # Loop on lists
         sets = []
-        flag_fval = False # Update f-values?
-        flag_wrest = False # Update wavelengths?
-        flag_gamma = True # Update gamma values (recommended)
+        flag_fval = False  # Update f-values?
+        flag_wrest = False  # Update wavelengths?
+        flag_gamma = True  # Update gamma values (recommended)
         for llist in self.lists:
             if str(llist) == 'H2':
                 sets.append('molecules')
@@ -125,7 +130,8 @@ class LineList(object):
             else:
                 import pdb
                 pdb.set_trace()
-                raise ValueError('load_data: Not ready for this: {:s}'.format(llist))
+                raise ValueError(
+                    'load_data: Not ready for this: {:s}'.format(llist))
 
         full_table = None
         all_func = []
@@ -143,15 +149,14 @@ class LineList(object):
                         # Unique values
                         wrest = full_table['wrest']
                         newi = []
-                        for jj,row in enumerate(QTable(table)): # QTable for units
-                            mt = np.abs(row['wrest']-wrest) < tol
+                        for jj, row in enumerate(QTable(table)):  # QTable for units
+                            mt = np.abs(row['wrest'] - wrest) < tol
                             if mt.sum() == 0:
                                 newi.append(jj)
                         # Append new ones (can't stack QTables yet)
                         full_table = vstack([full_table, table[newi]])
                     # Save to avoid repeating
                     all_func.append(func)
-
 
         # Save as QTable
         self._fulltable = QTable(full_table)
@@ -170,10 +175,8 @@ class LineList(object):
 
         CACHE['full_table'][key] = self._fulltable
 
-
-
     #####
-    def set_lines(self, verbose=True, use_cache=True):#, gd_lines=None):
+    def set_lines(self, verbose=True, use_cache=True):  # , gd_lines=None):
         """ Parse the lines of interest
         """
         import warnings
@@ -190,7 +193,7 @@ class LineList(object):
         # Default list
         # Loop on lines
         for llist in self.lists:
-            if llist in ['H2','CO']:
+            if llist in ['H2', 'CO']:
                 gdi = np.where(self._fulltable['mol'] == llist)[0]
                 if len(gdi) == 0:
                     raise IndexError(
@@ -205,28 +208,29 @@ class LineList(object):
             elif llist == 'EUV':
                 set_flags.append('fEUV')
             else:
-                raise ValueError('set_lines: Not ready for this: {:s}'.format(llist))
-
+                raise ValueError(
+                    'set_lines: Not ready for this: {:s}'.format(llist))
 
         # Deal with Defined sets
         #import pdb
-        #pdb.set_trace()
+        # pdb.set_trace()
         if len(set_flags) > 0:
             # Read standard file
             set_data = lilp.read_sets()
             # Speed up
-            wrest = self._fulltable['wrest'].value # Assuming Angstroms
+            wrest = self._fulltable['wrest'].value  # Assuming Angstroms
             for sflag in set_flags:
                 gdset = np.where(set_data[sflag] == 1)[0]
                 # Match to wavelengths
                 for igd in gdset:
-                    mt = np.where( 
-                        np.abs(set_data[igd]['wrest']-wrest) < 9e-5 )[0]
+                    mt = np.where(
+                        np.abs(set_data[igd]['wrest'] - wrest) < 9e-5)[0]
                     if len(mt) == 1:
                         for imt in mt:
                             # Over-ride name!
-                            self._fulltable[imt]['name'] = set_data[igd]['name']
-                            #if set_data[igd]['name'] == 'DI 1215':
+                            self._fulltable[imt][
+                                'name'] = set_data[igd]['name']
+                            # if set_data[igd]['name'] == 'DI 1215':
                             #    xdb.set_trace()
                         indices.append(mt[0])
                     elif len(mt) > 1:
@@ -234,7 +238,8 @@ class LineList(object):
                         wmsg = 'WARNING: Multiple lines with wrest={:g}'.format(
                             set_data[igd]['wrest'])
                         warnings.warn(wmsg)
-                        warnings.warn('Taking the first entry. Maybe use higher precision.')
+                        warnings.warn(
+                            'Taking the first entry. Maybe use higher precision.')
                         indices.append(mt[0])
                     else:
                         if verbose:
@@ -242,7 +247,7 @@ class LineList(object):
                                 set_data[igd]['name']))
 
         # Collate (should grab unique ones!)
-        all_idx = np.unique( np.array(indices) )
+        all_idx = np.unique(np.array(indices))
 
         # Parse and sort (consider masking instead)
         tmp_tab = self._fulltable[all_idx]
@@ -251,7 +256,6 @@ class LineList(object):
         #
         self._data = tmp_tab
         CACHE['data'][key] = self._data
-
 
     def subset_lines(self, subset, sort=False, reset_data=False, verbose=False):
         """ Select a user-specific subset of the lines from the LineList
@@ -270,37 +274,40 @@ class LineList(object):
           Sort this subset? [False]
 
         """
-        
+
         # Reset _data (useful for changing subsets)
         if reset_data:
             self.set_lines(verbose=False)
 
         indices = []
-        if isinstance(subset[0],(float,Quantity)): # wrest
-            wrest = self._data['wrest'].value # Assuming Angstroms
+        if isinstance(subset[0], (float, Quantity)):  # wrest
+            wrest = self._data['wrest'].value  # Assuming Angstroms
             for gdlin in subset:
-                mt = np.where( 
-                    np.abs(gdlin.value-wrest) < 1e-4 )[0]
+                mt = np.where(
+                    np.abs(gdlin.value - wrest) < 1e-4)[0]
                 if len(mt) == 1:
                     indices.append(mt)
                 elif len(mt) > 1:
                     raise ValueError('Need unique entries!')
                 else:
                     if verbose:
-                        print('subset_lines: Did not find {:g} in data Tables'.format(gdlin))
-        elif isinstance(subset[0],(basestring)): # Names
+                        print(
+                            'subset_lines: Did not find {:g} in data Tables'.format(gdlin))
+        elif isinstance(subset[0], (basestring)):  # Names
             names = np.array(self._data['name'])
             for gdlin in subset:
-                mt = np.where(str(gdlin)==names)[0]
+                mt = np.where(str(gdlin) == names)[0]
                 if len(mt) == 1:
                     indices.append(mt[0])
                 elif len(mt) > 1:
-                    raise ValueError('Should have been only one line with name {:s}!'.format(str(gdlin)))
+                    raise ValueError(
+                        'Should have been only one line with name {:s}!'.format(str(gdlin)))
                 else:
                     if verbose:
-                        print('subset_lines: Did not find {:s} in data Tables'.format(gdlin))
+                        print(
+                            'subset_lines: Did not find {:s} in data Tables'.format(gdlin))
             #import pdb
-            #pdb.set_trace()
+            # pdb.set_trace()
         else:
             raise ValueError('Not ready for this type of gd_lines')
         # Sort
@@ -316,8 +323,8 @@ class LineList(object):
 
         Currently using the default value from
         linetools.lists.parse().
-        """     
-        ldict , _ = lilp.line_data()
+        """
+        ldict, _ = lilp.line_data()
         ldict['name'] = 'unknown'
         return ldict
 
@@ -331,7 +338,7 @@ class LineList(object):
         ----------
         line: str or Quantity
             Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII', 1215.6700*u.AA)
-        
+
             [Note: when string contains spaces it only considers the
              first part of it, so 'HI' and 'HI 1215' and 'HI 1025' are
              all equivalent]
@@ -343,9 +350,9 @@ class LineList(object):
         transitions are found)
 
         """
-        if isinstance(line, basestring): # Name
-            line = line.split(' ')[0] # keep only the first part of input name
-        elif isinstance(line, Quantity): # Rest wavelength (with units)
+        if isinstance(line, basestring):  # Name
+            line = line.split(' ')[0]  # keep only the first part of input name
+        elif isinstance(line, Quantity):  # Rest wavelength (with units)
             data = self.__getitem__(line)
             return self.all_transitions(data['name'])
         else:
@@ -355,21 +362,21 @@ class LineList(object):
             return self.unknown_line()
         else:
             Z = None
-            for row in self._data: #is this loop avoidable?
+            for row in self._data:  # is this loop avoidable?
                 name = row['name']
-                #keep only the first part of name in linelist too
+                # keep only the first part of name in linelist too
                 name = name.split(' ')[0]
                 if name == line:
-                    Z = row['Z'] #atomic number
-                    ie = row['ion'] #ionization estate
-                    Ej = row['Ej'] #Energy of lower level
+                    Z = row['Z']  # atomic number
+                    ie = row['ion']  # ionization estate
+                    Ej = row['Ej']  # Energy of lower level
                     break
             if Z is not None:
-                tbl = self.__getitem__((Z,ie))
+                tbl = self.__getitem__((Z, ie))
                 # Make sure the lower energy level is the same too
                 cond = tbl['Ej'] == Ej
                 tbl = tbl[cond]
-                # For hydrogen/deuterium this contains deuterium/hydrogen; 
+                # For hydrogen/deuterium this contains deuterium/hydrogen;
                 # so let's get rid of them
                 if (line == 'HI') or (line == 'DI'):
                     names = np.array(tbl['name'])
@@ -377,13 +384,14 @@ class LineList(object):
                     tbl = tbl[cond]
                 if len(tbl) > 1:
                     return tbl
-                else: #this whould be always len(tbl)==1 because Z is not None
+                else:  # this whould be always len(tbl)==1 because Z is not None
                     name = tbl['name'][0]
                     return self.__getitem__(name)
             else:
-                raise ValueError('Line {} not found in the linelist'.format(line))
+                raise ValueError(
+                    'Line {} not found in the linelist'.format(line))
 
-    def strongest_transitions(self,line, wvlims, n_max=3,verbose=False):
+    def strongest_transitions(self, line, wvlims, n_max=3, verbose=False):
         """ Find the strongest transition for an ion
 
         For a given single line transition, this function returns
@@ -410,23 +418,26 @@ class LineList(object):
         None (if no transitions are found), dict (if only 1 transition
         found), or QTable (if > 1 transitions are found)
 
-        """    
+        """
 
-        #Check correct format
-        if isinstance(wvlims, tuple): # tuple
-            if all(isinstance(wvlim,Quantity) for wvlim in wvlims):
+        # Check correct format
+        if isinstance(wvlims, tuple):  # tuple
+            if all(isinstance(wvlim, Quantity) for wvlim in wvlims):
                 pass
             else:
-                raise SyntaxError('Elements of wvlims have to be of class Quantity; correct format please')
-        elif isinstance(wvlims, Quantity): # or quantity
+                raise SyntaxError(
+                    'Elements of wvlims have to be of class Quantity; correct format please')
+        elif isinstance(wvlims, Quantity):  # or quantity
             pass
         else:
             raise SyntaxError('wvlims has to be tuple or Quantity')
         if len(wvlims) != 2:
-            raise SyntaxError('wlims has to be of shape (2,); Please correct format')
+            raise SyntaxError(
+                'wlims has to be of shape (2,); Please correct format')
         if wvlims[0] >= wvlims[1]:
-            raise ValueError('Minimum limit `wlims[0]` is not smaller than maximum limit `wlims[1]`; please correct')
-        if isinstance(n_max,int):
+            raise ValueError(
+                'Minimum limit `wlims[0]` is not smaller than maximum limit `wlims[1]`; please correct')
+        if isinstance(n_max, int):
             if n_max < 1:
                 return None
         elif (n_max is not None):
@@ -437,33 +448,34 @@ class LineList(object):
         cond = (data['wrest'] >= wvlims[0]) & (data['wrest'] <= wvlims[1])
         if np.sum(cond) == 0:
             if verbose:
-                print('[strongest_transitions] Warning: no transitions found within wvlims; returning None')
+                print(
+                    '[strongest_transitions] Warning: no transitions found within wvlims; returning None')
             return None
-        elif isinstance(data,dict): #Only 1 case from a dict format
+        elif isinstance(data, dict):  # Only 1 case from a dict format
             return data
-        elif np.sum(cond) == 1: #only 1 case from a QTable format
+        elif np.sum(cond) == 1:  # only 1 case from a QTable format
             name = data[cond]['name'][0]
             return self.__getitem__(name)
         else:
-            #remove transitions out of range
+            # remove transitions out of range
             data = data[cond]
-            #sort by strength defined as wrest * fosc
+            # sort by strength defined as wrest * fosc
             strength = data['wrest'] * data['f']
             sorted_inds = np.argsort(strength)
-            #reverse sorted indices, so strongest get first
+            # reverse sorted indices, so strongest get first
             sorted_inds = sorted_inds[::-1]
-            #sort using sorted_inds
-            data = data[sorted_inds]            
-            #keep only the first n_max or less
+            # sort using sorted_inds
+            data = data[sorted_inds]
+            # keep only the first n_max or less
             if n_max is not None:
-                data = data[:n_max]            
-            if len(data) == 1: #Only 1 case from a QTable format; return a dictionary
+                data = data[:n_max]
+            if len(data) == 1:  # Only 1 case from a QTable format; return a dictionary
                 name = data['name'][0]
                 return self.__getitem__(name)
             else:
                 return data
 
-    def available_transitions(self, wvlims, n_max=None,n_max_tuple=None, min_strength=1.):
+    def available_transitions(self, wvlims, n_max=None, n_max_tuple=None, min_strength=1.):
         """ Find the strongest transitions in a wavelength interval.
 
         For a given wavelength range, wvlims=(wv_min,wv_max), this
@@ -488,7 +500,7 @@ class LineList(object):
             n_max_tuple=3. Otherwise it returns all of them
         min_strength : float, optional
             Minimum strength calculated from log10(wrest * fosc *
-            abundance) In thin space HI 1215 has 14.7.
+            abundance) In this way HI 1215 has 14.7 by definition.
 
         Returns
         -------
@@ -500,12 +512,13 @@ class LineList(object):
         from linetools.abund import ions as laions
         solar = SolarAbund()
         #
-        if all((isinstance(n,int) or (n is None)) for n in [n_max,n_max_tuple]):
+        if all((isinstance(n, int) or (n is None)) for n in [n_max, n_max_tuple]):
             if (n_max is not None) and (n_max < 1):
                 return None
         else:
-            raise SyntaxError('Both n_max and n_max_tuple must be integers when given!')
-        if isinstance(min_strength,float) or isinstance(min_strength,int):
+            raise SyntaxError(
+                'Both n_max and n_max_tuple must be integers when given!')
+        if isinstance(min_strength, float) or isinstance(min_strength, int):
             pass
         else:
             raise SyntaxError('min_strength must be a float value')
@@ -513,89 +526,94 @@ class LineList(object):
         # Identify unique ion_names (e.g. HI, CIV, CIII)
         #unique_ion_names = list(set([name.split(' ')[0] for name in self._data['name']]))
         #unique_ion_names = np.array(unique_ion_names)
-        unique_ion_names = np.unique([name.split(' ')[0] for name in self._data['name']])
+        unique_ion_names = np.unique(
+            [name.split(' ')[0] for name in self._data['name']])
 
-        #obtain the strongest transition of a given unique ion species
+        # obtain the strongest transition of a given unique ion species
         ion_name = []
         strength = []
-        for ion in unique_ion_names: #This loop is necesary to have a non trivial but convinient order in the final output
+        for ion in unique_ion_names:  # This loop is necesary to have a non trivial but convinient order in the final output
             # Abundance
             Zion = laions.name_ion(ion)
             if ion == 'DI':
-                abundance = 12.-4.8 # Approximate for Deuterium
+                abundance = 12. - 4.8  # Approximate for Deuterium
             else:
                 abundance = solar[Zion[0]]
             #
-            aux = self.strongest_transitions(ion,wvlims,n_max=1) #only the strongest
+            aux = self.strongest_transitions(
+                ion, wvlims, n_max=1)  # only the strongest
             if aux is not None:
-                if isinstance(aux,dict):#this should always be True given n_max=1
+                if isinstance(aux, dict):  # this should always be True given n_max=1
                     name = aux['name']
                 else:
                     name = aux['name'][0]
                 ion_name += [name]
-                strength += [np.log10(aux['wrest'].value * aux['f']) + abundance]
-        if len(ion_name)==0:
-            #no matches
+                strength += [np.log10(aux['wrest'].value *
+                                      aux['f']) + abundance]
+        if len(ion_name) == 0:
+            # no matches
             return None
 
-        #create Table
+        # create Table
         unique = Table()
-        unique.add_column(Column(data=ion_name,name='name'))
-        unique.add_column(Column(data=strength,name='strength'))
+        unique.add_column(Column(data=ion_name, name='name'))
+        unique.add_column(Column(data=strength, name='strength'))
 
-        #get rid of those below the min_strength threshold
+        # get rid of those below the min_strength threshold
         cond = unique['strength'] >= min_strength
         unique = unique[cond]
         if len(unique) < 1:
             return None
 
-        #sort by strength
+        # sort by strength
         unique.sort(['strength'])
-        unique.reverse() #Table unique is now sorted by strength, with only 
-                         #1 entry per ion species
+        unique.reverse()  # Table unique is now sorted by strength, with only
+        # 1 entry per ion species
 
-        #Create output data adding up to n_max_tuple per ion species
-        for i,row in enumerate(unique):
+        # Create output data adding up to n_max_tuple per ion species
+        for i, row in enumerate(unique):
             name = row['name']
             aux = self.strongest_transitions(name, wvlims, n_max=n_max_tuple)
-            #need to deal with dict vs QTable format now
-            if isinstance(aux,dict):
+            # need to deal with dict vs QTable format now
+            if isinstance(aux, dict):
                 aux = self.from_dict_to_qtable(aux)
             if i == 0:
-                output = Table(aux) #convert to table because QTable does not like vstack
+                # convert to table because QTable does not like vstack
+                output = Table(aux)
             else:
-                output = vstack([output,Table(aux)]) #vstack is only supported for Table()
-        #if len==1 return dict
+                # vstack is only supported for Table()
+                output = vstack([output, Table(aux)])
+        # if len==1 return dict
         if len(output) == 1:
             name = output['name'][0]
             return self.__getitem__(name)
-        else: #n_max>1
-            if n_max>1:
+        else:  # n_max>1
+            if n_max > 1:
                 output = output[:n_max]
-            if len(output) == 1: #return dictionary
+            if len(output) == 1:  # return dictionary
                 name = output['name'][0]
                 return self.__getitem__(name)
             else:
                 return QTable(output)
 
-    def from_dict_to_qtable(self,a):
+    def from_dict_to_qtable(self, a):
         """Converts dictionary `a` to its QTable version.
         """
 
-        if isinstance(a,dict):
+        if isinstance(a, dict):
             pass
         else:
             raise SyntaxError('Input has to be a dictionary')
-        
+
         keys = self._data.keys()
 
-        #Create a QTable with same shape as self._data
+        # Create a QTable with same shape as self._data
         tab = QTable(data=self._data[0])
-        #re-write the value elements
+        # re-write the value elements
         for key in keys:
             tab[0][key] = a[key]
         return tab
-    
+
     #####
     def __getattr__(self, k):
         """ Passback an array or Column of the data 
@@ -618,7 +636,7 @@ class LineList(object):
         else:
             return out
 
-    def __getitem__(self, k, tol=1e-3*u.AA):
+    def __getitem__(self, k, tol=1e-3 * u.AA):
         ''' Passback data as a dict (from the table) for the input line
 
         Parameters
@@ -634,51 +652,50 @@ class LineList(object):
         dict (from row in the data table if only 1 line is found) or
           QTable (tuple when more than 1 lines are found)
         '''
-        if isinstance(k,(float,Quantity)): # Wavelength
-            if isinstance(k,float): # Assuming Ang
-                inwv = k*u.AA
+        if isinstance(k, (float, Quantity)):  # Wavelength
+            if isinstance(k, float):  # Assuming Ang
+                inwv = k * u.AA
             else:
                 inwv = k
-            mt = np.where( np.abs(inwv-self.wrest) < tol)[0]
-        elif isinstance(k, basestring): # Name
+            mt = np.where(np.abs(inwv - self.wrest) < tol)[0]
+        elif isinstance(k, basestring):  # Name
             if k == 'unknown':
                 return self.unknown_line()
             else:
                 mt = np.where(str(k) == self.name)[0]
-        elif isinstance(k, tuple): # Zion
+        elif isinstance(k, tuple):  # Zion
             mt = (self._data['Z'] == k[0]) & (self._data['ion'] == k[1])
         else:
-            raise ValueError('Not prepared for this type',k)
+            raise ValueError('Not prepared for this type', k)
 
         # No Match?
         if len(mt) == 0:
             # Take closest??
             if self.closest and (not isinstance(k, basestring)):
-                mt = [np.argmin(np.abs(inwv-self.wrest))]
-                print('WARNING: Using {:.4f} for your input {:.4f}'.format(self.wrest[mt[0]], 
-                    inwv))
+                mt = [np.argmin(np.abs(inwv - self.wrest))]
+                print('WARNING: Using {:.4f} for your input {:.4f}'.format(self.wrest[mt[0]],
+                                                                           inwv))
             else:
                 print('No such line in the list', k)
                 return None
 
         # Now we have something
         if len(mt) == 1:
-            return dict(zip(self._data.dtype.names,self._data[mt][0]))  # Pass back as dict
-            #return self._data[mt][0]  # Pass back as a Row not a Table
-        elif isinstance(k,tuple):
+            # Pass back as dict
+            return dict(zip(self._data.dtype.names, self._data[mt][0]))
+            # return self._data[mt][0]  # Pass back as a Row not a Table
+        elif isinstance(k, tuple):
             return self._data[mt]
         else:
             raise ValueError(
                 '{:s}: Multiple lines in the list'.format(self.__class__))
 
-
     # Printing
     def __repr__(self):
         # Generate sets string
-        for kk,llist in enumerate(self.lists):
+        for kk, llist in enumerate(self.lists):
             if kk == 0:
                 sstr = llist
             else:
                 sstr = sstr + ',' + llist
         return '[LineList: {:s}]'.format(sstr)
-
