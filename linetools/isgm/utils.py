@@ -87,6 +87,7 @@ def build_components_from_abslines(iabslines, clmdict=None, coord=None):
     -------
     components :
       list of AbsComponent objects
+
     """
     if clmdict is None:
         abslines = iabslines
