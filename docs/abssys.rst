@@ -15,8 +15,6 @@ Notebooks
    :maxdepth: 1
 
    Simple Examples <AbsSystem_examples>
-   LLS <LLSSystem_examples>
-   DLA <DLASystem_examples>
 
 Overview
 ========
@@ -74,27 +72,9 @@ Generic
 -------
 
 A catch-all subclass for AbsSystem.
+More options are provided in
+`pyigm <https://github.com/pyigm/pyigm>`_.
 
-LymanAbs
---------
-
-A subclass for HI systems.  All of the components are
-required to have Zion=(1,1).
-
-LLS
----
-
-An AbsSystem class for LLS.  One is required to set the
-NHI keyword upon instantiation.  See the :doc:`LLSSystem_examples`
-notebook for more.
-
-DLA
----
-
-An AbsSystem class for DLA.  One is required to set the
-NHI keyword upon instantiation and it must equal or
-exceed 20.3.  See the :doc:`DLASystem_examples`
-notebook for more.
 
 Plots
 =====
