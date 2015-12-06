@@ -1,5 +1,5 @@
 """ Utilities for isgm
-Best to keep these separate from the Class modules
+ Best to keep these separate from the Class modules
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
