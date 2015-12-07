@@ -3,8 +3,6 @@
 This code was originally written by Mark Pilgrim
 (f8dy@diveintopython.org), and released under a Python 2.1.1 license,
 available at https://www.python.org/download/releases/2.1.1/license
-
-
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -50,9 +48,9 @@ romanNumeralMap = (('M',  1000),
 def toRoman(n):
     """ Convert an integer to Roman numeral."""
     if not (0 < n < 5000):
-        raise OutOfRangeError, "number out of range (must be 1..4999)"
+        raise OutOfRangeError("number out of range (must be 1..4999)")
     if int(n) != n:
-        raise NotIntegerError, "decimals can not be converted"
+        raise NotIntegerError("decimals can not be converted")
 
     result = ""
     for numeral, integer in romanNumeralMap:
@@ -77,9 +75,9 @@ romanNumeralPattern = re.compile("""
 def fromRoman(s):
     """Convert a Roman numeral to an integer."""
     if not s:
-        raise InvalidRomanNumeralError, 'Input can not be blank'
+        raise InvalidRomanNumeralError('Input can not be blank')
     if not romanNumeralPattern.search(s):
-        raise InvalidRomanNumeralError, 'Invalid Roman numeral: %s' % s
+        raise InvalidRomanNumeralError('Invalid Roman numeral: %s' % s)
 
     result = 0
     index = 0

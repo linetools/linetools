@@ -1,6 +1,9 @@
 # Module to run tests on Generating a LineList
 #   Also tests some simple functionality
 
+from __future__ import (print_function, absolute_import, division,
+unicode_literals)
+
 # TEST_UNICODE_LITERALS
 
 import os, pdb
