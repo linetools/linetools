@@ -23,16 +23,16 @@ expect to also include common emission lines in the near future.
 By definition, a LineList is a unique collection of transitions lines
 specified by:
 
-=============== =========   ============== ====================================================
-Property        Variable    Type           Description
-=============== =========   ============== ====================================================
-LineList key    llst_keys   str or list    A key to define a subsample of transitions to load:
-                                            * 'ISM'   :: "All" ISM lines (can be overwhelming!)
-                                            * 'Strong':: Strong ISM lines
-                                            * 'HI'    :: HI Lyman series
-                                            * 'H2'    :: H2 (Lyman-Werner)
-                                            * 'CO'    :: CO UV band-heads
-                                            * 'EUV'   :: Extreme UV lines
+============ =========   =========== ====================================================
+Property     Variable    Type        Description
+============ =========   =========== ====================================================
+LineList key llst_keys   str or list A key to define a subsample of transitions to load:
+                                         * 'ISM' - "All" ISM lines (can be overwhelming!)
+                                         * 'Strong' - Strong ISM lines
+                                         * 'HI' - HI Lyman series
+                                         * 'H2' - H2 (Lyman-Werner)
+                                         * 'CO' - CO UV band-heads
+                                         * 'EUV' - Extreme UV lines
 =============== =========   ============== =====================================================
 
 
