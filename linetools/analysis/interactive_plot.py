@@ -177,6 +177,7 @@ class PlotWrapNav(PlotWrapBase):
             fl = fl.value
         self.fl = fl
         self.nsmooth = 0
+        self.last_keypress = None
         # disable existing keypress events (like 's' for save).
         cids = list(fig.canvas.callbacks.callbacks['key_press_event'])
         for cid in cids:
@@ -188,6 +189,9 @@ class PlotWrapNav(PlotWrapBase):
 
     def on_keypress(self, event):
         """ Print a help message"""
+
+        # store the last key pressed
+        self.last_keypress = event.key
         if event.key == '?':
             print(self._help_string)
 
