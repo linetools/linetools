@@ -23,7 +23,7 @@ expect to also include common emission lines in the near future.
 By definition, a LineList is a unique collection of transitions lines
 specified by:
 
-
+.. _Table-1:
 ============ ========= =========== ====================================================
 Property     Variable  Type        Description
 ============ ========= =========== ====================================================
@@ -67,8 +67,8 @@ or a list of keys:
 
 In these examples, the object ``hi`` has purely HI Lyman series
 transitions (e.g. HI Lya) and ``euv`` has HI Lyman series and Extreme
-UV transitions (e.g. Ne VIII, MgX). The available keys are listed in
-Table XX.
+UV transitions (e.g. NeVIII, MgX). The available keys are listed in
+:Table:`Table-1`.
 
 We can now easily access atomic information regarding individual
 transitions either by the rest-frame wavelength::

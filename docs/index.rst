@@ -25,7 +25,7 @@ Contents
 
 .. toctree::
    :maxdepth: 1
-
+   LineList <linelist>
    AbsComponent <abscomp>
    AbsSystem <abssys>
 
