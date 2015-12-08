@@ -264,7 +264,7 @@ class AbsLine(SpectralLine):
 
         # need to use super here. (See
         # http://docs.astropy.org/en/stable/development/codeguide.html#super-vs-direct-example)
-        super(SpectralLine, self).__init__('Abs', trans, **kwargs)
+        super(AbsLine, self).__init__('Abs', trans, **kwargs)
 
     def print_specline_type(self):
         """ Return a string representing the type of vehicle this is."""
