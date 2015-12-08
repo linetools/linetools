@@ -16,24 +16,14 @@ from astropy.io import fits, ascii
 from astropy.table import QTable, Column, Table
 from astropy.io.votable import parse as vo_parse
 
-lt_path = imp.find_module('linetools')[1]
+from ..abund import roman
 
-# def line_data
-# def read_sets
-# def read_H2
-# def read_CO
-# def read_verner94
-# def parse_morton00
-# def parse_morton03
-# def mktab_morton03
-# def update_fval
-# def roman_to_number
+lt_path = imp.find_module('linetools')[1]
 
 # TODO
 # Ingest CO data
 # Ingest Galaxy lines
 # Ingest AGN lines
-
 
 #
 def line_data(nrows=1):
@@ -47,20 +37,19 @@ def line_data(nrows=1):
     Notes
     -----
     Group definition:
-
-        0: None
-        1: "All" ISM (intended to be all atomic lines ever observed)
-        2: Strong ISM
-        4: HI Lyman series
-        8: H2
-       16: CO
-       32: EUV
-       64: Galaxy Emission
-      128: Galaxy Absorption
-      256: AGN
-      512: ??
-     1024: User1 (Reserved)
-     2048: User2 (Reserved)
+       *    0: None
+       *    1: "All" ISM (intended to be all atomic lines ever observed)
+       *    2: Strong ISM
+       *    4: HI Lyman series
+       *    8: H2
+       *   16: CO
+       *   32: EUV
+       *   64: Galaxy Emission
+       *  128: Galaxy Absorption
+       *  256: AGN
+       *  512: ??
+       * 1024: User1 (Reserved)
+       * 2048: User2 (Reserved)
     """
     ldict = {
         'name': ' '*20,       # Name
@@ -145,6 +134,7 @@ def read_H2():
     ----------
     * Abgrall et al. 1993, A&AS, 101, 323
     * Abgrall et al. 1993, A&AS, 101, 273
+
     Kindly provide by co-author E. Roueff to JC Howk to JXP
 
     """
@@ -404,7 +394,7 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
                     if ioni[gdi] in isoi: # Isotope
                         continue
                     # Ion
-                    tbl[count]['ion'] = roman_to_number(ionv[gdi])
+                    tbl[count]['ion'] = roman.fromRoman(ionv[gdi])
 
                     # Wavelength
                     tbl[count]['wrest'] = float(line[19:28]) #* u.AA
@@ -634,27 +624,4 @@ def update_wrest(table, verbose=True):
     table['wrest'][mt[0]] = 1910.938 * u.AA
     table['Ek'][mt[0]] = 52330.33 / u.cm
     '''
-
 #
-def roman_to_number(val):
-    """Convert simple Roman numerals to Arabic
-
-    Parameters
-    ----------
-    val : str or unicode
-      Roman numeral for conversion
-
-    Returns
-    -------
-    Number
-    """
-    r_to_n = dict(I=1, II=2, III=3, IV=4, V=5, VI=6, 
-        VII=7, VIII=8, IX=9, X=10)
-    try:
-        num = r_to_n[val.strip()]
-    except KeyError:
-        print(val)
-        pdb.set_trace()
-
-    return num
-

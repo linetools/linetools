@@ -10,11 +10,17 @@
 #;   03-Nov-2014 by JXP
 #;-
 #;------------------------------------------------------------------------------
-from __future__ import print_function, absolute_import, division, unicode_literals
+from __future__ import (print_function, absolute_import, division,
+                        unicode_literals)
+
+# Python 2 & 3 compatibility
+try:
+    basestring
+except NameError:
+    basestring = str
 
 from linetools.abund.elements import ELEMENTS
 from linetools.abund import roman
-
 
 ########################## ##########################
 ########################## ##########################
