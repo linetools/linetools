@@ -21,21 +21,15 @@ expect to also include common emission lines in the near future.
    (:ref:`AbsLine Class`).  add this back in when written
 
 By definition, a LineList is a unique collection of transitions lines
-specified by:
+specified by a predefined keyword (or list of such keywords). At the
+moment, we have implemented six keywords:
 
-.. _Table-1:
-============ ========= =========== ====================================================
-Property     Variable  Type        Description
-============ ========= =========== ====================================================
-LineList key llst_keys str or list A key to define a subsample of transitions to load:
-                                     'ISM' - "All" ISM lines (can be overwhelming!)
-                                     'Strong' - Strong ISM lines
-                                     'HI' - HI Lyman series
-                                     'H2' - H2 (Lyman-Werner)
-                                     'CO' - CO UV band-heads
-                                     'EUV' - Extreme UV lines
-============ ========= =========== =====================================================
-
+* 'ISM' : "All" ISM lines (can be overwhelming!)
+* 'Strong' : Strong ISM lines
+* 'HI' : HI Lyman series
+* 'H2' : H2 (Lyman-Werner)
+* 'CO' : CO UV band-heads
+* 'EUV' :  Extreme UV lines
 
 Instantiation
 =============
@@ -45,25 +39,25 @@ The LineList Class may be instantiated using a single key::
 	hi = LineList('HI')
 
   linetools.lists.parse: Reading linelist --- 
-   /home/ntejos/python/linetools/linetools/data/lines/morton03_table2.fits.gz
+    /home/ntejos/python/linetools/linetools/data/lines/morton03_table2.fits.gz
   WARNING: UnitsWarning: The unit 'Angstrom' has been deprecated in the FITS standard. Suggested: nm (with data multiplied by 0.1). [astropy.units.format.utils]
   read_sets: Using set file -- 
-   /home/ntejos/python/linetools/linetools/lists/sets/llist_v0.4.ascii
+    /home/ntejos/python/linetools/linetools/lists/sets/llist_v0.4.ascii
   
-or a list of keys:
+or a list of keys::
 
   euv = LineList(['HI','EUV'])
 
   linetools.lists.parse: Reading linelist --- 
-   /home/ntejos/python/linetools/linetools/data/lines/morton03_table2.fits.gz
+    /home/ntejos/python/linetools/linetools/data/lines/morton03_table2.fits.gz
   linetools.lists.parse: Reading linelist --- 
-   /home/ntejos/python/linetools/linetools/data/lines/morton00_table2.fits.gz
+    /home/ntejos/python/linetools/linetools/data/lines/morton00_table2.fits.gz
   linetools.lists.parse: Reading linelist --- 
-   /home/ntejos/python/linetools/linetools/data/lines/verner94_tab6.fits
+    /home/ntejos/python/linetools/linetools/data/lines/verner94_tab6.fits
   linetools.lists.parse: Reading linelist --- 
-   /home/ntejos/python/linetools/linetools/data/lines/EUV_lines.ascii
+    /home/ntejos/python/linetools/linetools/data/lines/EUV_lines.ascii
   read_sets: Using set file -- 
-  /home/ntejos/python/linetools/linetools/lists/sets/llist_v0.4.ascii
+    /home/ntejos/python/linetools/linetools/lists/sets/llist_v0.4.ascii
 
 In these examples, the object ``hi`` has purely HI Lyman series
 transitions (e.g. HI Lya) and ``euv`` has HI Lyman series and Extreme
