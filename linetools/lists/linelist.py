@@ -266,21 +266,21 @@ class LineList(object):
 
         Parameters
         ----------
-        subset: list (of Quantity or str)
+        subset : list (of Quantity or str)
           List of wrest or names for lines to use (drawn from input LineList)
-          e.g. (['HI 1215', 'CIV 1548'], [])
-        reset_data: bool, optional
+          e.g. (['HI 1215', 'CIV 1548'] or [1215.67 * u.AA, 1548.195 * u.AA])
+        reset_data : bool, optional
           Reset self._data QTable based on the original list at the
           initialization(i.e. the default list). This is useful for
           changing subsets of lines without the need to initialize a
           different LineList() object. [False]
-        sort: bool, optional
+        sort : bool, optional
           Sort this subset? [False]
 
         """
 
         # Check the right format
-        if not isinstance(subset,list):
+        if not isinstance(subset, list):
             raise ValueError('subset_lines: the input subset must be a list!')
 
         # Reset _data (useful for changing subsets)
@@ -342,7 +342,7 @@ class LineList(object):
 
         Parameters
         ----------
-        line: str or Quantity
+        line : str or Quantity
             Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII',
             1215.6700*u.AA). When string contains spaces it only
             considers the first part of it, so 'HI' and 'HI 1215' and
@@ -405,23 +405,23 @@ class LineList(object):
 
         Parameters
         ----------
-        line: str or Quantity
+        line : str or Quantity
             Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII',
             1215.6700 * u.AA)[Note: when string contains spaces it only
             considers the first part of it, so 'HI' and 'HI 1215' and
             'HI 1025' are all equivalent][Note: to retrieve an
             unknown line use string 'unknown']
-        wvlims: tuple of Quantity, or Quantity tuple
+        wvlims : tuple of Quantity, or Quantity tuple
             Wavelength range, e.g. wvlims = (1100 * u.AA, 3200 * u.AA) or
             wvlims = (1100, 3200) * u.AA
-        n_max: int or None
+        n_max : int or None, optional
             Maximum number of transitions to retrieve; if n_max = None
             it retrieves all of them
 
         Returns
         -------
-        None(if no transitions are found), dict(if only 1 transition
-        found), or QTable(if > 1 transitions are found)
+        None (if no transitions are found), dict (if only 1 transition
+        found), or QTable (if > 1 transitions are found)
 
         """
 
@@ -493,17 +493,17 @@ class LineList(object):
 
         Parameters
         ----------
-        wvlims: tuple of Quantity
+        wvlims : tuple of Quantity
             Wavelength range, e.g. wvlims = (1100 * u.AA, 3200 * u.AA)
-        n_max: int, optional
+        n_max : int, optional
             Maximum number of transitions retrieved when given,
             otherwise recover all of them
-        n_max_tuple: int, optional
+        n_max_tuple : int, optional
             Maximum number of transitions in a given ion species to
             retrieve. e.g., if Lyman series are all available, it will
             retrieve only up to Lyman gamma if
             n_max_tuple = 3. Otherwise it returns all of them
-        min_strength: float, optional
+        min_strength : float, optional
             Minimum strength calculated from log10(wrest * fosc *
             abundance) In this way HI 1215 has 14.7 by definition.
 
@@ -703,4 +703,4 @@ class LineList(object):
                 sstr = llist
             else:
                 sstr = sstr + ',' + llist
-        return '<LineList: {:s}; {} transitions>'.format(sstr,len(self._data))
+        return '<LineList: {:s}; {} transitions>'.format(sstr, len(self._data))
