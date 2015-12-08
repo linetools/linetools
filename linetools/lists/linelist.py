@@ -266,7 +266,7 @@ class LineList(object):
 
         Parameters
         ----------
-        subset : list (of Quantity or str)
+        subset : list or np.ndarray (of Quantity or str)
           List of wrest or names for lines to use (drawn from input LineList)
           e.g. (['HI 1215', 'CIV 1548'] or [1215.67 * u.AA, 1548.195 * u.AA])
         reset_data : bool, optional
@@ -280,7 +280,7 @@ class LineList(object):
         """
 
         # Check the right format
-        if not isinstance(subset, list):
+        if not isinstance(subset, (list, np.ndarray)):
             raise ValueError('subset_lines: the input subset must be a list!')
 
         # Reset _data (useful for changing subsets)
