@@ -19,21 +19,25 @@ from astropy import constants as const
 from astropy.io import fits
 from astropy.table import QTable, Table, vstack, Column
 
-#from xastropy.xutils import xdebug as xdb
+# from xastropy.xutils import xdebug as xdb
 
 CACHE = {'full_table': {}, 'data': {}}
 
 from linetools.lists import parse as lilp
 
-#
-
 
 class LineList(object):
-    '''Class to over-load Spectrum1D for new functionality not yet in specutils
+    """ 
+    This Class is designed to organize and handle information about
+    atomic and/or molecular transition lines (e.g. HI Lya, CIV 1548,
+    Hydrogen Balmer series, etc.) observed in a variety of
+    astrophysical environments. It is currently implemented for
+    absorption lines, but we expect to also include common emission
+    lines in the near future.
 
     Parameters
     ----------
-    llst_keys : str or list  
+    llst_keys : str or list
       Input to grab line list.  Current options are:
        * 'ISM'     :: "All" ISM lines (can be overwhelming!)
        * 'Strong'  :: Strong ISM lines
@@ -52,9 +56,9 @@ class LineList(object):
       Sort the subset? [False]
     verbose : bool, optional
       Give info galore if True
-    '''
-    # Init
+    """
 
+    # Init
     def __init__(self, llst_keys, subset=None, verbose=False,
                  sort_subset=False):
 
@@ -212,7 +216,7 @@ class LineList(object):
                     'set_lines: Not ready for this: {:s}'.format(llist))
 
         # Deal with Defined sets
-        #import pdb
+        # import pdb
         # pdb.set_trace()
         if len(set_flags) > 0:
             # Read standard file
@@ -262,18 +266,22 @@ class LineList(object):
 
         Parameters
         ----------
-        subset : list, optional
-          List of wrest for lines to use (drawn from input linelist)
-          Quantity or str
-        reset_data : bool, optional
-          Reset self._data QTable based on the original list at the 
-          initialization (i.e. the default list). This is useful for 
-          changing subsets of lines without the need to initialize a 
+        subset: list (of Quantity or str)
+          List of wrest or names for lines to use (drawn from input LineList)
+          e.g. (['HI 1215', 'CIV 1548'], [])
+        reset_data: bool, optional
+          Reset self._data QTable based on the original list at the
+          initialization(i.e. the default list). This is useful for
+          changing subsets of lines without the need to initialize a
           different LineList() object. [False]
-        sort : bool, optional 
+        sort: bool, optional
           Sort this subset? [False]
 
         """
+
+        # Check the right format
+        if not isinstance(subset,list):
+            raise ValueError('subset_lines: the input subset must be a list!')
 
         # Reset _data (useful for changing subsets)
         if reset_data:
@@ -306,10 +314,8 @@ class LineList(object):
                     if verbose:
                         print(
                             'subset_lines: Did not find {:s} in data Tables'.format(gdlin))
-            #import pdb
-            # pdb.set_trace()
         else:
-            raise ValueError('Not ready for this type of gd_lines')
+            raise ValueError('Not ready for this `subset` type yet.')
         # Sort
         tmp = self._data[np.array(indices)]
         if sort:
@@ -337,7 +343,7 @@ class LineList(object):
         Parameters
         ----------
         line: str or Quantity
-            Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII', 1215.6700*u.AA)
+            Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII', 1215.6700 * u.AA)
 
             [Note: when string contains spaces it only considers the
              first part of it, so 'HI' and 'HI 1215' and 'HI 1025' are
@@ -346,7 +352,7 @@ class LineList(object):
 
         Returns
         -------
-        dict (if only 1 transition found) or QTable (if > 1
+        dict(if only 1 transition found) or QTable(if > 1
         transitions are found)
 
         """
@@ -402,21 +408,21 @@ class LineList(object):
         ----------
         line: str or Quantity
             Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII',
-            1215.6700*u.AA) [Note: when string contains spaces it only
+            1215.6700 * u.AA)[Note: when string contains spaces it only
             considers the first part of it, so 'HI' and 'HI 1215' and
-            'HI 1025' are all equivalent] [Note: to retrieve an
+            'HI 1025' are all equivalent][Note: to retrieve an
             unknown line use string 'unknown']
-        wvlims : tuple of Quantity, or Quantity tuple
-            Wavelength range, e.g. wvlims=(1100*u.AA, 3200*u.AA) or
-            wvlims=(1100, 3200)*u.AA
-        n_max : int or None
-            Maximum number of transitions to retrieve; if n_max=None
+        wvlims: tuple of Quantity, or Quantity tuple
+            Wavelength range, e.g. wvlims = (1100 * u.AA, 3200 * u.AA) or
+            wvlims = (1100, 3200) * u.AA
+        n_max: int or None
+            Maximum number of transitions to retrieve; if n_max = None
             it retrieves all of them
 
         Returns
         -------
-        None (if no transitions are found), dict (if only 1 transition
-        found), or QTable (if > 1 transitions are found)
+        None(if no transitions are found), dict(if only 1 transition
+        found), or QTable(if > 1 transitions are found)
 
         """
 
@@ -478,34 +484,34 @@ class LineList(object):
     def available_transitions(self, wvlims, n_max=None, n_max_tuple=None, min_strength=1.):
         """ Find the strongest transitions in a wavelength interval.
 
-        For a given wavelength range, wvlims=(wv_min,wv_max), this
+        For a given wavelength range, wvlims = (wv_min, wv_max), this
         function retrieves the n_max_tuple strongest transitions per
         each ion species in the LineList available at such a
         wavelength range and having strength larger than min_strength.
-        Strength is defined as log10(wrest*fosc*abundance). The output
+        Strength is defined as log10(wrest * fosc * abundance). The output
         is sorted by strength of the strongest available transition
         per ion species.
 
         Parameters
         ----------
-        wvlims : tuple of Quantity
-            Wavelength range, e.g. wvlims=(1100*u.AA, 3200*u.AA)
-        n_max : int, optional
+        wvlims: tuple of Quantity
+            Wavelength range, e.g. wvlims = (1100 * u.AA, 3200 * u.AA)
+        n_max: int, optional
             Maximum number of transitions retrieved when given,
             otherwise recover all of them
-        n_max_tuple : int, optional
+        n_max_tuple: int, optional
             Maximum number of transitions in a given ion species to
             retrieve. e.g., if Lyman series are all available, it will
             retrieve only up to Lyman gamma if
-            n_max_tuple=3. Otherwise it returns all of them
-        min_strength : float, optional
+            n_max_tuple = 3. Otherwise it returns all of them
+        min_strength: float, optional
             Minimum strength calculated from log10(wrest * fosc *
             abundance) In this way HI 1215 has 14.7 by definition.
 
         Returns
         -------
-        dict (if only 1 transition found) or QTable (if > 1
-        transitions are found) or None (if no transition is found)
+        dict(if only 1 transition found) or QTable(if > 1
+        transitions are found) or None(if no transition is found)
         """
         # Init
         from linetools.abund.solar import SolarAbund
@@ -524,22 +530,22 @@ class LineList(object):
             raise SyntaxError('min_strength must be a float value')
 
         # Identify unique ion_names (e.g. HI, CIV, CIII)
-        #unique_ion_names = list(set([name.split(' ')[0] for name in self._data['name']]))
-        #unique_ion_names = np.array(unique_ion_names)
+        # unique_ion_names = list(set([name.split(' ')[0] for name in self._data['name']]))
+        # unique_ion_names = np.array(unique_ion_names)
         unique_ion_names = np.unique(
             [name.split(' ')[0] for name in self._data['name']])
 
         # obtain the strongest transition of a given unique ion species
         ion_name = []
         strength = []
-        for ion in unique_ion_names:  # This loop is necesary to have a non trivial but convinient order in the final output
+        for ion in unique_ion_names:  # This loop is necessary to have a non trivial but convinient order in the final output
             # Abundance
             Zion = laions.name_ion(ion)
             if ion == 'DI':
                 abundance = 12. - 4.8  # Approximate for Deuterium
             else:
                 abundance = solar[Zion[0]]
-            #
+
             aux = self.strongest_transitions(
                 ion, wvlims, n_max=1)  # only the strongest
             if aux is not None:
@@ -578,7 +584,7 @@ class LineList(object):
             if isinstance(aux, dict):
                 aux = self.from_dict_to_qtable(aux)
             if i == 0:
-                # convert to table because QTable does not like vstack
+                # convert to Table because QTable does not like vstack
                 output = Table(aux)
             else:
                 # vstack is only supported for Table()
@@ -616,7 +622,7 @@ class LineList(object):
 
     #####
     def __getattr__(self, k):
-        """ Passback an array or Column of the data 
+        """ Passback an array or Column of the data
 
         k must be a Column name in the data Table
         """
@@ -698,4 +704,4 @@ class LineList(object):
                 sstr = llist
             else:
                 sstr = sstr + ',' + llist
-        return '[LineList: {:s}]'.format(sstr)
+        return '<LineList: {:s}; {} transitions>'.format(sstr,len(self._data))
