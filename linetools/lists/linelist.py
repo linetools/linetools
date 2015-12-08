@@ -41,10 +41,10 @@ class LineList(object):
        * 'H2'      :: H2 (Lyman-Werner)
        * 'CO'      :: CO UV band-heads
        * 'EUV'     :: EUV lines (for CASBAH project)
-       ---- NOT IMPLEMENTED YET -----
-       * 'Gal_E'   :: Galaxy emission lines (HII)
-       * 'Gal_A'   :: Galaxy absorption lines (stellar)
-       * 'AGN'     :: Key AGN lines
+       * 'Gal_E'   :: Galaxy emission lines (HII, to be implemented)
+       * 'Gal_A'   :: Galaxy absorption lines (stellar, to be implemented)
+       * 'AGN'     :: Key AGN lines (to be implemented)
+
     subset : list, optional
       List of subset of lines to use (drawn from input linelist)
       Needs to be Quantity or str (e.g. [1215.6700*u.AA] or ['HI 1215'])
@@ -337,17 +337,16 @@ class LineList(object):
         Parameters
         ----------
         line: str or Quantity
-            Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII', 1215.6700*u.AA)
-
-            [Note: when string contains spaces it only considers the
-             first part of it, so 'HI' and 'HI 1215' and 'HI 1025' are
-             all equivalent]
-            [Note: to retrieve an unknown line use string 'unknown']
+            Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII',
+            1215.6700*u.AA). When string contains spaces it only
+            considers the first part of it, so 'HI' and 'HI 1215' and
+            'HI 1025' are all equivalent. To retrieve an unknown line
+            use string 'unknown'.
 
         Returns
         -------
-        dict (if only 1 transition found) or QTable (if > 1
-        transitions are found)
+        dict or QTable
+            dict if only 1 transition found, otherwise QTable.
 
         """
         if isinstance(line, basestring):  # Name

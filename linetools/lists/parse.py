@@ -37,20 +37,19 @@ def line_data(nrows=1):
     Notes
     -----
     Group definition:
-
-        0: None
-        1: "All" ISM (intended to be all atomic lines ever observed)
-        2: Strong ISM
-        4: HI Lyman series
-        8: H2
-       16: CO
-       32: EUV
-       64: Galaxy Emission
-      128: Galaxy Absorption
-      256: AGN
-      512: ??
-     1024: User1 (Reserved)
-     2048: User2 (Reserved)
+       *    0: None
+       *    1: "All" ISM (intended to be all atomic lines ever observed)
+       *    2: Strong ISM
+       *    4: HI Lyman series
+       *    8: H2
+       *   16: CO
+       *   32: EUV
+       *   64: Galaxy Emission
+       *  128: Galaxy Absorption
+       *  256: AGN
+       *  512: ??
+       * 1024: User1 (Reserved)
+       * 2048: User2 (Reserved)
     """
     ldict = {
         'name': ' '*20,       # Name
@@ -135,6 +134,7 @@ def read_H2():
     ----------
     * Abgrall et al. 1993, A&AS, 101, 323
     * Abgrall et al. 1993, A&AS, 101, 273
+
     Kindly provide by co-author E. Roueff to JC Howk to JXP
 
     """
