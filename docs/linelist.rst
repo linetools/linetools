@@ -23,6 +23,7 @@ expect to also include common emission lines in the near future.
 By definition, a LineList is a unique collection of transitions lines
 specified by:
 
+
 ============ =========   =========== ====================================================
 Property     Variable    Type        Description
 ============ =========   =========== ====================================================
@@ -39,20 +40,83 @@ LineList key llst_keys   str or list A key to define a subsample of transitions 
 Instantiation
 =============
 
-The LineList Class may be instantiated in a few ways::
+The LineList Class may be instantiated using a single key::
 
-	ism = LineList(['ISM'])
+	hi = LineList('HI')
+
   linetools.lists.parse: Reading linelist --- 
-      /home/ntejos/python/linetools/linetools/data/lines/morton03_table2.fits.gz
+   /home/ntejos/python/linetools/linetools/data/lines/morton03_table2.fits.gz
   WARNING: UnitsWarning: The unit 'Angstrom' has been deprecated in the FITS standard. Suggested: nm (with data multiplied by 0.1). [astropy.units.format.utils]
-  linetools.lists.parse: Reading linelist --- 
-      /home/ntejos/python/linetools/linetools/data/lines/morton00_table2.fits.gz
-  linetools.lists.parse: Reading linelist --- 
-      /home/ntejos/python/linetools/linetools/data/lines/verner94_tab6.fits
-  linetools.lists.parse: Reading linelist --- 
-      /home/ntejos/python/linetools/linetools/data/lines/EUV_lines.ascii
   read_sets: Using set file -- 
-      /home/ntejos/python/linetools/linetools/lists/sets/llist_v0.4.ascii
+   /home/ntejos/python/linetools/linetools/lists/sets/llist_v0.4.ascii
+  
+or a list of keys:
+
+  euv = LineList(['HI','EUV'])
+
+  linetools.lists.parse: Reading linelist --- 
+   /home/ntejos/python/linetools/linetools/data/lines/morton03_table2.fits.gz
+  linetools.lists.parse: Reading linelist --- 
+   /home/ntejos/python/linetools/linetools/data/lines/morton00_table2.fits.gz
+  linetools.lists.parse: Reading linelist --- 
+   /home/ntejos/python/linetools/linetools/data/lines/verner94_tab6.fits
+  linetools.lists.parse: Reading linelist --- 
+   /home/ntejos/python/linetools/linetools/data/lines/EUV_lines.ascii
+  read_sets: Using set file -- 
+  /home/ntejos/python/linetools/linetools/lists/sets/llist_v0.4.ascii
+
+In these examples, the object ``hi`` has purely HI Lyman series
+transitions (e.g. HI Lya) and ``euv`` has HI Lyman series and Extreme
+UV transitions (e.g. Ne VIII, MgX). The available keys are listed in
+Table XX.
+
+We can now easily access atomic information regarding individual
+transitions either by the rest-frame wavelength::
+
+  wrest = 1215.67 * u.AA  # HI Lya
+  hi[wrest]
+
+or by the name convention within linetools, which in the case of HI
+Lya is ``HI 1215``::
+
+  name = 'HI 1215'
+  hi[name]
+
+both cases will provide the following dictionary::
+
+  {'A': <Quantity 626500000.0 1 / s>,
+  'Am': 0,
+  'Ej': <Quantity 0.0 1 / cm>,
+  'Ek': <Quantity 2259.163 1 / cm>,
+  'Ex': <Quantity 0.0 1 / cm>,
+  'Jj': 0.0,
+  'Jk': 0.0,
+  'Ref': 'Morton2003',
+  'Z': 1,
+  'col0': masked,
+  'col6': masked,
+  'el': 0,
+  'f': 0.41639999999999999,
+  'gamma': <Quantity 626500000.0 1 / s>,
+  'gj': 2,
+  'gk': 6,
+  'group': 1,
+  'ion': 1,
+  'mol': '',
+  'name': 'HI 1215',
+  'nj': 0,
+  'nk': 0,
+  'wrest': <Quantity 1215.67 Angstrom>}
+
+which summarizes the most important atomic information of HI Lya
+transition, including the reference where these values come from (in
+this case, ``Morton2003``). Therefore, if we want to know the
+oscillator strenght
+
+
+
+
+
 
 
 
