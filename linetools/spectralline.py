@@ -27,7 +27,7 @@ class SpectralLine(object):
     Parameters
     ----------
     ltype : {'Abs'}
-      Type of Spectral line. Just 'Abs' for now (also 'Em' in future).
+      Type of Spectral line. Just 'Abs' for now (also 'Emiss' in future).
     trans : Quantity or str
       Either the rest wavelength (e.g. 1215.6700*u.AA) or the
       transition name (e.g. 'CIV 1548')
@@ -237,13 +237,13 @@ class SpectralLine(object):
 
     # Output
     def __repr__(self):
-        txt = '[{:s}:'.format(self.__class__.__name__)
+        txt = '<{:s}:'.format(self.__class__.__name__)
         try:
             txt = txt+' {:s},'.format(self.data['name'])
         except KeyError:
             pass
         txt = txt + ' wrest={:g}'.format(self.wrest)
-        txt = txt + ']'
+        txt = txt + '>'
         return (txt)
 
 # ###########################################
@@ -261,7 +261,10 @@ class AbsLine(SpectralLine):
     # Initialize with a .dat file
     def __init__(self, trans, **kwargs):
         # Generate with type
-        SpectralLine.__init__(self,'Abs', trans, **kwargs)
+
+        # need to use super here. (See
+        # http://docs.astropy.org/en/stable/development/codeguide.html#super-vs-direct-example)
+        super(SpectralLine, self).__init__('Abs', trans, **kwargs)
 
     def print_specline_type(self):
         """ Return a string representing the type of vehicle this is."""
@@ -386,7 +389,7 @@ class AbsLine(SpectralLine):
 
     # Output
     def __repr__(self):
-        txt = '[{:s}:'.format(self.__class__.__name__)
+        txt = '<{:s}:'.format(self.__class__.__name__)
         # Name
         try:
             txt = txt+' {:s},'.format(self.data['name'])
@@ -399,7 +402,7 @@ class AbsLine(SpectralLine):
             txt = txt+', f={:g}'.format(self.data['fval'])
         except KeyError:
             pass
-        txt = txt + ']'
+        txt = txt + '>'
         return (txt)
 
 def many_abslines(all_wrest, llist):
