@@ -28,8 +28,6 @@ Contents
 
    AbsComponent <abscomp>
    AbsSystem <abssys>
-   AbsSurvey <abssurvey>
-
 
 ..
    To be added:

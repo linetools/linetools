@@ -429,15 +429,16 @@ class AbsComponent(object):
         Parameters
         ----------
         b : Quantity, optional
-            Doppler parameter of the component.
-            Default is 10*u.km/u.s
+            Doppler parameter of the component. Default is 10*u.km/u.s
         tie_strs : tuple of strings, optional
-            Strings to be used for tying parameters (z,b,logN), respectively.
-            These are all converted to lower case format, following VPFIT convention.
+            Strings to be used for tying parameters (z,b,logN),
+            respectively.  These are all converted to lower case
+            format, following VPFIT convention.
         fix_strs : tuple of strings, optional
-            Strings to be used for fixing parameters (z,b,logN), respectively.
-            These are all converted to upper case format, following VPFIT convention.
-            These will take precedence over tie_strs if different than ``.
+            Strings to be used for fixing parameters (z,b,logN),
+            respectively.  These are all converted to upper case
+            format, following VPFIT convention.  These will take
+            precedence over tie_strs if different than ''.
 
         Returns
         -------
@@ -475,25 +476,27 @@ class AbsComponent(object):
         s += '\n'
         return s
 
-    def repr_alis(self, T_kin=1e4*u.K, bturb=0.*u.km/u.s, tie_strs=('', '', '', ''), fix_strs=('', '', '', '')):
+    def repr_alis(self, T_kin=1e4*u.K, bturb=0.*u.km/u.s,
+                  tie_strs=('', '', '', ''), fix_strs=('', '', '', '')):
         """
         String representation for ALIS (line fitting software)
 
         Parameters
         ----------
         T_kin : Quantity, optional
-            Kinetic temperature.
-            Default is 1e4*u.K
+            Kinetic temperature. Default 1e4*u.K
         bturb : Quantity, optional
-            Turbulent Doppler parameter
-            Default is 0.*u.km/u.s
+            Turbulent Doppler parameter. Default 0.*u.km/u.s
         tie_strs : tuple of strings, optional
-            Strings to be used for tying parameters (logN,z,bturb,T_kin), respectively.
-            These are all converted to lower case format, following ALIS convention.
+            Strings to be used for tying parameters
+            (logN,z,bturb,T_kin), respectively.  These are all
+            converted to lower case format, following ALIS convention.
         fix_strs : tuple of strings, optional
-            Strings to be used for fixing parameters (logN,z,bturb,T_kin), respectively.
-            These are all converted to upper case format, following ALIS convention.
-            These will take precedence over tie_strs if different than ``.
+            Strings to be used for fixing parameters
+            (logN,z,bturb,T_kin), respectively.  These are all
+            converted to upper case format, following ALIS convention.
+            These will take precedence over tie_strs if different from
+            ''.
 
         Returns
         -------

@@ -11,7 +11,7 @@ Linetools depends on these packages:
 
 * `python <http://www.python.org/>`_ versions 2.7, or 3.3 or later
 * `numpy <http://www.numpy.org/>`_ version 1.9 or later
-* `astropy <http://www.astropy.org>`_ version 1.0 or later
+* `astropy`_ version 1.0 or later
 * `scipy <http://www.scipy.org/>`_ version 0.16 or later
 * `matplotlib <http://matplotlib.org/>`_  version 1.4 or later
 * `pyyaml <http://pyyaml.org/wiki/PyYAML>`_ version 3.11 or later
@@ -75,9 +75,9 @@ modules to see those changes in an existing Python session, though).
 
 Fantastic! In that case, follow the `Astropy developer guidelines
 <http://docs.astropy.org/en/stable/development/workflow/development_workflow.html>`_,
-replacing every instance of `astropy` in those instructions with
-`linetools`. This will install a 'fork' of linetools that you can use
-to submit code changes to the main repository.
+replacing every instance of **astropy** in those instructions with
+**linetools**. This will install a 'fork' of linetools that you can
+use to submit code changes to the main repository.
 
 
 Running Tests
