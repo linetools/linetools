@@ -25,17 +25,22 @@ specified by a predefined keyword (or list of such keywords). At the
 moment, we have implemented six keywords:
 
 * 'ISM' : "All" ISM lines (can be overwhelming!)
-* 'Strong' : Strong ISM lines
+* 'Strong' : Strong ISM lines (most common absorption line transitions observed)
 * 'HI' : HI Lyman series
 * 'H2' : H2 (Lyman-Werner)
 * 'CO' : CO UV band-heads
 * 'EUV' :  Extreme UV lines
 
+We note that a subset of transitions can also be specified using the
+`subset_line()` methods (see Section XXX). In this way, one can create
+an arbitrary collection of transitions.
+
+
 Instantiation
 =============
 
 The LineList Class may be instantiated using a single key::
-
+  
 	hi = LineList('HI')
 
   linetools.lists.parse: Reading linelist --- 
@@ -45,7 +50,7 @@ The LineList Class may be instantiated using a single key::
     /home/ntejos/python/linetools/linetools/lists/sets/llist_v0.4.ascii
   
 or a list of keys::
-
+  
   euv = LineList(['HI','EUV'])
 
   linetools.lists.parse: Reading linelist --- 
@@ -61,8 +66,7 @@ or a list of keys::
 
 In these examples, the object ``hi`` has purely HI Lyman series
 transitions (e.g. HI Lya) and ``euv`` has HI Lyman series and Extreme
-UV transitions (e.g. NeVIII, MgX). The available keys are listed in
-:Table:`Table-1`.
+UV transitions (e.g. NeVIII, MgX).
 
 We can now easily access atomic information regarding individual
 transitions either by the rest-frame wavelength::
