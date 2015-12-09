@@ -66,7 +66,8 @@ Examples
 
 """
 
-from __future__ import division, print_function
+from __future__ import (division, print_function, unicode_literals,
+                        absolute_import)
 
 __version__ = '2015.01.29'
 __docformat__ = 'restructuredtext en'
@@ -290,7 +291,7 @@ class Isotope(object):
                                      self.abundance * 100)
 
     def __repr__(self):
-        return "Isotope(%s, %s, %s)" % (
+        return "<Isotope(%s, %s, %s)>" % (
             repr(self.mass), repr(self.abundance), repr(self.massnumber))
 
 

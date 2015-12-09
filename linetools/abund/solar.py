@@ -1,6 +1,7 @@
 """ Simple Solar abundance calculations.
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
+from __future__ import (print_function, absolute_import, division,
+                        unicode_literals)
 
 # Python 2 & 3 compatibility
 try:
@@ -9,13 +10,10 @@ except NameError:
     basestring = str
 
 import numpy as np
-import os, imp
-import copy
-import pdb
+import imp
 
 from astropy import constants as const
 from astropy.io import ascii
-from astropy.table import Table
 from astropy.utils.misc import isiterable
 
 #from xastropy.xutils import xdebug as xdb
@@ -117,4 +115,3 @@ class SolarAbund(object):
     def __repr__(self):
         # Generate sets string
         return '<SolarAbund: {:s}>'.format(self.ref)
-
