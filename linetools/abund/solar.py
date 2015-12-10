@@ -41,7 +41,7 @@ class SolarAbund(object):
         # Load Data
         print('Loading abundances from {:s}'.format(self.ref))
         self.load_data()
-        print('Abundances are relative, by number on a '
+        print('Abundances are relative by number on a '
               'logarithmic scale with H=12') 
 
     def load_data(self):

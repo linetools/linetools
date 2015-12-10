@@ -8,7 +8,6 @@ The linetools API
    :no-inheritance-diagram:
 
 .. automodapi:: linetools.abund.solar
-   :skip: Table
    :no-inheritance-diagram:
 
 .. automodapi:: linetools.analysis.absline
