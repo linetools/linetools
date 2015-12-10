@@ -29,11 +29,12 @@ def ion_name(ion, flg=0, nspace=None):
 
     Parameters
     ----------
-    ion : tuple (Z, ion)
-      dict with tags of `Z` and `ion`
+    ion : tuple or dict
+      Either a tuple of integers (Z, ion) or a dict with tags of `Z`
+      and `ion`. e.g. (6, 4) would return 'CIV'.
 
     flg : int, optional (0)
-        * 0: Roman numeral
+        * 0: Roman numeral (e.g. CIV)
         * 1: Latex with ion notation (e.g C^+)
 
     nspace : int, optional (0)
@@ -42,7 +43,7 @@ def ion_name(ion, flg=0, nspace=None):
     Returns
     -------
     name : str
-      e.g. Si II, {\rm Si}^{+}
+      e.g. Si II, {\\rm Si}^{+}
 
     """
     if isinstance(ion,tuple):
@@ -53,10 +54,11 @@ def ion_name(ion, flg=0, nspace=None):
 
     # Ion state
     if flg == 0: # Roman
-        if nspace is None: nspace = 0
+        if nspace is None:
+            nspace = 0
         str_ion = roman.toRoman(ion[1])
-        spc = ' '*nspace
-        outp = str_elm+spc+str_ion
+        spc = ' ' * nspace
+        outp = str_elm + spc + str_ion
     elif flg == 1: # LaTeX
         if ion[1] == 0:
             raise ValueError('ionization.ion_name: Not ready for this input yet.')
@@ -67,8 +69,8 @@ def ion_name(ion, flg=0, nspace=None):
         elif ion[1] == 3:
             str_ion = '^{++}'
         else:
-            str_ion = '^{+'+str(ion[1]-1)+'}'
-        outp = '{\\rm '+str_elm+'}'+str_ion
+            str_ion = '^{+' + str(ion[1] - 1) + '}'
+        outp = '{\\rm ' + str_elm + '}' + str_ion
     else:
         raise ValueError('ionization.ion_name: Not ready for this flg.')
 
@@ -82,7 +84,7 @@ def name_ion(ion):
 
     Parameters
     ----------
-    ion: str
+    ion : str
       Name of the ion, e.g. 'SiII' or 'Si II'
 
     Returns
@@ -112,4 +114,4 @@ def name_ion(ion):
     # Ion
     ion_state = roman.fromRoman(ion[iion:].strip())
 
-    return (Z,ion_state)
+    return Z, ion_state

@@ -30,6 +30,7 @@ Contents
    AbsLine <absline>
    AbsComponent <abscomp>
    AbsSystem <abssys>
+   SolarAbund <solar>
 
 ..
    To be added:
