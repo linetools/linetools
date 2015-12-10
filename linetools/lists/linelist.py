@@ -50,7 +50,7 @@ class LineList(object):
        * 'AGN'     :: Key AGN lines (to be implemented)
 
     subset : list, optional
-      List of subset of lines to use (drawn from input linelist)
+      List of subset of lines to use (drawn from input LineList)
       Needs to be Quantity or str (e.g. [1215.6700*u.AA] or ['HI 1215'])
     sort_subset : bool, optional
       Sort the subset? [False]
@@ -60,7 +60,7 @@ class LineList(object):
 
     # Init
     def __init__(self, llst_keys, subset=None, verbose=False,
-                 sort_subset=False):
+                 sort_subset=False, closest=False):
 
         # Error catching
         if not isinstance(llst_keys, (list, basestring)):
@@ -73,7 +73,7 @@ class LineList(object):
             self.lists = llst_keys
 
         # Take closest line?
-        self.closest = False
+        self.closest = closest
 
         # Load Data
         self.load_data()
@@ -335,10 +335,10 @@ class LineList(object):
         return ldict
 
     def all_transitions(self, line):
-        """ Get all the transitions corresponding to a line..
+        """ Get all the transitions corresponding to a line.
 
         For a given single line transition, this function returns
-        all transitions from the linelist containing that line.
+        all transitions from the LineList containing that line.
 
         Parameters
         ----------
@@ -509,21 +509,21 @@ class LineList(object):
 
         Returns
         -------
-        dict(if only 1 transition found) or QTable(if > 1
-        transitions are found) or None(if no transition is found)
+        dict (if only 1 transition found) or QTable (if > 1
+        transitions are found) or None (if no transition is found)
         """
         # Init
         from linetools.abund.solar import SolarAbund
         from linetools.abund import ions as laions
         solar = SolarAbund()
-        #
+        
         if all((isinstance(n, int) or (n is None)) for n in [n_max, n_max_tuple]):
             if (n_max is not None) and (n_max < 1):
                 return None
         else:
             raise SyntaxError(
                 'Both n_max and n_max_tuple must be integers when given!')
-        if isinstance(min_strength, float) or isinstance(min_strength, int):
+        if isinstance(min_strength, (float,int)):
             pass
         else:
             raise SyntaxError('min_strength must be a float value')

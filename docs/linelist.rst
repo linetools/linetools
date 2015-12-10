@@ -2,9 +2,9 @@
 
 .. _LineList:
 
-******************
+**************
 LineList Class
-******************
+**************
 
 .. index:: LineList
 
@@ -31,9 +31,28 @@ moment, we have implemented six keywords:
 * 'CO' : CO UV band-heads
 * 'EUV' :  Extreme UV lines
 
+Parameters
+++++++++++
+
+=============== ============== ====================================================
+Parameter       Type           Description
+=============== ============== ====================================================
+llst_keys       str or list    Initialization keyword(s) (see above)
+subset          list, optional List of subset of lines to use (drawn from input
+                               LineList). Needs to be of Quantity or str 
+                               (e.g. [1215.6700*u.AA] or ['HI 1215']). Default None
+sort_subset     Boolean        Whether to sort the subset by rest-frame wavelength
+                               Default is False
+closest         Boolean        Whether to look for the closest transition in 
+                               wavelength independently on the actual difference. 
+                               Default is False (which is highly recommended!)
+=============== ============== ====================================================
+
+
 We note that a subset of transitions can also be specified using the
-`subset_line()` methods (see Section XXX). In this way, one can create
-an arbitrary collection of transitions.
+`subset` parameter at the instantiation of later by using the
+`subset_line()` method (see :ref:`subset_lines`). In this way, one can
+create an arbitrary collection of unique transitions.
 
 
 Instantiation
@@ -67,6 +86,10 @@ or a list of keys::
 In these examples, the object ``hi`` has purely HI Lyman series
 transitions (e.g. HI Lya) and ``euv`` has HI Lyman series and Extreme
 UV transitions (e.g. NeVIII, MgX).
+
+
+Accessing single transitions
+++++++++++++++++++++++++++++
 
 We can now easily access atomic information regarding individual
 transitions either by the rest-frame wavelength::
@@ -114,8 +137,45 @@ calling its dictionary keywords::
   hi['HI 1215']['wrest']
   <Quantity 1215.67 Angstrom>
 
-or::
+is the rest-frame wavelength of the HI Lya transition. Similarly,::
 
   euv['NeVIII 780']['f']
   0.050500001758337021
+
+is the oscillator strength of the NeVIII 780 transition.
+
+
+Accessing multiple transitions
+++++++++++++++++++++++++++++++
+
+.. Cover calling transitions using (Z,ion) tuple, differences
+.. between dictionary and Qtable outputs
+
+
+Unknown transition
+++++++++++++++++++
+
+
+::::
+
+Methods
+=======
+
+subset_lines()
+++++++++++++++
+
+This method provides a way to define a subset of lines drawn from the
+original LineList object. Consider that for some reason you may want
+only HI Lya and Lyb in your LineList, then you can achieve this by::
+
+  hi = LineList('HI')
+  hi.subset_lines()
+
+
+all_transitions()
++++++++++++++++++
+
+
+strongest_transitions()
++++++++++++++++++++++++
 
