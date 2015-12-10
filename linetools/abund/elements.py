@@ -50,7 +50,7 @@ References
 
 Examples
 --------
->>> from elements import ELEMENTS
+>>> from linetools.abund.elements import ELEMENTS
 >>> len(ELEMENTS)
 109
 >>> str(ELEMENTS[109])
