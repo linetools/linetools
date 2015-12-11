@@ -21,7 +21,7 @@ from linetools.spectra import convolve as lsc
 
 #from xastropy.xutils import xdebug as xdb
 
-spl = 29979245800.0  # cm/s
+c_cgs = 29979245800.0  # cm/s
 
 
 def voigt_wofz(vin,a):
@@ -110,10 +110,10 @@ def voigt_tau(wave, par):
     cold = 10.0**par[0] #/ u.cm / u.cm
     zp1=par[1]+1.0
     #wv=line.wrest.to(u.cm) #*1.0e-8
-    nujk = spl / par[3]
+    nujk = c_cgs / par[3]
     dnu = par[2]/par[3] #(line.attrib['b'].to(u.km/u.s) / wv).to('Hz')
     avoigt = par[5]/( 4 * np.pi * dnu)
-    uvoigt = ((spl / (wave/zp1)) - nujk) / dnu
+    uvoigt = ((c_cgs / (wave/zp1)) - nujk) / dnu
     # Voigt
     cne = 0.014971475 * cold * par[4] #line.data['f'] * u.cm * u.cm * u.Hz
     tau = cne * voigt_wofz(uvoigt,avoigt) / dnu 
