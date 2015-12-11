@@ -47,7 +47,7 @@ def test_gauss_smooth(spec):
     # Smooth
     smth_spec = spec.gauss_smooth(4.)
     # Test
-    np.testing.assert_allclose(smth_spec.flux[3000].value, 0.8288110494613)
+    np.testing.assert_allclose(smth_spec.flux[3000].value, 0.82889723777)
     assert smth_spec.flux.unit == spec.flux.unit
 
 # Rebin

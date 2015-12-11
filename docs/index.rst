@@ -26,17 +26,17 @@ Contents
 .. toctree::
    :maxdepth: 1
 
+   LineList <linelist>
    AbsLine <absline>
    AbsComponent <abscomp>
    AbsSystem <abssys>
    SolarAbund <solar>
+   XSpectrum1D <xspectrum1d>
 
 ..
    To be added:
 
    linelist
-   spectralline
-   xspectrum1d
 
 **Methods and Scripts**
 

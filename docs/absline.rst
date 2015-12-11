@@ -1,5 +1,3 @@
-.. highlight:: rest
-
 .. _AbsLine:
 
 *************
@@ -29,14 +27,14 @@ By definition, an AbsLine is specified by:
 ================ ================= ========= ========================================
 Property         Variable          Type      Description
 ================ ================= ========= ========================================
-RA, Dec          attrib['coord']   coord     astropy.coordinate
+RA, Dec          attrib['coord']   Coord     astropy.coordinate
 Redshift         attrib['z']       float     Reference redshift
 Velocity         attrib['v']       Quantity  line velocity relative to its redshift
 Velocity sigma   attrib['sig_v']   Quantity  1 sigma uncertainty in the velocity
 Equivalent Width attrib['EW']      Quantity  Equivalent width
 EW sigma         attrib['sig_EW']  Quantity  1 sigma uncertainty in EW
 EW flag          attrib['flag_EW'] int       Equivalent width flag
-Doppler param.   attrib['b']       Quantity  doppler parameter
+Doppler param.   attrib['b']       Quantity  Doppler parameter
 b sigma          attrib['sig_b']   Quantity  1 sigma uncertainty in b
 Column density   attrib['N']       Quantity  Column density
 N sigma          attrib['sig_N']   Quantity  1 sigma uncertainty in N
