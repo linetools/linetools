@@ -5,16 +5,13 @@ Heavily adapted from code by Ryan Cooke (e.g. alis)
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import sys
-import os
-import copy
 import warnings
 import pdb
 
 from scipy.special import wofz
 
 from astropy import units as u
-from astropy.units import Unit, Quantity
+from astropy.units import Quantity
 from astropy import constants as const
 from astropy.modeling import FittableModel, Parameter
 
@@ -24,28 +21,29 @@ from linetools.spectra import convolve as lsc
 
 #from xastropy.xutils import xdebug as xdb
 
-spl = 29979245800.0 # cm/s
-# 
+c_cgs = 29979245800.0  # cm/s
+
+
 def voigt_wofz(vin,a):
-    '''Uses scipy function for calculation.
+    """Uses scipy function for calculation.
 
     Tested for speed and accuracy (see Voigt notebook).
 
     Parameters
     ----------
-    vin: ndarray
+    vin : ndarray
       u parameter
-    a: float
+    a : float
       a parameter
 
     Returns
     -------
-    voigt: ndarray
-    '''
+    voigt : ndarray
+    """
     return wofz(vin + 1j * a).real
 
-# The standard King model
-def voigtking(vin,a):
+
+def voigtking(vin, a):
     """ Take from Alis by Ryan Cooke
     """
     oneonsqrtpi=0.56418958354775630
@@ -82,7 +80,7 @@ def voigtking(vin,a):
         voigt_prof[nl] = 2.0*((v1-y)*(v1-z)*(h0[p]+a*(h1[p]+a*(h2[p]+a*h3[p]))) - (v1-x)*(v1-z)*2.0*(h0[p1] + a*(h1[p1]+a*(h2[p1]+a*h3[p1]))) + (v1-x)*(v1-y)*(h0[p2] + a*(h1[p2]+a*(h2[p2]+a*h3[p2]))))
     return voigt_prof
 
-# The primary call
+
 def voigt_tau(wave, par):
     """ Find the optical depth at input wavelengths
 
@@ -112,10 +110,10 @@ def voigt_tau(wave, par):
     cold = 10.0**par[0] #/ u.cm / u.cm
     zp1=par[1]+1.0
     #wv=line.wrest.to(u.cm) #*1.0e-8
-    nujk = spl / par[3]
+    nujk = c_cgs / par[3]
     dnu = par[2]/par[3] #(line.attrib['b'].to(u.km/u.s) / wv).to('Hz')
     avoigt = par[5]/( 4 * np.pi * dnu)
-    uvoigt = ((spl / (wave/zp1)) - nujk) / dnu
+    uvoigt = ((c_cgs / (wave/zp1)) - nujk) / dnu
     # Voigt
     cne = 0.014971475 * cold * par[4] #line.data['f'] * u.cm * u.cm * u.Hz
     tau = cne * voigt_wofz(uvoigt,avoigt) / dnu 
@@ -124,7 +122,7 @@ def voigt_tau(wave, par):
 
 # The primary call
 def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'], skip_wveval=False, debug=False):
-    ''' Generates a Voigt model from a line or list of AbsLines
+    """ Generates a Voigt model from a line or list of AbsLines
 
     This may run *slowly* for many many lines.
 
@@ -152,7 +150,7 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'], skip_wveval=Fals
     -------
     list or single object
       Depends on ret, as described above
-    '''
+    """
     # Wavelength input
     if not isinstance(iwave,Quantity):  # Standard wavelength array
         raise ValueError('voigt_model: Unknown spectrum input')
@@ -241,6 +239,7 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'], skip_wveval=Fals
     if len(ret_val) == 1: ret_val = ret_val[0]
     # Return
     return ret_val
+
 
 class single_voigt_model(FittableModel):
     '''Generate a single Voigt model in astropy framework for fitting

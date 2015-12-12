@@ -16,18 +16,14 @@ import warnings
 import os, pdb
 import json
 
-from astropy.io import fits, ascii
+from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy import units as u
 from astropy.table import Table, Column
-from astropy.io.fits.fitsrec import FITS_rec
 from astropy.io.fits.hdu.table import BinTableHDU
 
 #from xastropy.xutils import xdebug as xdb
 
-#### ###############################
-#  Generate Spectrum1D from FITS file
-#
 def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
     sig_tags=None, multi_ivar=False, format='ascii'):
     """ Read a FITS file (or astropy Table or ASCII file) into a
