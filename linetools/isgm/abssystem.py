@@ -101,7 +101,11 @@ class AbsSystem(object):
         self.sig_NHI = sig_NHI
         # RA/DEC
         if isinstance(radec,(tuple)):
-            self.coord = SkyCoord(ra=radec[0], dec=radec[1])
+            if isinstance(radec[0], basestring):
+                self.coord = SkyCoord(radec[0]+radec[1], frame='fk5',
+                                      unit=(u.hourangle, u.deg))
+            else:
+                self.coord = SkyCoord(ra=radec[0], dec=radec[1])
         elif isinstance(radec,SkyCoord):
             self.coord = radec
         self.name = name

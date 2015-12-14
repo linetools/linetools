@@ -23,6 +23,13 @@ def test_init():
     assert gensys.abs_type == 'Generic'
     np.testing.assert_allclose(gensys.zabs,1.244)
 
+def test_init_strradec():
+    # Simple properties
+    gensys = GenericAbsSystem(('01:32:21','+22:15:53.3'), 1.244, [-500,500]*u.km/u.s, NHI=16.)
+    # Test
+    assert gensys.abs_type == 'Generic'
+    np.testing.assert_allclose(gensys.coord.ra.value, 23.087499999999995)
+
 def test_one_component():
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
     # HI Lya, Lyb
