@@ -70,15 +70,15 @@ class XSpectrum1D(Spectrum1D):
     '''
 
     @classmethod
-    def from_file(self, ifile):
-        ''' From file
+    def from_file(self, ifile, **kwargs):
+        """ From file
 
         Parameters
         ----------
         ifile : str
           Filename
-        '''
-        slf = lsio.readspec(ifile)
+        """
+        slf = lsio.readspec(ifile, **kwargs)
         return slf
 
     @classmethod
