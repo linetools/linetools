@@ -4,7 +4,6 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import os, imp, glob, pdb, gzip, sys
-import urllib2
 if not sys.version_info[0] > 2:
     import codecs
     open = codecs.open
@@ -612,9 +611,16 @@ def grab_galaxy_linelists(do_this=False):
         print('mktab_morton00: Returning...')
         return
 
+    try:
+        # For Python 3.0 and later
+        from urllib.request import urlopen
+    except ImportError:
+        # Fall back to Python 2's urllib2
+        from urllib2 import urlopen
+
     # Forbidden
     url = 'https://raw.githubusercontent.com/desihub/desisim/master/data/forbidden_lines.dat'
-    f = urllib2.urlopen(url)
+    f = urlopen(url)
     tab_fil = lt_path+'/data/lines/galaxy_forbidden.ascii'
     print('Writing {:s}'.format(tab_fil))
     with open(tab_fil, "wb") as code:
@@ -622,7 +628,7 @@ def grab_galaxy_linelists(do_this=False):
 
     # Recombination
     url = 'https://raw.githubusercontent.com/desihub/desisim/master/data/recombination_lines.dat'
-    f = urllib2.urlopen(url)
+    f = urlopen(url)
     tab_fil = lt_path+'/data/lines/galaxy_recomb.ascii'
     print('Writing {:s}'.format(tab_fil))
     with open(tab_fil, "wb") as code:
