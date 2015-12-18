@@ -4,24 +4,21 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import os, imp, glob, pdb, gzip, sys
-import subprocess
+import urllib2
 if not sys.version_info[0] > 2:
     import codecs
     open = codecs.open
 
 from astropy import units as u
 from astropy.units.quantity import Quantity
-from astropy import constants as const
 from astropy.io import fits, ascii
 from astropy.table import QTable, Column, Table
-from astropy.io.votable import parse as vo_parse
 
 from ..abund import roman
 
 lt_path = imp.find_module('linetools')[1]
 
 # TODO
-# Ingest CO data
 # Ingest Galaxy lines
 # Ingest AGN lines
 
@@ -239,6 +236,50 @@ def read_verner94():
 
     # Return
     return data
+
+
+def read_forbidden():
+    """ read galaxy emission lines (forbidden)
+
+    There may be more here: https://github.com/moustakas/impro/blob/master/pro/hiiregions/im_getmatrix.pro
+
+    Returns
+    -------
+    QTable of forbidden lines
+    """
+    forb_fil = lt_path + '/data/lines/galaxy_forbidden.ascii'
+    print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(forb_fil))
+    data = QTable.read(forb_fil, format='ascii')
+
+    # Rename columns
+    data.rename_column('wave', 'wrest')
+    data['wrest'].unit = u.AA
+    for row in data:
+        row['name'] = row['name'].replace('_', ' ')
+    # Return
+    return data
+
+
+def read_recomb():
+    """ read galaxy emission lines (recombination)
+
+    Returns
+    -------
+    QTable of recombination lines
+    """
+    recomb_fil = lt_path + '/data/lines/galaxy_recomb.ascii'
+    print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(recomb_fil))
+    data = QTable.read(recomb_fil, format='ascii')
+
+    # Rename columns
+    data.rename_column('wave', 'wrest')
+    data['wrest'].unit = u.AA
+    for row in data:
+        row['name'] = row['name'].replace('_', ' ')
+
+    # Return
+    return data
+
 
 def parse_morton00(orig=False):
     """Parse tables from Morton 2000, ApJS, 130, 403
@@ -498,7 +539,7 @@ def mktab_morton03(do_this=False, outfil=None, fits=True):
         with gzip.open(outfil+'.gz', 'wb') as dst:
             dst.writelines(src)
     os.unlink(outfil)
-    #subprocess.call(['gzip', '-f', outfil])
+
 
 def mktab_morton00(do_this=False, outfil=None):
     """Used to generate a FITS Table for the Morton2000 paper
@@ -531,6 +572,42 @@ def mktab_morton00(do_this=False, outfil=None):
         with gzip.open(outfil+'.gz', 'wb') as dst:
             dst.writelines(src)
     os.unlink(outfil)
+
+
+def grab_galaxy_linelists(do_this=False):
+    """ Pulls galaxy emission line lists from DESI project
+
+    Specifically, desisim
+    Writes to hard-drive
+    Only run if you are building
+
+    Parameters
+    ----------
+    do_this : bool, optional
+      Set to True to actually do this. Default=False
+
+    """
+    if not do_this:
+        print('mktab_morton00: It is very unlikely you want to do this')
+        print('mktab_morton00: Returning...')
+        return
+
+    # Forbidden
+    url = 'https://raw.githubusercontent.com/desihub/desisim/master/data/forbidden_lines.dat'
+    f = urllib2.urlopen(url)
+    tab_fil = lt_path+'/data/lines/galaxy_forbidden.ascii'
+    print('Writing {:s}'.format(tab_fil))
+    with open(tab_fil, "wb") as code:
+        code.write(f.read())
+
+    # Recombination
+    url = 'https://raw.githubusercontent.com/desihub/desisim/master/data/recombination_lines.dat'
+    f = urllib2.urlopen(url)
+    tab_fil = lt_path+'/data/lines/galaxy_recomb.ascii'
+    print('Writing {:s}'.format(tab_fil))
+    with open(tab_fil, "wb") as code:
+        code.write(f.read())
+
 
 def update_fval(table, verbose=False):
     """Update f-values from the literature
