@@ -280,6 +280,26 @@ def read_recomb():
     # Return
     return data
 
+def read_galabs():
+    """ read galaxy absorption lines
+
+    Returns
+    -------
+    QTable of recombination lines
+    """
+    recomb_fil = lt_path + '/data/lines/galaxy_abs.ascii'
+    print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(recomb_fil))
+    data = QTable.read(recomb_fil, format='ascii')
+
+    # Rename columns
+    data.rename_column('wave', 'wrest')
+    data['wrest'].unit = u.AA
+    for row in data:
+        row['name'] = row['name'].replace('_', ' ')
+
+    # Return
+    return data
+
 
 def parse_morton00(orig=False):
     """Parse tables from Morton 2000, ApJS, 130, 403

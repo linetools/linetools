@@ -30,6 +30,7 @@ moment, we have implemented six keywords:
 * 'H2' : H2 (Lyman-Werner)
 * 'CO' : CO UV band-heads
 * 'EUV' :  Extreme UV lines
+* 'Galaxy' :  Lines typically identified in galaxy spectra
 
 Parameters
 ++++++++++

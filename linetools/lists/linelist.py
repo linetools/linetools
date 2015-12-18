@@ -97,7 +97,7 @@ class LineList(object):
             # H2 (Abrigail), CO (JXP)
             'molecules': [lilp.read_H2, lilp.read_CO],
             'euv': [lilp.read_euv], # EUV lines (by hand for now; soon to be Verner96)
-            'galaxy': [lilp.read_forbidden, lilp.read_recomb],
+            'galaxy': [lilp.read_forbidden, lilp.read_recomb, lilp.read_galabs],
         }
 
         # Loop on lists
