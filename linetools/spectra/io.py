@@ -15,21 +15,18 @@ import numpy as np
 import warnings
 import os, pdb
 import json
+from PyQt4 import QtCore
 
-from astropy.io import fits, ascii
+from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
 from astropy import units as u
 from astropy.table import Table, Column
-from astropy.io.fits.fitsrec import FITS_rec
 from astropy.io.fits.hdu.table import BinTableHDU
 
 #from xastropy.xutils import xdebug as xdb
 
-#### ###############################
-#  Generate Spectrum1D from FITS file
-#
 def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
-    sig_tags=None, multi_ivar=False, format='ascii'):
+    sig_tags=None, multi_ivar=False, format='ascii', exten=None):
     """ Read a FITS file (or astropy Table or ASCII file) into a
     Spectrum1D class
 
@@ -55,6 +52,8 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
       multi-extension FITS.
     format : str, optional
       Format for ASCII table input ['ascii']
+    exten : int, optional
+      FITS extension (mainly for multiple binary FITS tables)
 
     Returns
     -------
@@ -81,7 +80,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
                 flg_fits = True
         if flg_fits: # FITS
             # Read header
-            datfil,chk = chk_for_gz(specfil.strip())
+            datfil, chk = chk_for_gz(specfil.strip())
             if chk == 0:
                 raise IOError('File does not exist {}'.format(specfil))
             hdulist = fits.open(os.path.expanduser(datfil))
@@ -103,16 +102,14 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
     ## #################
     # Binary FITS table?
 
-    #import pdb; pdb.set_trace()
     if is_UVES_popler(head0):
         xspec1d = parse_UVES_popler(hdulist)
-
     elif head0['NAXIS'] == 0:
         # Flux
         if flux_tags is None:
             flux_tags = ['SPEC', 'FLUX', 'FLAM', 'FX',
-                         'FLUXSTIS', 'FLUX_OPT', 'fl', 'flux']
-        fx, fx_tag = get_table_column(flux_tags, hdulist)
+                         'FLUXSTIS', 'FLUX_OPT', 'fl', 'flux', 'counts']
+        fx, fx_tag = get_table_column(flux_tags, hdulist, idx=exten)
         if fx is None:
             print('Binary FITS Table but no Flux tag')
             return
@@ -123,10 +120,11 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         sig, sig_tag = get_table_column(sig_tags, hdulist)
         if sig is None:
             ivar_tags = ['IVAR', 'IVAR_OPT']
-            ivar, ivar_tag = get_table_column(ivar_tags, hdulist)
+            ivar, ivar_tag = get_table_column(ivar_tags, hdulist, idx=exten)
             if ivar is None:
-                print('Binary FITS Table but no error tags')
-                return
+                var_tags = ['VAR', 'var']
+                var, var_tag = get_table_column(var_tags, hdulist, idx=exten)
+                sig = np.sqrt(var)
             else:
                 sig = np.zeros(ivar.size)
                 gdi = np.where( ivar > 0.)[0]
@@ -134,14 +132,14 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         # Wavelength
         wave_tags = ['WAVE','WAVELENGTH','LAMBDA','LOGLAM',
                      'WAVESTIS', 'WAVE_OPT', 'wa', 'wave']
-        wave, wave_tag = get_table_column(wave_tags, hdulist)
+        wave, wave_tag = get_table_column(wave_tags, hdulist, idx=exten)
         if wave_tag == 'LOGLAM':
             wave = 10.**wave
         if wave is None:
             print('Binary FITS Table but no wavelength tag')
             return
         co_tags = ['CONT', 'CO', 'CONTINUUM', 'co', 'cont']
-        co, co_tag = get_table_column(co_tags, hdulist)
+        co, co_tag = get_table_column(co_tags, hdulist, idx=exten)
 
     elif head0['NAXIS'] == 1: # Data in the zero extension
 
@@ -245,6 +243,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         print('Looks like an image')
         return
 
+
     # Generate, as needed
     if 'xspec1d' not in locals():
         # Give Ang as default
@@ -285,7 +284,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
 
 #### ###############################
 #  Grab values from the Binary FITS Table or Table
-def get_table_column(tags, hdulist, idx=1):
+def get_table_column(tags, hdulist, idx=None):
     """ Find a column in a FITS binary table
 
     Used to return flux/error/wave values from a binary FITS table
@@ -297,7 +296,7 @@ def get_table_column(tags, hdulist, idx=1):
      List of string tag names
     hdulist : fits header data unit list  
     idx : int, optional
-     Index of list for Table input [Default: 1]
+     Index of list for Table input
 
     Returns
     -------
@@ -305,6 +304,8 @@ def get_table_column(tags, hdulist, idx=1):
       Data values corresponding to the first tag found
       Returns None if no match
     """
+    if idx is None:
+        idx = 1
     dat = None
     # Use Table
     if isinstance(hdulist[idx],BinTableHDU):
