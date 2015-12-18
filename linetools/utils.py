@@ -136,7 +136,7 @@ def z_from_v(z, v):
 
     Parameters
     ----------
-    z : float
+    z : float or array
        Redshift
     v : float or array
        Velocities

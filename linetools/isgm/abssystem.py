@@ -9,6 +9,7 @@ except NameError:
     basestring = str
 
 import numpy as np
+import pdb
 import warnings
 from abc import ABCMeta
 
@@ -108,6 +109,13 @@ class AbsSystem(object):
                 self.coord = SkyCoord(ra=radec[0], dec=radec[1])
         elif isinstance(radec,SkyCoord):
             self.coord = radec
+        elif isinstance(radec,basestring):
+            if ':' in radec:
+                self.coord = SkyCoord(radec, frame='fk5', unit=(u.hourangle, u.deg))
+            else:  # Add in :
+                sign = max(radec.find('+'), radec.find('-'))
+                newradec = (radec[0:2]+':'+radec[2:4]+':'+radec[4:sign+3] +':'+radec[sign+3:sign+5]+':'+radec[sign+5:])
+                self.coord = SkyCoord(newradec, frame='fk5', unit=(u.hourangle, u.deg))
         self.name = name
 
         # Abs type
