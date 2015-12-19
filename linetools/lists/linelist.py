@@ -91,12 +91,12 @@ class LineList(object):
 
         # Define datasets: In order of Priority
         dataset = {
-            'ism': [lilp.parse_morton03, lilp.parse_morton00,
-                    lilp.read_verner94, lilp.read_euv],  # Morton 2003, Morton 00, Verner 94, Verner 96 [soon]
+            'ism': [lilp.parse_morton03, lilp.parse_morton00, lilp.parse_verner96,
+                    lilp.read_verner94, lilp.read_euv],  # Morton 2003, Morton 00, Verner 96, Verner 94
             'hi': [lilp.parse_morton03],
             # H2 (Abrigail), CO (JXP)
             'molecules': [lilp.read_H2, lilp.read_CO],
-            'euv': [lilp.read_euv], # EUV lines (by hand for now; soon to be Verner96)
+            'euv': [lilp.read_euv],  # EUV lines (by hand for now; soon to be Verner96)
             'galaxy': [lilp.read_forbidden, lilp.read_recomb, lilp.read_galabs],
         }
 

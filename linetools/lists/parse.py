@@ -14,6 +14,7 @@ from astropy.io import fits, ascii
 from astropy.table import QTable, Column, Table
 
 from ..abund import roman
+from ..abund.elements import ELEMENTS
 
 lt_path = imp.find_module('linetools')[1]
 
@@ -295,6 +296,72 @@ def read_galabs():
     data['wrest'].unit = u.AA
     for row in data:
         row['name'] = row['name'].replace('_', ' ')
+
+    # Return
+    return data
+
+def parse_verner96(orig=False, write=False):
+    """Parse tables from Verner, Verner, & Ferland (1996, Atomic Data and Nuclear Data Tables, Vol. 64, p.1)
+
+    Parameters
+    ----------
+    orig : bool, optional
+      Use original code to parse the ASCII file
+      Else, read from a FITS file
+
+    Returns
+    -------
+    data : Table
+      Atomic data
+    """
+    # Look for FITS
+    fitsf = lt_path + '/data/lines/verner96_tab1.fits.gz'
+    verner96_tab1 = glob.glob(fitsf)
+
+    if (len(verner96_tab1) > 0) & (not orig):
+        print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
+            verner96_tab1[0]))
+        data = Table.read(verner96_tab1[0])
+    else:
+        # File
+        verner96_tab1 = lt_path + '/data/lines/verner96_tab1.txt'
+        # Read
+        with open(verner96_tab1) as f:
+            lines = f.readlines()
+        # Grab the 'good' ones
+        gdlines = [iline.strip() for iline in lines if len(iline.strip()) > 113]
+        ldict, data = line_data(nrows=len(gdlines))
+        # Loop
+        for kk, line in enumerate(gdlines):
+            # Z, ion
+            data[kk]['Z'] = ELEMENTS[line[0:2].strip()].number
+            data[kk]['ion'] = int(line[2:4].strip())
+            # wrest
+            data[kk]['wrest'] = float(line[47:56].strip())
+            # Ej, Ek
+            data[kk]['Ej'] = float(line[59:73].strip())
+            data[kk]['Ek'] = float(line[73:89].strip())
+            # gj, gk
+            data[kk]['gj'] = int(line[89:92].strip())
+            data[kk]['gk'] = int(line[92:95].strip())
+            # Ak
+            data[kk]['A'] = float(line[95:103].strip())
+            # f
+            data[kk]['f'] = float(line[104:112].strip())
+        # Update
+        data['Ref'] = 'Verner1996'
+
+        # Write
+        if write:
+            outfil = lt_path + '/data/lines/verner96_tab1.fits'
+            data.write(outfil,overwrite=True)
+            print('parse_verner96: Wrote {:s}'.format(outfil))
+            # Compress and delete
+            print('Now compressing...')
+            with open(outfil) as src:
+                with gzip.open(outfil+'.gz', 'wb') as dst:
+                    dst.writelines(src)
+            os.unlink(outfil)
 
     # Return
     return data
