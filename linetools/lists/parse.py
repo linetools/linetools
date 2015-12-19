@@ -249,7 +249,7 @@ def read_forbidden():
     """
     forb_fil = lt_path + '/data/lines/galaxy_forbidden.ascii'
     print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(forb_fil))
-    data = QTable.read(forb_fil, format='ascii')
+    data = Table.read(forb_fil, format='ascii')
 
     # Rename columns
     data.rename_column('wave', 'wrest')
@@ -270,7 +270,7 @@ def read_recomb():
     """
     recomb_fil = lt_path + '/data/lines/galaxy_recomb.ascii'
     print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(recomb_fil))
-    data = QTable.read(recomb_fil, format='ascii')
+    data = Table.read(recomb_fil, format='ascii')
 
     # Rename columns
     data.rename_column('wave', 'wrest')
@@ -291,7 +291,7 @@ def read_galabs():
     """
     recomb_fil = lt_path + '/data/lines/galaxy_abs.ascii'
     print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(recomb_fil))
-    data = QTable.read(recomb_fil, format='ascii')
+    data = Table.read(recomb_fil, format='ascii')
 
     # Rename columns
     data.rename_column('wave', 'wrest')
