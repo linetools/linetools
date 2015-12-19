@@ -1,0 +1,19 @@
+## J. Moustakas, Siena, 2015 May 7
+##
+## Table of forbidden nebular emission lines and their rest-frame
+## wavelengths.  The ratio column is a dummy column needed by
+## desisim.templates.
+## 
+## The wavelengths are laboratory wavelengths in vacuum (Angstroms).
+## 
+# 1 name
+# 2 wave 
+# 3 ratio
+[OIII]_5007  5008.239  1.0 
+[OIII]_4959  4960.295  1.0 
+ [NII]_6584  6585.277  1.0 
+ [NII]_6548  6549.852  1.0 
+ [SII]_6716  6718.294  1.0 
+ [SII]_6731  6732.673  1.0 
+ [OII]_3726  3727.092  1.0 
+ [OII]_3729  3729.874  1.0 

@@ -3,13 +3,13 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import os, imp, glob
+import imp, glob
+import copy
 
-from astropy import units as u
-from astropy.units.quantity import Quantity
-from astropy import constants as const
-from astropy.io import fits, ascii
-from astropy.table import QTable, Column, Table
+from astropy.io import ascii
+from astropy.table import Column
+
+from linetools.lists import parse as llp
 
 
 lt_path = imp.find_module('linetools')[1]
@@ -102,7 +102,7 @@ def mk_strong(infil=None, outfil=None):
     print('mk_strong: Wrote {:s}'.format(outfil))
 
 def mk_hi(infil=None, outfil=None):
-    ''' Make the HI list ISM + HI
+    """ Make the HI list ISM + HI
 
     Parameters
     ----------
@@ -110,11 +110,11 @@ def mk_hi(infil=None, outfil=None):
       Starting file.  Should use latest llist_vX.X.ascii
     outfil : str, optional
       Output file.  Default is to use infil
-    '''
+    """
     if infil is None:
         fils = glob.glob(lt_path+'/lists/sets/llist_v*')
         fils.sort()
-        infil = fils[srt][-1] # Should grab the lateset
+        infil = fils[-1] # Should grab the lateset
 
     # Read
     data = ascii.read(infil, format='fixed_width')
@@ -133,3 +133,47 @@ def mk_hi(infil=None, outfil=None):
     pdb.set_trace()
     data.write(outfil, format='ascii.fixed_width')
 
+def add_galaxy_lines(outfil, infil=None):
+    """ Append galaxy lines (as necessary)
+
+    Parameters
+    ----------
+    infil : str, optional
+      Starting file.  Should use latest llist_vX.X.ascii
+    outfil : str, optional
+      Output file.  Default is to use infil
+    """
+    if infil is None:
+        fils = glob.glob(lt_path+'/lists/sets/llist_v*')
+        fils.sort()
+        infil = fils[-1]  # Should grab the lateset
+
+    # Read set file
+    data = ascii.read(infil, format='fixed_width')
+
+    # Read galaxy lines (emission)
+    forbidden = llp.read_forbidden()
+    recomb = llp.read_recomb()
+
+    tmp_row = copy.deepcopy(data[0])
+    for key in ['fISM', 'fSI', 'fHI', 'fEUV', 'fAGN']:
+        tmp_row[key] = 0
+    tmp_row['fgE'] = 1
+    # Add if new
+    for row in forbidden:
+        if np.sum(np.abs(row['wrest']-data['wrest']) < 0.0001) == 0:
+            tmp_row['wrest'] = row['wrest']
+            tmp_row['name'] = row['name']
+            data.add_row(tmp_row)
+    # Add if new
+    for row in recomb:
+        if np.sum(np.abs(row['wrest']-data['wrest']) < 0.0001) == 0:
+            tmp_row['wrest'] = row['wrest']
+            tmp_row['name'] = row['name'].replace('_',' ')
+            data.add_row(tmp_row)
+
+    # Write
+    print('Make sure you want to do this!')
+    import pdb
+    pdb.set_trace()
+    data.write(outfil, format='ascii.fixed_width')

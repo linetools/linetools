@@ -4,24 +4,21 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import os, imp, glob, pdb, gzip, sys
-import subprocess
 if not sys.version_info[0] > 2:
     import codecs
     open = codecs.open
 
 from astropy import units as u
 from astropy.units.quantity import Quantity
-from astropy import constants as const
 from astropy.io import fits, ascii
 from astropy.table import QTable, Column, Table
-from astropy.io.votable import parse as vo_parse
 
 from ..abund import roman
+from ..abund.elements import ELEMENTS
 
 lt_path = imp.find_module('linetools')[1]
 
 # TODO
-# Ingest CO data
 # Ingest Galaxy lines
 # Ingest AGN lines
 
@@ -239,6 +236,139 @@ def read_verner94():
 
     # Return
     return data
+
+
+def read_forbidden():
+    """ read galaxy emission lines (forbidden)
+
+    There may be more here: https://github.com/moustakas/impro/blob/master/pro/hiiregions/im_getmatrix.pro
+
+    Returns
+    -------
+    QTable of forbidden lines
+    """
+    forb_fil = lt_path + '/data/lines/galaxy_forbidden.ascii'
+    print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(forb_fil))
+    data = Table.read(forb_fil, format='ascii')
+
+    # Rename columns
+    data.rename_column('wave', 'wrest')
+    data['wrest'].unit = u.AA
+    for row in data:
+        row['name'] = row['name'].replace('_', ' ')
+    data['Ref'] = 'DESI_NIST_JM'
+    # Return
+    return data
+
+
+def read_recomb():
+    """ read galaxy emission lines (recombination)
+
+    Returns
+    -------
+    QTable of recombination lines
+    """
+    recomb_fil = lt_path + '/data/lines/galaxy_recomb.ascii'
+    print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(recomb_fil))
+    data = Table.read(recomb_fil, format='ascii')
+
+    # Rename columns
+    data.rename_column('wave', 'wrest')
+    data['wrest'].unit = u.AA
+    for row in data:
+        row['name'] = row['name'].replace('_', ' ')
+    data['Ref'] = 'DESI_NIST_JM'
+
+    # Return
+    return data
+
+def read_galabs():
+    """ read galaxy absorption lines
+
+    Returns
+    -------
+    QTable of recombination lines
+    """
+    recomb_fil = lt_path + '/data/lines/galaxy_abs.ascii'
+    print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(recomb_fil))
+    data = Table.read(recomb_fil, format='ascii')
+
+    # Rename columns
+    data.rename_column('wave', 'wrest')
+    data['wrest'].unit = u.AA
+    for row in data:
+        row['name'] = row['name'].replace('_', ' ')
+    data['Ref'] = 'JXP_DK_Unknown'
+
+    # Return
+    return data
+
+def parse_verner96(orig=False, write=False):
+    """Parse tables from Verner, Verner, & Ferland (1996, Atomic Data and Nuclear Data Tables, Vol. 64, p.1)
+
+    Parameters
+    ----------
+    orig : bool, optional
+      Use original code to parse the ASCII file
+      Else, read from a FITS file
+
+    Returns
+    -------
+    data : Table
+      Atomic data
+    """
+    # Look for FITS
+    fitsf = lt_path + '/data/lines/verner96_tab1.fits.gz'
+    verner96_tab1 = glob.glob(fitsf)
+
+    if (len(verner96_tab1) > 0) & (not orig):
+        print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
+            verner96_tab1[0]))
+        data = Table.read(verner96_tab1[0])
+    else:
+        # File
+        verner96_tab1 = lt_path + '/data/lines/verner96_tab1.txt'
+        # Read
+        with open(verner96_tab1) as f:
+            lines = f.readlines()
+        # Grab the 'good' ones
+        gdlines = [iline.strip() for iline in lines if len(iline.strip()) > 113]
+        ldict, data = line_data(nrows=len(gdlines))
+        # Loop
+        for kk, line in enumerate(gdlines):
+            # Z, ion
+            data[kk]['Z'] = ELEMENTS[line[0:2].strip()].number
+            data[kk]['ion'] = int(line[2:4].strip())
+            # wrest
+            data[kk]['wrest'] = float(line[47:56].strip())
+            # Ej, Ek
+            data[kk]['Ej'] = float(line[59:73].strip())
+            data[kk]['Ek'] = float(line[73:89].strip())
+            # gj, gk
+            data[kk]['gj'] = int(line[89:92].strip())
+            data[kk]['gk'] = int(line[92:95].strip())
+            # Ak
+            data[kk]['A'] = float(line[95:103].strip())
+            # f
+            data[kk]['f'] = float(line[104:112].strip())
+        # Update
+        data['Ref'] = 'Verner1996'
+
+        # Write
+        if write:
+            outfil = lt_path + '/data/lines/verner96_tab1.fits'
+            data.write(outfil,overwrite=True)
+            print('parse_verner96: Wrote {:s}'.format(outfil))
+            # Compress and delete
+            print('Now compressing...')
+            with open(outfil) as src:
+                with gzip.open(outfil+'.gz', 'wb') as dst:
+                    dst.writelines(src)
+            os.unlink(outfil)
+
+    # Return
+    return data
+
 
 def parse_morton00(orig=False):
     """Parse tables from Morton 2000, ApJS, 130, 403
@@ -498,7 +628,7 @@ def mktab_morton03(do_this=False, outfil=None, fits=True):
         with gzip.open(outfil+'.gz', 'wb') as dst:
             dst.writelines(src)
     os.unlink(outfil)
-    #subprocess.call(['gzip', '-f', outfil])
+
 
 def mktab_morton00(do_this=False, outfil=None):
     """Used to generate a FITS Table for the Morton2000 paper
@@ -531,6 +661,49 @@ def mktab_morton00(do_this=False, outfil=None):
         with gzip.open(outfil+'.gz', 'wb') as dst:
             dst.writelines(src)
     os.unlink(outfil)
+
+
+def grab_galaxy_linelists(do_this=False):
+    """ Pulls galaxy emission line lists from DESI project
+
+    Specifically, desisim
+    Writes to hard-drive
+    Only run if you are building
+
+    Parameters
+    ----------
+    do_this : bool, optional
+      Set to True to actually do this. Default=False
+
+    """
+    if not do_this:
+        print('mktab_morton00: It is very unlikely you want to do this')
+        print('mktab_morton00: Returning...')
+        return
+
+    try:
+        # For Python 3.0 and later
+        from urllib.request import urlopen
+    except ImportError:
+        # Fall back to Python 2's urllib2
+        from urllib2 import urlopen
+
+    # Forbidden
+    url = 'https://raw.githubusercontent.com/desihub/desisim/master/data/forbidden_lines.dat'
+    f = urlopen(url)
+    tab_fil = lt_path+'/data/lines/galaxy_forbidden.ascii'
+    print('Writing {:s}'.format(tab_fil))
+    with open(tab_fil, "wb") as code:
+        code.write(f.read())
+
+    # Recombination
+    url = 'https://raw.githubusercontent.com/desihub/desisim/master/data/recombination_lines.dat'
+    f = urlopen(url)
+    tab_fil = lt_path+'/data/lines/galaxy_recomb.ascii'
+    print('Writing {:s}'.format(tab_fil))
+    with open(tab_fil, "wb") as code:
+        code.write(f.read())
+
 
 def update_fval(table, verbose=False):
     """Update f-values from the literature

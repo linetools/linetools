@@ -16,5 +16,5 @@ from ._astropy_init import *
 if not _ASTROPY_SETUP_:
     pass
     #from example_mod import *
-    from . import spectra
-    from . import lists
+    #from . import spectra
+    #from . import lists

@@ -9,14 +9,9 @@ except NameError:
     basestring = str
 
 import numpy as np
-import os
-import pdb
-import copy
 
 from astropy import units as u
 from astropy.units.quantity import Quantity
-from astropy import constants as const
-from astropy.io import fits
 from astropy.table import QTable, Table, vstack, Column
 
 # from xastropy.xutils import xdebug as xdb
@@ -88,7 +83,6 @@ class LineList(object):
     def load_data(self, tol=1e-3 * u.AA, use_cache=True):
         """Grab the data for the lines of interest
         """
-
         global CACHE
         key = tuple(self.lists + [tol])
         if use_cache and key in CACHE['full_table']:
@@ -97,13 +91,13 @@ class LineList(object):
 
         # Define datasets: In order of Priority
         dataset = {
-            'ism': [lilp.parse_morton03, lilp.parse_morton00,
-                    lilp.read_verner94, lilp.read_euv],  # Morton 2003, Morton 00, Verner 94, Verner 96 [soon]
+            'ism': [lilp.parse_morton03, lilp.parse_morton00, lilp.parse_verner96,
+                    lilp.read_verner94, lilp.read_euv],  # Morton 2003, Morton 00, Verner 96, Verner 94
             'hi': [lilp.parse_morton03],
             # H2 (Abrigail), CO (JXP)
             'molecules': [lilp.read_H2, lilp.read_CO],
-            # EUV lines (by hand for now; soon to be Verner96)
-            'euv': [lilp.read_euv]
+            'euv': [lilp.read_euv],  # EUV lines (by hand for now; soon to be Verner96)
+            'galaxy': [lilp.read_forbidden, lilp.read_recomb, lilp.read_galabs],
         }
 
         # Loop on lists
@@ -131,6 +125,8 @@ class LineList(object):
                 sets.append('euv')
                 flag_fval = True
                 flag_wrest = True
+            elif str(llist) == 'Galaxy':
+                sets.append('galaxy')
             else:
                 import pdb
                 pdb.set_trace()
@@ -154,7 +150,11 @@ class LineList(object):
                         wrest = full_table['wrest']
                         newi = []
                         for jj, row in enumerate(QTable(table)):  # QTable for units
-                            mt = np.abs(row['wrest'] - wrest) < tol
+                            try:
+                                mt = np.abs(row['wrest'] - wrest) < tol
+                            except:
+                                import pdb
+                                pdb.set_trace()
                             if mt.sum() == 0:
                                 newi.append(jj)
                         # Append new ones (can't stack QTables yet)
@@ -182,6 +182,12 @@ class LineList(object):
     #####
     def set_lines(self, verbose=True, use_cache=True):  # , gd_lines=None):
         """ Parse the lines of interest
+
+        Parameters
+        ----------
+        verbose : bool, optional
+        use_cache : bool, optional
+          cache the linelist for faster repeat performance
         """
         import warnings
 
@@ -211,6 +217,9 @@ class LineList(object):
                 set_flags.append('fHI')
             elif llist == 'EUV':
                 set_flags.append('fEUV')
+            elif llist == 'Galaxy':
+                set_flags.append('fgE')
+                set_flags.append('fgA')
             else:
                 raise ValueError(
                     'set_lines: Not ready for this: {:s}'.format(llist))
