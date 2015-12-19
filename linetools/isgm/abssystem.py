@@ -113,7 +113,10 @@ class AbsSystem(object):
             if ':' in radec:
                 self.coord = SkyCoord(radec, frame='fk5', unit=(u.hourangle, u.deg))
             else:  # Add in :
-                sign = max(radec.find('+'), radec.find('-'))
+                if ('+' in radec) or ('-' in radec):
+                    sign = max(radec.find('+'), radec.find('-'))
+                else:
+                    raise ValueError("radec must include + or - for DEC")
                 newradec = (radec[0:2]+':'+radec[2:4]+':'+radec[4:sign+3] +':'+radec[sign+3:sign+5]+':'+radec[sign+5:])
                 self.coord = SkyCoord(newradec, frame='fk5', unit=(u.hourangle, u.deg))
         self.name = name
