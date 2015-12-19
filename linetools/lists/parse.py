@@ -256,6 +256,7 @@ def read_forbidden():
     data['wrest'].unit = u.AA
     for row in data:
         row['name'] = row['name'].replace('_', ' ')
+    data['Ref'] = 'DESI_NIST_JM'
     # Return
     return data
 
@@ -276,6 +277,7 @@ def read_recomb():
     data['wrest'].unit = u.AA
     for row in data:
         row['name'] = row['name'].replace('_', ' ')
+    data['Ref'] = 'DESI_NIST_JM'
 
     # Return
     return data
@@ -296,6 +298,7 @@ def read_galabs():
     data['wrest'].unit = u.AA
     for row in data:
         row['name'] = row['name'].replace('_', ' ')
+    data['Ref'] = 'JXP_DK_Unknown'
 
     # Return
     return data
