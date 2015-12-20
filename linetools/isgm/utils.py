@@ -11,15 +11,11 @@ except NameError:
 
 import pdb
 import numpy as np
-from collections import OrderedDict
 
 from astropy import constants as const
 from astropy import units as u
-from astropy.coordinates import SkyCoord
 from astropy.table import QTable
-from astropy.io import ascii
 
-from linetools.spectralline import AbsLine
 from linetools.analysis import absline as ltaa
 from linetools.isgm.abscomponent import AbsComponent
 
