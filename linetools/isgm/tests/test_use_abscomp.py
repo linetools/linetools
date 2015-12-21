@@ -26,7 +26,7 @@ lt_path = imp.find_module('linetools')[1]
 #pdb.set_trace()
 # Set of Input lines
 
-def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False):
+def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True):
     # Read a spectrum Spec
     if add_spec:
         xspec = lsio.readspec(lt_path+'/spectra/tests/files/UM184_nF.fits')
@@ -41,7 +41,11 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False):
     for trans in all_trans:
         iline = AbsLine(trans)
         iline.attrib['z'] = 2.92939
-        iline.attrib['logN'] = 13.3 + np.random.rand()
+        if use_rand:
+            rnd = np.random.rand()
+        else:
+            rnd = 0.
+        iline.attrib['logN'] = 13.3 + rnd
         iline.attrib['sig_logN'] = 0.15
         iline.attrib['flag_N'] = 1
         iline.analy['spec'] = xspec
@@ -65,6 +69,30 @@ def test_synthesize_colm():
     abscomp.synthesize_colm(redo_aodm=True)
     # Test
     np.testing.assert_allclose(abscomp.logN,13.594447075294818)
+    # Reset flags (for testing)
+    abscomp2,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True, use_rand=False)
+    for iline in abscomp2._abslines:
+        if iline.data['name'] == 'SiII 1260':
+            iline.attrib['flag_N'] = 2
+        elif iline.data['name'] == 'SiII 1808':
+            iline.attrib['flag_N'] = 3
+        else:
+            iline.attrib['flag_N'] = 1
+    abscomp2.synthesize_colm()
+    # Test
+    np.testing.assert_allclose(abscomp2.logN, 13.3)
+    # Another
+    abscomp3,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True, use_rand=False)
+    for iline in abscomp3._abslines:
+        if iline.data['name'] == 'SiII 1260':
+            iline.attrib['flag_N'] = 3
+        elif iline.data['name'] == 'SiII 1808':
+            iline.attrib['flag_N'] = 2
+        else:
+            iline.attrib['flag_N'] = 1
+    abscomp3.synthesize_colm()
+    # Test
+    np.testing.assert_allclose(abscomp3.logN, 13.3)
 
 def test_build_components_from_lines():
     # Lines
@@ -94,7 +122,7 @@ def test_synthesize_components():
     synth_SiII = ltiu.synthesize_components([SiIIcomp1,SiIIcomp2])
     np.testing.assert_allclose(synth_SiII.logN,13.862456155250918)
     np.testing.assert_allclose(synth_SiII.sig_logN,0.010146948602759272)
-"""
+
 def test_stack_plot():
     # AbsLine(s)
     lya = AbsLine(1215.670*u.AA)
@@ -111,7 +139,6 @@ def test_stack_plot():
     abscomp = AbsComponent.from_abslines([lya,lyb])
     # Plot
     abscomp.stack_plot(show=False)
-"""
 
 
 def test_repr_vpfit():
