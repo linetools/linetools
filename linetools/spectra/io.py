@@ -15,7 +15,6 @@ import numpy as np
 import warnings
 import os, pdb
 import json
-from PyQt4 import QtCore
 
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
