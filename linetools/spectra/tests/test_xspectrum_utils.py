@@ -121,7 +121,6 @@ def test_copy(spec):
 
 
 def test_continuum_utils(spec):
-    spec = spec()
     # define continuum in a non-interactive way...
     n = len(spec.wavelength.value)
     contpoints = [(spec.wavelength.value[i], 1.) for i in range(n)[::int(n/100)]]
