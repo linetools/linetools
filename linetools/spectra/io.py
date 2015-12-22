@@ -198,6 +198,10 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             else:
                 wave = hdulist['WAVELENGTH'].data * u.AA
                 fx = hdulist['FLUX'].data
+                # Sort
+                srt = np.argsort(wave)
+                wave = wave[srt]
+                fx = fx[srt]
                 xspec1d = XSpectrum1D.from_array(wave, u.Quantity(fx))
 
             # Error array
@@ -252,7 +256,12 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             uwave = u.Quantity(wave, unit=u.AA)
         else:
             uwave = u.Quantity(wave)
+        # Sort
+        srt = np.argsort(uwave)
+        uwave = uwave[srt]
+        fx = fx[srt]
         if sig is not None:
+            sig = sig[srt]
             xspec1d = XSpectrum1D.from_array(uwave, u.Quantity(fx),
                                              uncertainty=StdDevUncertainty(sig))
         else:
