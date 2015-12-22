@@ -4,7 +4,7 @@ Module for dealing with LSFs of various astronomical instruments.
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-from scipy.interpolate import interp1d, Akima1DInterpolator
+from scipy.interpolate import interp1d
 from astropy.io import fits, ascii
 from astropy.units import Quantity
 import astropy.units as u
@@ -310,8 +310,9 @@ class LSF(object):
             lsf_vals =  f(wv_array_AA)
         elif kind in ('Akima','akima'):
             # f = Akima1DInterpolator(lsf_tab['wv'],lsf_tab['kernel']) 
-            # NT: I tried Akima interpolator from scipy.inter and is not robust in extreme situations
-            # where the wv_array is large compared to the kernel FWHM.
+            # NT: I tried Akima interpolator from scipy.interpolate
+            # and is not robust in extreme situations where the
+            # wv_array is large compared to the kernel FWHM.
             #Let's try linetools.analysis.interp Akima version 
             lsf_vals = interp_Akima(wv_array_AA,lsf_tab['wv'],lsf_tab['kernel'])
 
