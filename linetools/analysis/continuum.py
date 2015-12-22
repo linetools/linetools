@@ -95,6 +95,27 @@ def update_knots(knots, indices, fl, masked):
         knots[iknot][iy] = np.median(f1)
 
 
+def perturb_knots(knots, indices, sig_fl, masked):
+    """ Adds a perturbation noise in the y
+    values of the `knots`.
+
+    Updates `knots` inplace.
+
+    Parameters
+    ----------
+    knots : list of [xpos, ypos, bool] with length N
+      bool says whether the knot should kept unchanged.
+    indices : list of (i0,i1) index pairs
+       The start and end indices into fl and masked of each
+       spectrum chunk (xpos of each knot are the chunk centres).
+    sig_fl, masked : arrays shape (M,)
+       The error in the flux, and boolean arrays showing which
+       pixels are masked.
+    """
+    sig_y = []
+    pass
+
+
 def linear_co(wa, knots):
     """linear interpolation through the spline knots.
 
