@@ -1,6 +1,7 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
+import pytest
 import pdb
 from astropy import units as u
 
@@ -45,10 +46,10 @@ def test_photocross():
 def test_sumlogn_fail():
     obj1 = dict(flag_N=4)
     obj2 = dict(flag_N=4)
-    np.testing.assert_raises(ValueError, sum_logN, obj1, obj2)
+    pytest.raises(ValueError, sum_logN, obj1, obj2)
     #
     obj1 = dict(flag_N=1)
-    np.testing.assert_raises(ValueError, sum_logN, obj1, obj2)
+    pytest.raises(ValueError, sum_logN, obj1, obj2)
 
 def test_sumlogn_limit():
     obj1 = dict(flag_N=3, logN=15., sig_logN=99.)
