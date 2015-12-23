@@ -834,7 +834,7 @@ or QtAgg backends to enable all interactive plotting commands.
         try:
             contpoints = self.meta['contpoints']
         except:
-            raise RuntimeError('Meta data does not exist; cannot perturb the continuum.')
+            raise RuntimeError('Meta data `contpoints` does not exist; cannot perturb the continuum.')
         xy = np.array(contpoints)
         xy = xy.transpose()
         x, y = xy[0], xy[1]
@@ -844,7 +844,8 @@ or QtAgg backends to enable all interactive plotting commands.
         # y_err = y_err = self.uncertainty.array[inds]
 
         # Seed
-        np.random.seed(seed=seed)
+        if seed is not None:
+            np.random.seed(seed=seed)
         #add Normal noise to y points
         y += np.random.normal(0, y * rel_var, len(y))
 
@@ -864,7 +865,7 @@ or QtAgg backends to enable all interactive plotting commands.
         try:
             contpoints = self.meta['contpoints']
         except:
-            raise RuntimeError('Meta data does not exist; cannot reset the continuum.')
+            raise RuntimeError('Meta data `contpoints` does not exist; cannot reset the continuum.')
 
         xy = np.array(contpoints)
         xy = xy.transpose()
