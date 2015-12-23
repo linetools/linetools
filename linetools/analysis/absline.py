@@ -15,7 +15,7 @@ atom_cst = (const.m_e.cgs*const.c.cgs / (np.pi *
     (const.e.esu**2).cgs)).to(u.AA*u.s/(u.km*u.cm**2))
 
 # Perform AODM on the line
-def aodm(spec,idata):
+def aodm(spec, idata):
     """ AODM calculation on an absorption line
 
     See Savage & Sembach 1991, ApJ, 379, 245
@@ -280,6 +280,7 @@ def sum_logN(obj1, obj2):
         if obj2['flag_N'] in [1,2]:
             logN = obj2['logN']
             flag_N = obj2['flag_N']
+            sig_logN = obj2['sig_logN']
         else:
             pass # Take sums
     # Return
