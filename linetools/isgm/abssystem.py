@@ -16,10 +16,10 @@ from abc import ABCMeta
 from astropy import units as u
 from astropy.table import QTable
 from astropy import constants as const
-from astropy.coordinates import SkyCoord
 
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.isgm import utils as ltiu
+from linetools import utils as ltu
 
 
 class AbsSystem(object):
@@ -100,25 +100,7 @@ class AbsSystem(object):
         self.vlim = vlim
         self.NHI = NHI
         self.sig_NHI = sig_NHI
-        # RA/DEC
-        if isinstance(radec,(tuple)):
-            if isinstance(radec[0], basestring):
-                self.coord = SkyCoord(radec[0]+radec[1], frame='fk5',
-                                      unit=(u.hourangle, u.deg))
-            else:
-                self.coord = SkyCoord(ra=radec[0], dec=radec[1])
-        elif isinstance(radec,SkyCoord):
-            self.coord = radec
-        elif isinstance(radec,basestring):
-            if ':' in radec:
-                self.coord = SkyCoord(radec, frame='fk5', unit=(u.hourangle, u.deg))
-            else:  # Add in :
-                if ('+' in radec) or ('-' in radec):
-                    sign = max(radec.find('+'), radec.find('-'))
-                else:
-                    raise ValueError("radec must include + or - for DEC")
-                newradec = (radec[0:2]+':'+radec[2:4]+':'+radec[4:sign+3] +':'+radec[sign+3:sign+5]+':'+radec[sign+5:])
-                self.coord = SkyCoord(newradec, frame='fk5', unit=(u.hourangle, u.deg))
+        self.coord = ltu.radec_to_coord(radec)
         self.name = name
 
         # Abs type
