@@ -755,6 +755,9 @@ or QtAgg backends to enable all interactive plotting commands.
         else:
             knots = [list(k) for k in knots]
 
+        if not len(knots) > 0:
+            raise RuntimeError('Problem generating continuum spline knots')
+
         co = (self.co if hasattr(self, 'co') else None)
         if co is not None:
             x = [k[0] for k in knots]
