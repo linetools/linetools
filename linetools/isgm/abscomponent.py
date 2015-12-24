@@ -54,7 +54,7 @@ class AbsComponent(object):
         A comment, default is ``
     """
     @classmethod
-    def from_abslines(cls, abslines):
+    def from_abslines(cls, abslines, **kwargs):
         """Instantiate from a list of AbsLine objects
 
         Parameters
@@ -75,7 +75,7 @@ class AbsComponent(object):
         # Append with component checking
         if len(abslines) > 1:
             for absline in abslines[1:]:
-                slf.add_absline(absline)
+                slf.add_absline(absline, **kwargs)
         # Return
         return slf
 
@@ -157,7 +157,7 @@ class AbsComponent(object):
         self.name = ions.ion_name(self.Zion, nspace=1)
         self._abslines = []
 
-    def add_absline(self, absline, tol=0.1*u.arcsec):
+    def add_absline(self, absline, tol=0.1*u.arcsec, skip_vel=False):
         """Add an AbsLine object to the component if it satisfies
         all of the rules.
 
@@ -169,6 +169,8 @@ class AbsComponent(object):
         absline : AbsLine
         tol : Angle, optional
           Tolerance on matching coordinates
+        skip_vel : bool, optional
+          Skip velocity test?  Not recommended
         """
         # Perform easy checks
         test = bool(self.coord.separation(absline.attrib['coord']) < tol)
@@ -176,9 +178,11 @@ class AbsComponent(object):
         test = test & (self.Zion[1] == absline.data['ion'])
         test = test & bool(self.Ej == absline.data['Ej'])
         # Now redshift/velocity
-        zlim_line = (1+absline.attrib['z'])*absline.analy['vlim']/const.c.to('km/s')
-        zlim_comp = (1+self.zcomp)*self.vlim/const.c.to('km/s')
-        test = test & (zlim_line[0] >= zlim_comp[0]) & (zlim_line[1] <= zlim_comp[1])
+        if not skip_vel:
+            zlim_line = (1+absline.attrib['z'])*absline.analy['vlim']/const.c.to('km/s')
+            zlim_comp = (1+self.zcomp)*self.vlim/const.c.to('km/s')
+            test = test & (zlim_line[0] >= zlim_comp[0]) & (
+                zlim_line[1] <= zlim_comp[1])
         # Isotope
         if self.A is not None:
             raise ValueError('Not ready for this yet')
