@@ -262,8 +262,12 @@ q        : quit
             c = raw_input('knots file exists, use this? (y) ')
             if c.lower() != 'n':
                 contpoints = loadjson('./_knots.jsn')
-        contpoints = sorted(tuple(cp) for cp in contpoints)
+        # need the float call here to make sure values are all float64
+        # and thus json serializable.
+        contpoints = sorted(tuple(float(val) for val in cp) for
+                            cp in contpoints)
 
+        #import pdb; pdb.set_trace()
         if co is not None:
             self.continuum = np.array(co, copy=True)
             if self.anchor is None:
@@ -301,8 +305,8 @@ q        : quit
         contpoints[-1] = wa[i2], y
         self.indices = i1, i2
         if self.anchor:
-            self.anchor_start = wa[i1 - 1], co[i1 - 1]
-            self.anchor_end = wa[i2 + 1], co[i2 + 1]
+            self.anchor_start = wa[i1 - 1], float(co[i1 - 1])
+            self.anchor_end = wa[i2 + 1], float(co[i2 + 1])
         self.contpoints = contpoints
         self.wmin = wmin
         self.wmax = wmax
@@ -445,8 +449,8 @@ q        : quit
             xnew = []
             xnew.extend(np.array(xc[:-1]) + 0.5*np.diff(xc))
             ynew = np.interp(xnew, xc, yc)
-            ynew = [local_median(self.wa, self.fl, self.er, xnew[i],
-                                 default=ynew[i])
+            ynew = [float(local_median(self.wa, self.fl, self.er, xnew[i],
+                                       default=ynew[i]))
                     for i in range(len(xnew))]
             # add to contpoints
             self.contpoints.extend(zip(xnew, ynew))
@@ -470,7 +474,7 @@ q        : quit
             # add a point to contpoints
             x, y = event.xdata, event.ydata
             if not self.contpoints or x not in list(zip(*self.contpoints))[0]:
-                self.contpoints.append((x, y))
+                self.contpoints.append((x, float(y)))
                 self.contpoints.sort()
                 self.update()
         if event.key == 'A':
@@ -482,7 +486,7 @@ q        : quit
             if not self.contpoints or x not in list(zip(*self.contpoints))[0]:
                 y = local_median(self.wa, self.fl, self.er, x,
                                  default=event.ydata)
-                self.contpoints.append((x, y))
+                self.contpoints.append((x, float(y)))
                 self.contpoints.sort()
                 self.update()
         elif event.key in ('d', '4'):
@@ -530,7 +534,7 @@ q        : quit
                     x not in list(zip(*self.contpoints))[0]):
                 y = local_median(self.wa, self.fl, self.er, x,
                                  default=event.ydata)
-            self.contpoints[ind] = x, y
+            self.contpoints[ind] = x, float(y)
             self.contpoints.sort()
             self.update()
 
