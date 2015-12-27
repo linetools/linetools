@@ -64,7 +64,8 @@ def chk_components(components, chk_match=False, chk_A_none=False, toler=0.2*u.ar
     # Return
     return tests
 
-def build_components_from_abslines(iabslines, clmdict=None, coord=None):
+def build_components_from_abslines(iabslines, clmdict=None, coord=None,
+                                   **kwargs):
     """ Generate a list of AbsComponent from a list of abslines
 
     Groups lines with like Zion, Ej, (and A; future)
@@ -108,7 +109,7 @@ def build_components_from_abslines(iabslines, clmdict=None, coord=None):
         mtZiE = np.where(uZiE == uZiE[uidx])[0]
         lines = [abslines[ii] for ii in mtZiE] # Need a list
         # Generate component
-        component = AbsComponent.from_abslines(lines)
+        component = AbsComponent.from_abslines(lines, **kwargs)
         # Reset vmin, vmax
         vmin,vmax = 9999., -9999.
         for iline in lines:
