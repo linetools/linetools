@@ -95,13 +95,15 @@ class XSpectrum1D(Spectrum1D):
         return slf
 
     @classmethod
-    def from_tuple(cls, ituple):
+    def from_tuple(cls, ituple, sort=True):
         """Make an XSpectrum1D from a tuple of arrays.
 
         Parameters
         ----------
         ituple : (wave,flux), (wave,flux,sig) or (wave,flux,sig,cont)
           If wave is unitless, Angstroms are assumed
+        sort : bool, optional
+          Sort by wavelength?
         """
         # Units
         try:
@@ -112,16 +114,23 @@ class XSpectrum1D(Spectrum1D):
             if wv_unit is None:
                 wv_unit = u.AA
         uwave = u.Quantity(ituple[0], unit=wv_unit)
+        # Sort
+        ltuple = list(ituple)
+        if sort:
+            srt = np.argsort(uwave)
+            uwave = uwave[srt]
+            for ii in range(1, len(ituple)):
+                ltuple[ii] = ituple[ii][srt]
         # Generate
-        if len(ituple) == 2:  # wave, flux
-            spec = cls.from_array(uwave, u.Quantity(ituple[1]))
-        elif len(ituple) == 3:
-            spec = cls.from_array(uwave, u.Quantity(ituple[1]),
-                                  uncertainty=StdDevUncertainty(ituple[2]))
+        if len(ltuple) == 2:  # wave, flux
+            spec = cls.from_array(uwave, u.Quantity(ltuple[1]))
+        elif len(ltuple) == 3:
+            spec = cls.from_array(uwave, u.Quantity(ltuple[1]),
+                uncertainty=StdDevUncertainty(ltuple[2]))
         else:
-            spec = cls.from_array(uwave, u.Quantity(ituple[1]),
-                                  uncertainty=StdDevUncertainty(ituple[2]))
-            spec.co = ituple[3]
+            spec = cls.from_array(uwave, u.Quantity(ltuple[1]),
+                uncertainty=StdDevUncertainty(ltuple[2]))
+            spec.co = ltuple[3]
 
         spec.filename = 'none'
         # Return

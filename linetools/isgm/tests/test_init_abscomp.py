@@ -7,11 +7,12 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import pytest
 from astropy import units as u
 import numpy as np
+import pytest
 
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.spectralline import AbsLine
 
-#import pdb
+import pdb
 #pdb.set_trace()
 # Set of Input lines
 
@@ -21,6 +22,15 @@ def test_init():
     # Test
     assert abscomp.Zion[0] == 14
     np.testing.assert_allclose(abscomp.zcomp,1.0)
+    print(abscomp)
+
+def test_init_failures():
+    with pytest.raises(IOError):
+        AbsComponent.from_abslines('blah')
+    with pytest.raises(IOError):
+        AbsComponent.from_abslines(['blah'])
+    with pytest.raises(IOError):
+        AbsComponent.from_component('blah')
 
 def test_init_single_absline():
     # Single AbsLine
@@ -31,6 +41,7 @@ def test_init_single_absline():
     # Test
     assert abscomp.Zion[0] == 1
     np.testing.assert_allclose(abscomp.zcomp,2.92939)
+    print(abscomp)
 
 def test_init_multi_absline():
     # AbsLine(s)

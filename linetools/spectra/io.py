@@ -198,7 +198,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             else:
                 wave = hdulist['WAVELENGTH'].data * u.AA
                 fx = hdulist['FLUX'].data
-                xspec1d = XSpectrum1D.from_array(wave, u.Quantity(fx))
+                xspec1d = XSpectrum1D.from_tuple((wave, fx))
 
             # Error array
             if 'ERROR' in hdulist:
@@ -253,10 +253,9 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         else:
             uwave = u.Quantity(wave)
         if sig is not None:
-            xspec1d = XSpectrum1D.from_array(uwave, u.Quantity(fx),
-                                             uncertainty=StdDevUncertainty(sig))
+            xspec1d = XSpectrum1D.from_tuple((uwave, fx, sig))
         else:
-            xspec1d = XSpectrum1D.from_array(uwave, u.Quantity(fx))
+            xspec1d = XSpectrum1D.from_tuple((uwave, fx))
 
     if np.any(np.isnan(xspec1d.dispersion)):
         warnings.warn('WARNING: Some wavelengths are NaN')
@@ -452,7 +451,6 @@ def parse_UVES_popler(hdulist):
     co = hdulist[0].data[3]
     fx = hdulist[0].data[0] * co  #  Flux
     sig = hdulist[0].data[1] * co
-    xspec1d = XSpectrum1D.from_array(uwave, u.Quantity(fx),
-                                     uncertainty=StdDevUncertainty(sig))
+    xspec1d = XSpectrum1D.from_tuple((uwave, fx, sig))
     xspec1d.co = co
     return xspec1d
