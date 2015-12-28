@@ -169,8 +169,39 @@ This method provides a way to define a subset of lines drawn from the
 original LineList object. Consider that for some reason you may want
 only HI Lya and Lyb in your LineList, then you can achieve this by::
 
-  hi = LineList('HI')
-  hi.subset_lines()
+    hi = LineList('HI')
+    hi.subset_lines(['HI 1215', 'HI 1025'])
+
+Which has only those two transitions loaded.
+
+You may also want to use rest-frame wavelength to define a subset, for
+instance::
+    ism = LineList('ISM')
+    lines = [2796.3543, 2803.5315, 1548.195, 1550.77] * u.AA
+    ism.subset_lines(lines)
+    print(ism)
+    <LineList: ISM; 4 transitions>
+
+Which has only those four transitions of MgII and CIV. In order to
+avoid loading the `LineList('ISM')` again, you can use the keyword
+`reset_data` in `subset_lines()` to make another arbitrarily different
+subset of lines from the original `LineList`::
+
+    lines = ['HI 1215', 'HI 1025']
+    ism.subset_lines(lines, reset_data=True)
+    print(ism)
+    <LineList: ISM; 2 transitions>
+
+Which only has those HI Lya and Lyb.
+
+Finally, if you want the transitions to be sorted by rest-frame
+wavelength you can use the optional keyword `sort`::
+
+
+
+
+set_lines()
++++++++++++
 
 
 all_transitions()
