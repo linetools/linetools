@@ -273,6 +273,9 @@ def read_forbidden():
         row['name'] = aux['name'][ii].replace('_', ' ')
     data['Ref'] = 'DESI_NIST_JM'
 
+    # mask the galaxy data using default mask_keys
+    data = mask_gal(data)
+
     # Return
     return data
 
@@ -299,6 +302,9 @@ def read_recomb():
         row['name'] = aux[ii]['name'].replace('_', ' ')
     data['Ref'] = 'DESI_NIST_JM'
 
+    # mask the galaxy data using default mask_keys
+    data = mask_gal(data)
+
     # Return
     return data
 
@@ -324,6 +330,9 @@ def read_galabs():
         row['name'] = aux[ii]['name'].replace('_', ' ')
     data['Ref'] = 'JXP_DK_Unknown'
 
+    # mask the galaxy data using default mask_keys
+    data = mask_gal(data)
+
     # Return
     return data
 
@@ -333,21 +342,40 @@ def mask_gal(data, mask_keys=None):
 
     Parameters
     ----------
-    data : Table (masked)
+    data : Table or QTable (masked)
         The original table to mask columns for
     mask_keys : list of strings, optional
         List of column names to be masked if given
         Otherwise it uses the default:
 
-
     Returns
     -------
-    data_masked : Table (masked)
+    data_masked : QTable (masked)
         The masked version of `data`
 
+        [Known issue: QTable is not masking columns with units]
+
     """
+    # check input
+    if not isinstance(data, (Table, QTable)):
+        raise RuntimeError('The input table has to be astropy Table or QTable')
+
+    if data.masked is not True:
+        raise RuntimeError('The input Table/QTable has to be masked.')
+
+    #convert to QTable
+    if isinstance(data, Table):
+        data = QTable(data)
+
+    # set default keys to mask
     if mask_keys is None:
-        mask_keys = ['A', 'el', 'nj', 'nk']
+        mask_keys = ['A', 'el', 'nj', 'nk','group','Ek','f','mol',
+                     'Ej','Am','Ex','Jj','Jk','gk','gj','gamma']
+
+    for key in mask_keys:
+        data[key].mask= True
+
+    return data
 
 
 def parse_verner96(orig=False, write=False):
