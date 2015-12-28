@@ -4,6 +4,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import json
 import gzip, os
+import warnings
 
 import numpy as np
 from astropy import constants as const
@@ -37,6 +38,12 @@ def between(a, vmin, vmax):
 def radec_to_coord(radec):
     """ Convert one of many radec formats to SkyCoord
 
+    Examples: 'J124511+144523',
+              '124511+144523',
+              'J12:45:11+14:45:23',
+              ('12:45:11','+14:45:23')
+              ('12:45:11','14:45:23')  -- Assumes positive DEC
+
     Parameters
     ----------
     radec : str or tuple
@@ -49,9 +56,15 @@ def radec_to_coord(radec):
     from astropy.coordinates import SkyCoord
 
     # RA/DEC
-    if isinstance(radec,(tuple)):
+    if isinstance(radec, (tuple)):
         if isinstance(radec[0], basestring):
-            coord = SkyCoord(radec[0]+radec[1], frame='fk5',
+            if radec[1][0] not in ['+', '-']:  #
+                DEC = '+'+radec[1]
+                warnings.warn("Assuming your DEC is +")
+            else:
+                DEC = radec[1]
+            #
+            coord = SkyCoord(radec[0]+DEC, frame='fk5',
                                   unit=(u.hourangle, u.deg))
         else:
             coord = SkyCoord(ra=radec[0], dec=radec[1])

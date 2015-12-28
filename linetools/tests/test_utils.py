@@ -33,7 +33,8 @@ def test_save_load_json():
 
 def test_radeccoord():
     for radec in ['J124511+144523', '124511+144523',
-                  'J12:45:11+14:45:23', ('12:45:11','+14:45:23')]:
+                  'J12:45:11+14:45:23', ('12:45:11','+14:45:23'),
+                  ('12:45:11', '14:45:23')]:
         coord = radec_to_coord(radec)
         # Test
         np.testing.assert_allclose(coord.ra.value, 191.2958333333333)
