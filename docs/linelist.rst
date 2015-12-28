@@ -170,8 +170,15 @@ original LineList object. Consider that for some reason you may want
 only HI Lya and Lyb in your LineList, then you can achieve this by::
 
   hi = LineList('HI')
-  hi.subset_lines()
+  hi.subset_lines(['HI 1215', 'HI 1025'])
 
+Which has only those two transitions loaded.
+
+You may also want to use rest-frame wavelength to define a subset, for
+instance::
+    ism = LineList('ISM')
+    sub_lines = [2796.3543, 2803.5315, 1548.195, 1550.77] * u.AA
+    civ_mgii = ism.subset(sub_lines)
 
 all_transitions()
 +++++++++++++++++

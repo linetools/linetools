@@ -20,6 +20,10 @@ CACHE = {'full_table': {}, 'data': {}}
 
 from linetools.lists import parse as lilp
 
+# TODO
+# Do something about transitions that are both in Galaxy and ISM
+# (e.g. MgII). Currently, priority is given to the first one loaded
+# but that may not be the best approach...
 
 class LineList(object):
     """ 
@@ -40,6 +44,7 @@ class LineList(object):
        * 'H2'      :: H2 (Lyman-Werner)
        * 'CO'      :: CO UV band-heads
        * 'EUV'     :: EUV lines (for CASBAH project)
+       * 'Galaxy'  :: Lines typically identified in galaxy spectra
        * 'Gal_E'   :: Galaxy emission lines (HII, to be implemented)
        * 'Gal_A'   :: Galaxy absorption lines (stellar, to be implemented)
        * 'AGN'     :: Key AGN lines (to be implemented)
@@ -128,8 +133,8 @@ class LineList(object):
             elif str(llist) == 'Galaxy':
                 sets.append('galaxy')
             else:
-                import pdb
-                pdb.set_trace()
+                # import pdb
+                # pdb.set_trace()
                 raise ValueError(
                     'load_data: Not ready for this: {:s}'.format(llist))
 
@@ -143,13 +148,16 @@ class LineList(object):
                 if func not in all_func:
                     # Read
                     table = func()
+                    # make it a QTable
+                    table = QTable(table)
+
                     if full_table is None:
                         full_table = table
                     else:
                         # Unique values
                         wrest = full_table['wrest']
                         newi = []
-                        for jj, row in enumerate(QTable(table)):  # QTable for units
+                        for jj, row in enumerate(table):
                             try:
                                 mt = np.abs(row['wrest'] - wrest) < tol
                             except:
@@ -157,8 +165,8 @@ class LineList(object):
                                 pdb.set_trace()
                             if mt.sum() == 0:
                                 newi.append(jj)
-                        # Append new ones (can't stack QTables yet)
-                        full_table = vstack([full_table, table[newi]])
+                        # Append new ones as Tables (can't stack QTables yet)
+                        full_table = vstack([Table(full_table), Table(table[newi])])
                     # Save to avoid repeating
                     all_func.append(func)
 
