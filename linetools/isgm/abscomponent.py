@@ -20,6 +20,7 @@ from astropy.table import QTable, Column
 from specutils import Spectrum1D
 
 from linetools.analysis import absline as ltaa
+from linetools.analysis import plots as ltap
 from linetools.spectralline import AbsLine
 from linetools.abund import ions
 
@@ -370,61 +371,14 @@ class AbsComponent(object):
         # Log values
         self.logN, self.sig_logN = ltaa.log_clm(self)
 
-    def stack_plot(self, nrow=6, show=True):
+    def stack_plot(self, **kwargs):
         """Show a stack plot of the component, if spec are loaded
         Assumes the data are normalized.
 
         Parameters
         ----------
-        nrow : int, optional  
-          Maximum number of rows per column
-        show : bool, optional
-          Show the plot?
         """
-        import matplotlib.pyplot as plt
-        import matplotlib.gridspec as gridspec
-        import matplotlib as mpl
-        mpl.rcParams['font.family'] = 'stixgeneral'
-        mpl.rcParams['font.size'] = 15.
-        # Check for spec
-        gdiline = []
-        for iline in self._abslines:
-            if isinstance(iline.analy['spec'], Spectrum1D):
-                gdiline.append(iline)
-        nplt = len(gdiline)
-        if nplt == 0:
-            print("Load spectra into the absline.analy['spec']")
-            return
-        # Setup plot
-        nrow = min(nplt, nrow)
-        ncol = nplt // nrow + (nplt % nrow > 0)
-        plt.clf()
-        gs = gridspec.GridSpec(nrow, ncol)
-        ymnx = (-0.1, 1.1)
-
-        for qq, iline in enumerate(gdiline):
-            ax = plt.subplot(gs[qq % nrow, qq//nrow])
-            # Plot
-            velo = iline.analy['spec'].relative_vel((1+iline.attrib['z'])*iline.wrest)
-            ax.plot(velo, iline.analy['spec'].flux, 'k-', linestyle='steps-mid')
-            ax.plot(velo, iline.analy['spec'].sig, 'r:')
-            # Lines
-            ax.plot([0]*2, ymnx, 'g--')
-            # Axes
-            ax.set_xlim(self.vlim.value)
-            ax.set_ylim(ymnx)
-            ax.minorticks_on()
-            if ((qq+1) % nrow == 0) or ((qq+1) == nplt):
-                ax.set_xlabel('Relative Velocity (km/s)')
-            else:
-                ax.get_xaxis().set_ticks([])
-            # Label
-            ax.text(0.1, 0.1, iline.data['name'], transform=ax.transAxes, ha='left', va='center', fontsize='x-large')  # , bbox={'facecolor':'white'})
-
-        plt.tight_layout(pad=0.2, h_pad=0., w_pad=0.1)
-        if show:
-            plt.show()
-        plt.close()
+        ltap.stack_plot(self._abslines, vlim=self.vlim, **kwargs)
 
     def repr_vpfit(self, b=10.*u.km/u.s, tie_strs=('', '', ''), fix_strs=('', '', '')):
         """
