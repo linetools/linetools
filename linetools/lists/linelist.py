@@ -332,7 +332,10 @@ class LineList(object):
         else:
             raise ValueError('Not ready for this `subset` type yet.')
         # Sort
-        tmp = self._data[np.array(indices)]
+        # squeeze the indices into 1 axis
+        inds = np.array(indices)
+        inds = np.squeeze(inds, axis=(1,))
+        tmp = self._data[inds]
         if sort:
             tmp.sort('wrest')
         # Finish
