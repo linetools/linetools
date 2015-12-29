@@ -168,8 +168,8 @@ This method provides a way to define a subset of lines drawn from the
 original LineList object. Consider that for some reason you may want
 only HI Lya and Lyb in your LineList, then you can achieve this by::
 
-    hi = LineList('HI')
-    hi.subset_lines(['HI 1215', 'HI 1025'])
+  hi = LineList('HI')
+  hi.subset_lines(['HI 1215', 'HI 1025'])
 
 Which has only those two transitions loaded.
 
