@@ -14,8 +14,7 @@ Overview
 This Class is designed to organize and handle information about atomic
 and/or molecular transition lines (e.g. HI Lya, CIV 1548, Hydrogen
 Balmer series, etc.) observed in a variety of astrophysical
-environments. It is currently implemented for absorption lines, but we
-expect to also include common emission lines in the near future.
+environments.
 
 ..
    (:ref:`AbsLine Class`).  add this back in when written
@@ -328,19 +327,60 @@ the LineList. The relative strength of a transition of a single
 ion species is simply defined as the product of its rest-frame
 wavelength (`wrest`) and oscillator strength (`f`). With this
 in mind, `strongest_transitions()` basically gives you the strongest
-`n_max` transitions of a given ion between a wavelength range::
+`n_max` (default being `n_max=3`) transitions of a given ion between a wavelength range, sorted
+by relative strength::
 
     wvlims = [1000, 3000] * u.AA
-    si2_strong = ism.strongest_transitions('SiII', wvlims, n_max=3)
+    line = 'SiII'
+    si2_strong = ism.strongest_transitions(line, wvlims, n_max=4)
+    print(si2_strong['name'])
+       name
+    ---------
+    SiII 1260
+    SiII 1193
+    SiII 1190
+    SiII 1526
 
+The syntax is the same as for `all_transitions()` and you will the
+same result using `line in ['SiII', 'SiII 1190', 'SiII 889', 889.7228*u.AA]`.
+Depending on the wavelength range the output may vary though::
+
+    wvlims = [500, 1100] * u.AA
+    line = 'SiII 1260'
+    si2_strong = ism.strongest_transitions(line, wvlims, n_max=4)
+    print(si2_strong['name'])
+       name
+    ---------
+    SiII 989
+    SiII 889
+    SiII 1020
+
+Note that despite `n_max=4` we have only retrieved the 3 transitions
+satisfying the criteria of belonging to `wvlims = [500, 1100] * u.AA`.
+Again, note that even though `SiII 1260` is out of `wvlims` range, it
+can still be used to identify that you are interested in the `SiII` ion
+species.
+
+If you would like to retrieve all the transitions in a given `wvlims`
+regardless of its relative strength, you can set `n_max=None`.
+
+Following the convention within `LineList`, if only 1 transition is
+retrieved, the output of `strongest_transitions()` is a dictionary; if more
+than 1 transition are retrieved the output is a QTable. If no transition exist
+the output is `None`.
 
 
 available_transitions()
 +++++++++++++++++++++++
 
-Let's illustrate its use with an example. Let's imagine
-that you have an spectrum covering the following wavelength range::
+Sometimes it may be useful to know what are the available
+transition in a given wavelength range found in the LineList
+regardless of the ion species. This is particularly the case when
+someone is trying to identify unknown emission/absorption lines
+in a spectrum. Let us then illustrate the use of this method
+with an example. Imagine that you have an observed spectrum
+covering the following wavelength range::
 
     wvlims = [3500,10000] * u.AA
 
-Let's now imagine that we are interested in a
+Let us now imagine that we are interested in a particular redshift...
