@@ -304,14 +304,15 @@ class LineList(object):
 
         indices = []
         if isinstance(subset[0], (float, Quantity)):  # wrest
-            wrest = self._data['wrest'].value  # Assuming Angstroms
+            wrest = self._data['wrest'].to('AA').value  # In Angstroms
             for gdlin in subset:
                 mt = np.where(
-                    np.abs(gdlin.value - wrest) < 1e-4)[0]
+                    np.abs(gdlin.to('AA').value - wrest) < 1e-4)[0]
                 if len(mt) == 1:
-                    indices.append(mt)
+                    indices.append(mt[0])
+                    # import pdb; pdb.set_trace()
                 elif len(mt) > 1:
-                    raise ValueError('Need unique entries!')
+                    raise ValueError('There are multiple matches for line {:g} {:s}!'.format(gdlin.value, gdlin.unit))
                 else:
                     if verbose:
                         print(
@@ -322,6 +323,7 @@ class LineList(object):
                 mt = np.where(str(gdlin) == names)[0]
                 if len(mt) == 1:
                     indices.append(mt[0])
+                    # import pdb; pdb.set_trace()
                 elif len(mt) > 1:
                     raise ValueError(
                         'Should have been only one line with name {:s}!'.format(str(gdlin)))
@@ -332,7 +334,7 @@ class LineList(object):
         else:
             raise ValueError('Not ready for this `subset` type yet.')
         # Sort
-        tmp = self._data[np.array(indices)]
+        tmp = self._data[indices]
         if sort:
             tmp.sort('wrest')
         # Finish

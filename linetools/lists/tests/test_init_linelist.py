@@ -60,7 +60,7 @@ def test_co():
     #
     np.testing.assert_allclose(CO[1322.133*u.AA]['f'], 0.0006683439, rtol=1e-5)
 
-# Galactic Linelist
+# Galactic LineList
 def test_galx():
     galx = LineList('Galaxy')
     #
