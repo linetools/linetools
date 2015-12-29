@@ -14,9 +14,7 @@ Overview
 This Class is designed to organize and handle information about atomic
 and/or molecular transition lines (e.g. HI Lya, CIV 1548, Hydrogen
 Balmer series, etc.) observed in a variety of astrophysical
-environments. It is currently implemented for absorption lines, but we
-expect to also include common emission lines in the near future.
-
+environments.
 ..
    (:ref:`AbsLine Class`).  add this back in when written
 

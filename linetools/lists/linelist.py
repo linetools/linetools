@@ -45,8 +45,6 @@ class LineList(object):
        * 'CO'      :: CO UV band-heads
        * 'EUV'     :: EUV lines (for CASBAH project)
        * 'Galaxy'  :: Lines typically identified in galaxy spectra
-       * 'Gal_E'   :: Galaxy emission lines (HII, to be implemented)
-       * 'Gal_A'   :: Galaxy absorption lines (stellar, to be implemented)
        * 'AGN'     :: Key AGN lines (to be implemented)
 
     subset : list, optional
