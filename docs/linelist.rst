@@ -322,3 +322,25 @@ convention is needed.
 strongest_transitions()
 +++++++++++++++++++++++
 
+Sometimes it may be useful to know what are the strongest
+transition of a given ion in a given wavelength range found in
+the LineList. The relative strength of a transition of a single
+ion species is simply defined as the product of its rest-frame
+wavelength (`wrest`) and oscillator strength (`f`). With this
+in mind, `strongest_transitions()` basically gives you the strongest
+`n_max` transitions of a given ion between a wavelength range::
+
+    wvlims = [1000, 3000] * u.AA
+    si2_strong = ism.strongest_transitions('SiII', wvlims, n_max=3)
+
+
+
+available_transitions()
++++++++++++++++++++++++
+
+Let's illustrate its use with an example. Let's imagine
+that you have an spectrum covering the following wavelength range::
+
+    wvlims = [3500,10000] * u.AA
+
+Let's now imagine that we are interested in a
