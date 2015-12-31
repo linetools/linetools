@@ -81,7 +81,7 @@ class SolarAbund(object):
  
         Parameters
         ----------
-        k : int or str
+        k : int or str or list/tuple
           * int -- Atomic number (6)
           * str -- Element name (e.g. 'C')
 
