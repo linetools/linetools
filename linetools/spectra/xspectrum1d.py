@@ -394,18 +394,21 @@ or QtAgg backends to enable all interactive plotting commands.
                 plt.show()
 
     #  Rebin
-    def rebin(self, new_wv):
+    def rebin(self, new_wv, do_sig=False):
         """ Rebin the existing spectrum rebinned to a new wavelength array
         Uses simple linear interpolation.  The default (and only) option
         conserves counts (and flambda).
 
         WARNING: Do not trust either edge pixel of the new array
-        WARNING: Does not act on the Error array!  Nor does it generate one
 
         Parameters
         ----------
         new_wv : Quantity array
           New wavelength array
+        do_sig : bool, optional
+          Rebin error too (if it exists)
+          S/N is only crudely conserved
+          Rejected pixels get propagated
 
         Returns
         -------
@@ -420,12 +423,21 @@ or QtAgg backends to enable all interactive plotting commands.
             (self.wavelength[npix - 1] - self.wavelength[npix - 2]) / 2.
         dwv = wvh - np.roll(wvh, 1)
         dwv[0] = 2 * (wvh[0] - self.wavelength[0])
+        med_dwv = np.median(dwv.value)
+
+        # Error
+        if do_sig:
+            var = self.sig**2
+        else:
+            var = np.ones_like(self.flux)
 
         # Cumulative Sum
         cumsum = np.cumsum(self.flux * dwv)
+        cumvar = np.cumsum(var * dwv)
 
         # Interpolate (loses the units)
         fcum = interp1d(wvh, cumsum, fill_value=0., bounds_error=False)
+        fvar = interp1d(wvh, cumvar, fill_value=0., bounds_error=False)
 
         # Endpoints of new pixels
         nnew = len(new_wv)
@@ -439,22 +451,44 @@ or QtAgg backends to enable all interactive plotting commands.
 
         # Evaluate and put unit back
         newcum = fcum(bwv) * dwv.unit
+        newvar = fvar(bwv) * dwv.unit
 
         # Endpoint
         if (bwv[-1] > wvh[-1]):
             newcum[-1] = cumsum[-1]
+            newvar[-1] = cumvar[-1]
 
-        # Rebinned flux
+        # Rebinned flux, var
         new_fx = (np.roll(newcum, -1) - newcum)[:-1]
+        new_var = (np.roll(newvar, -1) - newvar)[:-1]
 
         # Normalize (preserve counts and flambda)
         new_dwv = bwv - np.roll(bwv, 1)
         #import pdb
         # pdb.set_trace()
         new_fx = new_fx / new_dwv[1:]
+        # Preserve S/N (crudely)
+        pdb.set_trace()
+        med_newdwv = np.median(new_dwv.value)
+        new_var = new_var / (med_newdwv/med_dwv)
 
         # Return new spectrum
-        return XSpectrum1D.from_array(new_wv, new_fx, meta=self.meta.copy())
+        if do_sig:
+            # Create new_sig and deal with bad pixels
+            new_sig = np.zeros_like(new_var)
+            gd = new_var > 0.
+            new_sig[gd] = np.sqrt(new_var[gd])
+            bad = np.where(var <= 0.)[0]
+            pdb.set_trace()
+            for ibad in bad:
+                bad_new = np.where(np.abs(new_wv-self.dispersion[ibad])<new_dwv)[0]
+                new_sig[bad_new] = 0.
+            # Init
+            newspec = XSpectrum1D.from_tuple((new_wv, new_fx, new_sig))
+            newspec.meta=self.meta.copy()
+            return newspec
+        else:
+            return XSpectrum1D.from_array(new_wv, new_fx, meta=self.meta.copy())
 
     # Velo array
     def relative_vel(self, wv_obs):

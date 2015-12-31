@@ -21,6 +21,17 @@ def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
 
+def test_rebin(spec):
+    # Rebin
+    new_wv = np.arange(3000., 9000., 5) * u.AA
+    newspec = spec.rebin(new_wv)
+    # Test
+    np.testing.assert_allclose(newspec.flux[1000], 0.9999280967617779)
+    assert newspec.flux.unit == u.dimensionless_unscaled
+    # With sigma
+    newspec = spec.rebin(new_wv, do_sig=True)
+    pdb.set_trace()
+    np.testing.assert_allclose(newspec.flux[1000], 0.9999280967617779)
 
 def test_addnoise(spec):
     #
@@ -52,14 +63,6 @@ def test_gauss_smooth(spec):
     assert smth_spec.flux.unit == spec.flux.unit
 
 
-def test_rebin(spec):
-    # Rebin
-    new_wv = np.arange(3000., 9000., 5) * u.AA
-    newspec = spec.rebin(new_wv)
-    # Test
-
-    np.testing.assert_allclose(newspec.flux[1000], 0.9999280967617779)
-    assert newspec.flux.unit == u.dimensionless_unscaled
 
 
 def test_relvel(spec):
