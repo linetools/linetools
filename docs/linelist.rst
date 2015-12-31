@@ -14,8 +14,7 @@ Overview
 This Class is designed to organize and handle information about atomic
 and/or molecular transition lines (e.g. HI Lya, CIV 1548, Hydrogen
 Balmer series, etc.) observed in a variety of astrophysical
-environments. It is currently implemented for absorption lines, but we
-expect to also include common emission lines in the near future.
+environments.
 
 ..
    (:ref:`AbsLine Class`).  add this back in when written
@@ -170,13 +169,223 @@ original LineList object. Consider that for some reason you may want
 only HI Lya and Lyb in your LineList, then you can achieve this by::
 
   hi = LineList('HI')
-  hi.subset_lines()
+  hi.subset_lines(['HI 1215', 'HI 1025'])
 
+Which has only those two transitions loaded.
+
+You may also want to use rest-frame wavelength to define a subset, for
+instance::
+    ism = LineList('ISM')
+    lines = [2796.3543, 2803.5315, 1548.195, 1550.77] * u.AA
+    ism.subset_lines(lines)
+    print(ism)
+    <LineList: ISM; 4 transitions>
+
+Which has only those four transitions of MgII and CIV. In order to
+avoid loading the `LineList('ISM')` again, you can use the keyword
+`reset_data` in `subset_lines()` to make another arbitrarily different
+subset of lines from the original `LineList`::
+
+    lines = ['HI 1215', 'HI 1025']
+    ism.subset_lines(lines, reset_data=True)
+    print(ism)
+    <LineList: ISM; 2 transitions>
+
+Which only has those HI Lya and Lyb.
+
+Finally, if you want the transitions to be sorted by rest-frame
+wavelength you can use the optional keyword `sort`::
+
+    lines = [2796.3543, 2803.5315, 1548.195, 1550.77] * u.AA
+    ism.subset_lines(lines, reset_data=True, sort=True)
+    ism._data['wrest']
+    <Quantity [ 1548.195 , 1550.77  , 2796.3543, 2803.5315] Angstrom>
+
+
+set_lines()
++++++++++++
+
+Another way to reset the LineList to its original form is by using
+`set_lines()`. Following the previous example, we have a ism Linelist
+with only 4 transitions::
+
+    print(ism._data['name'])
+       name
+    ---------
+    CIV 1548
+    CIV 1550
+    MgII 2796
+    MgII 2803
+
+    print(ism)
+    <LineList: ISM; 4 transitions>
+
+    ism.set_lines()
+    print(ism)
+    <LineList: ISM; 412 transitions>
+
+Give us the original ism `LineList` with 412 unique transitions.
+
+You may also want to use rest-frame wavelength to define a subset, for
+instance::
+    ism = LineList('ISM')
+    sub_lines = [2796.3543, 2803.5315, 1548.195, 1550.77] * u.AA
+    civ_mgii = ism.subset(sub_lines)
 
 all_transitions()
 +++++++++++++++++
+
+Sometimes it may be useful to know all the transitions associated
+to a given ion species. This can be achieved by the
+`all_transitions()` method::
+
+    ism = LineList('ISM')
+    mgii = ism.all_transitions('MgII')
+
+Which give us the information of all the 6 transitions of MgII::
+
+    print(mgii)
+         A       el  nj  nk group    name       Ek    ...  Jk  Z   gk  gj    gamma    col0 col6
+        1 / s                                  1 / cm  ...                    1 / s
+    ----------- --- --- --- ----- --------- --------- ... --- --- --- --- ----------- ---- ----
+      2350000.0   0   0   0     1 MgII 1025  97468.92 ... 0.0  12   4   2   2350000.0   --   --
+      2480000.0   0   0   0     1 MgII 1026  97455.12 ... 0.0  12   2   2   2480000.0   --   --
+      1370000.0   0   0   0     1 MgII 1239  80650.02 ... 0.0  12   4   2   1370000.0   --   --
+      1540000.0   0   0   0     1 MgII 1240   80619.5 ... 0.0  12   2   2   1540000.0   --   --
+    262500000.0   0   0   0     1 MgII 2796 35760.848 ... 0.0  12   4   2 262500000.0   --   --
+    259500000.0   0   0   0     1 MgII 2803 35669.298 ... 0.0  12   2   2 259500000.0   --   --
+
+In this case `mgii` is a QTable because more than 1
+transitions were found. In cases were only 1 transition
+exists, the output of `all_transitions()` is a dictionary
+with the same keywords as the columns of `ism._data` QTable::
+
+    ciii = ism.all_transitions('CIII')
+    type(ciii)
+    dict
+    ciii
+    {'A': <Quantity 1760000000.0 1 / s>,
+    'Am': 0,
+    'Ej': <Quantity 0.0 1 / cm>,
+    'Ek': <Quantity 2352.04 1 / cm>,
+    'Ex': <Quantity 0.0 1 / cm>,
+    'Jj': 0.0,
+    'Jk': 0.0,
+    'Ref': 'Morton2003',
+    'Z': 6,
+    'col0': masked,
+    'col6': masked,
+    'el': 0,
+    'f': 0.75700000000000001,
+    'gamma': <Quantity 1760000000.0 1 / s>,
+    'gj': 1,
+    'gk': 3,
+    'group': 1,
+    'ion': 3,
+    'mol': '',
+    'name': 'CIII 977',
+    'nj': 0,
+    'nk': 0,
+    'wrest': <Quantity 977.0201 Angstrom>}
+
+You can also use a rest-frame wavelength to
+identify the ion species of interest::
+
+    wrest =  1260.4221 * u.AA
+    si2 = ism.all_transitions(wrest)
+    print(si2['name', 'wrest', 'f'])
+       name     wrest          f
+               Angstrom
+    --------- --------- ---------------
+    SiII 889  889.7228 0.0434000007808
+    SiII 989  989.8731           0.171
+    SiII 1020 1020.6989          0.0168
+    SiII 1190 1190.4158           0.292
+    SiII 1193 1193.2897           0.582
+    SiII 1260 1260.4221            1.18
+    SiII 1304 1304.3702          0.0863
+    SiII 1526  1526.707           0.127
+    SiII 1808 1808.0129         0.00208
+    SiII 2335  2335.123        4.25e-06
+
+It is worth mentioning that for the purposes of `all_transitions`,
+it does not matter which transition of a given ion species you pick
+to do the call, it will retrieve the same answer, e.g.::
+
+    hi = ism.all_transitions('HI 1215')
+    hi = ism.all_transitions('HI 1025')
+    hi = ism.all_transitions(972.5367 * u.AA)
+    hi = ism.all_transitions('HI')
+
+are all equivalent. Note that in the last example we only used
+the root name of the transition (i.e. the string before the
+blank space, `HI`), so no prior knowledge of the name
+convention is needed.
 
 
 strongest_transitions()
 +++++++++++++++++++++++
 
+Sometimes it may be useful to know what are the strongest
+transition of a given ion in a given wavelength range found in
+the LineList. The relative strength of a transition of a single
+ion species is simply defined as the product of its rest-frame
+wavelength (`wrest`) and oscillator strength (`f`). With this
+in mind, `strongest_transitions()` basically gives you the strongest
+`n_max` (default being `n_max=3`) transitions of a given ion between a wavelength range, sorted
+by relative strength::
+
+    wvlims = [1000, 3000] * u.AA
+    line = 'SiII'
+    si2_strong = ism.strongest_transitions(line, wvlims, n_max=4)
+    print(si2_strong['name'])
+       name
+    ---------
+    SiII 1260
+    SiII 1193
+    SiII 1190
+    SiII 1526
+
+The syntax is the same as for `all_transitions()` and you will the
+same result using `line in ['SiII', 'SiII 1190', 'SiII 889', 889.7228*u.AA]`.
+Depending on the wavelength range the output may vary though::
+
+    wvlims = [500, 1100] * u.AA
+    line = 'SiII 1260'
+    si2_strong = ism.strongest_transitions(line, wvlims, n_max=4)
+    print(si2_strong['name'])
+       name
+    ---------
+    SiII 989
+    SiII 889
+    SiII 1020
+
+Note that despite `n_max=4` we have only retrieved the 3 transitions
+satisfying the criteria of belonging to `wvlims = [500, 1100] * u.AA`.
+Again, note that even though `SiII 1260` is out of `wvlims` range, it
+can still be used to identify that you are interested in the `SiII` ion
+species.
+
+If you would like to retrieve all the transitions in a given `wvlims`
+regardless of its relative strength, you can set `n_max=None`.
+
+Following the convention within `LineList`, if only 1 transition is
+retrieved, the output of `strongest_transitions()` is a dictionary; if more
+than 1 transition are retrieved the output is a QTable. If no transition exist
+the output is `None`.
+
+
+available_transitions()
++++++++++++++++++++++++
+
+Sometimes it may be useful to know what are the available
+transition in a given wavelength range found in the LineList
+regardless of the ion species. This is particularly the case when
+someone is trying to identify unknown emission/absorption lines
+in a spectrum. Let us then illustrate the use of this method
+with an example. Imagine that you have an observed spectrum
+covering the following wavelength range::
+
+    wvlims = [3500,10000] * u.AA
+
+Let us now imagine that we are interested in a particular redshift...

@@ -4,6 +4,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import json
 import gzip, os
+import warnings
 
 import numpy as np
 from astropy import constants as const
@@ -34,6 +35,59 @@ def between(a, vmin, vmax):
     c &= a >= vmin
     return c
 
+def radec_to_coord(radec):
+    """ Convert one of many radec formats to SkyCoord
+
+    Examples: 'J124511+144523',
+              '124511+144523',
+              'J12:45:11+14:45:23',
+              ('12:45:11','+14:45:23')
+              ('12:45:11','14:45:23')  -- Assumes positive DEC
+
+    Parameters
+    ----------
+    radec : str or tuple
+
+    Returns
+    -------
+    coord : SkyCoord
+
+    """
+    from astropy.coordinates import SkyCoord
+
+    # RA/DEC
+    if isinstance(radec, (tuple)):
+        if isinstance(radec[0], basestring):
+            if radec[1][0] not in ['+', '-']:  #
+                DEC = '+'+radec[1]
+                warnings.warn("Assuming your DEC is +")
+            else:
+                DEC = radec[1]
+            #
+            coord = SkyCoord(radec[0]+DEC, frame='fk5',
+                                  unit=(u.hourangle, u.deg))
+        else:
+            coord = SkyCoord(ra=radec[0], dec=radec[1])
+    elif isinstance(radec,SkyCoord):
+        coord = radec
+    elif isinstance(radec,basestring):
+        # Find first instance of a number (i.e. strip J, SDSS, etc.)
+        for ii in range(len(radec)):
+            if radec[ii].isdigit():
+                break
+        radec = radec[ii:]
+        #
+        if ':' in radec:
+            coord = SkyCoord(radec, frame='fk5', unit=(u.hourangle, u.deg))
+        else:  # Add in :
+            if ('+' in radec) or ('-' in radec):
+                sign = max(radec.find('+'), radec.find('-'))
+            else:
+                raise ValueError("radec must include + or - for DEC")
+            newradec = (radec[0:2]+':'+radec[2:4]+':'+radec[4:sign+3] +':'+radec[sign+3:sign+5]+':'+radec[sign+5:])
+            coord = SkyCoord(newradec, frame='fk5', unit=(u.hourangle, u.deg))
+    # Return
+    return coord
 
 def scipy_rebin(a, *args):
     """ Simple script to rebin an input array to a new shape.
@@ -85,25 +139,18 @@ def savejson(filename, obj, overwrite=False, indent=None):
     if os.path.lexists(filename) and not overwrite:
         raise IOError('%s exists' % filename)
     if filename.endswith('.gz'):
-        fh = gzip.open(filename, 'wt')
+        with gzip.open(filename, 'wt') as fh:
+            json.dump(obj, fh, indent=indent)
     else:
-        fh = open(filename, 'wt')
-    try:
-        json.dump(obj, fh, indent=indent)
-    except:
-        import pdb; pdb.set_trace()
+        with open(filename, 'wt') as fh:
+            json.dump(obj, fh, indent=indent)
 
-    fh.close()
 
 def loadjson(filename):
     """ Load a python object saved with savejson."""
-    fh = open(filename, 'rt')
-    try:
+    with open(filename, 'rt') as fh:
         obj = json.load(fh)
-    except:
-        import pdb; pdb.set_trace()
-        
-    fh.close()
+
     return obj
 
 

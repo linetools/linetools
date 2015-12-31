@@ -20,6 +20,10 @@ CACHE = {'full_table': {}, 'data': {}}
 
 from linetools.lists import parse as lilp
 
+# TODO
+# Do something about transitions that are both in Galaxy and ISM
+# (e.g. MgII). Currently, priority is given to the first one loaded
+# but that may not be the best approach...
 
 class LineList(object):
     """ 
@@ -40,8 +44,7 @@ class LineList(object):
        * 'H2'      :: H2 (Lyman-Werner)
        * 'CO'      :: CO UV band-heads
        * 'EUV'     :: EUV lines (for CASBAH project)
-       * 'Gal_E'   :: Galaxy emission lines (HII, to be implemented)
-       * 'Gal_A'   :: Galaxy absorption lines (stellar, to be implemented)
+       * 'Galaxy'  :: Lines typically identified in galaxy spectra
        * 'AGN'     :: Key AGN lines (to be implemented)
 
     subset : list, optional
@@ -128,8 +131,8 @@ class LineList(object):
             elif str(llist) == 'Galaxy':
                 sets.append('galaxy')
             else:
-                import pdb
-                pdb.set_trace()
+                # import pdb
+                # pdb.set_trace()
                 raise ValueError(
                     'load_data: Not ready for this: {:s}'.format(llist))
 
@@ -143,13 +146,16 @@ class LineList(object):
                 if func not in all_func:
                     # Read
                     table = func()
+                    # make it a QTable
+                    table = QTable(table)
+
                     if full_table is None:
                         full_table = table
                     else:
                         # Unique values
                         wrest = full_table['wrest']
                         newi = []
-                        for jj, row in enumerate(QTable(table)):  # QTable for units
+                        for jj, row in enumerate(table):
                             try:
                                 mt = np.abs(row['wrest'] - wrest) < tol
                             except:
@@ -157,8 +163,8 @@ class LineList(object):
                                 pdb.set_trace()
                             if mt.sum() == 0:
                                 newi.append(jj)
-                        # Append new ones (can't stack QTables yet)
-                        full_table = vstack([full_table, table[newi]])
+                        # Append new ones as Tables (can't stack QTables yet)
+                        full_table = vstack([Table(full_table), Table(table[newi])])
                     # Save to avoid repeating
                     all_func.append(func)
 
@@ -298,14 +304,15 @@ class LineList(object):
 
         indices = []
         if isinstance(subset[0], (float, Quantity)):  # wrest
-            wrest = self._data['wrest'].value  # Assuming Angstroms
+            wrest = self._data['wrest'].to('AA').value  # In Angstroms
             for gdlin in subset:
                 mt = np.where(
-                    np.abs(gdlin.value - wrest) < 1e-4)[0]
+                    np.abs(gdlin.to('AA').value - wrest) < 1e-4)[0]
                 if len(mt) == 1:
-                    indices.append(mt)
+                    indices.append(mt[0])
+                    # import pdb; pdb.set_trace()
                 elif len(mt) > 1:
-                    raise ValueError('Need unique entries!')
+                    raise ValueError('There are multiple matches for line {:g} {:s}!'.format(gdlin.value, gdlin.unit))
                 else:
                     if verbose:
                         print(
@@ -316,6 +323,7 @@ class LineList(object):
                 mt = np.where(str(gdlin) == names)[0]
                 if len(mt) == 1:
                     indices.append(mt[0])
+                    # import pdb; pdb.set_trace()
                 elif len(mt) > 1:
                     raise ValueError(
                         'Should have been only one line with name {:s}!'.format(str(gdlin)))
@@ -326,7 +334,7 @@ class LineList(object):
         else:
             raise ValueError('Not ready for this `subset` type yet.')
         # Sort
-        tmp = self._data[np.array(indices)]
+        tmp = self._data[indices]
         if sort:
             tmp.sort('wrest')
         # Finish

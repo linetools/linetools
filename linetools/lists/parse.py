@@ -18,9 +18,11 @@ from ..abund.elements import ELEMENTS
 
 lt_path = imp.find_module('linetools')[1]
 
+
 # TODO
 # Ingest Galaxy lines
 # Ingest AGN lines
+# Add Ej, Ek, Ex for emission lines (specially Balmer, Paschen and Brackett)
 
 #
 def line_data(nrows=1):
@@ -81,7 +83,13 @@ def line_data(nrows=1):
             clm = Column( [ldict[key]]*nrows, name=key)
         # Append
         clms.append(clm)
-    tbl = Table(clms)
+
+    # make it a masked Table so we can deal with Galaxy
+    # emission and ISM absorption simultaneously by masking
+    # out what does not make sense in one case or the other
+    tbl = Table(clms, masked=True)
+    # import pdb
+    # pdb.set_trace()
 
     return ldict, tbl
 
@@ -116,6 +124,9 @@ def read_euv():
     EUV_fil = lt_path + '/data/lines/EUV_lines.ascii'
     print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(EUV_fil))
     data = Table.read(EUV_fil, format='ascii', guess=False, comment=';',delimiter='|')
+
+    # Units
+    data['wrest'].unit = u.AA
 
     # Return
     return data
@@ -249,14 +260,22 @@ def read_forbidden():
     """
     forb_fil = lt_path + '/data/lines/galaxy_forbidden.ascii'
     print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(forb_fil))
-    data = Table.read(forb_fil, format='ascii')
+    aux = Table.read(forb_fil, format='ascii')
 
-    # Rename columns
-    data.rename_column('wave', 'wrest')
-    data['wrest'].unit = u.AA
-    for row in data:
-        row['name'] = row['name'].replace('_', ' ')
+    # My table
+    ldict, data = line_data(nrows=len(aux))
+
+    # load values using convention names
+    data['wrest'] = aux['wave']
+    data['Z'] = aux['Z']
+    data['ion'] = aux['ion']
+    for ii, row in enumerate(data):
+        row['name'] = aux['name'][ii].replace('_', ' ')
     data['Ref'] = 'DESI_NIST_JM'
+
+    # mask the galaxy data using default mask_keys
+    data = mask_gal(data)
+
     # Return
     return data
 
@@ -270,14 +289,21 @@ def read_recomb():
     """
     recomb_fil = lt_path + '/data/lines/galaxy_recomb.ascii'
     print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(recomb_fil))
-    data = Table.read(recomb_fil, format='ascii')
+    aux = Table.read(recomb_fil, format='ascii')
 
-    # Rename columns
-    data.rename_column('wave', 'wrest')
-    data['wrest'].unit = u.AA
-    for row in data:
-        row['name'] = row['name'].replace('_', ' ')
+    # My table
+    ldict, data = line_data(nrows=len(aux))
+
+    # load values using convention names
+    data['wrest'] = aux['wave']
+    data['Z'] = aux['Z']
+    data['ion'] = aux['ion']
+    for ii, row in enumerate(data):
+        row['name'] = aux[ii]['name'].replace('_', ' ')
     data['Ref'] = 'DESI_NIST_JM'
+
+    # mask the galaxy data using default mask_keys
+    data = mask_gal(data)
 
     # Return
     return data
@@ -289,19 +315,68 @@ def read_galabs():
     -------
     QTable of recombination lines
     """
-    recomb_fil = lt_path + '/data/lines/galaxy_abs.ascii'
-    print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(recomb_fil))
-    data = Table.read(recomb_fil, format='ascii')
+    galabs_fil = lt_path + '/data/lines/galaxy_abs.ascii'
+    print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(galabs_fil))
+    aux = Table.read(galabs_fil, format='ascii')
 
-    # Rename columns
-    data.rename_column('wave', 'wrest')
-    data['wrest'].unit = u.AA
-    for row in data:
-        row['name'] = row['name'].replace('_', ' ')
+    # My table
+    ldict, data = line_data(nrows=len(aux))
+
+    # load values using convention names
+    data['wrest'] = aux['wave']
+    data['Z'] = aux['Z']
+    data['ion'] = aux['ion']
+    for ii, row in enumerate(data):
+        row['name'] = aux[ii]['name'].replace('_', ' ')
     data['Ref'] = 'JXP_DK_Unknown'
+
+    # mask the galaxy data using default mask_keys
+    data = mask_gal(data)
 
     # Return
     return data
+
+
+def mask_gal(data, mask_keys=None):
+    """Masks linelist attributes for all galaxy lines
+
+    Parameters
+    ----------
+    data : Table or QTable (masked)
+        The original table to mask columns for
+    mask_keys : list of strings, optional
+        List of column names to be masked if given
+        Otherwise it uses the default:
+
+    Returns
+    -------
+    data_masked : QTable (masked)
+        The masked version of `data`
+
+        [Known issue: QTable is not masking columns with units]
+
+    """
+    # check input
+    if not isinstance(data, (Table, QTable)):
+        raise RuntimeError('The input table has to be astropy Table or QTable')
+
+    if data.masked is not True:
+        raise RuntimeError('The input Table/QTable has to be masked.')
+
+    #convert to QTable
+    if isinstance(data, Table):
+        data = QTable(data)
+
+    # set default keys to mask
+    if mask_keys is None:
+        mask_keys = ['A', 'el', 'nj', 'nk','group','Ek','f','mol',
+                     'Ej','Am','Ex','Jj','Jk','gk','gj','gamma']
+
+    for key in mask_keys:
+        data[key].mask= True
+
+    return data
+
 
 def parse_verner96(orig=False, write=False):
     """Parse tables from Verner, Verner, & Ferland (1996, Atomic Data and Nuclear Data Tables, Vol. 64, p.1)
