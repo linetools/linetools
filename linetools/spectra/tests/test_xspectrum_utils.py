@@ -30,8 +30,13 @@ def test_rebin(spec):
     assert newspec.flux.unit == u.dimensionless_unscaled
     # With sigma
     newspec = spec.rebin(new_wv, do_sig=True)
-    pdb.set_trace()
-    np.testing.assert_allclose(newspec.flux[1000], 0.9999280967617779)
+    """
+    i1 = np.argmin(np.abs(spec.wavelength-5000.*u.AA))
+    s2n_1 = spec.flux[i1] / spec.sig[i1]
+    i2 = np.argmin(np.abs(newspec.wavelength-5000.*u.AA))
+    s2n_2 = newspec.flux[i2] / newspec.sig[i2]
+    """
+    np.testing.assert_allclose(newspec.sig[1000], 0.014321873163459941)
 
 def test_addnoise(spec):
     #

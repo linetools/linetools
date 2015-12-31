@@ -95,7 +95,7 @@ class XSpectrum1D(Spectrum1D):
         return slf
 
     @classmethod
-    def from_tuple(cls, ituple, sort=True):
+    def from_tuple(cls, ituple, sort=True, **kwargs):
         """Make an XSpectrum1D from a tuple of arrays.
 
         Parameters
@@ -123,13 +123,13 @@ class XSpectrum1D(Spectrum1D):
                 ltuple[ii] = ituple[ii][srt]
         # Generate
         if len(ltuple) == 2:  # wave, flux
-            spec = cls.from_array(uwave, u.Quantity(ltuple[1]))
+            spec = cls.from_array(uwave, u.Quantity(ltuple[1]), **kwargs)
         elif len(ltuple) == 3:
             spec = cls.from_array(uwave, u.Quantity(ltuple[1]),
-                uncertainty=StdDevUncertainty(ltuple[2]))
+                uncertainty=StdDevUncertainty(ltuple[2]), **kwargs)
         else:
             spec = cls.from_array(uwave, u.Quantity(ltuple[1]),
-                uncertainty=StdDevUncertainty(ltuple[2]))
+                uncertainty=StdDevUncertainty(ltuple[2]), **kwargs)
             spec.co = ltuple[3]
 
         spec.filename = 'none'
@@ -468,24 +468,24 @@ or QtAgg backends to enable all interactive plotting commands.
         # pdb.set_trace()
         new_fx = new_fx / new_dwv[1:]
         # Preserve S/N (crudely)
-        pdb.set_trace()
         med_newdwv = np.median(new_dwv.value)
-        new_var = new_var / (med_newdwv/med_dwv)
+        new_var = new_var / (med_newdwv/med_dwv) / new_dwv[1:]
 
         # Return new spectrum
         if do_sig:
-            # Create new_sig and deal with bad pixels
+            # Create new_sig
             new_sig = np.zeros_like(new_var)
             gd = new_var > 0.
-            new_sig[gd] = np.sqrt(new_var[gd])
+            new_sig[gd] = np.sqrt(new_var[gd].value)
+            # Deal with bad pixels
             bad = np.where(var <= 0.)[0]
-            pdb.set_trace()
             for ibad in bad:
-                bad_new = np.where(np.abs(new_wv-self.dispersion[ibad])<new_dwv)[0]
+                bad_new = np.where(np.abs(new_wv-self.wavelength[ibad]) <
+                                   (new_dwv[1:]+dwv[ibad])/2)[0]
                 new_sig[bad_new] = 0.
             # Init
-            newspec = XSpectrum1D.from_tuple((new_wv, new_fx, new_sig))
-            newspec.meta=self.meta.copy()
+            newspec = XSpectrum1D.from_tuple((new_wv.value, new_fx, new_sig),
+                                             meta=self.meta.copy())
             return newspec
         else:
             return XSpectrum1D.from_array(new_wv, new_fx, meta=self.meta.copy())
