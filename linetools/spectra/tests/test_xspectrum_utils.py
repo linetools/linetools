@@ -16,6 +16,9 @@ from linetools.spectra.xspectrum1d import XSpectrum1D
 def spec():
     return io.readspec(data_path('UM184_nF.fits'))
 
+@pytest.fixture
+def spec2():
+    return io.readspec(data_path('PH957_f.fits'))
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
@@ -41,6 +44,8 @@ def test_box_smooth(spec):
 
     newspec5 = spec.box_smooth(5)
     np.testing.assert_allclose(newspec5.flux[3000], 1.086308240890503)
+    # Preserve
+    newspec5p = spec.box_smooth(5, preserve=True)
 
 
 def test_gauss_smooth(spec):
@@ -50,6 +55,11 @@ def test_gauss_smooth(spec):
     # Test
     np.testing.assert_allclose(smth_spec.flux[3000].value, 0.82889723777)
     assert smth_spec.flux.unit == spec.flux.unit
+
+
+def test_print_repr(spec):
+    print(repr(spec))
+    print(spec)
 
 
 def test_rebin(spec):
@@ -71,9 +81,8 @@ def test_relvel(spec):
     assert velo.unit == (u.km/u.s)
 
 
-def test_print_repr(spec):
-    print(repr(spec))
-    print(spec)
+def test_splice(spec, spec2):
+    spec3 = spec.splice(spec2)
 
 
 def test_write_ascii(spec):
@@ -85,12 +94,17 @@ def test_write_ascii(spec):
     np.testing.assert_allclose(spec.dispersion, spec2.dispersion)
 
 
-def test_write_fits(spec):
+def test_write_fits(spec, spec2):
     # Write. Should be replaced with tempfile.TemporaryFile
     spec.write_to_fits(data_path('tmp.fits'))
-    spec2 = io.readspec(data_path('tmp.fits'))
+    specin = io.readspec(data_path('tmp.fits'))
     # check a round trip works
-    np.testing.assert_allclose(spec.dispersion, spec2.dispersion)
+    np.testing.assert_allclose(spec.dispersion, specin.dispersion)
+    # ESI
+    spec2.write_to_fits(data_path('tmp2.fits'))
+    specin2 = io.readspec(data_path('tmp2.fits'))
+    # check a round trip works
+    np.testing.assert_allclose(spec2.dispersion, specin2.dispersion)
 
 
 def test_readwrite_without_sig():
@@ -140,3 +154,5 @@ def test_continuum_utils(spec):
     #test reset
     spec.reset_continuum()
     np.testing.assert_allclose(spec.co, 1.)
+    # normalize
+    spec.normalize()

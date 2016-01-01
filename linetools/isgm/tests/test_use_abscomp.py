@@ -102,6 +102,15 @@ def test_build_components_from_lines():
     comps = ltiu.build_components_from_abslines([HIlines[0],HIlines[1],SiIIlines[0],SiIIlines[1]])
     assert len(comps) == 2
 
+def test_iontable_from_components():
+    # Lines
+    abscomp,HIlines = mk_comp('HI')
+    abscomp,SiIIlines = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True)
+    # Components
+    comps = ltiu.build_components_from_abslines([HIlines[0],HIlines[1],SiIIlines[0],SiIIlines[1]])
+    tbl = ltiu.iontable_from_components(comps)
+    assert len(tbl) == 2
+
 def test_cog():
     # Component
     abscomp,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True)
@@ -122,6 +131,9 @@ def test_synthesize_components():
     synth_SiII = ltiu.synthesize_components([SiIIcomp1,SiIIcomp2])
     np.testing.assert_allclose(synth_SiII.logN,13.862456155250918)
     np.testing.assert_allclose(synth_SiII.sig_logN,0.010146948602759272)
+    # Failures
+    pytest.raises(IOError, ltiu.synthesize_components, 1)
+    pytest.raises(IOError, ltiu.synthesize_components, [1,2])
 
 """
 def test_stack_plot():

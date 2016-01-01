@@ -136,6 +136,10 @@ def iontable_from_components(components,ztbl=None):
       list of AbsComponent objects
     ztbl : float, optional
       Redshift for the table
+
+    Returns
+    -------
+    iontbl : QTable
     """
     from collections import OrderedDict
     # Checks

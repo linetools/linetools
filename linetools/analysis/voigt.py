@@ -180,14 +180,14 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'], skip_wveval=Fals
         wave = iwave
 
     # Generate list if needed
-    if isinstance(line,AbsLine):  # Single line as an AbsLine Class
+    if isinstance(line, AbsLine):  # Single line as an AbsLine Class
         lines = [line]
     elif isinstance(line,list):
-        if not isinstance(line[0],AbsLine):  
-            raise ValueError('voigt_from_abslines: Must be AbsLine')
+        if not isinstance(line[0], AbsLine):
+            raise IOError('voigt_from_abslines: Must be AbsLine')
         lines = line
     else: 
-        raise ValueError('voigt_from_abslines: Unknown input')
+        raise IOError('voigt_from_abslines: Unknown input')
 
     # Generate tau 
     tau = np.zeros(wave.size)
