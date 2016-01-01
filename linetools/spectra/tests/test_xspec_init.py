@@ -25,9 +25,14 @@ def test_from_tuple():
     np.testing.assert_allclose(spec.sig, idl['sig'], atol=2e-3, rtol=0)
 
     assert spec.dispersion.unit == u.Unit('AA')
+    #
+    spec = XSpectrum1D.from_tuple((idl['wave'],idl['flux']))
+    np.testing.assert_allclose(spec.dispersion.value, idl['wave'])
+    # continuum
+    co = np.ones_like(idl['flux'])
+    spec = XSpectrum1D.from_tuple((idl['wave'],idl['flux'],idl['sig'], co))
+    np.testing.assert_allclose(spec.dispersion.value, idl['wave'])
 
-# From Table
-#def test_from_table():
 
 # From file
 def test_from_file():
@@ -46,4 +51,9 @@ def test_attrib():
     np.testing.assert_allclose(spec.wvmin.value, 3056.6673905210096)
     #np.testing.assert_allclose(spec.median_s2n,18.383451461791992)
 
+
+def test_const_sig():
+    spec = io.readspec(data_path('UM184_nF.fits'))
+    spec.constant_sig(sigv=0.1)
+    np.testing.assert_allclose(spec.sig[0], 0.1)
 
