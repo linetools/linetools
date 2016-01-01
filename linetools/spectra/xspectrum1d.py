@@ -400,6 +400,8 @@ or QtAgg backends to enable all interactive plotting commands.
         conserves counts (and flambda).
 
         WARNING: Do not trust either edge pixel of the new array
+        Also be aware that neighboring pixels are likely to be correlated
+        in a manner that is not described by the error array.
 
         Parameters
         ----------
