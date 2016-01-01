@@ -129,6 +129,8 @@ def jsonify_dict(d):
             dout[key] = jsonify_dict(value)
         elif isinstance(value, np.ndarray):
             dout[key] = value.tolist()
+        elif isinstance(value, np.int64):  # Python 3.x
+            dout[key] = int(value)
         else:
             dout[key] = value
     return dout

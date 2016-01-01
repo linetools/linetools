@@ -36,6 +36,7 @@ def test_dicts():
     adict = abslin.to_dict()
     assert isinstance(adict, dict)
     # Write
+    #pdb.set_trace()
     ltu.savejson('tmp.json', adict, overwrite=True)
     # Read
     newdict = ltu.loadjson('tmp.json')
