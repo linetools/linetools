@@ -10,6 +10,8 @@ except NameError:
 
 import numpy as np
 import copy
+import pdb
+import warnings
 
 from astropy import units as u
 from astropy.units import Quantity
@@ -18,6 +20,7 @@ from astropy.coordinates import SkyCoord
 from linetools.analysis import utils as lau
 from linetools.analysis import absline as laa
 from linetools.lists.linelist import LineList
+from linetools import utils as ltu
 
 # Class for Spectral line
 class SpectralLine(object):
@@ -51,6 +54,51 @@ class SpectralLine(object):
     data : dict
       Line atomic/molecular data ((e.g. f-value, A coefficient, Elow)
     """
+    @classmethod
+    def from_dict(cls, idict):
+        """ Initialize from a dict (usually read from disk)
+
+        Parameters
+        ----------
+        idict : dict
+          dict with the Line parameters
+
+        Returns
+        -------
+        sline : SpectralLine
+         SpectralLine of the proper type
+
+        """
+        # Init
+        if idict['ltype'] == 'Abs':
+            sline = AbsLine(idict['trans'])
+        # Check data
+        for key in idict['data']:
+            if isinstance(idict['data'][key], dict):  # Assume Quantity
+                assert sline.data[key].value == idict['data'][key]['value']
+            else:
+                assert sline.data[key] == idict['data'][key]
+        # Set analy
+        for key in idict['analy']:
+            if isinstance(idict['analy'][key], dict):  # Assume Quantity
+                sline.analy[key] = Quantity(idict['analy'][key]['value'],
+                                             unit=idict['analy'][key]['unit'])
+            elif key == 'spec_file':
+                warnings.warn("You will need to load {:s} into attrib['spec'] yourself".format(
+                        idict['analy'][key]))
+            else:
+                sline.analy[key] = idict['analy'][key]
+        # Set attrib
+        for key in idict['attrib']:
+            if isinstance(idict['attrib'][key], dict):  # Assume Quantity
+                sline.attrib[key] = Quantity(idict['attrib'][key]['value'],
+                                             unit=idict['attrib'][key]['unit'])
+            elif key in ['RA','DEC']:
+                sline.attrib['coord'] = SkyCoord(ra=idict['attrib']['RA']*u.deg,
+                                              dec=idict['attrib']['DEC']*u.deg)
+            else:
+                sline.attrib[key] = idict['attrib'][key]
+        return sline
 
     # Initialize with wavelength
     def __init__(self, ltype, trans, linelist=None, closest=False,
@@ -234,6 +282,58 @@ class SpectralLine(object):
         # Push to rest-frame
         self.attrib['EW'] = self.attrib['EW'] / (self.attrib['z']+1)
         self.attrib['sig_EW'] = self.attrib['sig_EW'] / (self.attrib['z']+1)
+
+    # EW
+    def to_dict(self):
+        """ Convert class to dict
+
+        Returns
+        -------
+        adict : dict
+         dict representation of the SpectralLine
+        """
+        from numpy.ma.core import MaskedConstant
+        from astropy.units import Quantity
+        # Starting
+        adict = dict(ltype=self.ltype, analy=dict(), attrib=dict(), data=dict(),
+                     trans=self.trans, wrest=dict(value=self.wrest.value,
+                                                  unit=self.wrest.unit.to_string()))
+        # Data
+        for key in self.data:
+            # Skip masked values
+            if isinstance(self.data[key], MaskedConstant):
+                continue
+            # Quantity
+            elif isinstance(self.data[key], Quantity):
+                adict['data'][key] = dict(value=self.data[key].value,
+                                          unit=self.data[key].unit.to_string())
+            else:
+                adict['data'][key] = self.data[key]
+        # Attrib
+        for key in self.attrib:
+            if key == 'coord':
+                adict['attrib']['RA'] = self.attrib['coord'].ra.value
+                adict['attrib']['DEC'] = self.attrib['coord'].dec.value
+            elif isinstance(self.attrib[key], Quantity):
+                adict['attrib'][key] = dict(value=self.attrib[key].value,
+                                            unit=self.attrib[key].unit.to_string())
+            else:
+                adict['attrib'][key] = self.attrib[key]
+        # Analysis
+        for key in self.analy:
+            if key == 'spec':
+                if self.analy['spec'] is not None:
+                    adict['analy']['spec_file'] = self.analy['spec'].filename
+            elif isinstance(self.analy[key], Quantity):
+                adict['analy'][key] = dict(value=self.analy[key].value,
+                                            unit=self.analy[key].unit.to_string())
+            else:
+                adict['analy'][key] = self.analy[key]
+
+        # Polish for JSON
+        adict = ltu.jsonify_dict(adict)
+        # Return
+        return adict
 
     # Output
     def __repr__(self):
