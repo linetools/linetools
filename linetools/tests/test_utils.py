@@ -29,6 +29,11 @@ def test_save_load_json():
     # Load
     new_dict = loadjson('tmp.json')
     assert new_dict['a'] == 1
+    # Write with gzip
+    savejson('tmp.json.gz', tmp_dict, overwrite=True)
+    # Load
+    new_dict = loadjson('tmp.json.gz')
+    assert new_dict['a'] == 1
 
 
 def test_radeccoord():

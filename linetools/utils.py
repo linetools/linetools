@@ -135,6 +135,7 @@ def jsonify_dict(d):
             dout[key] = value
     return dout
 
+
 def savejson(filename, obj, overwrite=False, indent=None):
     """ Save a python object to filename using using the JSON encoder."""
 
@@ -150,8 +151,12 @@ def savejson(filename, obj, overwrite=False, indent=None):
 
 def loadjson(filename):
     """ Load a python object saved with savejson."""
-    with open(filename, 'rt') as fh:
-        obj = json.load(fh)
+    if filename.endswith('.gz'):
+        with gzip.open(filename, "rb") as f:
+            obj = json.loads(f.read().decode("ascii"))
+    else:
+        with open(filename, 'rt') as fh:
+            obj = json.load(fh)
 
     return obj
 
