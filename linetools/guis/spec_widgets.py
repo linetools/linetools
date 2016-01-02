@@ -2,13 +2,23 @@
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
+import numpy as np
+import os
+
 from PyQt4 import QtGui
 from PyQt4 import QtCore
+
+from astropy import units as u
+from astropy.units import Quantity
+from astropy import constants as const
 
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 from linetools.guis import utils as ltgu
+from linetools.guis import line_widgets as ltgl
+from ..spectralline import AbsLine
+from ..analysis import voigt as ltv
 
 
 class ExamineSpecWidget(QtGui.QWidget):
@@ -75,7 +85,7 @@ class ExamineSpecWidget(QtGui.QWidget):
         # Create the mpl Figure and FigCanvas objects.
         # 5x4 inches, 100 dots-per-inch
         #
-        self.dpi = 150 # 150
+        self.dpi = 150  # 150
         self.fig = Figure((8.0, 4.0), dpi=self.dpi)
         self.canvas = FigureCanvas(self.fig)
         self.canvas.setParent(self)
@@ -87,7 +97,7 @@ class ExamineSpecWidget(QtGui.QWidget):
         self.canvas.mpl_connect('button_press_event', self.on_click)
 
         # Make two plots
-        self.ax = self.fig.add_subplot(1,1,1)
+        self.ax = self.fig.add_subplot(1, 1, 1)
         self.fig.subplots_adjust(hspace=0.1, wspace=0.1)
 
         vbox = QtGui.QVBoxLayout()
@@ -104,38 +114,36 @@ class ExamineSpecWidget(QtGui.QWidget):
         xmin = np.min(self.spec.dispersion.value)
         xmax = np.max(self.spec.dispersion.value)
         from linetools.spectra.plotting import get_flux_plotrange
-        ymin, ymax = get_flux_plotrange(self.spec.flux.value)#, mult_pos=1)
-        # ymed = np.median(self.spec.flux.value)
-        # ymin = 0. - 0.1*ymed
-        # ymax = ymed * 1.5
-        #
+        ymin, ymax = get_flux_plotrange(self.spec.flux.value)
         #QtCore.pyqtRemoveInputHook()
         #xdb.set_trace()
         #QtCore.pyqtRestoreInputHook()
-        self.psdict['xmnx'] = np.array([xmin,xmax])
-        self.psdict['ymnx'] = [ymin,ymax]
-        self.psdict['sv_xy'] = [ [xmin,xmax], [ymin,ymax] ]
+        self.psdict['xmnx'] = np.array([xmin, xmax])
+        self.psdict['ymnx'] = [ymin, ymax]
+        self.psdict['sv_xy'] = [[xmin, xmax], [ymin, ymax]]
         self.psdict['tmp_xy'] = None
-        self.psdict['nav'] = xxgu.navigate(0,0,init=True)
+        self.psdict['nav'] = ltgu.navigate(0, 0, init=True)
         # Analysis dict
-        self.adict['flg'] = 0 # Column density flag
+        self.adict['flg'] = 0  # Column density flag
 
-
-    # Main Driver
-    def on_key(self,event):
-
+    def on_key(self, event):
+        """ Deals with key events
+        Parameters
+        ----------
+        event : event object
+        """
         flg = -1
 
-        ## NAVIGATING
+        # NAVIGATING
         if event.key in self.psdict['nav']:
-            flg = xxgu.navigate(self.psdict,event)
+            flg = ltgu.navigate(self.psdict, event)
 
-        ## DOUBLETS
-        if event.key in ['C','M','X','4','8','B']:  # Set left
-            wave = xxgu.set_doublet(self, event)
+        # DOUBLETS
+        if event.key in ['C', 'M', 'X', '4', '8', 'B']:  # Set left
+            wave = ltgu.set_doublet(self, event)
             #print('wave = {:g},{:g}'.format(wave[0], wave[1]))
-            self.ax.plot( [wave[0],wave[0]], self.psdict['ymnx'], '--', color='red')
-            self.ax.plot( [wave[1],wave[1]], self.psdict['ymnx'], '--', color='red')
+            self.ax.plot( [wave[0], wave[0]], self.psdict['ymnx'], '--', color='red')
+            self.ax.plot( [wave[1], wave[1]], self.psdict['ymnx'], '--', color='red')
             flg = 2 # Layer
 
         ## SMOOTH
@@ -160,17 +168,18 @@ class ExamineSpecWidget(QtGui.QWidget):
             lya_line.z = zlya
             lya_line.attrib['N'] = NHI
             lya_line.attrib['b'] = 30.
-            self.lya_line = xspec.voigt.voigt_model(self.spec.dispersion, lya_line, Npix=3.)
+            self.lya_line = ltv.voigt_from_abslines(self.spec.dispersion,
+                                                    lya_line, fwhm=3.)
             self.adict['flg'] = 4
             flg = 1
 
-        ## ANALYSIS:  EW, AODM column density
+        # ANALYSIS:  EW, AODM column density
         if event.key in ['N', 'E', '$']:
             # If column check for line list
             #QtCore.pyqtRemoveInputHook()
             #xdb.set_trace()
             #QtCore.pyqtRestoreInputHook()
-            if (event.key in ['N','E']) & (self.llist['List'] == 'None'):
+            if (event.key in ['N', 'E']) & (self.llist['List'] == 'None'):
                 print('xspec: Choose a Line list first!')
                 try:
                     self.statusBar().showMessage('Choose a Line list first!')
@@ -190,8 +199,10 @@ class ExamineSpecWidget(QtGui.QWidget):
                 self.adict['flg'] = 2 # Ready to plot + print
 
                 # Sort em + make arrays
-                iwv = np.array(sorted([self.adict['wv_1'], self.adict['wv_2']])) * self.spec.wcs.unit
-                ic = np.array(sorted([self.adict['C_1'], self.adict['C_2']]))
+                iwv = np.array(sorted([self.adict['wv_1'],
+                                       self.adict['wv_2']])) * self.spec.wcs.unit
+                ic = np.array(sorted([self.adict['C_1'],
+                                      self.adict['C_2']]))
 
                 # Calculate the continuum (linear fit)
                 param = np.polyfit(iwv, ic, 1)
@@ -204,7 +215,8 @@ class ExamineSpecWidget(QtGui.QWidget):
                     median = np.median(self.spec.flux[pix])
                     stdv = np.std(self.spec.flux[pix]-self.spec.conti[pix])
                     S2N = median / stdv
-                    mssg = 'Mean={:g}, Median={:g}, S/N={:g}'.format(mean,median,S2N)
+                    mssg = 'Mean={:g}, Median={:g}, S/N={:g}'.format(
+                            mean,median,S2N)
                 else:
                     # Find the spectral line (or request it!)
                     rng_wrest = iwv / (self.llist['z']+1)
@@ -215,7 +227,7 @@ class ExamineSpecWidget(QtGui.QWidget):
                     else:
                         if len(gdl) == 0: # Search through them all
                             gdl = np.arange(len(self.llist[self.llist['List']]))
-                        sel_widg = SelectLineWidget(self.llist[self.llist['List']]._data[gdl])
+                        sel_widg = ltgl.SelectLineWidget(self.llist[self.llist['List']]._data[gdl])
                         sel_widg.exec_()
                         line = sel_widg.line
                         #wrest = float(line.split('::')[1].lstrip())
@@ -266,7 +278,6 @@ class ExamineSpecWidget(QtGui.QWidget):
 
         ## Velocity plot
         if event.key == 'v':
-            flg = 0
             from xastropy.xguis import spec_guis as xsgui
             z=self.llist['z']
             # Check for a match in existing list and use it if so
@@ -298,7 +309,9 @@ class ExamineSpecWidget(QtGui.QWidget):
                 else:
                     path = self.spec.filename[0:i0]+'/ID_LINES/'
                 outfil = path + self.spec.filename[i0+1:i1]+'_z'+'{:.4f}'.format(z)+'_id.fits'
-                xutils.files.ensure_dir(outfil)
+                d = os.path.dirname(outfil)
+                if not os.path.exists(d):
+                    os.mkdir(d)
                 self.outfil = outfil
                 #QtCore.pyqtRemoveInputHook()
                 #xdb.set_trace()
@@ -422,7 +435,6 @@ class ExamineSpecWidget(QtGui.QWidget):
                     wvobs = wrest * (abs_sys.zabs+1)
                     gdwv = np.where( ((wvobs.value+5) > self.psdict['xmnx'][0]) &  # Buffer for region
                                     ((wvobs.value-5) < self.psdict['xmnx'][1]))[0]
-                    #for kk in range(len(gdwv)):
                     for jj in gdwv:
                         if lines[jj].analy['do_analysis'] == 0:
                             continue
@@ -461,7 +473,7 @@ class ExamineSpecWidget(QtGui.QWidget):
             self.canvas.draw()
 
     # Notes on usage
-    def help_notes():
+    def help_notes(self):
         doublets = [ 'Doublets --------',
                      'C: CIV',
                      'M: MgII',
