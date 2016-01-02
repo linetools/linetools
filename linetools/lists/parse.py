@@ -11,7 +11,7 @@ if not sys.version_info[0] > 2:
 from astropy import units as u
 from astropy.units.quantity import Quantity
 from astropy.io import fits, ascii
-from astropy.table import QTable, Column, Table
+from astropy.table import QTable, Column, Table, vstack
 
 from ..abund import roman
 from ..abund.elements import ELEMENTS
@@ -790,6 +790,11 @@ def update_fval(table, verbose=False):
     table : QTable
       Data to be updated
     verbose : bool, optional
+
+    Returns
+    -------
+    table : QTable
+      Updated table.  Passback required when using vstack
     """
     # Shectman et al. 1998, ApJ, 504, 921 
     #   Morton2003 cites this but uses a different f-value
@@ -826,6 +831,23 @@ def update_fval(table, verbose=False):
             table['f'][mt[0]] = row['f']
         else:
             raise ValueError('Uh oh')
+
+    ## ##
+    # Lines without f-value but of interest
+
+    # AsII
+    mn = np.min(np.abs(table['wrest']-1355.934*u.AA))  # In Morton2000
+    if mn > 0.05*u.AA:
+        _, new_row = line_data()
+        new_row['Z'] = 33
+        new_row['ion'] = 2
+        new_row['wrest'] = 1355.934
+        new_row['name'] = 'AsII 1355'
+        new_row['f'].mask = True
+        # Stack
+        table = QTable(vstack([Table(table), new_row]))
+
+    return table
 
 def update_gamma(table, verbose=True):
     """Update/add-in gamma values
