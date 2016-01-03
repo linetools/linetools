@@ -48,3 +48,14 @@ To list all the command line options available, use::
         lt_plot -h
 
 
+lt_xspec
+--------
+
+Launch a QT Gui to examine an input spectrum.
+
+For example::
+
+   lt_xspec filename
+
+You can explore the data, perform simple analysis (e.g. EW measurements)
+and more.  See the Notebook for more.
