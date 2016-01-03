@@ -45,6 +45,11 @@ N flag           attrib['flag_N']  int       Column density flag
 Instantiation
 =============
 
+from_dict
+---------
+
+Instantiate from a dict.  The keys *ltype* and *trans* are required.
+
 Attributes
 ==========
 
@@ -59,6 +64,15 @@ Plots
 
 Methods
 =======
+
+to_dict
+-------
+
+Converts the key attributes of the Class to a dict.  Useful
+for writing to the hard-drive (e.g. in JSON).::
+
+   abslin = AbsLine(1548.195*u.AA)
+   adict = aline.to_dict()
 
 Output
 ======

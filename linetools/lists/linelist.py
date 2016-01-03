@@ -177,7 +177,7 @@ class LineList(object):
 
         # Update f-values (Howk00)
         if flag_fval:
-            lilp.update_fval(self._fulltable)
+            self._fulltable = lilp.update_fval(self._fulltable)
 
         # Update gamma-values (Mainly HI)
         if flag_gamma:

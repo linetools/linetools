@@ -13,16 +13,17 @@ from linetools.lists import parse
 
 # Morton 2003 ASCII file
 def test_morton03():
-	m03 = parse.parse_morton03(orig=True)
-	# 
-	np.testing.assert_allclose(m03['wrest'][5], 930.7482, rtol=1e-7)
+    m03 = parse.parse_morton03(orig=True)
+    #
+    np.testing.assert_allclose(m03['wrest'][5], 930.7482, rtol=1e-7)
 
-	assert m03['wrest'].unit == u.Angstrom
+    assert m03['wrest'].unit == u.Angstrom
 
 # Morton 2000 ASCII file
 def test_morton00():
-	m00 = parse.parse_morton00(orig=True)
+    m00 = parse.parse_morton00(orig=True)
 
-	np.testing.assert_allclose(m00['wrest'][5], 2593.3093, rtol=1e-7)
+    np.testing.assert_allclose(m00['wrest'][5], 2593.3093, rtol=1e-7)
 
-	assert m00['wrest'].unit == u.AA
+    assert m00['wrest'].unit == u.AA
+
