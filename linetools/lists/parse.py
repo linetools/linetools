@@ -728,7 +728,7 @@ def mktab_morton00(do_this=False, outfil=None):
     # Write
     if outfil is None:
         outfil = lt_path + '/data/lines/morton00_table2.fits'
-    m00.write(outfil,overwrite=True)
+    m00.write(outfil, overwrite=True)
     print('mktab_morton00: Wrote {:s}'.format(outfil))
     #
     print('mktab_morton03: Now compressing...')
@@ -794,7 +794,9 @@ def update_fval(table, verbose=False):
     Returns
     -------
     table : QTable
-      Updated table.  Passback required when using vstack
+      Updated table.
+      Note: This return is required to handle the vstack, i.e.
+      as opposed to modifying the input table in place.
     """
     # Shectman et al. 1998, ApJ, 504, 921 
     #   Morton2003 cites this but uses a different f-value
@@ -849,7 +851,8 @@ def update_fval(table, verbose=False):
 
     return table
 
-def update_gamma(table, verbose=True):
+
+def update_gamma(table):
     """Update/add-in gamma values
 
     Parameters
@@ -875,6 +878,7 @@ def update_gamma(table, verbose=True):
                 mt = np.where( (np.abs(table['wrest']-key*u.AA) < 1e-4*u.AA))[0] 
                 if len(mt) > 0:
                     table['gamma'][mt[0]] = gdict[key]
+
 
 def update_wrest(table, verbose=True):
     """Update wrest values (and Ej,Ek)
