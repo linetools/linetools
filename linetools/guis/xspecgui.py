@@ -2,13 +2,16 @@
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
+import sys
 from PyQt4 import QtGui
-from PyQt4 import QtCore
 
 from matplotlib import rcParams
 
+from astropy.units import Quantity
+
 from linetools.guis import utils as ltgu
 from linetools.guis import line_widgets as ltgl
+from linetools.guis import spec_widgets as ltgsp
 
 class XSpecGui(QtGui.QMainWindow):
     """ GUI to replace XIDL x_specplot (which simulated a GUI by T. Barlow)
@@ -22,7 +25,8 @@ class XSpecGui(QtGui.QMainWindow):
           Input spectrum.  If tuple then (wave,fx) or (wave,fx,sig)
         '''
         #reload(xxgu)
-        reload(xspw)
+        reload(ltgl)
+        reload(ltgsp)
         # INIT
         spec, _ = ltgu.read_spec(ispec, exten=exten)
         #QtCore.pyqtRemoveInputHook()
@@ -43,7 +47,7 @@ class XSpecGui(QtGui.QMainWindow):
         self.pltline_widg.setMaximumWidth(300)
 
         # Hook the spec widget to Plot Line
-        self.spec_widg = xspw.ExamineSpecWidget(spec,status=self.statusBar,
+        self.spec_widg = ltgsp.ExamineSpecWidget(spec,status=self.statusBar,
                                                 llist=self.pltline_widg.llist,
                                                 zsys=zsys, norm=norm, exten=exten)
         self.pltline_widg.spec_widg = self.spec_widg
@@ -76,7 +80,7 @@ class XSpecGui(QtGui.QMainWindow):
         if event.button == 3: # Set redshift
             if self.pltline_widg.llist['List'] is None:
                 return
-            self.select_line_widg = xspw.SelectLineWidget(
+            self.select_line_widg = ltgl.SelectLineWidget(
                 self.pltline_widg.llist[self.pltline_widg.llist['List']]._data)
             self.select_line_widg.exec_()
             line = self.select_line_widg.line
@@ -97,3 +101,15 @@ class XSpecGui(QtGui.QMainWindow):
     # Quit
     def quit(self):
         self.close()
+
+def main(args, **kwargs):
+    from specutils.spectrum1d import Spectrum1D
+
+    if not isinstance(args,(Spectrum1D,tuple,basestring)):
+        raise IOError("Bad input")
+    # Run
+    app = QtGui.QApplication(sys.argv)
+    gui = XSpecGui(args, **kwargs)
+    gui.show()
+    app.exec_()
+    return

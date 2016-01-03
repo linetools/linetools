@@ -5,6 +5,8 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 
+import numpy as np
+
 from astropy.table import Table
 
 from linetools.guis import utils as ltgu

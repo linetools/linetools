@@ -8,9 +8,10 @@ import os
 from PyQt4 import QtGui
 from PyQt4 import QtCore
 
-from astropy import units as u
 from astropy.units import Quantity
 from astropy import constants as const
+from astropy import units as u
+u.def_unit(['mAA', 'milliAngstrom'], 0.001 * u.AA, namespace=globals()) # mA
 
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
@@ -276,9 +277,9 @@ class ExamineSpecWidget(QtGui.QWidget):
                 #QtCore.pyqtRestoreInputHook()
 
 
+        """
         ## Velocity plot
         if event.key == 'v':
-            from xastropy.xguis import spec_guis as xsgui
             z=self.llist['z']
             # Check for a match in existing list and use it if so
             if len(self.abs_sys) > 0:
@@ -336,6 +337,7 @@ class ExamineSpecWidget(QtGui.QWidget):
                     print('Adding new abs system')
             # Redraw
             flg=1
+        """
 
         # Dummy keys
         if event.key in ['shift', 'control', 'shift+super', 'super+shift']:
