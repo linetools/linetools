@@ -37,16 +37,18 @@ def between(a, vmin, vmax):
 
 def radec_to_coord(radec):
     """ Converts one of many of Celestial Coordinates
-    `radec` formats to an astropy SkyCoord object.
+    `radec` formats to an astropy SkyCoord object. Assumes
+    J2000 equinox.
 
     Parameters
     ----------
     radec : str or tuple
         Examples:
         'J124511+144523',
-        '124511+144523', -- Assumes J2000 equinox
+        '124511+144523',
         'J12:45:11+14:45:23',
         ('12:45:11','+14:45:23')
+        ('12 45 11', +14 45 23)
         ('12:45:11','14:45:23')  -- Assumes positive DEC
 
     Returns
