@@ -118,6 +118,7 @@ class SpectralLine(object):
         self.analy = {'spec': None, # Analysis inputs (e.g. spectrum; from .clm file or AbsID)
             'wvlim': [0., 0.]*u.AA, # Wavelength interval about the line (observed)
             'vlim': [0., 0.]*u.km/u.s, # Velocity limit of line, relative to self.attrib['z']
+            'flag_kin': 0,  # Use for kinematic analysis?
             'do_analysis': 1 # Analyze
             }
         self.attrib = {   # Properties (e.g. column, EW, centroid)
