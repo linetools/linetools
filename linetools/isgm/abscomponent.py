@@ -400,8 +400,9 @@ class AbsComponent(object):
         # get Doppler parameter to km/s
         b = b.to('km/s').value
 
-        # name
-        name = self.name.replace(' ', '')
+        # Ion name
+        name = ions.ion_name(self.Zion, nspace=1)
+        name = name.replace(' ', '')
 
         # Deal with fix and tie parameters
         # Check format first
@@ -467,7 +468,8 @@ class AbsComponent(object):
             nucleons = 2 * self.Zion[0]
 
         # name
-        name = '{}'.format(nucleons)+self.name.replace(' ', '_')
+        name = ions.ion_name(self.Zion, nspace=1)
+        name = '{}'.format(nucleons)+name.replace(' ', '_')
 
         # Deal with fix and tie parameters
         # Check format first
