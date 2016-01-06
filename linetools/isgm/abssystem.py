@@ -176,15 +176,12 @@ class AbsSystem(object):
 
         Returns
         -------
-        abslist : list
+        abslist : list of AbsLines
 
         """
-        abslist = []
-        for component in self._components:
-            for iline in component._abslines:
-                abslist.append(iline)
         # Return
-        return abslist
+        return [iline for component in self._components
+                for iline in component._abslines]
 
 
 class GenericAbsSystem(AbsSystem):

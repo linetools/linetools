@@ -6,14 +6,13 @@ Plot a spectrum with an interactive QT GUI
 import pdb
 import sys
 
-from PyQt4 import QtGui
-
-from linetools.guis.xspecgui import XSpecGui
 
 # Script to run XSpec from the command line or ipython
 def main(*args, **kwargs):
     """ Runs the XSpecGui on an input file
     """
+    from PyQt4 import QtGui
+    from linetools.guis.xspecgui import XSpecGui
     import argparse
 
     parser = argparse.ArgumentParser(description='Parse for XSpec')

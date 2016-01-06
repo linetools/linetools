@@ -10,6 +10,7 @@ import numpy as np
 from astropy.table import Table
 
 from linetools.guis import utils as ltgu
+from linetools.lists.linelist import LineList
 
 # #####
 class PlotLinesWidget(QtGui.QWidget):
@@ -182,3 +183,116 @@ class SelectLineWidget(QtGui.QDialog):
         self.line = str(curr.text())
         # Print
         print('You chose: {:s}'.format(curr.text()))
+
+
+class SelectedLinesWidget(QtGui.QWidget):
+    """ Widget to show and enable lines to be selected
+    inp : LineList
+      Input LineList
+    init_select : str or list of indices
+      str -- 'All'
+
+    """
+    def __init__(self, inp, parent=None, init_select=None, plot_widget=None):
+        """
+        """
+        super(SelectedLinesWidget, self).__init__(parent)
+
+        self.parent=parent
+
+        # Line list Table
+        if isinstance(inp, LineList):
+            self.lines = inp._data
+            self.llst = inp
+        elif isinstance(inp,Table):
+            raise ValueError('SelectedLineWidget: DEPRECATED')
+        else:
+            raise ValueError('SelectedLineWidget: Wrong type of input')
+
+        self.plot_widget = plot_widget
+
+        # Create the line list
+        line_label = QtGui.QLabel('Lines:')
+        self.lines_widget = QtGui.QListWidget(self)
+        self.lines_widget.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
+
+        # Initialize list
+        self.item_flg = 0
+        self.init_list()
+
+        # Initial selection
+        if init_select is None:
+            self.selected = [0]
+        elif init_select == 'All':
+            self.selected = []
+            for ii in range(self.lines_widget.count()):
+                self.lines_widget.item(ii).setSelected(True)
+                self.selected.append(ii)
+        else:
+            self.selected = init_select
+            if len(self.selected) == 0:
+                self.selected = [0]
+
+        for iselect in self.selected:
+            self.lines_widget.item(iselect).setSelected(True)
+
+        self.lines_widget.scrollToItem( self.lines_widget.item( self.selected[0] ) )
+
+        # Events
+        self.lines_widget.itemSelectionChanged.connect(self.on_item_change)
+
+        # Layout
+        vbox = QtGui.QVBoxLayout()
+        vbox.addWidget(line_label)
+        vbox.addWidget(self.lines_widget)
+
+        self.setLayout(vbox)
+
+    def init_list(self):
+        nlin = len(self.lines['wrest'])
+        for ii in range(nlin):
+            self.lines_widget.addItem('{:s} :: {:.3f} :: {}'.format(self.lines['name'][ii],
+                                                         self.lines['wrest'][ii].value,
+                                                         self.lines['f'][ii]))
+
+    def on_item_change(self): #,item):
+        # For big changes
+        if self.item_flg == 1:
+            return
+        all_items = [self.lines_widget.item(ii) for ii in range(self.lines_widget.count())]
+        sel_items = self.lines_widget.selectedItems()
+        self.selected = [all_items.index(isel) for isel in sel_items]
+        self.selected.sort()
+
+        #QtCore.pyqtRemoveInputHook()
+        #xdb.set_trace()
+        #QtCore.pyqtRestoreInputHook()
+
+        # Update llist
+        try:
+            self.plot_widget.llist['show_line'] = self.selected
+        except AttributeError:
+            if self.parent is not None:
+                self.parent.updated_slines(self.selected)
+            return
+        else:
+            self.plot_widget.on_draw()
+
+    def on_list_change(self, llist):
+        # Clear
+        if not isinstance(llist, LineList):
+            raise ValueError('Expecting LineList!!')
+        self.item_flg = 1
+        self.lines = llist._data
+        self.llst = llist
+        self.lines_widget.clear()
+        # Initialize
+        self.init_list()
+        #QtCore.pyqtRemoveInputHook()
+        #xdb.set_trace()
+        #QtCore.pyqtRestoreInputHook()
+        # Set selected
+        for iselect in self.selected:
+            self.lines_widget.item(iselect).setSelected(True)
+        self.lines_widget.scrollToItem(self.lines_widget.item(self.selected[0]))
+        self.item_flg = 0

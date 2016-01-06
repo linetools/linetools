@@ -133,6 +133,7 @@ class ExamineSpecWidget(QtGui.QWidget):
         ----------
         event : event object
         """
+        # Flag to control re-draw
         flg = -1
 
         # NAVIGATING
