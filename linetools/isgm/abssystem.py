@@ -16,6 +16,7 @@ from abc import ABCMeta
 from astropy import units as u
 from astropy.table import QTable
 from astropy import constants as const
+from astropy.coordinates import SkyCoord
 
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.isgm import utils as ltiu
@@ -93,6 +94,33 @@ class AbsSystem(object):
                 slf.add_component(component)
         # Return
         return slf
+
+    @classmethod
+    def from_dict(cls, idict):
+        """ Instantiate from a dict.  Usually read from the hard-drive
+
+        Parameters
+        ----------
+        idict : dict
+
+        Returns
+        -------
+        AbsSystem
+
+        """
+        slf = cls(idict['abs_type'],
+                  SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg),
+                  idict['zabs'], idict['vlim']*u.km/u.s,
+                  zem=idict['zem'], NHI=idict['NHI'],
+                  sig_NHI=idict['sig_NHI'], name=idict['Name']
+                  )
+        # Components
+        for key in idict['components']:
+            comp = AbsComponent.from_dict(idict['components'][key])
+            slf.add_component(comp)
+        # Return
+        return slf
+
 
     def __init__(self, abs_type, radec, zabs, vlim, zem=0.,
                  NHI=0., sig_NHI=np.zeros(2), name=None):
@@ -195,10 +223,9 @@ class AbsSystem(object):
                        kin=self.kin, Refs=self.Refs,
                        )
         # Components
-        if len(self._components) > 0:
-            outdict['components'] = {}
-            for component in self._components:
-                outdict['components'][component.name] = component.to_dict()
+        outdict['components'] = {}
+        for component in self._components:
+            outdict['components'][component.name] = component.to_dict()
         # Polish
         outdict = ltu.jsonify_dict(outdict)
         # Return

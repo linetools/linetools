@@ -57,6 +57,16 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True):
     return abscomp, abslines
 
 
+def test_todict():
+    SiIIcomp1,_ = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s, add_spec=True)
+    cdict = SiIIcomp1.to_dict()
+    #
+    assert isinstance(cdict, dict)
+    assert cdict['Zion'] == (14, 2)
+    # And instantiate
+    newcomp = AbsComponent.from_dict(cdict)
+    assert isinstance(newcomp, AbsComponent)
+
 def test_build_table():
     abscomp,_ = mk_comp('HI')
     # Instantiate
@@ -156,12 +166,7 @@ def test_stack_plot():
 """
 
 
-def test_todict():
-    SiIIcomp1,_ = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s, add_spec=True)
-    cdict = SiIIcomp1.to_dict()
-    #
-    assert isinstance(cdict, dict)
-    assert cdict['Zion'] == (14, 2)
+
 
 
 def test_repr_vpfit():

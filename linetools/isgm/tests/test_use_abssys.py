@@ -10,7 +10,7 @@ from astropy.coordinates import SkyCoord
 import numpy as np
 
 from linetools.isgm.abscomponent import AbsComponent
-from linetools.isgm.abssystem import GenericAbsSystem, LymanAbsSystem
+from linetools.isgm.abssystem import AbsSystem, GenericAbsSystem, LymanAbsSystem
 from linetools.spectralline import AbsLine
 
 import pdb
@@ -44,6 +44,7 @@ def test_list_of_abslines():
     # Test
     assert len(abslines) == 6
 
+
 def test_todict():
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
     # HI Lya, Lyb
@@ -64,3 +65,6 @@ def test_todict():
     #with io.open('tmp.json', 'w', encoding='utf-8') as f:
     #    f.write(unicode(json.dumps(adict, sort_keys=True, indent=4,
     #                               separators=(',', ': '))))
+    # Instantiate
+    newsys = AbsSystem.from_dict(adict)
+    assert isinstance(newsys, AbsSystem)

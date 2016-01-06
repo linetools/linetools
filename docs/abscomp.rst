@@ -61,6 +61,11 @@ or multiple::
     lyb.attrib['z'] = lya.attrib['z']
     abscomp = AbsComponent.from_abslines([lya,lyb])
 
+One may also instantiate from a *dict*, usually read
+from the hard-drive::
+
+    abscomp = AbsComponent.from_dict(idict)
+
 ::::
 
 Inspecting

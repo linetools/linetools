@@ -21,7 +21,7 @@ from specutils import Spectrum1D
 
 from linetools.analysis import absline as ltaa
 from linetools.analysis import plots as ltap
-from linetools.spectralline import AbsLine
+from linetools.spectralline import AbsLine, SpectralLine
 from linetools.abund import ions
 from linetools import utils as ltu
 
@@ -102,6 +102,30 @@ class AbsComponent(object):
         # Return
         return cls(component.coord, component.Zion, component.zcomp, component.vlim, Ej=component.Ej,
                    A=component.A, **kwargs)
+
+    @classmethod
+    def from_dict(cls, idict, **kwargs):
+        """ Instantiate from a dict
+
+        Parameters
+        ----------
+        idict : dict
+
+        Returns
+        -------
+
+        """
+        slf = cls(SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg),
+                  tuple(idict['Zion']), idict['zcomp'], idict['vlim']*u.km/u.s,
+                  Ej=idict['Ej'], A=idict['A'],
+                  Ntup = tuple([idict[key] for key in ['flag_N', 'logN', 'sig_logN']]),
+                  comment=idict['comment'])
+        # Add lines
+        for key in idict['lines']:
+            iline = SpectralLine.from_dict(idict['lines'][key])
+            slf.add_absline(iline, **kwargs)
+        # Return
+        return slf
 
     def __init__(self, radec, Zion, z, vlim, Ej=0./u.cm, A=None, Ntup=None, comment=''):
         """  Initiator
@@ -513,13 +537,14 @@ class AbsComponent(object):
         cdict : dict
         """
         cdict = dict(Zion=self.Zion, zcomp=self.zcomp, vlim=self.vlim.to('km/s').value,
+                     Name=self.name,
+                     RA=self.coord.ra.value, DEC=self.coord.dec.value,
                      A=self.A, Ej=self.Ej.to('1/cm').value, comment=self.comment,
                      flag_N=self.flag_N, logN=self.logN, sig_logN=self.sig_logN)
         # AbsLines
-        if len(self._abslines) > 0:
-            cdict['lines'] = {}
-            for iline in self._abslines:
-                cdict['lines'][iline.wrest.value] = iline.to_dict()
+        cdict['lines'] = {}
+        for iline in self._abslines:
+            cdict['lines'][iline.wrest.value] = iline.to_dict()
         # Polish
         cdict = ltu.jsonify_dict(cdict)
         # Return

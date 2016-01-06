@@ -59,6 +59,10 @@ More commonly, one will instantiate with one or more AbsComponent objects::
     HIsys = LymanAbsSystem.from_components([abscomp])
 
 
+One may also instantiate from a *dict*, usually read
+from the hard-drive::
+
+    abscomp = AbsSystem.from_dict(idict)
 
 Attributes
 ==========
