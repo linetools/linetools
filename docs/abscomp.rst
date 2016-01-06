@@ -140,6 +140,15 @@ sig_b      Quantity       Output error in b-value (km/s)
 Misc
 ====
 
+I/O
++++
+
+One may generate a *dict* of the key properties of the AbsSystem
+with the to_dict() method::
+
+   cdict = component.to_dict()
+
+
 Synthesize Components
 +++++++++++++++++++++
 

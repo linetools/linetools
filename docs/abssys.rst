@@ -80,5 +80,11 @@ Plots
 Methods
 =======
 
+One may generate a *dict* of the key properties of the AbsSystem
+with the to_dict() method::
+
+   odict = HIsys.to_dict()
+
+
 Output
 ======
