@@ -14,12 +14,13 @@ Linetools depends on these packages:
 * `matplotlib <http://matplotlib.org/>`_  version 1.4 or later
 * `pyyaml <http://pyyaml.org/wiki/PyYAML>`_ version 3.11 or later
 * `specutils <https://github.com/astropy/specutils>`_ version 0.2 or later
+* `PyQT4 <https://wiki.python.org/moin/PyQt>`_ version 4 (for GUIs)
 
 We strongly recommend that you use `Anaconda
 <https://www.continuum.io/downloads>`_ to install them. With Anaconda
 you can check for the presence and versions of the dependencies with::
 
-  conda list "^python$|numpy|astropy$|scipy$|matplotlib|pyyaml|specutils"
+  conda list "^python$|numpy|astropy$|scipy$|matplotlib|pyyaml|specutils|PyQT"
 
 If you're missing any, install them with (for example)::
 
