@@ -29,16 +29,26 @@ class ExamineSpecWidget(QtGui.QWidget):
         12-Dec-2014 by JXP
         Parameters:
         ------------
-        key_events : bool, optional
-          Use key events? [True]
-          Useful when coupling to other widgets
     """
     def __init__(self, ispec, parent=None, status=None, llist=None,
                  abs_sys=None, norm=True, second_file=None, zsys=None,
                  key_events=True, vlines=None, plotzero=False, exten=None):
-        '''
-        spec = Spectrum1D
-        '''
+        """
+        ispec : Spectrum1D or tuple of arrays
+        exten : int, optional
+          extension for the spectrum in multi-extension FITS file
+        parent : Widget parent, optional
+        status : Point to status bar, optional
+        llist : dict, optional
+          Used to guide the line lists
+        abs_sys : list, optional
+          AbsSystem's
+        zsys : float, optional
+          intial redshift
+        key_events : bool, optional
+          Use key events? [True]
+          Useful when coupling to other widgets
+        """
         super(ExamineSpecWidget, self).__init__(parent)
 
         # Spectrum
@@ -111,6 +121,8 @@ class ExamineSpecWidget(QtGui.QWidget):
 
     # Setup the spectrum plotting info
     def init_spec(self):
+        """ Initialize parameters for plotting the spectrum
+        """
         #xy min/max
         xmin = np.min(self.spec.dispersion.value)
         xmax = np.max(self.spec.dispersion.value)
@@ -141,7 +153,7 @@ class ExamineSpecWidget(QtGui.QWidget):
             flg = ltgu.navigate(self.psdict, event)
 
         # DOUBLETS
-        if event.key in ['C', 'M', 'X', '4', '8', 'B']:  # Set left
+        if event.key in ['C', 'M', 'X', '4', '8', 'B']:
             wave = ltgu.set_doublet(self, event)
             #print('wave = {:g},{:g}'.format(wave[0], wave[1]))
             self.ax.plot( [wave[0], wave[0]], self.psdict['ymnx'], '--', color='red')
@@ -357,6 +369,8 @@ class ExamineSpecWidget(QtGui.QWidget):
 
     # Click of main mouse button
     def on_click(self,event):
+        """ Handles mouse button events
+        """
         try:
             print('button={:d}, x={:f}, y={:f}, xdata={:f}, ydata={:f}'.format(
                 event.button, event.x, event.y, event.xdata, event.ydata))
@@ -477,6 +491,8 @@ class ExamineSpecWidget(QtGui.QWidget):
 
     # Notes on usage
     def help_notes(self):
+        """ Not sure this is working..
+        """
         doublets = [ 'Doublets --------',
                      'C: CIV',
                      'M: MgII',

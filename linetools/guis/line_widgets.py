@@ -20,10 +20,11 @@ class PlotLinesWidget(QtGui.QWidget):
         """
         Parameters
         ----------
-        parent
-        status
-        init_llist
-        init_z
+        parent : Widget parent
+        status : Point to status bar
+        init_llist : input LineList dictionary (from another widget)
+        init_z : float, optional
+          Initial redshift
 
         Returns
         -------
@@ -46,7 +47,7 @@ class PlotLinesWidget(QtGui.QWidget):
         self.connect(self.zbox, QtCore.SIGNAL('editingFinished ()'), self.setz)
 
         # Create the line list
-        self.lists = ['None', 'ISM', 'Strong', 'Galaxy', 'H2', 'EUV', 'OVI']
+        self.lists = ['None', 'ISM', 'Strong', 'Galaxy', 'H2', 'EUV']
         #'grb.lst', 'dla.lst', 'lls.lst', 'subLLS.lst',
 #                      'lyman.lst', 'Dlyman.lst', 'gal_vac.lst', 'ne8.lst',
 #                      'lowz_ovi.lst', 'casbah.lst', 'H2.lst']
@@ -63,8 +64,8 @@ class PlotLinesWidget(QtGui.QWidget):
             self.llist = {} # Dict for the line lists
             self.llist['Plot'] = False
             self.llist['z'] = 0.
-            self.llist['List'] = 'None'
-            self.llist['Lists'] = []
+            self.llist['List'] = 'None'  # Name of the LineList being used
+            self.llist['Lists'] = []     # Archived LineLists
         else: # Fill it all up and select
             self.llist = init_llist
             if not init_llist['List'] in self.lists:
