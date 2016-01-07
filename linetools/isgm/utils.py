@@ -11,6 +11,7 @@ except NameError:
 
 import pdb
 import numpy as np
+import warnings
 
 from astropy import constants as const
 from astropy import units as u
@@ -89,10 +90,8 @@ def build_components_from_abslines(iabslines, clmdict=None, coord=None,
     if clmdict is None:
         abslines = iabslines
     else:
+        raise DeprecationWarning("Gone")
         abslines = []
-        for wrest in clmdict['lines'].keys():
-            clmdict['lines'][wrest].attrib['coord'] = coord
-            abslines.append(clmdict['lines'][wrest])
     # Test
     if not isinstance(abslines,list):
         raise IOError('Need a list of AbsLine objects')
@@ -121,7 +120,39 @@ def build_components_from_abslines(iabslines, clmdict=None, coord=None,
 
     return components
 
+def build_components_from_dict(idict, coord=None, **kwargs):
+    """ Generate a list of components from an input dict
 
+    Parameters
+    ----------
+    idict : dict
+      Must contain either components or lines as a key
+    coord : SkyCoord, optional
+
+    Returns
+    -------
+    components :
+      list of AbsComponent objects
+    """
+    from linetools.spectralline import AbsLine
+
+    components = []
+    if 'components' in idict.keys():
+        # Components
+        for key in idict['components']:
+            components.append(AbsComponent.from_dict(idict['components'][key]))
+    elif 'lines' in idict.keys():  # to be deprecated
+        lines = []
+        for key in idict['lines']:
+            line = AbsLine.from_dict(idict['lines'][key])
+            if coord is not None:
+                line.attrib['coord'] = coord
+            lines.append(line)
+        components = build_components_from_abslines(lines, **kwargs)
+    else:
+        warnings.warn("No components in this dict")
+    # Return
+    return components
 
 def iontable_from_components(components,ztbl=None):
     """Generate a QTable from a list of components

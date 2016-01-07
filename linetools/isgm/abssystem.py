@@ -21,6 +21,7 @@ from astropy.coordinates import SkyCoord
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.isgm import utils as ltiu
 from linetools import utils as ltu
+from linetools.spectralline import AbsLine
 from linetools.abund import ions
 
 
@@ -115,12 +116,13 @@ class AbsSystem(object):
                   sig_NHI=idict['sig_NHI'], name=idict['Name']
                   )
         # Components
-        for key in idict['components']:
-            comp = AbsComponent.from_dict(idict['components'][key])
-            slf.add_component(comp)
+        components = ltiu.build_components_from_dict(idict)
+        for component in components:
+            # This is to insure the components follow the rules
+            slf.add_component(component)
+
         # Return
         return slf
-
 
     def __init__(self, abs_type, radec, zabs, vlim, zem=0.,
                  NHI=0., sig_NHI=np.zeros(2), name=None):
