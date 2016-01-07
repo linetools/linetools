@@ -18,12 +18,17 @@ class XSpecGui(QtGui.QMainWindow):
     """
     def __init__(self, ispec, parent=None, zsys=None, norm=None, exten=None):
         QtGui.QMainWindow.__init__(self, parent)
-        '''
-        Parameters
-        --------------
-        spec = Spectrum1D or tuple of arrays
+        """
+        ispec = Spectrum1D or tuple of arrays
           Input spectrum.  If tuple then (wave,fx) or (wave,fx,sig)
-        '''
+        parent : Widget parent, optional
+        zsys : float, optional
+          intial redshift
+        exten : int, optional
+          extension for the spectrum in multi-extension FITS file
+        norm : bool, optional
+          True if the spectrum is normalized
+        """
         #reload(xxgu)
         reload(ltgl)
         reload(ltgsp)
@@ -73,10 +78,14 @@ class XSpecGui(QtGui.QMainWindow):
         self.setCentralWidget(self.main_widget)
 
     def create_status_bar(self):
+        """ Status bar for the GUI
+        """
         self.status_text = QtGui.QLabel("XSpec")
         self.statusBar().addWidget(self.status_text, 1)
 
-    def on_click(self,event):
+    def on_click(self, event):
+        """ Over-loads click events
+        """
         if event.button == 3: # Set redshift
             if self.pltline_widg.llist['List'] is None:
                 return
@@ -101,6 +110,7 @@ class XSpecGui(QtGui.QMainWindow):
     # Quit
     def quit(self):
         self.close()
+
 
 def main(args, **kwargs):
     from specutils.spectrum1d import Spectrum1D
