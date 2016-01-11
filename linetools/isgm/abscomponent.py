@@ -219,7 +219,6 @@ class AbsComponent(object):
             self._abslines.append(absline)
         else:
             warnings.warn('Input absline with wrest={:g} does not match component rules. Not appending'.format(absline.wrest))
-            pdb.set_trace()
 
     def build_table(self):
         """Generate an astropy QTable out of the component.
