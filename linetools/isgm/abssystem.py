@@ -211,7 +211,6 @@ class AbsSystem(object):
         if test:
             self._components.append(abscomp)
         else:
-            pdb.set_trace()
             warnings.warn('Input AbsComponent with does not match AbsSystem rules. Not appending')
 
     def chk_component(self, component):
@@ -220,6 +219,7 @@ class AbsSystem(object):
         Parameters
         ----------
         component : AbsComponent
+
         """
         return True
 
