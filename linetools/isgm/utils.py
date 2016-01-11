@@ -144,7 +144,12 @@ def build_components_from_dict(idict, coord=None, **kwargs):
     elif 'lines' in idict.keys():  # to be deprecated
         lines = []
         for key in idict['lines']:
-            line = AbsLine.from_dict(idict['lines'][key])
+            if isinstance(idict['lines'][key], AbsLine):
+                line = idict['lines'][key]
+            elif isinstance(idict['lines'][key], dict):
+                line = AbsLine.from_dict(idict['lines'][key])
+            else:
+                raise IOError("Need those lines")
             if coord is not None:
                 line.attrib['coord'] = coord
             lines.append(line)

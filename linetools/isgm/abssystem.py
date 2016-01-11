@@ -72,19 +72,40 @@ class AbsSystem(object):
     __metaclass__ = ABCMeta
 
     @classmethod
-    def from_components(cls, components):
-        """Instantiate from a list of AbsComponent objects
+    def from_abslines(cls, abslines, vlim=None, **kwargs):
+        """Instantiate from a list of AbsLines
 
         Parameters
         ----------
         components : list
           List of AbsComponent objects
         """
+        # Generate components
+        components = ltiu.build_components_from_abslines(abslines, **kwargs)
+        # Instantiate
+        slf = cls.from_components(components, vlim=vlim)
+        # Return
+        return slf
+
+    @classmethod
+    def from_components(cls, components, vlim=None):
+        """Instantiate from a list of AbsComponent objects
+
+        Parameters
+        ----------
+        components : list
+          List of AbsComponent objects
+        vlim : list, optional
+          Velocity limits for the system
+          If not set, the first components sets vlim
+        """
         # Check
         assert ltiu.chk_components(components)
         # Instantiate with the first component
         init_comp = components[0]
-        slf = cls(init_comp.coord, init_comp.zcomp, init_comp.vlim)
+        if vlim is None:
+            vlim = init_comp.vlim
+        slf = cls(init_comp.coord, init_comp.zcomp, vlim)
         if slf.chk_component(init_comp):
             slf._components.append(init_comp)
         else:
@@ -190,6 +211,7 @@ class AbsSystem(object):
         if test:
             self._components.append(abscomp)
         else:
+            pdb.set_trace()
             warnings.warn('Input AbsComponent with does not match AbsSystem rules. Not appending')
 
     def chk_component(self, component):
@@ -218,11 +240,17 @@ class AbsSystem(object):
     def to_dict(self):
         """ Write AbsSystem data to a dict
         """
+        import datetime
+        import getpass
+        date = str(datetime.date.today().strftime('%Y-%b-%d'))
+        user = getpass.getuser()
+        # Generate the dict
         outdict = dict(Name=self.name, abs_type=self.abs_type, zabs=self.zabs,
                        vlim=self.vlim.to('km/s').value, zem=self.zem,
                        NHI=self.NHI, sig_NHI=self.sig_NHI,
                        RA=self.coord.ra.value, DEC=self.coord.dec.value,
-                       kin=self.kin, Refs=self.Refs,
+                       kin=self.kin, Refs=self.Refs, CreationDate=date,
+                       user=user
                        )
         # Components
         outdict['components'] = {}

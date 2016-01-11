@@ -117,7 +117,7 @@ class AbsComponent(object):
         """
         slf = cls(SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg),
                   tuple(idict['Zion']), idict['zcomp'], idict['vlim']*u.km/u.s,
-                  Ej=idict['Ej'], A=idict['A'],
+                  Ej=idict['Ej']/u.cm, A=idict['A'],
                   Ntup = tuple([idict[key] for key in ['flag_N', 'logN', 'sig_logN']]),
                   comment=idict['comment'])
         # Add lines
@@ -219,6 +219,7 @@ class AbsComponent(object):
             self._abslines.append(absline)
         else:
             warnings.warn('Input absline with wrest={:g} does not match component rules. Not appending'.format(absline.wrest))
+            pdb.set_trace()
 
     def build_table(self):
         """Generate an astropy QTable out of the component.

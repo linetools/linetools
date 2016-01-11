@@ -72,6 +72,8 @@ class SpectralLine(object):
         # Init
         if idict['ltype'] == 'Abs':
             sline = AbsLine(idict['trans'])
+        else:
+            raise ValueError("Not prepared for this type")
         # Check data
         for key in idict['data']:
             if isinstance(idict['data'][key], dict):  # Assume Quantity
