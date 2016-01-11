@@ -117,7 +117,7 @@ class AbsComponent(object):
         """
         slf = cls(SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg),
                   tuple(idict['Zion']), idict['zcomp'], idict['vlim']*u.km/u.s,
-                  Ej=idict['Ej'], A=idict['A'],
+                  Ej=idict['Ej']/u.cm, A=idict['A'],
                   Ntup = tuple([idict[key] for key in ['flag_N', 'logN', 'sig_logN']]),
                   comment=idict['comment'])
         # Add lines
