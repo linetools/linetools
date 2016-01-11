@@ -21,8 +21,9 @@ from specutils import Spectrum1D
 
 from linetools.analysis import absline as ltaa
 from linetools.analysis import plots as ltap
-from linetools.spectralline import AbsLine
+from linetools.spectralline import AbsLine, SpectralLine
 from linetools.abund import ions
+from linetools import utils as ltu
 
 #import xastropy.atomic as xatom
 #from xastropy.stats import basic as xsb
@@ -102,6 +103,30 @@ class AbsComponent(object):
         return cls(component.coord, component.Zion, component.zcomp, component.vlim, Ej=component.Ej,
                    A=component.A, **kwargs)
 
+    @classmethod
+    def from_dict(cls, idict, **kwargs):
+        """ Instantiate from a dict
+
+        Parameters
+        ----------
+        idict : dict
+
+        Returns
+        -------
+
+        """
+        slf = cls(SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg),
+                  tuple(idict['Zion']), idict['zcomp'], idict['vlim']*u.km/u.s,
+                  Ej=idict['Ej'], A=idict['A'],
+                  Ntup = tuple([idict[key] for key in ['flag_N', 'logN', 'sig_logN']]),
+                  comment=idict['comment'])
+        # Add lines
+        for key in idict['lines']:
+            iline = SpectralLine.from_dict(idict['lines'][key])
+            slf.add_absline(iline, **kwargs)
+        # Return
+        return slf
+
     def __init__(self, radec, Zion, z, vlim, Ej=0./u.cm, A=None, Ntup=None, comment=''):
         """  Initiator
 
@@ -155,7 +180,9 @@ class AbsComponent(object):
             self.sig_logN = 0.
 
         # Other
-        self.name = ions.ion_name(self.Zion, nspace=1)
+        self.name = '{:s}_z{:0.5f}'.format(
+                ions.ion_name(self.Zion, nspace=0),
+            self.zcomp)
         self._abslines = []
 
     def add_absline(self, absline, tol=0.1*u.arcsec, skip_vel=False):
@@ -371,15 +398,6 @@ class AbsComponent(object):
         # Log values
         self.logN, self.sig_logN = ltaa.log_clm(self)
 
-    def stack_plot(self, **kwargs):
-        """Show a stack plot of the component, if spec are loaded
-        Assumes the data are normalized.
-
-        Parameters
-        ----------
-        """
-        ltap.stack_plot(self._abslines, vlim=self.vlim, **kwargs)
-
     def repr_vpfit(self, b=10.*u.km/u.s, tie_strs=('', '', ''), fix_strs=('', '', '')):
         """
         String representation for VPFIT (line fitting software) in its fort.26 format
@@ -406,8 +424,9 @@ class AbsComponent(object):
         # get Doppler parameter to km/s
         b = b.to('km/s').value
 
-        # name
-        name = self.name.replace(' ', '')
+        # Ion name
+        name = ions.ion_name(self.Zion, nspace=1)
+        name = name.replace(' ', '')
 
         # Deal with fix and tie parameters
         # Check format first
@@ -473,7 +492,8 @@ class AbsComponent(object):
             nucleons = 2 * self.Zion[0]
 
         # name
-        name = '{}'.format(nucleons)+self.name.replace(' ', '_')
+        name = ions.ion_name(self.Zion, nspace=1)
+        name = '{}'.format(nucleons)+name.replace(' ', '_')
 
         # Deal with fix and tie parameters
         # Check format first
@@ -501,6 +521,35 @@ class AbsComponent(object):
         s += '\n'
         return s
 
+    def stack_plot(self, **kwargs):
+        """Show a stack plot of the component, if spec are loaded
+        Assumes the data are normalized.
+
+        Parameters
+        ----------
+        """
+        ltap.stack_plot(self._abslines, vlim=self.vlim, **kwargs)
+
+    def to_dict(self):
+        """ Convert component data to a dict
+        Returns
+        -------
+        cdict : dict
+        """
+        cdict = dict(Zion=self.Zion, zcomp=self.zcomp, vlim=self.vlim.to('km/s').value,
+                     Name=self.name,
+                     RA=self.coord.ra.value, DEC=self.coord.dec.value,
+                     A=self.A, Ej=self.Ej.to('1/cm').value, comment=self.comment,
+                     flag_N=self.flag_N, logN=self.logN, sig_logN=self.sig_logN)
+        # AbsLines
+        cdict['lines'] = {}
+        for iline in self._abslines:
+            cdict['lines'][iline.wrest.value] = iline.to_dict()
+        # Polish
+        cdict = ltu.jsonify_dict(cdict)
+        # Return
+        return cdict
+
     def __getitem__(self, attrib):
         """Passback attribute, if it exists
 
@@ -514,7 +563,8 @@ class AbsComponent(object):
 
     def __repr__(self):
         txt = '<{:s}: {:s} {:s}, Name={:s}, Zion=({:d},{:d}), Ej={:g}, z={:g}, vlim={:g},{:g}'.format(
-            self.__class__.__name__, self.coord.ra.to_string(unit=u.hour,sep=':', pad=True), self.coord.dec.to_string(sep=':',pad=True,alwayssign=True), self.name, self.Zion[0], self.Zion[1], self.Ej, self.zcomp, self.vlim[0], self.vlim[1])
+            self.__class__.__name__, self.coord.ra.to_string(unit=u.hour,sep=':', pad=True),
+                self.coord.dec.to_string(sep=':',pad=True,alwayssign=True), self.name, self.Zion[0], self.Zion[1], self.Ej, self.zcomp, self.vlim[0], self.vlim[1])
 
         # Column?
         if self.flag_N > 0:

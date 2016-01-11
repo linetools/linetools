@@ -16,10 +16,13 @@ from abc import ABCMeta
 from astropy import units as u
 from astropy.table import QTable
 from astropy import constants as const
+from astropy.coordinates import SkyCoord
 
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.isgm import utils as ltiu
 from linetools import utils as ltu
+from linetools.spectralline import AbsLine
+from linetools.abund import ions
 
 
 class AbsSystem(object):
@@ -93,7 +96,36 @@ class AbsSystem(object):
         # Return
         return slf
 
-    def __init__(self, abs_type, radec, zabs, vlim, zem=0., NHI=0., sig_NHI=np.zeros(2), name=''):
+    @classmethod
+    def from_dict(cls, idict):
+        """ Instantiate from a dict.  Usually read from the hard-drive
+
+        Parameters
+        ----------
+        idict : dict
+
+        Returns
+        -------
+        AbsSystem
+
+        """
+        slf = cls(idict['abs_type'],
+                  SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg),
+                  idict['zabs'], idict['vlim']*u.km/u.s,
+                  zem=idict['zem'], NHI=idict['NHI'],
+                  sig_NHI=idict['sig_NHI'], name=idict['Name']
+                  )
+        # Components
+        components = ltiu.build_components_from_dict(idict)
+        for component in components:
+            # This is to insure the components follow the rules
+            slf.add_component(component)
+
+        # Return
+        return slf
+
+    def __init__(self, abs_type, radec, zabs, vlim, zem=0.,
+                 NHI=0., sig_NHI=np.zeros(2), name=None):
 
         self.zabs = zabs
         self.zem = zem
@@ -101,7 +133,13 @@ class AbsSystem(object):
         self.NHI = NHI
         self.sig_NHI = sig_NHI
         self.coord = ltu.radec_to_coord(radec)
-        self.name = name
+        if name is None:
+            self.name = 'J{:s}{:s}_z{:.3f}'.format(
+                    self.coord.ra.to_string(unit=u.hour,sep='',pad=True),
+                    self.coord.dec.to_string(sep='',pad=True,alwayssign=True),
+                    self.zabs)
+        else:
+            self.name = name
 
         # Abs type
         if abs_type == None:
@@ -154,19 +192,13 @@ class AbsSystem(object):
         else:
             warnings.warn('Input AbsComponent with does not match AbsSystem rules. Not appending')
 
-    # #############
-    def __repr__(self):
-        txt = '[{:s}: name={:s} type={:s}, {:s} {:s}, z={:g}, NHI={:g}'.format(
-            self.__class__.__name__, self.name, self.abs_type,
-            self.coord.ra.to_string(unit=u.hour,sep=':',pad=True),
-            self.coord.dec.to_string(sep=':',pad=True,alwayssign=True),
-            self.zabs, self.NHI)
-        # Finish
-        txt = txt + ']'
-        return (txt)
-
     def chk_component(self, component):
-        """Additional checks on the component"""
+        """Additional checks on the component
+
+        Parameters
+        ----------
+        component : AbsComponent
+        """
         return True
 
     def list_of_abslines(self):
@@ -182,6 +214,34 @@ class AbsSystem(object):
         # Return
         return [iline for component in self._components
                 for iline in component._abslines]
+
+    def to_dict(self):
+        """ Write AbsSystem data to a dict
+        """
+        outdict = dict(Name=self.name, abs_type=self.abs_type, zabs=self.zabs,
+                       vlim=self.vlim.to('km/s').value, zem=self.zem,
+                       NHI=self.NHI, sig_NHI=self.sig_NHI,
+                       RA=self.coord.ra.value, DEC=self.coord.dec.value,
+                       kin=self.kin, Refs=self.Refs,
+                       )
+        # Components
+        outdict['components'] = {}
+        for component in self._components:
+            outdict['components'][component.name] = component.to_dict()
+        # Polish
+        outdict = ltu.jsonify_dict(outdict)
+        # Return
+        return outdict
+
+    def __repr__(self):
+        txt = '<{:s}: name={:s} type={:s}, {:s} {:s}, z={:g}, NHI={:g}'.format(
+                self.__class__.__name__, self.name, self.abs_type,
+                self.coord.ra.to_string(unit=u.hour,sep=':',pad=True),
+                self.coord.dec.to_string(sep=':',pad=True,alwayssign=True),
+                self.zabs, self.NHI)
+        # Finish
+        txt = txt + '>'
+        return (txt)
 
 
 class GenericAbsSystem(AbsSystem):
