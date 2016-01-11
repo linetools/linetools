@@ -219,6 +219,7 @@ class AbsSystem(object):
         Parameters
         ----------
         component : AbsComponent
+
         """
         return True
 
