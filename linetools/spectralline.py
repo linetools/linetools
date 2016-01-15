@@ -25,35 +25,37 @@ from linetools import utils as ltu
 # Class for Spectral line
 class SpectralLine(object):
     """
-    Class for a spectral line.  Emission or absorption.
+    Class for a spectral line. Emission or absorption.
 
     Parameters
     ----------
-    ltype : {'Abs'}
-      Type of Spectral line. Just 'Abs' for now (also 'Emiss' in future).
-    trans : Quantity or str
-      Either the rest wavelength (e.g. 1215.6700*u.AA) or the
-      transition name (e.g. 'CIV 1548')
-    linelist : LineList, optional
-      A LineList instance or string input to LineList (e.g. 'HI')
-    closest : bool [False]
-      Take the closest line to input wavelength.
+    ltype : str
+        Type of Spectral line. Just `Abs` implemented for now but
+        we expect to include `Emiss` in future.
+    trans : Quantity, str
+        Either the rest wavelength (e.g. 1215.6700*u.AA) or the
+        transition name (e.g. 'CIV 1548')
+    linelist : LineList, str; optional
+        A LineList instance or string input to LineList (e.g. 'HI')
+    closest : bool; optional
+        Take the closest line to input wavelength (Default is False)
 
     Attributes
     ----------
-    ltype : {'Abs', 'Emiss'}
-      type of line
+    ltype : str
+        Type of line, either 'Abs' or 'Emiss' (not currently implemented though)
     wrest : Quantity
-      Rest wavelength
+        Rest wavelength
     z : float
-      Redshift
+        Redshift
     attrib : dict
-      Line properties (e.g. column, EW, centroid, RA, Dec)
+        Line properties (e.g. column, EW, centroid, RA, Dec)
     analy : dict
-      Analysis inputs (e.g. a spectrum, wavelength limits)
+        Analysis inputs (e.g. a spectrum, wavelength limits)
     data : dict
-      Line atomic/molecular data ((e.g. f-value, A coefficient, Elow)
+        Line atomic/molecular data (e.g. f-value, A coefficient, Elow)
     """
+
     @classmethod
     def from_dict(cls, idict):
         """ Initialize from a dict (usually read from disk)
@@ -73,7 +75,7 @@ class SpectralLine(object):
         if idict['ltype'] == 'Abs':
             sline = AbsLine(idict['trans'])
         else:
-            raise ValueError("Not prepared for this type")
+            raise ValueError("Not prepared for type {:s}.".format(idict['ltype']))
         # Check data
         for key in idict['data']:
             if isinstance(idict['data'][key], dict):  # Assume Quantity
@@ -117,18 +119,19 @@ class SpectralLine(object):
 
         # Other
         self.data = {} # Atomic/Molecular Data (e.g. f-value, A coefficient, Elow)
-        self.analy = {'spec': None, # Analysis inputs (e.g. spectrum; from .clm file or AbsID)
-            'wvlim': [0., 0.]*u.AA, # Wavelength interval about the line (observed)
-            'vlim': [0., 0.]*u.km/u.s, # Velocity limit of line, relative to self.attrib['z']
-            'flag_kin': 0,  # Use for kinematic analysis?
-            'do_analysis': 1 # Analyze
+        self.analy = {
+            'spec': None,              # Analysis inputs (e.g. spectrum; from .clm file or AbsID)
+            'wvlim': [0., 0.]*u.AA,    # Wavelength interval about the line (observed)
+            'vlim': [0., 0.]*u.km/u.s, # Rest-frame velocity limit of line, relative to self.attrib['z']
+            'flag_kin': 0,             # Use for kinematic analysis?
+            'do_analysis': 1           # Analyze?
             }
-        self.attrib = {   # Properties (e.g. column, EW, centroid)
-                       'coord': SkyCoord(ra=0.*u.deg, dec=0.*u.deg),  #  Coords
-                       'z': z, 'sig_z': 0.,  #  Redshift
-                       'v': 0.*u.km/u.s, 'sig_v': 0.*u.km/u.s,  #  Velocity relative to z
-                       'EW': 0.*u.AA, 'sig_EW': 0.*u.AA, 'flag_EW': 0 # EW
-                       }
+        self.attrib = {
+            'coord': SkyCoord(ra=0.*u.deg, dec=0.*u.deg),  # Coords
+            'z': z, 'sig_z': 0.,                           # Redshift
+            'v': 0.*u.km/u.s, 'sig_v': 0.*u.km/u.s,        # rest-frame velocity relative to z
+            'EW': 0.*u.AA, 'sig_EW': 0.*u.AA, 'flag_EW': 0 # EW
+            }
 
         # Fill data
         self.fill_data(trans, linelist=linelist, closest=closest)
@@ -180,27 +183,27 @@ class SpectralLine(object):
         # Return
         return answer
 
-    def cut_spec(self, normalize=False, relvel=False):
+    def cut_spec(self, normalize=False):
         """ Cut out a chunk of the spectrum around this line.
 
         Parameters
         ----------
-        normalize : bool [False]
-          Normalize the spectrum if true (and continuum exists)
-        relvel : bool [False]
-          Calculate and return velocity relative to this line
+        normalize : bool
+            Whether to normalize the spectrum (if continuum exists)
+            Default is False
 
         Returns
         -------
         fx, sig, dict(wave, velo)
-          Arrays (numpy or Quantity) of flux, error, and wavelength/velocity
+            Arrays (numpy or Quantity) of flux, error, and wavelength/velocity
+            The velocity is calculated relative to self.attrib['z']
         """
+
         # Checks
         if self.analy['spec'] is None:
             raise ValueError('spectralline.cut_spec: Need to set spectrum!')
         if self.analy['spec'].wcs.unit == 1.:
             raise ValueError('Expecting a unit!')
-                    # Velocity
 
         # Pixels for evaluation
         if np.sum(self.analy['wvlim'].value > 0.):
@@ -217,21 +220,21 @@ class SpectralLine(object):
         sig = self.analy['spec'].sig[pix]
         wave = self.analy['spec'].dispersion[pix]
 
-        # Velocity array
+        # Velocity array created within the XSpectrum1D class and cut afterwards
         self.analy['spec'].velo = self.analy['spec'].relative_vel(
             self.wrest*(1 + self.attrib['z']))
-        velo = self.analy['spec'].velo[pix] 
+        velo = self.analy['spec'].velo[pix]
 
         # Normalize?
         if normalize:
             try:
-                fx = fx / self.analy['spec'].conti[pix]
+                fx = fx / self.analy['spec'].co[pix]
             except AttributeError:
                 pass
             else:
-                sig = sig / self.analy['spec'].conti[pix]
+                sig = sig / self.analy['spec'].co[pix]
 
-       # Return
+        # Return
         return fx, sig, dict(wave=wave, velo=velo)
 
 
@@ -421,6 +424,7 @@ class AbsLine(SpectralLine):
         self.attrib.update({'N': 0./u.cm**2, 'sig_N': 0./u.cm**2, 'flag_N': 0, # Column
                        'b': 0.*u.km/u.s, 'sig_b': 0.*u.km/u.s  # Doppler
                        } )
+
     # Voigt
     def generate_voigt(self, wave=None, **kwargs):
         """ Generate a Voigt profile model for the absorption line in
