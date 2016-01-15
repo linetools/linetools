@@ -43,6 +43,11 @@ def test_list_of_abslines():
     abslines = gensys.list_of_abslines()
     # Test
     assert len(abslines) == 6
+    # Grab one line
+    lyb = gensys.absline('HI 1025')
+    np.testing.assert_allclose(lyb.wrest.value, 1025.7222)
+    lyb = gensys.absline(1025.72*u.AA)
+    np.testing.assert_allclose(lyb.wrest.value, 1025.7222)
 
 
 def test_todict():
@@ -61,10 +66,11 @@ def test_todict():
     # Dict
     adict = HIsys.to_dict()
     assert isinstance(adict, dict)
-    #import io,json
-    #with io.open('tmp.json', 'w', encoding='utf-8') as f:
-    #    f.write(unicode(json.dumps(adict, sort_keys=True, indent=4,
-    #                               separators=(',', ': '))))
+    # Verify it is JSON compatible
+    import io,json
+    with io.open('tmp.json', 'w', encoding='utf-8') as f:
+        f.write(unicode(json.dumps(adict, sort_keys=True, indent=4,
+                                   separators=(',', ': '))))
     # Instantiate
     newsys = AbsSystem.from_dict(adict)
     assert isinstance(newsys, AbsSystem)

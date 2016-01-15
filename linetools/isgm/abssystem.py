@@ -14,6 +14,7 @@ import warnings
 from abc import ABCMeta
 
 from astropy import units as u
+from astropy.units import Quantity
 from astropy.table import QTable
 from astropy import constants as const
 from astropy.coordinates import SkyCoord
@@ -182,6 +183,42 @@ class AbsSystem(object):
 
         # Refs (list of references)
         self.Refs = []
+
+    def absline(self, inp):
+        """ Returns an AbsLine from the AbsSystem
+
+        Parameters
+        ----------
+        inp : str or Quantity
+          str -- Name of the transition, e.g. 'CII 1334'
+          Quantity -- Rest wavelength of the transition, e.g. 1334.53*u.AA
+            to 0.01 precision
+
+        Returns
+        -------
+        absline -- AbsLine object or list of Abslines
+          More than one will be returned if this line exists in
+          multiple components.  The returned quantity will then
+          be a list instead of a single object
+        """
+        # Generate the lines
+        abslines = self.list_of_abslines()
+        if isinstance(inp,basestring):
+            names = np.array([absline.trans for absline in abslines])
+            mt = np.where(names == inp)[0]
+        elif isinstance(inp,Quantity):
+            wrest = Quantity([absline.wrest for absline in abslines])
+            mt = np.where(np.abs(wrest-inp) < 0.01*u.AA)[0]
+        else:
+            raise IOError("Bad input to absline")
+        # Finish
+        if len(mt) == 0:
+            warnings.warn("No absline with input={}".format(inp))
+            return None
+        elif len(mt) == 1:
+            return abslines[mt]
+        else:
+            return [abslines[ii] for ii in mt]
 
     def add_component(self, abscomp, toler=0.2*u.arcsec):
         """Add an AbsComponent object if it satisfies all of the rules.
