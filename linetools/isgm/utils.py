@@ -110,7 +110,15 @@ def build_components_from_abslines(iabslines, clmdict=None, coord=None,
         mtZiE = np.where(uZiE == uZiE[uidx])[0]
         lines = [abslines[ii] for ii in mtZiE] # Need a list
         # Generate component
-        component = AbsComponent.from_abslines(lines, **kwargs)
+        if lines[0].data['Ej'].value > 0.:
+            # Grab stars from transition name
+            nstars = lines[0].trans.count('*')
+            if nstars == 0:
+                raise ValueError("Should have at least one *")
+            stars = '*'*nstars
+        else:
+            stars = None
+        component = AbsComponent.from_abslines(lines, stars=stars, **kwargs)
         # Reset vmin, vmax
         vmin,vmax = 9999., -9999.
         for iline in lines:
@@ -217,7 +225,7 @@ def iontable_from_components(components, ztbl=None):
         # Synthesize components with like Zion, Ej
         mtZiE = np.where(uZiE == uZiE[uidx])[0]
         comps = [components[ii] for ii in mtZiE]  # Need a list
-        synth_comp = synthesize_components(comps,zcomp=ztbl)
+        synth_comp = synthesize_components(comps, zcomp=ztbl)
         # Add a row to QTable
         row = dict(Z=synth_comp.Zion[0],ion=synth_comp.Zion[1],
                    z=ztbl,
