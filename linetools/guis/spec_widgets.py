@@ -156,8 +156,8 @@ class ExamineSpecWidget(QtGui.QWidget):
         if event.key in ['C', 'M', 'X', '4', '8', 'B']:
             wave = ltgu.set_doublet(self, event)
             #print('wave = {:g},{:g}'.format(wave[0], wave[1]))
-            self.ax.plot( [wave[0], wave[0]], self.psdict['ymnx'], '--', color='red')
-            self.ax.plot( [wave[1], wave[1]], self.psdict['ymnx'], '--', color='red')
+            self.ax.plot([wave[0], wave[0]], self.psdict['ymnx'], '--', color='red')
+            self.ax.plot([wave[1], wave[1]], self.psdict['ymnx'], '--', color='red')
             flg = 2 # Layer
 
         ## SMOOTH
