@@ -20,6 +20,7 @@ from astropy.table import QTable
 from linetools.analysis import absline as ltaa
 from linetools.isgm.abscomponent import AbsComponent
 
+
 def chk_components(components, chk_match=False, chk_A_none=False, toler=0.2*u.arcsec):
     """ Performs checks on a list of components
 
@@ -64,6 +65,7 @@ def chk_components(components, chk_match=False, chk_A_none=False, toler=0.2*u.ar
         tests = tests & match
     # Return
     return tests
+
 
 def build_components_from_abslines(iabslines, clmdict=None, coord=None,
                                    **kwargs):
@@ -117,8 +119,9 @@ def build_components_from_abslines(iabslines, clmdict=None, coord=None,
         component.vlim = [vmin,vmax]*u.km/u.s
         # Append
         components.append(component)
-
+    # Return
     return components
+
 
 def build_components_from_dict(idict, coord=None, **kwargs):
     """ Generate a list of components from an input dict
@@ -159,7 +162,8 @@ def build_components_from_dict(idict, coord=None, **kwargs):
     # Return
     return components
 
-def iontable_from_components(components,ztbl=None):
+
+def iontable_from_components(components, ztbl=None):
     """Generate a QTable from a list of components
 
     Method does *not* perform logic on redshifts or vlim.
@@ -212,7 +216,7 @@ def iontable_from_components(components,ztbl=None):
     for uidx in auidx:
         # Synthesize components with like Zion, Ej
         mtZiE = np.where(uZiE == uZiE[uidx])[0]
-        comps = [components[ii] for ii in mtZiE] # Need a list
+        comps = [components[ii] for ii in mtZiE]  # Need a list
         synth_comp = synthesize_components(comps,zcomp=ztbl)
         # Add a row to QTable
         row = dict(Z=synth_comp.Zion[0],ion=synth_comp.Zion[1],
@@ -258,7 +262,8 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
 
     # Meld column densities
     for comp in components[1:]:
-        synth_comp.flag_N, synth_comp.logN, synth_comp.sig_logN = ltaa.sum_logN(synth_comp, comp)
+        if comp.flag_N != 0:
+            synth_comp.flag_N, synth_comp.logN, synth_comp.sig_logN = ltaa.sum_logN(synth_comp, comp)
 
     # Meld z, vlim
     # zcomp
