@@ -84,11 +84,30 @@ Plots
 Methods
 =======
 
+AbsLines
+--------
+
+There are a few methods related to the AbsLine objects within
+an AbsSystem.  One can generate a list of all the AbsLine objects
+with::
+
+   lines = abssys.list_of_abslines()
+
+One can retrieve one or more AbsLine objects matching the name
+or rest-wavelength of a transition, e.g. ::
+
+   lyb = abssys.get_absline('HI 1025')
+   # or
+   lyb = abssys.get_absline(1025.72*u.AA)  # Nearest 0.01 A is required
+
+Output
+======
+
 One may generate a *dict* of the key properties of the AbsSystem
 with the to_dict() method::
 
    odict = HIsys.to_dict()
 
+This dict is required to be JSON compatible.
 
-Output
-======
+

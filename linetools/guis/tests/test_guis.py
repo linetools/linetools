@@ -25,9 +25,9 @@ def test_navigate():
     # Init
     nav_dict = dict(nav=ltgu.navigate(0,0,init=True))
     assert isinstance(nav_dict['nav'], list)
-    nav_dict['xmnx'] = [0., 1]
-    nav_dict['ymnx'] = [0., 1]
-    nav_dict['sv_xy'] = [[0,1], [0,1]]
+    nav_dict['x_minmax'] = [0., 1]
+    nav_dict['y_minmax'] = [0., 1]
+    nav_dict['sv_xy_minmax'] = [[0,1], [0,1]]
     nav_dict['tmp_xy'] = None
     # Usage
     o = type(str('Dummy'), (object,), {})

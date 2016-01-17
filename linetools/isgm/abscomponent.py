@@ -56,13 +56,15 @@ class AbsComponent(object):
         A comment, default is ``
     """
     @classmethod
-    def from_abslines(cls, abslines, **kwargs):
+    def from_abslines(cls, abslines, stars=None, **kwargs):
         """Instantiate from a list of AbsLine objects
 
         Parameters
         ----------
         abslines : list 
           List of AbsLine objects
+        stars : str, optional
+          Asterisks to append to the ion name (e.g. fine-structure, CII*)
         """
         # Check
         if not isinstance(abslines, list):
@@ -72,7 +74,9 @@ class AbsComponent(object):
 
         # Instantiate with the first line
         init_line = abslines[0]
-        slf = cls( init_line.attrib['coord'], (init_line.data['Z'],init_line.data['ion']), init_line.attrib['z'], init_line.analy['vlim'], Ej=init_line.data['Ej'])
+        slf = cls( init_line.attrib['coord'], (init_line.data['Z'],init_line.data['ion']),
+                   init_line.attrib['z'], init_line.analy['vlim'],
+                   Ej=init_line.data['Ej'], stars=stars)
         slf._abslines.append(init_line)
         # Append with component checking
         if len(abslines) > 1:
@@ -101,7 +105,7 @@ class AbsComponent(object):
             raise IOError('Need an AbsComponent object')
         # Return
         return cls(component.coord, component.Zion, component.zcomp, component.vlim, Ej=component.Ej,
-                   A=component.A, **kwargs)
+                   A=component.A, name=component.name, **kwargs)
 
     @classmethod
     def from_dict(cls, idict, **kwargs):
@@ -119,7 +123,7 @@ class AbsComponent(object):
                   tuple(idict['Zion']), idict['zcomp'], idict['vlim']*u.km/u.s,
                   Ej=idict['Ej']/u.cm, A=idict['A'],
                   Ntup = tuple([idict[key] for key in ['flag_N', 'logN', 'sig_logN']]),
-                  comment=idict['comment'])
+                  comment=idict['comment'], name=idict['Name'])
         # Add lines
         for key in idict['lines']:
             iline = SpectralLine.from_dict(idict['lines'][key])
@@ -127,7 +131,8 @@ class AbsComponent(object):
         # Return
         return slf
 
-    def __init__(self, radec, Zion, z, vlim, Ej=0./u.cm, A=None, Ntup=None, comment=''):
+    def __init__(self, radec, Zion, z, vlim, Ej=0./u.cm, A=None,
+                 Ntup=None, comment='', name=None, stars=None):
         """  Initiator
 
         Parameters
@@ -152,6 +157,9 @@ class AbsComponent(object):
             sig_logN : Error in log10 N
         Ej : Quantity, optional
             Energy of lower level (1/cm)
+        stars : str, optional
+            asterisks to add to name, e.g. '**' for CI**
+            Required if name=None and Ej>0.
         comment : str, optional
             A comment, default is ``
         """
@@ -179,10 +187,18 @@ class AbsComponent(object):
             self.logN = 0.
             self.sig_logN = 0.
 
+        # Name
+        if name is None:
+            iname = ions.ion_name(self.Zion, nspace=0)
+            if self.Ej.value > 0:  # Need to put *'s in name
+                try:
+                    iname += stars
+                except:
+                    raise IOError("Need to provide 'stars' parameter.")
+            self.name = '{:s}_z{:0.5f}'.format(iname, self.zcomp)
+        else:
+            self.name = name
         # Other
-        self.name = '{:s}_z{:0.5f}'.format(
-                ions.ion_name(self.Zion, nspace=0),
-            self.zcomp)
         self._abslines = []
 
     def add_absline(self, absline, tol=0.1*u.arcsec, skip_vel=False):

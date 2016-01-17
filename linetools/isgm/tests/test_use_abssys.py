@@ -43,6 +43,11 @@ def test_list_of_abslines():
     abslines = gensys.list_of_abslines()
     # Test
     assert len(abslines) == 6
+    # Grab one line
+    lyb = gensys.get_absline('HI 1025')
+    np.testing.assert_allclose(lyb.wrest.value, 1025.7222)
+    lyb = gensys.get_absline(1025.72*u.AA)
+    np.testing.assert_allclose(lyb.wrest.value, 1025.7222)
 
 
 def test_todict():
@@ -61,10 +66,29 @@ def test_todict():
     # Dict
     adict = HIsys.to_dict()
     assert isinstance(adict, dict)
-    #import io,json
-    #with io.open('tmp.json', 'w', encoding='utf-8') as f:
-    #    f.write(unicode(json.dumps(adict, sort_keys=True, indent=4,
-    #                               separators=(',', ': '))))
     # Instantiate
     newsys = AbsSystem.from_dict(adict)
     assert isinstance(newsys, AbsSystem)
+
+@pytest.mark.skipif("sys.version_info >= (3,0)")
+def test_todict_withjson():
+    radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
+    # HI Lya, Lyb
+    lya = AbsLine(1215.670*u.AA)
+    lya.analy['vlim'] = [-300.,300.]*u.km/u.s
+    lya.attrib['z'] = 2.92939
+    lyb = AbsLine(1025.7222*u.AA)
+    lyb.analy['vlim'] = [-300.,300.]*u.km/u.s
+    lyb.attrib['z'] = lya.attrib['z']
+    abscomp = AbsComponent.from_abslines([lya,lyb])
+    abscomp.coord = radec
+    # Instantiate
+    HIsys = LymanAbsSystem.from_components([abscomp])
+    # Dict
+    adict = HIsys.to_dict()
+    assert isinstance(adict, dict)
+    # Verify it is JSON compatible (failing in Python 3)
+    import io,json
+    with io.open('tmp.json', 'w', encoding='utf-8') as f:
+        f.write(unicode(json.dumps(adict, sort_keys=True, indent=4,
+                                   separators=(',', ': '))))
