@@ -44,9 +44,9 @@ def test_list_of_abslines():
     # Test
     assert len(abslines) == 6
     # Grab one line
-    lyb = gensys.absline('HI 1025')
+    lyb = gensys.get_absline('HI 1025')
     np.testing.assert_allclose(lyb.wrest.value, 1025.7222)
-    lyb = gensys.absline(1025.72*u.AA)
+    lyb = gensys.get_absline(1025.72*u.AA)
     np.testing.assert_allclose(lyb.wrest.value, 1025.7222)
 
 

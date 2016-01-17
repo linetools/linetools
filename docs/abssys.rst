@@ -96,9 +96,9 @@ with::
 One can retrieve one or more AbsLine objects matching the name
 or rest-wavelength of a transition, e.g. ::
 
-   lyb = abssys.absline('HI 1025')
+   lyb = abssys.get_absline('HI 1025')
    # or
-   lyb = abssys.absline(1025.72*u.AA)  # Nearest 0.01 A is required
+   lyb = abssys.get_absline(1025.72*u.AA)  # Nearest 0.01 A is required
 
 Output
 ======
