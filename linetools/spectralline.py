@@ -72,7 +72,7 @@ class SpectralLine(object):
         """
         # Init
         if idict['ltype'] == 'Abs':
-            sline = AbsLine(idict['trans'])
+            sline = AbsLine(idict['name'])
         else:
             raise ValueError("Not prepared for this type")
         # Check data
