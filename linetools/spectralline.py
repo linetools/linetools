@@ -73,7 +73,11 @@ class SpectralLine(object):
         """
         # Init
         if idict['ltype'] == 'Abs':
-            sline = AbsLine(idict['trans'])
+            # TODO: remove this try/except eventually
+            try:
+                sline = AbsLine(idict['name'])
+            except: #  This is to be compatible JSON files already written with old notation
+                sline = AbsLine(idict['trans'])
         else:
             raise ValueError("Not prepared for type {:s}.".format(idict['ltype']))
         # Check data
@@ -301,7 +305,7 @@ class SpectralLine(object):
         from astropy.units import Quantity
         # Starting
         adict = dict(ltype=self.ltype, analy=dict(), attrib=dict(), data=dict(),
-                     trans=self.trans, wrest=dict(value=self.wrest.value,
+                     name=self.name, wrest=dict(value=self.wrest.value,
                                                   unit=self.wrest.unit.to_string()))
         # Data
         for key in self.data:
@@ -359,9 +363,9 @@ class AbsLine(SpectralLine):
     Parameters
     ----------
     trans : Quantity or str
-      Quantity: Rest wavelength (e.g. 1215.6700*u.AA)
-      str: Name of transition (e.g. 'CIV 1548'). For an unknown
-      transition use string 'unknown'.
+        Quantity -- Rest wavelength (e.g. 1215.6700*u.AA)
+        str -- Name of transition (e.g. 'CIV 1548'). For an
+        unknown transition use string 'unknown'.
     """
     # Initialize with a .dat file
     def __init__(self, trans, **kwargs):
@@ -409,7 +413,7 @@ class AbsLine(SpectralLine):
 
         # Update
         self.wrest = self.data['wrest']
-        self.trans = self.data['name']
+        self.name = self.data['name']
 
         #
         self.analy.update( {
