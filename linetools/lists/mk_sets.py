@@ -20,17 +20,17 @@ except ImportError:
     pass
 
 
-#
+'''
 def mk_ism(outfil=None, overwrite=False):
-    ''' Make the ISM list from grb.lst in xastropy
+    """ Make the ISM list from grb.lst in xastropy
 
     SHOULD BE DEPRECATED AFTER v0.0
 
     Parameters
     ----------
-    outfil: str, optional
+    outfil : str, optional
       Outfil
-    '''
+    """
     raise ValueError('BAD IDEA TO RUN THIS AGAIN')
     raise ValueError('REALLY')
     # Read
@@ -59,9 +59,11 @@ def mk_ism(outfil=None, overwrite=False):
     # Write
     data[['wrest','name','fISM']+oflgs].write(outfil, format='ascii.fixed_width')
     print('mk_ism: Wrote {:s}'.format(outfil))
+'''
 
+'''
 def mk_strong(infil=None, outfil=None):
-    ''' Make the Strong ISM list from lls.lst in xastropy
+    """ Make the Strong ISM list from lls.lst in xastropy
 
     SHOULD BE DEPRECATED AFTER v0.0
 
@@ -71,7 +73,7 @@ def mk_strong(infil=None, outfil=None):
       Starting file.  Should use latest llist_vX.X.ascii
     outfil : str, optional
       Outfil
-    '''
+    """
     if infil is None:
         fils = glob.glob(lt_path+'/lists/sets/llist_v*')
         infil = fils[-1] # Should grab the lateset
@@ -100,8 +102,9 @@ def mk_strong(infil=None, outfil=None):
         outfil = infil
     data.write(outfil, format='ascii.fixed_width')
     print('mk_strong: Wrote {:s}'.format(outfil))
+'''
 
-def mk_hi(infil=None, outfil=None):
+def mk_hi(infil=None, outfil=None, stop=True):
     """ Make the HI list ISM + HI
 
     Parameters
@@ -129,20 +132,23 @@ def mk_hi(infil=None, outfil=None):
     if outfil is None:
         outfil = infil
 
-    import pdb
-    pdb.set_trace()
+    if stop:
+        import pdb
+        pdb.set_trace()
     data.write(outfil, format='ascii.fixed_width')
 
-def add_galaxy_lines(outfil, infil=None):
+
+def add_galaxy_lines(outfil, infil=None, stop=True):
     """ Append galaxy lines (as necessary)
 
     Parameters
     ----------
+    outfil : str
+      Output file.
     infil : str, optional
       Starting file.  Should use latest llist_vX.X.ascii
-    outfil : str, optional
-      Output file.  Default is to use infil
     """
+    import pdb
     if infil is None:
         fils = glob.glob(lt_path+'/lists/sets/llist_v*')
         fils.sort()
@@ -161,19 +167,20 @@ def add_galaxy_lines(outfil, infil=None):
     tmp_row['fgE'] = 1
     # Add if new
     for row in forbidden:
-        if np.sum(np.abs(row['wrest']-data['wrest']) < 0.0001) == 0:
-            tmp_row['wrest'] = row['wrest']
+        if np.sum(np.abs(row['wrest'].value-data['wrest']) < 0.0001) == 0:
+            tmp_row['wrest'] = row['wrest'].value
             tmp_row['name'] = row['name']
             data.add_row(tmp_row)
     # Add if new
     for row in recomb:
-        if np.sum(np.abs(row['wrest']-data['wrest']) < 0.0001) == 0:
-            tmp_row['wrest'] = row['wrest']
+        if np.sum(np.abs(row['wrest'].value-data['wrest']) < 0.0001) == 0:
+            tmp_row['wrest'] = row['wrest'].value
             tmp_row['name'] = row['name'].replace('_',' ')
             data.add_row(tmp_row)
 
     # Write
     print('Make sure you want to do this!')
-    import pdb
-    pdb.set_trace()
+    if stop:
+        import pdb
+        pdb.set_trace()
     data.write(outfil, format='ascii.fixed_width')
