@@ -3,15 +3,16 @@
 
 # TEST_UNICODE_LITERALS
 
-import os, pdb
+import pdb
 import pytest
-import astropy.io.ascii as ascii
 from astropy import units as u
 import numpy as np
 
 from linetools.lists import parse
 
 # Morton 2003 ASCII file
+
+@pytest.mark.skipif("sys.version_info >= (3,0)")
 def test_morton03():
     m03 = parse.parse_morton03(orig=True)
     #

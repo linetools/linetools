@@ -8,8 +8,6 @@ import pdb
 import json
 import warnings
 
-import matplotlib
-matplotlib.use('Agg')
 
 import astropy as apy
 from astropy import units as u
@@ -354,6 +352,8 @@ class XSpectrum1D(Spectrum1D):
         Other keyword arguments are passed to the matplotlib plot
         command.
         """
+        #import matplotlib
+        #matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         from ..analysis.interactive_plot import PlotWrapNav
 
