@@ -131,9 +131,9 @@ class ExamineSpecWidget(QtGui.QWidget):
         #QtCore.pyqtRemoveInputHook()
         #xdb.set_trace()
         #QtCore.pyqtRestoreInputHook()
-        self.psdict['xmnx'] = np.array([xmin, xmax])
-        self.psdict['ymnx'] = [ymin, ymax]
-        self.psdict['sv_xy'] = [[xmin, xmax], [ymin, ymax]]
+        self.psdict['x_minmax'] = np.array([xmin, xmax])
+        self.psdict['y_minmax'] = [ymin, ymax]
+        self.psdict['sv_xy_minmax'] = [[xmin, xmax], [ymin, ymax]]
         self.psdict['tmp_xy'] = None
         self.psdict['nav'] = ltgu.navigate(0, 0, init=True)
         # Analysis dict
@@ -156,8 +156,8 @@ class ExamineSpecWidget(QtGui.QWidget):
         if event.key in ['C', 'M', 'X', '4', '8', 'B']:
             wave = ltgu.set_doublet(self, event)
             #print('wave = {:g},{:g}'.format(wave[0], wave[1]))
-            self.ax.plot([wave[0], wave[0]], self.psdict['ymnx'], '--', color='red')
-            self.ax.plot([wave[1], wave[1]], self.psdict['ymnx'], '--', color='red')
+            self.ax.plot([wave[0], wave[0]], self.psdict['y_minmax'], '--', color='red')
+            self.ax.plot([wave[1], wave[1]], self.psdict['y_minmax'], '--', color='red')
             flg = 2 # Layer
 
         ## SMOOTH
@@ -379,7 +379,7 @@ class ExamineSpecWidget(QtGui.QWidget):
             return
         if event.button == 1: # Draw line
             self.xval = event.xdata
-            self.ax.plot( [event.xdata,event.xdata], self.psdict['ymnx'], ':', color='green')
+            self.ax.plot( [event.xdata,event.xdata], self.psdict['y_minmax'], ':', color='green')
             self.on_draw(replot=False)
 
             # Print values
@@ -423,23 +423,23 @@ class ExamineSpecWidget(QtGui.QWidget):
 
             # Spectral lines?
             if self.llist['Plot'] is True:
-                ylbl = self.psdict['ymnx'][1]-0.2*(self.psdict['ymnx'][1]-self.psdict['ymnx'][0])
+                ylbl = self.psdict['y_minmax'][1]-0.2*(self.psdict['y_minmax'][1]-self.psdict['y_minmax'][0])
                 z = self.llist['z']
                 wvobs = np.array((1+z) * self.llist[self.llist['List']].wrest)
-                gdwv = np.where( (wvobs > self.psdict['xmnx'][0]) &
-                                 (wvobs < self.psdict['xmnx'][1]))[0]
+                gdwv = np.where( (wvobs > self.psdict['x_minmax'][0]) &
+                                 (wvobs < self.psdict['x_minmax'][1]))[0]
                 for kk in range(len(gdwv)):
                     jj = gdwv[kk]
                     wrest = self.llist[self.llist['List']].wrest[jj].value
                     lbl = self.llist[self.llist['List']].name[jj]
                     # Plot
-                    self.ax.plot(wrest*np.array([z+1,z+1]), self.psdict['ymnx'], 'b--')
+                    self.ax.plot(wrest*np.array([z+1,z+1]), self.psdict['y_minmax'], 'b--')
                     # Label
                     self.ax.text(wrest*(z+1), ylbl, lbl, color='blue', rotation=90., size='small')
 
             # Abs Sys?
             if not self.abs_sys is None:
-                ylbl = self.psdict['ymnx'][0]+0.2*(self.psdict['ymnx'][1]-self.psdict['ymnx'][0])
+                ylbl = self.psdict['y_minmax'][0]+0.2*(self.psdict['y_minmax'][1]-self.psdict['y_minmax'][0])
                 clrs = ['red', 'green', 'cyan', 'orange', 'gray', 'purple']*10
                 ii=-1
                 for abs_sys in self.abs_sys:
@@ -450,8 +450,8 @@ class ExamineSpecWidget(QtGui.QWidget):
                     #QtCore.pyqtRestoreInputHook()
                     wrest = Quantity([line.wrest for line in lines])
                     wvobs = wrest * (abs_sys.zabs+1)
-                    gdwv = np.where( ((wvobs.value+5) > self.psdict['xmnx'][0]) &  # Buffer for region
-                                    ((wvobs.value-5) < self.psdict['xmnx'][1]))[0]
+                    gdwv = np.where( ((wvobs.value+5) > self.psdict['x_minmax'][0]) &  # Buffer for region
+                                    ((wvobs.value-5) < self.psdict['x_minmax'][1]))[0]
                     for jj in gdwv:
                         if lines[jj].analy['do_analysis'] == 0:
                             continue
@@ -476,8 +476,8 @@ class ExamineSpecWidget(QtGui.QWidget):
                     self.lya_line.flux, color='green')
 
         # Reset window limits
-        self.ax.set_xlim(self.psdict['xmnx'])
-        self.ax.set_ylim(self.psdict['ymnx'])
+        self.ax.set_xlim(self.psdict['x_minmax'])
+        self.ax.set_ylim(self.psdict['y_minmax'])
 
         if self.plotzero:
             self.ax.axhline(0, lw=0.3, color='k')
