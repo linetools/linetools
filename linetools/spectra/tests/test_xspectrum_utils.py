@@ -149,8 +149,8 @@ def test_copy(spec):
     assert spec.wavelength[0] == spec2.wavelength[0]
     assert spec.flux[-1] == spec2.flux[-1]
 
-def test_plot(spec):
-    spec.plot(show=False)
+#def test_plot(spec):
+#    spec.plot(show=False)
 
 def test_continuum_utils(spec):
     # define continuum in a non-interactive way...
