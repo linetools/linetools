@@ -274,7 +274,7 @@ class XSpectrum1D(Spectrum1D):
             if no_check:
                 print('WARNING: Continuum length differs from flux')
                 if len(co) > len(self.flux):
-                    self.flux /= conti[0:len(self.flux)]
+                    self.flux /= co[0:len(self.flux)]
                     if self.uncertainty is not None:
                         self.uncertainty.array /= co[0:len(self.flux)]
                     return
