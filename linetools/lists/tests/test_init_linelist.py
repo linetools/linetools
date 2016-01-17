@@ -11,10 +11,17 @@ from astropy import units as u
 import numpy as np
 
 from linetools.lists.linelist import LineList
+from linetools.lists import mk_sets as llmk
+
 
 #import pdb
 #pdb.set_trace()
 # Set of Input lines
+
+def test_other():
+    pytest.raises(TypeError, LineList, 1, [])
+    #
+    ism = LineList(['ISM'])
 
 # ISM LineList
 def test_ism():
@@ -39,6 +46,12 @@ def test_strong():
     strng = LineList('Strong')
     #
     assert len(strng._data) < 200
+
+# Strong ISM LineList
+def test_euv():
+    euv = LineList('EUV')
+    #
+    assert np.max(euv._data['wrest'].value) < 1000.
 
 # HI LineList
 def test_h1():
@@ -81,3 +94,9 @@ def test_unknown():
     assert unknown['name'] == 'unknown', 'There is a problem in the LineList.unknown_line()'
     assert unknown['wrest'] == 0.*u.AA, 'There is a problem in the LineList.unknown_line()'
     print(ism['unknown'])
+
+def test_mk_sets():
+    import imp
+    llmk.mk_hi(outfil='tmp.lst', stop=False)
+    lt_path = imp.find_module('linetools')[1]
+    llmk.add_galaxy_lines('tmp.lst', infil=lt_path+'/lists/sets/llist_v0.1.ascii', stop=False)

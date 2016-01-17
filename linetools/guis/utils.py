@@ -28,43 +28,43 @@ def navigate(psdict, event, init=False):
         return 0
 
     if event.key == 'l':  # Set left
-        psdict['xmnx'][0] = event.xdata
+        psdict['x_minmax'][0] = event.xdata
     elif event.key == 'r':  # Set Right
-        psdict['xmnx'][1] = event.xdata
+        psdict['x_minmax'][1] = event.xdata
     elif event.key == 'b':  # Set Bottom
-        psdict['ymnx'][0] = event.ydata
+        psdict['y_minmax'][0] = event.ydata
     elif event.key == 't':  # Set Top
-        psdict['ymnx'][1] = event.ydata
+        psdict['y_minmax'][1] = event.ydata
     elif event.key == 'T':  # Set Top to 1.1
-        psdict['ymnx'][1] = 1.1
+        psdict['y_minmax'][1] = 1.1
     elif event.key == 's':  # Select window (i.e. zoom-in)
         if psdict['tmp_xy'] is None:
             psdict['tmp_xy'] = [event.xdata,event.ydata]
             print('Press another s to set the zoom-in window')
         else:
-            psdict['xmnx'][0] = np.minimum(event.xdata,psdict['tmp_xy'][0])
-            psdict['xmnx'][1] = np.maximum(event.xdata,psdict['tmp_xy'][0])
-            psdict['ymnx'][0] = np.minimum(event.ydata,psdict['tmp_xy'][1])
-            psdict['ymnx'][1] = np.maximum(event.ydata,psdict['tmp_xy'][1])
+            psdict['x_minmax'][0] = np.minimum(event.xdata,psdict['tmp_xy'][0])
+            psdict['x_minmax'][1] = np.maximum(event.xdata,psdict['tmp_xy'][0])
+            psdict['y_minmax'][0] = np.minimum(event.ydata,psdict['tmp_xy'][1])
+            psdict['y_minmax'][1] = np.maximum(event.ydata,psdict['tmp_xy'][1])
             psdict['tmp_xy'] = None
     elif event.key == 'i':  # Zoom in (and center)
-        deltx = (psdict['xmnx'][1]-psdict['xmnx'][0])/4.
-        psdict['xmnx'] = [event.xdata-deltx, event.xdata+deltx]
+        deltx = (psdict['x_minmax'][1]-psdict['x_minmax'][0])/4.
+        psdict['x_minmax'] = [event.xdata-deltx, event.xdata+deltx]
     elif event.key == 'I':  # Zoom in (and center)
-        deltx = (psdict['xmnx'][1]-psdict['xmnx'][0])/16.
-        psdict['xmnx'] = [event.xdata-deltx, event.xdata+deltx]
+        deltx = (psdict['x_minmax'][1]-psdict['x_minmax'][0])/16.
+        psdict['x_minmax'] = [event.xdata-deltx, event.xdata+deltx]
     elif event.key == 'o':  # Zoom in (and center)
-        deltx = psdict['xmnx'][1]-psdict['xmnx'][0]
-        psdict['xmnx'] = [event.xdata-deltx, event.xdata+deltx]
+        deltx = psdict['x_minmax'][1]-psdict['x_minmax'][0]
+        psdict['x_minmax'] = [event.xdata-deltx, event.xdata+deltx]
     elif event.key == 'O':  # Zoom in (and center)
-        deltx = psdict['xmnx'][1]-psdict['xmnx'][0]
-        psdict['xmnx'] = [event.xdata-2*deltx, event.xdata+2*deltx]
+        deltx = psdict['x_minmax'][1]-psdict['x_minmax'][0]
+        psdict['x_minmax'] = [event.xdata-2*deltx, event.xdata+2*deltx]
     elif event.key == 'Y':  # Zoom in (and center)
-        delty = psdict['ymnx'][1]-psdict['ymnx'][0]
-        psdict['ymnx'] = [event.ydata-delty, event.ydata+delty]
+        delty = psdict['y_minmax'][1]-psdict['y_minmax'][0]
+        psdict['y_minmax'] = [event.ydata-delty, event.ydata+delty]
     elif event.key in ['[',']','{','}']:  # Pan
-        center = (psdict['xmnx'][1]+psdict['xmnx'][0])/2.
-        deltx = (psdict['xmnx'][1]-psdict['xmnx'][0])/2.
+        center = (psdict['x_minmax'][1]+psdict['x_minmax'][0])/2.
+        deltx = (psdict['x_minmax'][1]-psdict['x_minmax'][0])/2.
         if event.key == '[':
             new_center = center - deltx
         elif event.key == ']':
@@ -73,12 +73,12 @@ def navigate(psdict, event, init=False):
             new_center = center - 4*deltx
         elif event.key == '}':
             new_center = center + 4*deltx
-        psdict['xmnx'] = [new_center-deltx, new_center+deltx]
+        psdict['x_minmax'] = [new_center-deltx, new_center+deltx]
     elif event.key == 'W': # Reset the Window
-        psdict['xmnx'] = copy.deepcopy(psdict['sv_xy'][0])
-        psdict['ymnx'] = copy.deepcopy(psdict['sv_xy'][1])
+        psdict['x_minmax'] = copy.deepcopy(psdict['sv_xy_minmax'][0])
+        psdict['y_minmax'] = copy.deepcopy(psdict['sv_xy_minmax'][1])
     elif event.key == 'Z': # Zero
-        psdict['ymnx'][0] = 0.
+        psdict['y_minmax'][0] = 0.
     else:
         if not (event.key in ['shift']):
             rstr = 'Key {:s} not supported.'.format(event.key)

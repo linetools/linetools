@@ -81,7 +81,7 @@ def test_print_repr(spec):
 def test_rebin(spec):
     # Rebin
     new_wv = np.arange(3000., 9000., 5) * u.AA
-    newspec = spec.rebin(new_wv)
+    newspec = spec.rebin(new_wv, do_sig=True)
     # Test
 
     np.testing.assert_allclose(newspec.flux[1000], 0.9999280967617779)
@@ -149,6 +149,8 @@ def test_copy(spec):
     assert spec.wavelength[0] == spec2.wavelength[0]
     assert spec.flux[-1] == spec2.flux[-1]
 
+def test_plot(spec):
+    spec.plot(show=False)
 
 def test_continuum_utils(spec):
     # define continuum in a non-interactive way...
