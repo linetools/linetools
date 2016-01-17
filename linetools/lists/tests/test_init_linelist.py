@@ -18,6 +18,11 @@ from linetools.lists import mk_sets as llmk
 #pdb.set_trace()
 # Set of Input lines
 
+def test_other():
+    pytest.raises(TypeError, LineList, 1, [])
+    #
+    ism = LineList(['ISM'])
+
 # ISM LineList
 def test_ism():
     ism = LineList('ISM')
@@ -41,6 +46,12 @@ def test_strong():
     strng = LineList('Strong')
     #
     assert len(strng._data) < 200
+
+# Strong ISM LineList
+def test_euv():
+    euv = LineList('EUV')
+    #
+    assert np.max(euv._data['wrest'].value) < 1000.
 
 # HI LineList
 def test_h1():
@@ -86,4 +97,4 @@ def test_unknown():
 
 def test_mk_sets():
     llmk.mk_hi(outfil='tmp.lst', no_stop=True)
-    llmk.add_galaxy_lines('tmp.lst', no_stop=True)
+    llmk.add_galaxy_lines('tmp.lst', infil='../sets/llist_v0.1.ascii', no_stop=True)
