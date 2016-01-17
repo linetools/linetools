@@ -8,13 +8,14 @@ import pdb
 import json
 import warnings
 
+
 import astropy as apy
 from astropy import units as u
 from astropy.units import Quantity
 from astropy import constants as const
 from astropy.io import fits
 from astropy.nddata import StdDevUncertainty
-from astropy.table import Table, QTable
+from astropy.table import QTable
 
 import linetools.utils as liu
 import linetools.spectra.io as lsio
@@ -273,7 +274,7 @@ class XSpectrum1D(Spectrum1D):
             if no_check:
                 print('WARNING: Continuum length differs from flux')
                 if len(co) > len(self.flux):
-                    self.flux /= conti[0:len(self.flux)]
+                    self.flux /= co[0:len(self.flux)]
                     if self.uncertainty is not None:
                         self.uncertainty.array /= co[0:len(self.flux)]
                     return
@@ -339,7 +340,7 @@ class XSpectrum1D(Spectrum1D):
     # Splice spectrum + Normalize
     # Quick plot
     def plot(self, **kwargs):
-        ''' Plot the spectrum
+        """ Plot the spectrum
 
         Parameters
         ----------
@@ -350,7 +351,9 @@ class XSpectrum1D(Spectrum1D):
 
         Other keyword arguments are passed to the matplotlib plot
         command.
-        '''
+        """
+        #import matplotlib
+        #matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         from ..analysis.interactive_plot import PlotWrapNav
 
@@ -923,8 +926,15 @@ or QtAgg backends to enable all interactive plotting commands.
         co = self._interp_continuum(x, y)
         self.co = co
 
+    def __dir__(self):
+        """ Does something more sensible than what Spectrum1D provides
+        Returns
+        -------
+        dir : list
 
-    # Output
+        """
+        return dir(type(self))
+
     def __repr__(self):
         txt = '< {:s}: '.format(self.__class__.__name__)
         # Name

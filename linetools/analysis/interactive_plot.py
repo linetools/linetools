@@ -7,6 +7,7 @@ import numpy as np
 from ..utils import between, loadjson, savejson
 from ..spectra.convolve import convolve_psf
 from ..spectra.plotting import get_flux_plotrange
+from ..guis import utils as ltgu
 from .interp import AkimaSpline
 
 from astropy.modeling import models
@@ -67,11 +68,20 @@ S,U          Smooth/unsmooth spectrum
 """
 
     def __init__(self):
+        # Navigate dict
+        self.nav_dict = dict(nav=ltgu.navigate(init=True))
         pass
 
     def on_keypress_navigate(self, event):
         """ Process a keypress event. Requires attributes self.ax,
         self.fl, self.wa, self.fig
+        """
+        # Requiring inaxes for all of these now
+        if (event.key in self.nav_dict['nav']) and event.inaxes:
+            ltgu.navigate(self.nav_dict, event)
+            self.ax.set_xlim(self.nav_dict['xmnx'])
+            self.ax.set_ylim(self.nav_dict['ymnx'])
+            self.fig.canvas.draw()
         """
         # Navigation
         if event.key == 'i' and event.inaxes:
@@ -128,6 +138,7 @@ S,U          Smooth/unsmooth spectrum
             x0, x1 = self.ax.get_xlim()
             self.ax.set_xlim(x0, event.xdata)
             self.fig.canvas.draw()
+        """
 
     def on_keypress_smooth(self, event):
         """ Smooth the flux with a gaussian. Requires attributes
@@ -170,6 +181,9 @@ class PlotWrapNav(PlotWrapBase):
         self.artists = artists
         self.fig = fig
         self.ax = ax
+        self.nav_dict = dict(nav=ltgu.navigate(0, 0, init=True))
+        self.nav_dict['xmnx'] = self.ax.get_xlim()
+        self.nav_dict['ymnx'] = self.ax.get_ylim()
         if isinstance(wa, u.Quantity):
             wa = wa.value
         self.wa = wa
@@ -257,6 +271,8 @@ q        : quit
         self.fl = fl
         self.er = er
         self.anchor = anchor
+
+
 
         if os.path.lexists('./_knots.jsn'):
             c = raw_input('knots file exists, use this? (y) ')
@@ -353,7 +369,14 @@ q        : quit
         a1.set_ylim(-4, 4)
         a0.axhline(0, color='0.7')
 
+        # Initial plot limits
         i0,i1 = self.indices
+        xmin = wa[i0]
+        xmax = wa[i1]
+        self.nav_dict = dict(nav=ltgu.navigate(0, 0, init=True))
+        self.nav_dict['xmnx'] = [xmin, xmax]
+        ymin,ymax = get_flux_plotrange(self.fl[between(wa, xmin, xmax)])
+        #
         art = []
         art.append(a0.axvline(wa[i0], color='r', ls='--', lw=2, zorder=10))
         art.append(a0.axvline(wa[i1], color='r', ls='--', lw=2, zorder=10))
@@ -366,10 +389,15 @@ q        : quit
         m2, = a0.plot([0], [0], 'o', mfc='None', mew=2, ms=12, mec='r',
                       alpha=0.7)
 
-        a0.set_xlim(wa[i0], wa[i1])
+        a0.set_xlim(self.nav_dict['xmnx'])
         good = (er[i0:i1] > 0) & ~np.isnan(fl[i0:i1]) & ~np.isinf(fl[i0:i1])
         ymax = 2 * np.abs(np.percentile(fl[i0:i1][good], 95))
-        a0.set_ylim(-0.1*ymax, ymax)
+        ymin = -0.1 * ymax
+        self.nav_dict['ymnx'] = [ymin, ymax]
+        a0.set_ylim(self.nav_dict['ymnx'])
+
+        self.nav_dict['sv_xy'] = [[xmin, xmax], [ymin, ymax]]
+        self.nav_dict['tmp_xy'] = None
 
         # for histogram
         trans = mtran.blended_transform_factory(a1.transAxes, a1.transData)

@@ -349,7 +349,7 @@ class AbsComponent(object):
     def synthesize_colm(self, overwrite=False, redo_aodm=False, **kwargs):
         """Synthesize column density measurements of the component.
         Default is to use the current AbsLine values, but the user can
-        request that those be re-calculated with AODM
+        request that those be re-calculated with AODM.
 
         Parameters
         ----------
