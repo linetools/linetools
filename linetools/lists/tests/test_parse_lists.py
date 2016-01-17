@@ -20,7 +20,7 @@ def test_morton03():
     assert m03['wrest'].unit == u.Angstrom
     #
     m03 = parse.mktab_morton03()
-    m03 = parse.mktab_morton03(do_this=True, outfil='tmp.fits')
+    #m03 = parse.mktab_morton03(do_this=True, outfil='tmp.fits')
     m03 = parse.mktab_morton03(do_this=True, fits=False, outfil='tmp.vo')
 
 # Morton 2000 ASCII file
