@@ -926,8 +926,15 @@ or QtAgg backends to enable all interactive plotting commands.
         co = self._interp_continuum(x, y)
         self.co = co
 
+    def __dir__(self):
+        """ Does something more sensible than what Spectrum1D provides
+        Returns
+        -------
+        dir : list
 
-    # Output
+        """
+        return dir(type(self))
+
     def __repr__(self):
         txt = '< {:s}: '.format(self.__class__.__name__)
         # Name
