@@ -11,6 +11,8 @@ from astropy import units as u
 import numpy as np
 
 from linetools.lists.linelist import LineList
+from linetools.lists import mk_sets as llmk
+
 
 #import pdb
 #pdb.set_trace()
@@ -81,3 +83,7 @@ def test_unknown():
     assert unknown['name'] == 'unknown', 'There is a problem in the LineList.unknown_line()'
     assert unknown['wrest'] == 0.*u.AA, 'There is a problem in the LineList.unknown_line()'
     print(ism['unknown'])
+
+def test_mk_sets():
+    llmk.mk_hi(outfil='tmp.lst', no_stop=True)
+    llmk.add_galaxy_lines('tmp.lst', no_stop=True)
