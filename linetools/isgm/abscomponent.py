@@ -63,6 +63,8 @@ class AbsComponent(object):
         ----------
         abslines : list 
           List of AbsLine objects
+        stars : str, optional
+          Asterisks to append to the ion name (e.g. fine-structure, CII*)
         """
         # Check
         if not isinstance(abslines, list):
@@ -157,6 +159,7 @@ class AbsComponent(object):
             Energy of lower level (1/cm)
         stars : str, optional
             asterisks to add to name, e.g. '**' for CI**
+            Required if name=None and Ej>0.
         comment : str, optional
             A comment, default is ``
         """
@@ -191,7 +194,7 @@ class AbsComponent(object):
                 try:
                     iname += stars
                 except:
-                    pdb.set_trace()
+                    raise IOError("Need to provide 'stars' parameter.")
             self.name = '{:s}_z{:0.5f}'.format(iname, self.zcomp)
         else:
             self.name = name
