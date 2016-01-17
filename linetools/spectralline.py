@@ -227,12 +227,11 @@ class SpectralLine(object):
 
         # Normalize?
         if normalize:
-            try:
+            if self.analy['spec'].co is not None:
                 fx = fx / self.analy['spec'].co[pix]
-            except AttributeError:
-                pass
-            else:
                 sig = sig / self.analy['spec'].co[pix]
+            else:
+                warnings.warn("{} does not have a spectrum with continuum. Not normalizing.".format(self))
 
         # Return
         return fx, sig, dict(wave=wave, velo=velo)
@@ -240,21 +239,21 @@ class SpectralLine(object):
 
     # EW 
     def measure_ew(self, flg=1, initial_guesses=None):
-        """ Measure the observer frame equivalent width
+        """ Measures the observer frame equivalent width
 
         Note this requires `wvlim` and `spec` attributes must be set!
         Default is simple boxcar integration. Observer frame, not
-        rest-frame (use measure_restew below for rest-frame).
+        rest-frame (use measure_restew() for rest-frame).
 
         It sets these attributes:
-           * self.attrib[ 'EW', 'sig_EW' ]:
+           * self.attrib['EW', 'sig_EW']:
              The EW and error in observer frame
 
         Parameters
         ----------
-        flg : {1, 2} [1]
-          * 1 -- Boxcar integration 
-          * 2 -- Gaussian fit
+        flg : int
+            * 1 -- Boxcar integration (default)
+            * 2 -- Gaussian fit
         initial_guesses : tuple of floats [None]
           If a model is chosen (e.g. flg=2, Gaussian) a tuple of
           (amplitude, mean, stddev) can be specified.
