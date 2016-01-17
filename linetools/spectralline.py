@@ -72,7 +72,11 @@ class SpectralLine(object):
         """
         # Init
         if idict['ltype'] == 'Abs':
-            sline = AbsLine(idict['name'])
+            # TODO: remove this try/except eventually
+            try:
+                sline = AbsLine(idict['name'])
+            except: #  This is to be compatible JSON files already written with old notation
+                sline = AbsLine(idict['trans'])
         else:
             raise ValueError("Not prepared for this type")
         # Check data
