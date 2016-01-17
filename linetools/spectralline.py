@@ -54,6 +54,7 @@ class SpectralLine(object):
     data : dict
       Line atomic/molecular data ((e.g. f-value, A coefficient, Elow)
     """
+
     @classmethod
     def from_dict(cls, idict):
         """ Initialize from a dict (usually read from disk)
@@ -299,7 +300,7 @@ class SpectralLine(object):
         from astropy.units import Quantity
         # Starting
         adict = dict(ltype=self.ltype, analy=dict(), attrib=dict(), data=dict(),
-                     trans=self.trans, wrest=dict(value=self.wrest.value,
+                     name=self.name, wrest=dict(value=self.wrest.value,
                                                   unit=self.wrest.unit.to_string()))
         # Data
         for key in self.data:
@@ -357,9 +358,9 @@ class AbsLine(SpectralLine):
     Parameters
     ----------
     trans : Quantity or str
-      Quantity: Rest wavelength (e.g. 1215.6700*u.AA)
-      str: Name of transition (e.g. 'CIV 1548'). For an unknown
-      transition use string 'unknown'.
+        Quantity -- Rest wavelength (e.g. 1215.6700*u.AA)
+        str -- Name of transition (e.g. 'CIV 1548'). For an
+        unknown transition use string 'unknown'.
     """
     # Initialize with a .dat file
     def __init__(self, trans, **kwargs):
@@ -407,7 +408,7 @@ class AbsLine(SpectralLine):
 
         # Update
         self.wrest = self.data['wrest']
-        self.trans = self.data['name']
+        self.name = self.data['name']
 
         #
         self.analy.update( {

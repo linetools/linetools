@@ -41,4 +41,4 @@ def test_dicts():
     # Read
     newdict = ltu.loadjson('tmp.json')
     newlin = SpectralLine.from_dict(newdict)
-    assert newlin.trans == 'HI 1215'
+    assert newlin.name == 'HI 1215'
