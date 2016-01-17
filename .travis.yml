@@ -111,7 +111,7 @@ install:
     #- if [[ $SETUP_CMD == 'test --coverage' ]]; then $PIP_INSTALL coverage coveralls; fi
     - if [[ $SETUP_CMD == 'test --coverage' ]]; then $PIP_INSTALL coverage==3.7.1 coveralls; fi
 
-before_script:
+before_script:   # Required for plotting tests
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
   - sleep 3 # give xvfb some time to start

@@ -97,6 +97,6 @@ def test_unknown():
 
 def test_mk_sets():
     import imp
-    llmk.mk_hi(outfil='tmp.lst', no_stop=True)
+    llmk.mk_hi(outfil='tmp.lst', stop=False)
     lt_path = imp.find_module('linetools')[1]
-    llmk.add_galaxy_lines('tmp.lst', infil=lt_path+'/lists/sets/llist_v0.1.ascii', no_stop=True)
+    llmk.add_galaxy_lines('tmp.lst', infil=lt_path+'/lists/sets/llist_v0.1.ascii', stop=False)

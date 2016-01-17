@@ -104,7 +104,7 @@ def mk_strong(infil=None, outfil=None):
     print('mk_strong: Wrote {:s}'.format(outfil))
 '''
 
-def mk_hi(infil=None, outfil=None, no_stop=False):
+def mk_hi(infil=None, outfil=None, stop=True):
     """ Make the HI list ISM + HI
 
     Parameters
@@ -132,13 +132,13 @@ def mk_hi(infil=None, outfil=None, no_stop=False):
     if outfil is None:
         outfil = infil
 
-    if not no_stop:
+    if stop:
         import pdb
         pdb.set_trace()
     data.write(outfil, format='ascii.fixed_width')
 
 
-def add_galaxy_lines(outfil, infil=None, no_stop=False):
+def add_galaxy_lines(outfil, infil=None, stop=True):
     """ Append galaxy lines (as necessary)
 
     Parameters
@@ -180,7 +180,7 @@ def add_galaxy_lines(outfil, infil=None, no_stop=False):
 
     # Write
     print('Make sure you want to do this!')
-    if not no_stop:
+    if stop:
         import pdb
         pdb.set_trace()
     data.write(outfil, format='ascii.fixed_width')
