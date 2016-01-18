@@ -462,7 +462,7 @@ class AbsLine(SpectralLine):
         return spec
 
     # AODM
-    def measure_aodm(self, nsig=3.):
+    def measure_aodm(self, nsig=3., normalize=True):
         """ AODM calculation
 
         It sets these attributes:
@@ -473,9 +473,11 @@ class AbsLine(SpectralLine):
         ----------
         nsig : float, optional
           Number of sigma significance required for a "detection"
+        normalize : bool, optional
+          Normalize first?
         """
         # Cut spectrum
-        fx, sig, xdict = self.cut_spec(normalize=True)
+        fx, sig, xdict = self.cut_spec(normalize=normalize)
         velo = xdict['velo']
 
         # Calculate

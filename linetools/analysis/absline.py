@@ -44,9 +44,10 @@ def aodm(spec, idata):
     velo,fx,sig = spec
     wrest, fval = idata
 
-    # dv
-    delv = velo - np.roll(velo,1)
+    # dv (np.abs -- just in case the data weren't sorted)
+    delv = np.abs(velo - np.roll(velo,1))
     delv[0] = delv[1]
+    delv[-1] = delv[-2]
 
     # Atomic data
     cst = atom_cst/(fval*wrest) #/ (u.km/u.s) / u.cm * (u.AA/u.cm)
@@ -70,7 +71,6 @@ def aodm(spec, idata):
     # Sum it
     ntot = np.sum( nndt*delv )
     tvar = np.sum( (delv*cst*sig/fx)**2 )
-
 
     # Return
     return ntot, np.sqrt(tvar), flg_sat
