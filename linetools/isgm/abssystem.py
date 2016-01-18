@@ -244,7 +244,7 @@ class AbsSystem(object):
         # Generate the lines
         abslines = self.list_of_abslines()
         if isinstance(inp,basestring):
-            names = np.array([absline.trans for absline in abslines])
+            names = np.array([absline.name for absline in abslines])
             mt = np.where(names == inp)[0]
         elif isinstance(inp,Quantity):
             wrest = Quantity([absline.wrest for absline in abslines])
