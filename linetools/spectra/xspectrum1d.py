@@ -180,8 +180,11 @@ class XSpectrum1D(Spectrum1D):
             self.set_diagnostics()
             return self._wvmax
 
-    # overload dispersion to work around a bug in specutils that sets
-    # the first dispersion value to NaN for wavelength lookup tables.
+    # overload dispersion to work around a bug in numpy 1.10.1 that
+    # sets the first dispersion value to NaN for wavelength lookup
+    # tables. Once we're confident people will be using numpy version
+    # 1.10.2+, this can be removed
+
     @property
     def dispersion(self):
         # returning the disp
