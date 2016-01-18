@@ -79,7 +79,7 @@ def test_synthesize_colm():
     # Column
     abscomp.synthesize_colm(redo_aodm=True)
     # Test
-    np.testing.assert_allclose(abscomp.logN,13.594447075294818)
+    np.testing.assert_allclose(abscomp.logN, 13.594445560856554)
     # Reset flags (for testing)
     abscomp2,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True, use_rand=False)
     for iline in abscomp2._abslines:
@@ -140,8 +140,8 @@ def test_synthesize_components():
     SiIIcomp2.synthesize_colm(redo_aodm=True)
     #
     synth_SiII = ltiu.synthesize_components([SiIIcomp1,SiIIcomp2])
-    np.testing.assert_allclose(synth_SiII.logN,13.862456155250918)
-    np.testing.assert_allclose(synth_SiII.sig_logN,0.010146948602759272)
+    np.testing.assert_allclose(synth_SiII.logN, 13.862454764546792)
+    np.testing.assert_allclose(synth_SiII.sig_logN, 0.010146946475971825)
     # Failures
     pytest.raises(IOError, ltiu.synthesize_components, 1)
     pytest.raises(IOError, ltiu.synthesize_components, [1,2])
