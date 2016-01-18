@@ -141,7 +141,7 @@ def test_synthesize_components():
     #
     synth_SiII = ltiu.synthesize_components([SiIIcomp1,SiIIcomp2])
     np.testing.assert_allclose(synth_SiII.logN, 13.862454764546792)
-    np.testing.assert_allclose(synth_SiII.sig_logN,0.010146948602759272)
+    np.testing.assert_allclose(synth_SiII.sig_logN, 0.010146946475971825)
     # Failures
     pytest.raises(IOError, ltiu.synthesize_components, 1)
     pytest.raises(IOError, ltiu.synthesize_components, [1,2])
