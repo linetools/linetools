@@ -164,7 +164,7 @@ class XSpectrum1D(Spectrum1D):
 
     @property
     def wvmin(self):
-        '''Minimum wavelength '''
+        """Minimum wavelength """
         try:
             return self._wvmin
         except AttributeError:
@@ -173,7 +173,7 @@ class XSpectrum1D(Spectrum1D):
 
     @property
     def wvmax(self):
-        '''Maximum wavelength '''
+        """Maximum wavelength """
         try:
             return self._wvmax
         except AttributeError:
@@ -297,7 +297,7 @@ class XSpectrum1D(Spectrum1D):
 
     #  Grabs spectrum pixels in a velocity window
     def pix_minmax(self, *args):
-        """Find pixels in wavelength or velocity range
+        """ Find pixel indices given a wavelength or velocity range
 
         Parameters
         ----------
@@ -316,7 +316,7 @@ class XSpectrum1D(Spectrum1D):
         gdpix, wvmnx, pixmnx
           * gdpix: Pixel indices satisfying the cut
           * wvmnx: Tuple of the min and max wavelengths
-          * pixmnx: Tuple of the min and max pixels
+          * pixmnx: Tuple of the min and max pixel indices
         """
 
         if len(args) == 1:  # Option 1
@@ -360,6 +360,8 @@ class XSpectrum1D(Spectrum1D):
         import matplotlib.pyplot as plt
         from ..analysis.interactive_plot import PlotWrapNav
 
+        nocolor = (False if color in kwargs else True)
+
         ax = plt.gca()
         fig = plt.gcf()
 
@@ -368,17 +370,20 @@ class XSpectrum1D(Spectrum1D):
 
         show = kwargs.pop('show', True)
 
-        kwargs.update(color='0.5')
+        if nocolor:
+            kwargs.update(color='0.5')
         artists['fl'] = ax.plot(self.wavelength, self.flux,
                                 drawstyle='steps-mid', **kwargs)[0]
 
         if self.sig is not None:
-            kwargs.update(color='g')
+            if nocolor:
+                kwargs.update(color='g')
             ax.plot(self.wavelength, self.sig, **kwargs)
 
         if hasattr(self, 'co'):
             if self.co is not None:
-                kwargs.update(color='r')
+                if nocolor:
+                    kwargs.update(color='r')
                 ax.plot(self.wavelength, self.co, **kwargs)
 
         ax.set_ylim(*get_flux_plotrange(self.flux))
@@ -401,9 +406,10 @@ or QtAgg backends to enable all interactive plotting commands.
 
     #  Rebin
     def rebin(self, new_wv, do_sig=False):
-        """ Rebin the existing spectrum rebinned to a new wavelength array
-        Uses simple linear interpolation.  The default (and only) option
-        conserves counts (and flambda).
+        """ Rebin to a new wavelength array
+
+        Uses simple linear interpolation.  The default (and only)
+        option conserves counts (and flambda).
 
         WARNING: Do not trust either edge pixel of the new array
         Also be aware that neighboring pixels are likely to be correlated
@@ -521,8 +527,7 @@ or QtAgg backends to enable all interactive plotting commands.
 
     #  Box car smooth
     def box_smooth(self, nbox, preserve=False):
-        """ Box car smooth spectrum and return a new one
-        Is a simple wrapper to the rebin routine
+        """ Box car smooth the spectrum
 
         Parameters
         ----------
@@ -534,7 +539,7 @@ or QtAgg backends to enable all interactive plotting commands.
 
         Returns
         -------
-          XSpectrum1D of the smoothed spectrum
+        A new XSpectrum1D instance of the smoothed spectrum
         """
         if preserve:
             from astropy.convolution import convolve, Box1DKernel
@@ -563,10 +568,10 @@ or QtAgg backends to enable all interactive plotting commands.
 
     # Splice two spectra together
     def gauss_smooth(self, fwhm, **kwargs):
-        ''' Smooth a spectrum with a Gaussian
+        """ Smooth a spectrum with a Gaussian
 
-        Need to consider smoothing the uncertainty array
-
+        Note that the uncertainty array is not smoothed.
+        
         Parameters
         ----------
         fwhm : float
@@ -574,8 +579,8 @@ or QtAgg backends to enable all interactive plotting commands.
 
         Returns
         -------
-        XSpectrum1D of the smoothed spectrum
-        '''
+        A new XSpectrum1D instance of the smoothed spectrum
+        """
         # Import
         from linetools.spectra import convolve as lsc
 
@@ -590,15 +595,15 @@ or QtAgg backends to enable all interactive plotting commands.
 
     # Splice two spectra together
     def splice(self, spec2, wvmx=None, scale=1.):
-        ''' Combine two overlapping spectra
+        """ Combine two overlapping spectra.
 
-        It is assumed that the internal spectrum is *bluer* than
-        the input spectrum.
+        It is assumed that the original spectrum is *bluer* than
+        the overlapping spectrum.
 
         Parameters
         ----------
         spec2 : Spectrum1D
-          Second spectrum
+          The overlapping spectrum
         wvmx : Quantity, optional
           Wavelength to begin splicing *after*
         scale : float, optional
@@ -607,9 +612,9 @@ or QtAgg backends to enable all interactive plotting commands.
 
         Returns
         -------
-        spec3 : Spectrum1D
-          Spliced spectrum
-        '''
+        spec3 : XSpectrum1D
+          Spliced spectrum.
+        """
         # Begin splicing after the end of the internal spectrum
         if wvmx is None:
             wvmx = np.max(self.wavelength)
@@ -839,7 +844,7 @@ or QtAgg backends to enable all interactive plotting commands.
         """
         Returns an interpolation of the continuum using knots at
         (x,y) positions. If at least 5 points exists, it uses Akima
-        Spline interpolation. Else, it uses linear interpolation.
+        Spline interpolation.  it uses linear interpolation.
 
         Parameters
         ----------
@@ -931,6 +936,7 @@ or QtAgg backends to enable all interactive plotting commands.
 
     def __dir__(self):
         """ Does something more sensible than what Spectrum1D provides
+
         Returns
         -------
         dir : list
@@ -939,7 +945,7 @@ or QtAgg backends to enable all interactive plotting commands.
         return dir(type(self))
 
     def __repr__(self):
-        txt = '< {:s}: '.format(self.__class__.__name__)
+        txt = '<{:s}: '.format(self.__class__.__name__)
         # Name
         try:
             txt = txt + 'file={:s},'.format(self.filename)
@@ -948,5 +954,5 @@ or QtAgg backends to enable all interactive plotting commands.
         # wrest
         txt = txt + ' wvmin={:g}, wvmax={:g}'.format(
             self.wvmin, self.wvmax)
-        txt = txt + ' >'
+        txt = txt + '>'
         return (txt)
