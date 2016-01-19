@@ -360,7 +360,7 @@ class XSpectrum1D(Spectrum1D):
         import matplotlib.pyplot as plt
         from ..analysis.interactive_plot import PlotWrapNav
 
-        nocolor = (False if color in kwargs else True)
+        nocolor = (False if 'color' in kwargs else True)
 
         ax = plt.gca()
         fig = plt.gcf()
