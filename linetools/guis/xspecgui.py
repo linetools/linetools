@@ -29,17 +29,15 @@ class XSpecGui(QtGui.QMainWindow):
         norm : bool, optional
           True if the spectrum is normalized
         """
-        #reload(xxgu)
-        reload(ltgl)
-        reload(ltgsp)
+        #reload(ltgl)
+        #reload(ltgsp)
         # INIT
-        spec, _ = ltgu.read_spec(ispec, exten=exten)
         #QtCore.pyqtRemoveInputHook()
         #xdb.set_trace()
         #QtCore.pyqtRestoreInputHook()
 
-        #
-        rcParams['agg.path.chunksize'] = 20000 # Needed to avoid crash in large spectral files
+        # Needed to avoid crash in large spectral files
+        rcParams['agg.path.chunksize'] = 20000
 
         # Build a widget combining several others
         self.main_widget = QtGui.QWidget()
@@ -52,7 +50,7 @@ class XSpecGui(QtGui.QMainWindow):
         self.pltline_widg.setMaximumWidth(300)
 
         # Hook the spec widget to Plot Line
-        self.spec_widg = ltgsp.ExamineSpecWidget(spec,status=self.statusBar,
+        self.spec_widg = ltgsp.ExamineSpecWidget(ispec,status=self.statusBar,
                                                 llist=self.pltline_widg.llist,
                                                 zsys=zsys, norm=norm, exten=exten)
         self.pltline_widg.spec_widg = self.spec_widg

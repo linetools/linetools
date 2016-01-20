@@ -27,13 +27,13 @@ class ExamineSpecWidget(QtGui.QWidget):
         fiddle about.  Akin to XIDL/x_specplot.pro
 
         12-Dec-2014 by JXP
-        Parameters:
-        ------------
     """
     def __init__(self, ispec, parent=None, status=None, llist=None,
                  abs_sys=None, norm=True, second_file=None, zsys=None,
                  key_events=True, vlines=None, plotzero=False, exten=None):
         """
+        Parameters
+        ----------
         ispec : Spectrum1D or tuple of arrays
         exten : int, optional
           extension for the spectrum in multi-extension FITS file
@@ -141,6 +141,7 @@ class ExamineSpecWidget(QtGui.QWidget):
 
     def on_key(self, event):
         """ Deals with key events
+
         Parameters
         ----------
         event : event object
