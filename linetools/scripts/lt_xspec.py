@@ -11,8 +11,6 @@ import sys
 def main(*args, **kwargs):
     """ Runs the XSpecGui on an input file
     """
-    from PyQt4 import QtGui
-    from linetools.guis.xspecgui import XSpecGui
     import argparse
 
     parser = argparse.ArgumentParser(description='Parse for XSpec')
@@ -24,22 +22,21 @@ def main(*args, **kwargs):
 
     pargs = parser.parse_args()
 
+
+    from PyQt4 import QtGui
+    from linetools.guis.xspecgui import XSpecGui
+
     # Normalized?
     norm = True
     if pargs.un_norm:
         norm = False
 
     # Extension
-    try:
-        exten = pargs.exten
-    except AttributeError:
-        exten = 0
+    exten = (pargs.exten if hasattr(pargs, 'exten') else 0)
 
     # Second spectral file?
-    try:
-        zsys = pargs.zsys
-    except AttributeError:
-        zsys=None
+    zsys = (pargs.zsys if hasattr(pargs, 'zsys') else None)
+
 
     app = QtGui.QApplication(sys.argv)
     gui = XSpecGui(pargs.file, zsys=zsys, norm=norm, exten=exten)
