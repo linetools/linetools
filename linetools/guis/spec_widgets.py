@@ -373,7 +373,7 @@ class ExamineSpecWidget(QtGui.QWidget):
         """ Handles mouse button events
         """
         try:
-            print('button={:d}, x={:f}, y={:f}, xdata={:f}, ydata={:f}'.format(
+            print('button={:d}, x={:f}, y={:f}, xdata={:f}, ydata={:g}'.format(
                 event.button, event.x, event.y, event.xdata, event.ydata))
         except ValueError:
             print('Out of bounds')
@@ -385,7 +385,7 @@ class ExamineSpecWidget(QtGui.QWidget):
 
             # Print values
             try:
-                self.statusBar().showMessage('x,y = {:f}, {:f}'.format(event.xdata,event.ydata))
+                self.statusBar().showMessage('x,y = {:f}, {:g}'.format(event.xdata,event.ydata))
             except AttributeError:
                 return
 
