@@ -38,7 +38,6 @@ The linetools API
    :skip: FittableModel
    :skip: Parameter
    :skip: Quantity
-   :skip: Unit
    :skip: XSpectrum1D
 
 
@@ -60,7 +59,6 @@ The linetools API
 .. automodapi:: linetools.lists.mk_sets
 
 .. automodapi:: linetools.lists.parse
-   :skip: vo_parse
 
 .. automodapi:: linetools.spectra.convolve
    :skip: convolve
@@ -73,7 +71,6 @@ The linetools API
    :skip: QTable
    :skip: Table
    :skip: Column
-   :skip: Akima1DInterpolator
    :skip: interp1d
 
 .. automodapi:: linetools.spectra.plotting
@@ -83,7 +80,6 @@ The linetools API
    :skip: InteractiveCoFit
    :skip: QTable
    :skip: StdDevUncertainty
-   :skip: Table
    :skip: Spectrum1D
 
 .. automodapi:: linetools.spectralline

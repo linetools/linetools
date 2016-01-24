@@ -11,17 +11,14 @@ LineList Class
 Overview
 ========
 
-This Class is designed to organize and handle information about atomic
-and/or molecular transition lines (e.g. HI Lya, CIV 1548, Hydrogen
-Balmer series, etc.) observed in a variety of astrophysical
-environments.
+This class organizes information about atomic and molecular transition
+lines (e.g. HI Lya, CIV 1548, Hydrogen Balmer series) observed
+in astrophysical environments.
 
 ..
    (:ref:`AbsLine Class`).  add this back in when written
 
-By definition, a LineList is a unique collection of transitions lines
-specified by a predefined keyword (or list of such keywords). At the
-moment, we have implemented six keywords:
+The following lists are currently avaliable:
 
 * 'ISM' : "All" ISM lines (can be overwhelming!)
 * 'Strong' : Strong ISM lines (most common absorption line transitions observed)
@@ -31,34 +28,12 @@ moment, we have implemented six keywords:
 * 'EUV' :  Extreme UV lines
 * 'Galaxy' :  Lines typically identified in galaxy spectra
 
-Parameters
-++++++++++
-
-=============== ============== ====================================================
-Parameter       Type           Description
-=============== ============== ====================================================
-llst_keys       str or list    Initialization keyword(s) (see above)
-subset          list, optional List of subset of lines to use (drawn from input
-                               LineList). Needs to be of Quantity or str 
-                               (e.g. [1215.6700*u.AA] or ['HI 1215']). Default None
-sort_subset     Boolean        Whether to sort the subset by rest-frame wavelength
-                               Default is False
-closest         Boolean        Whether to look for the closest transition in 
-                               wavelength independently on the actual difference. 
-                               Default is False (which is highly recommended!)
-=============== ============== ====================================================
-
-
-We note that a subset of transitions can also be specified using the
-`subset` parameter at the instantiation of later by using the
-`subset_line()` method (see :ref:`subset_lines`). In this way, one can
-create an arbitrary collection of unique transitions.
-
 
 Instantiation
 =============
 
-The LineList Class may be instantiated using a single key::
+The LineList Class may be instantiated using one of the keys in the
+list above::
   
 	hi = LineList('HI')
 
@@ -83,9 +58,10 @@ or a list of keys::
   read_sets: Using set file -- 
     /home/ntejos/python/linetools/linetools/lists/sets/llist_v0.4.ascii
 
-In these examples, the object ``hi`` has purely HI Lyman series
-transitions (e.g. HI Lya) and ``euv`` has HI Lyman series and Extreme
-UV transitions (e.g. NeVIII, MgX).
+Here ``hi`` contains only HI Lyman series transitions (e.g. HI Lya),
+and ``euv`` contains both HI Lyman series and extreme UV metal
+transitions (e.g. NeVIII, MgX). Each line list contains a unique set
+of transitions, such that are no duplicate lines.
 
 
 Accessing single transitions
@@ -145,17 +121,6 @@ is the rest-frame wavelength of the HI Lya transition. Similarly,::
 is the oscillator strength of the NeVIII 780 transition.
 
 
-Accessing multiple transitions
-++++++++++++++++++++++++++++++
-
-.. Cover calling transitions using (Z,ion) tuple, differences
-.. between dictionary and Qtable outputs
-
-
-Unknown transition
-++++++++++++++++++
-
-
 ::::
 
 Methods
@@ -175,13 +140,14 @@ Which has only those two transitions loaded.
 
 You may also want to use rest-frame wavelength to define a subset, for
 instance::
+
     ism = LineList('ISM')
     lines = [2796.3543, 2803.5315, 1548.195, 1550.77] * u.AA
     ism.subset_lines(lines)
     print(ism)
     <LineList: ISM; 4 transitions>
 
-Which has only those four transitions of MgII and CIV. In order to
+selects only those four transitions of MgII and CIV. In order to
 avoid loading the `LineList('ISM')` again, you can use the keyword
 `reset_data` in `subset_lines()` to make another arbitrarily different
 subset of lines from the original `LineList`::
@@ -288,8 +254,8 @@ with the same keywords as the columns of `ism._data` QTable::
     'nk': 0,
     'wrest': <Quantity 977.0201 Angstrom>}
 
-You can also use a rest-frame wavelength to
-identify the ion species of interest::
+You can also use a rest-frame wavelength to identify the ion species
+of interest::
 
     wrest =  1260.4221 * u.AA
     si2 = ism.all_transitions(wrest)
@@ -308,32 +274,30 @@ identify the ion species of interest::
     SiII 1808 1808.0129         0.00208
     SiII 2335  2335.123        4.25e-06
 
-It is worth mentioning that for the purposes of `all_transitions`,
-it does not matter which transition of a given ion species you pick
-to do the call, it will retrieve the same answer, e.g.::
+For the purposes of `all_transitions`, it does not matter which
+transition of a given ion species you choose, it will still retrieve
+the same answer, e.g.::
 
     hi = ism.all_transitions('HI 1215')
     hi = ism.all_transitions('HI 1025')
     hi = ism.all_transitions(972.5367 * u.AA)
     hi = ism.all_transitions('HI')
 
-are all equivalent. Note that in the last example we only used
-the root name of the transition (i.e. the string before the
-blank space, `HI`), so no prior knowledge of the name
-convention is needed.
+are all equivalent. Note that in the last example we only used the
+root name of the transition (i.e. the string before the blank space,
+`HI`), so no prior knowledge of the linetools naming convention is
+needed.
 
 
 strongest_transitions()
 +++++++++++++++++++++++
 
-Sometimes it may be useful to know what are the strongest
-transition of a given ion in a given wavelength range found in
-the LineList. The relative strength of a transition of a single
-ion species is simply defined as the product of its rest-frame
-wavelength (`wrest`) and oscillator strength (`f`). With this
-in mind, `strongest_transitions()` basically gives you the strongest
-`n_max` (default being `n_max=3`) transitions of a given ion between a wavelength range, sorted
-by relative strength::
+Sometimes it is useful to know the strongest transition for an ion in
+the LineList within some wavelength range. `strongest_transitions()`
+gives the strongest `n_max` transitions of a given ion
+between a wavelength range, sorted by relative strength (defined as
+the product of its rest-frame wavelength `wrest` and oscillator
+strength `f`)::
 
     wvlims = [1000, 3000] * u.AA
     line = 'SiII'
@@ -346,9 +310,10 @@ by relative strength::
     SiII 1190
     SiII 1526
 
-The syntax is the same as for `all_transitions()` and you will the
-same result using `line in ['SiII', 'SiII 1190', 'SiII 889', 889.7228*u.AA]`.
-Depending on the wavelength range the output may vary though::
+The syntax is the same as for `all_transitions()`. Note that you will
+get the same result if you use `line='SiII'`, `line='SiII 1190'`,
+`line='SiII 889'`, or `line=889.7228*u.AA`. By default `n_max=3`.
+Depending on the wavelength range, however, the output may vary::
 
     wvlims = [500, 1100] * u.AA
     line = 'SiII 1260'
@@ -370,22 +335,6 @@ If you would like to retrieve all the transitions in a given `wvlims`
 regardless of its relative strength, you can set `n_max=None`.
 
 Following the convention within `LineList`, if only 1 transition is
-retrieved, the output of `strongest_transitions()` is a dictionary; if more
-than 1 transition are retrieved the output is a QTable. If no transition exist
-the output is `None`.
-
-
-available_transitions()
-+++++++++++++++++++++++
-
-Sometimes it may be useful to know what are the available
-transition in a given wavelength range found in the LineList
-regardless of the ion species. This is particularly the case when
-someone is trying to identify unknown emission/absorption lines
-in a spectrum. Let us then illustrate the use of this method
-with an example. Imagine that you have an observed spectrum
-covering the following wavelength range::
-
-    wvlims = [3500,10000] * u.AA
-
-Let us now imagine that we are interested in a particular redshift...
+retrieved, the output of `strongest_transitions()` is a dictionary; if
+more than 1 transition are retrieved the output is a QTable. If no
+transition exist the output is `None`.

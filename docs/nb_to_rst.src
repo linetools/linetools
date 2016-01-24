@@ -7,4 +7,5 @@ ipython nbconvert examples/AbsComponent_ColumnDensities.ipynb --to rst
 ipython nbconvert examples/AbsSystem_examples.ipynb --to rst
 ipython nbconvert examples/AbsLine_examples.ipynb --to rst
 ipython nbconvert examples/SolarAbund.ipynb --to rst
+ipython nbconvert examples/xspecgui.ipynb --to rst
 
