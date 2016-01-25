@@ -5,6 +5,10 @@ Examples for the AbsComponent Class (v0.3)
 .. code:: python
 
     %matplotlib inline
+    
+    # suppress warnings for these examples
+    import warnings
+    warnings.filterwarnings('ignore')
 
 .. code:: python
 
@@ -14,21 +18,17 @@ Examples for the AbsComponent Class (v0.3)
     except:
         pass
     
+    import astropy.units as u
     from linetools.spectralline import AbsLine
     from linetools.isgm import utils as ltiu
     from linetools.analysis import absline as laa
     from linetools.spectra import io as lsio
     from linetools.isgm.abscomponent import AbsComponent
+    
+    
     #
     import imp
     lt_path = imp.find_module('linetools')[1]
-
-
-.. parsed-literal::
-
-    /Users/xavier/anaconda/lib/python2.7/site-packages/matplotlib/__init__.py:872: UserWarning: axes.color_cycle is deprecated and replaced with axes.prop_cycle; please use the latter.
-      warnings.warn(self.msg_depr % (key, alt_key))
-
 
 Instantiate
 -----------
@@ -46,7 +46,7 @@ Standard
 
 .. parsed-literal::
 
-    [AbsComponent: 00:40:00 +45:00:00, Zion=(14,2), z=1, vlim=-300 km / s,300 km / s]
+    <AbsComponent: 00:40:00 +45:00:00, Name=SiII_z1.00000, Zion=(14,2), Ej=0 1 / cm, z=1, vlim=-300 km / s,300 km / s>
 
 
 
@@ -65,32 +65,18 @@ From one line
 
 .. parsed-literal::
 
-    WARNING: UnitsWarning: The unit 'Angstrom' has been deprecated in the FITS standard. Suggested: 10**-1 nm. [astropy.units.format.utils]
-    WARNING:astropy:UnitsWarning: The unit 'Angstrom' has been deprecated in the FITS standard. Suggested: 10**-1 nm.
-
-
-.. parsed-literal::
-
     linetools.lists.parse: Reading linelist --- 
-       /Users/xavier/local/Python/linetools/linetools/data/lines/morton03_table2.fits.gz
+       /Users/ncrighton/Code/Repo/linetools/build/lib.macosx-10.5-x86_64-3.4/linetools/data/lines/morton03_table2.fits.gz
     linetools.lists.parse: Reading linelist --- 
-       /Users/xavier/local/Python/linetools/linetools/data/lines/morton00_table2.fits.gz
+       /Users/ncrighton/Code/Repo/linetools/build/lib.macosx-10.5-x86_64-3.4/linetools/data/lines/morton00_table2.fits.gz
     linetools.lists.parse: Reading linelist --- 
-       /Users/xavier/local/Python/linetools/linetools/data/lines/verner94_tab6.fits
-
-.. parsed-literal::
-
-    WARNING: UnitsWarning: '0.1nm' did not parse as fits unit: Numeric factor not supported by FITS [astropy.units.core]
-    WARNING:astropy:UnitsWarning: '0.1nm' did not parse as fits unit: Numeric factor not supported by FITS
-
-
-.. parsed-literal::
-
-    
+       /Users/ncrighton/Code/Repo/linetools/build/lib.macosx-10.5-x86_64-3.4/linetools/data/lines/verner96_tab1.fits.gz
     linetools.lists.parse: Reading linelist --- 
-       /Users/xavier/local/Python/linetools/linetools/data/lines/EUV_lines.ascii
+       /Users/ncrighton/Code/Repo/linetools/build/lib.macosx-10.5-x86_64-3.4/linetools/data/lines/verner94_tab6.fits
+    linetools.lists.parse: Reading linelist --- 
+       /Users/ncrighton/Code/Repo/linetools/build/lib.macosx-10.5-x86_64-3.4/linetools/data/lines/EUV_lines.ascii
     read_sets: Using set file -- 
-      /Users/xavier/local/Python/linetools/linetools/lists/sets/llist_v0.3.ascii
+      /Users/ncrighton/Code/Repo/linetools/build/lib.macosx-10.5-x86_64-3.4/linetools/lists/sets/llist_v1.0.ascii
 
 
 .. code:: python
@@ -102,14 +88,14 @@ From one line
 
 .. parsed-literal::
 
-    [AbsComponent: 00:00:00 +00:00:00, Zion=(1,1), z=2.92939, vlim=-300 km / s,300 km / s]
+    <AbsComponent: 00:00:00 +00:00:00, Name=HI_z2.92939, Zion=(1,1), Ej=0 1 / cm, z=2.92939, vlim=-300 km / s,300 km / s>
 
 
 
 
 .. parsed-literal::
 
-    [[AbsLine: HI 1215, wrest=1215.6700 Angstrom]]
+    [<AbsLine: HI 1215, wrest=1215.6700 Angstrom>]
 
 
 
@@ -131,15 +117,15 @@ From multiple
 
 .. parsed-literal::
 
-    [AbsComponent: 00:00:00 +00:00:00, Zion=(1,1), z=2.92939, vlim=-300 km / s,300 km / s]
+    <AbsComponent: 00:00:00 +00:00:00, Name=HI_z2.92939, Zion=(1,1), Ej=0 1 / cm, z=2.92939, vlim=-300 km / s,300 km / s>
 
 
 
 
 .. parsed-literal::
 
-    [[AbsLine: HI 1215, wrest=1215.6700 Angstrom],
-     [AbsLine: HI 1025, wrest=1025.7222 Angstrom]]
+    [<AbsLine: HI 1215, wrest=1215.6700 Angstrom>,
+     <AbsLine: HI 1025, wrest=1025.7222 Angstrom>]
 
 
 
@@ -151,7 +137,8 @@ Generate a Component Table
 
 .. code:: python
 
-    reload(laa)
+    import imp
+    imp.reload(laa)
     lya.attrib['logN'] = 14.1
     lya.attrib['sig_logN'] = 0.15
     lya.attrib['flag_N'] = 1
@@ -182,7 +169,7 @@ Generate a Component Table
 .. raw:: html
 
     &lt;QTable length=2&gt;
-    <table id="table4566175568">
+    <table id="table4507725552">
     <thead><tr><th>wrest</th><th>z</th><th>flag_N</th><th>logN</th><th>sig_logN</th></tr></thead>
     <thead><tr><th>Angstrom</th><th></th><th></th><th></th><th></th></tr></thead>
     <thead><tr><th>float64</th><th>float64</th><th>int64</th><th>float64</th><th>float64</th></tr></thead>
@@ -236,9 +223,9 @@ Synthesize multiple components
 
 .. parsed-literal::
 
-    [[AbsComponent: 00:00:00 +00:00:00, Zion=(1,1), z=2.92939, vlim=-300 km / s,300 km / s, logN=14.1172, sig_N=0.117912],
-     [AbsComponent: 00:00:00 +00:00:00, Zion=(14,2), z=2.92939, vlim=-300 km / s,50 km / s, logN=13.4438, sig_N=0.0916346],
-     [AbsComponent: 00:00:00 +00:00:00, Zion=(14,2), z=2.92939, vlim=50 km / s,300 km / s, logN=13.7373, sig_N=0.0913882]]
+    [<AbsComponent: 00:00:00 +00:00:00, Name=HI_z2.92939, Zion=(1,1), Ej=0 1 / cm, z=2.92939, vlim=-300 km / s,300 km / s, logN=14.1172, sig_N=0.117912, flag_N=1>,
+     <AbsComponent: 00:00:00 +00:00:00, Name=SiII_z2.92939, Zion=(14,2), Ej=0 1 / cm, z=2.92939, vlim=-300 km / s,50 km / s, logN=13.1121, sig_N=0.0893676, flag_N=1>,
+     <AbsComponent: 00:00:00 +00:00:00, Name=SiII_z2.92939, Zion=(14,2), Ej=0 1 / cm, z=2.92939, vlim=50 km / s,300 km / s, logN=13.4314, sig_N=0.0948459, flag_N=1>]
 
 
 
@@ -252,7 +239,7 @@ Synthesize multiple components
 
 .. parsed-literal::
 
-    [AbsComponent: 00:00:00 +00:00:00, Zion=(14,2), z=2.92939, vlim=-60 km / s,310 km / s, logN=13.9159, sig_N=0.0679991]
+    <AbsComponent: 00:00:00 +00:00:00, Name=SiII_z2.92939, Zion=(14,2), Ej=0 1 / cm, z=2.92939, vlim=-300 km / s,300 km / s, logN=13.6015, sig_N=0.0703485, flag_N=1>
 
 
 
@@ -261,7 +248,7 @@ Generate multiple components from abslines
 
 .. code:: python
 
-    reload(ltiu)
+    imp.reload(ltiu)
     comps = ltiu.build_components_from_abslines([lya,lyb,SiIIlines[0],SiIIlines[1]])
     comps
 
@@ -270,8 +257,8 @@ Generate multiple components from abslines
 
 .. parsed-literal::
 
-    [[AbsComponent: 00:00:00 +00:00:00, Zion=(1,1), z=2.92939, vlim=-300 km / s,300 km / s],
-     [AbsComponent: 00:00:00 +00:00:00, Zion=(14,2), z=2.92939, vlim=-300 km / s,50 km / s]]
+    [<AbsComponent: 00:00:00 +00:00:00, Name=HI_z2.92939, Zion=(1,1), Ej=0 1 / cm, z=2.92939, vlim=-300 km / s,300 km / s>,
+     <AbsComponent: 00:00:00 +00:00:00, Name=SiII_z2.92939, Zion=(14,2), Ej=0 1 / cm, z=2.92939, vlim=-300 km / s,50 km / s>]
 
 
 
@@ -280,7 +267,7 @@ Generate an Ion Table
 
 .. code:: python
 
-    reload(ltiu)
+    imp.reload(ltiu)
     tbl = ltiu.iontable_from_components([abscomp,SiIIcomp,SiIIcomp2])
     tbl
 
@@ -290,12 +277,12 @@ Generate an Ion Table
 .. raw:: html
 
     &lt;QTable length=2&gt;
-    <table id="table4565810512">
-    <thead><tr><th>Z</th><th>ion</th><th>A</th><th>Ej</th><th>vmin</th><th>vmax</th><th>flag_N</th><th>logN</th><th>sig_logN</th></tr></thead>
-    <thead><tr><th></th><th></th><th></th><th></th><th>km / s</th><th>km / s</th><th></th><th></th><th></th></tr></thead>
-    <thead><tr><th>int64</th><th>int64</th><th>int64</th><th>float64</th><th>float64</th><th>float64</th><th>int64</th><th>float64</th><th>float64</th></tr></thead>
-    <tr><td>1</td><td>1</td><td>0</td><td>0.0</td><td>290.0</td><td>310.0</td><td>1</td><td>14.1172024817</td><td>0.117911610801</td></tr>
-    <tr><td>14</td><td>2</td><td>0</td><td>0.0</td><td>-60.0</td><td>310.0</td><td>1</td><td>13.9159106165</td><td>0.0679990910669</td></tr>
+    <table id="table4515788896">
+    <thead><tr><th>Z</th><th>ion</th><th>A</th><th>Ej</th><th>z</th><th>vmin</th><th>vmax</th><th>flag_N</th><th>logN</th><th>sig_logN</th></tr></thead>
+    <thead><tr><th></th><th></th><th></th><th></th><th></th><th>km / s</th><th>km / s</th><th></th><th></th><th></th></tr></thead>
+    <thead><tr><th>int64</th><th>int64</th><th>int64</th><th>float64</th><th>float64</th><th>float64</th><th>float64</th><th>int64</th><th>float64</th><th>float64</th></tr></thead>
+    <tr><td>1</td><td>1</td><td>0</td><td>0.0</td><td>2.92939</td><td>-300.0</td><td>300.0</td><td>1</td><td>14.1172024817</td><td>0.117911610801</td></tr>
+    <tr><td>14</td><td>2</td><td>0</td><td>0.0</td><td>2.92939</td><td>-300.0</td><td>300.0</td><td>1</td><td>13.6015026841</td><td>0.070348495532</td></tr>
     </table>
 
 
@@ -319,4 +306,9 @@ Show
 
     abscomp = AbsComponent.from_abslines([lya,lyb])
     abscomp.stack_plot()
+
+
+
+.. image:: AbsComponent_examples_files/AbsComponent_examples_30_0.png
+
 
