@@ -81,7 +81,8 @@ class LineList(object):
 
         # Subset of lines for use
         if subset is not None:
-            self.subset_lines(subset, verbose=verbose, sort=sort_subset)
+            new = self.subset_lines(subset, verbose=verbose, sort=sort_subset)
+            self._data = new._data
 
     def load_data(self, tol=1e-3 * u.AA, use_cache=True):
         """Grab the data for the lines of interest
@@ -282,15 +283,20 @@ class LineList(object):
         Parameters
         ----------
         subset : list or np.ndarray (of Quantity or str)
-          List of wrest or names for lines to use (drawn from input LineList)
-          e.g. (['HI 1215', 'CIV 1548'] or [1215.67 * u.AA, 1548.195 * u.AA])
+            List of wrest or names for lines to use (drawn from current
+            LineList object) e.g. (['HI 1215', 'CIV 1548'] or
+            [1215.67 * u.AA, 1548.195 * u.AA])
         reset_data : bool, optional
-          Reset self._data QTable based on the original list at the
-          initialization(i.e. the default list). This is useful for
-          changing subsets of lines without the need to initialize a
-          different LineList() object. [False]
+            Reset self._data QTable based on the original list at the
+            initialization(i.e. the default list). This is useful for
+            changing subsets of lines without the need to initialize a
+            different LineList() object. Default is False.
         sort : bool, optional
-          Sort this subset? [False]
+            Sort this subset? Default is False.
+
+        Returns
+        -------
+        A new LineList object with the subset of transitions
 
         """
 
@@ -337,8 +343,11 @@ class LineList(object):
         tmp = self._data[indices]
         if sort:
             tmp.sort('wrest')
-        # Finish
-        self._data = tmp
+
+        # Return LineList object
+        names = tmp._data['name']
+        return LineList(self.lists, subset=names, sort_subset=sort)
+        # self._data = tmp
 
     def unknown_line(self):
         """Returns a dictionary of line properties set to an unknown
