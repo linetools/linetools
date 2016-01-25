@@ -107,7 +107,8 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         # Flux
         if flux_tags is None:
             flux_tags = ['SPEC', 'FLUX', 'FLAM', 'FX',
-                         'FLUXSTIS', 'FLUX_OPT', 'fl', 'flux', 'counts']
+                         'FLUXSTIS', 'FLUX_OPT', 'fl', 'flux', 'counts',
+                         'COUNTS']
         fx, fx_tag = get_table_column(flux_tags, hdulist, idx=exten)
         if fx is None:
             print('Binary FITS Table but no Flux tag')
@@ -115,7 +116,8 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         # Error
         if sig_tags is None:
             sig_tags = ['ERROR','ERR','SIGMA_FLUX','FLAM_SIG', 'SIGMA_UP',
-                        'ERRSTIS', 'FLUXERR', 'sigma', 'sigma_flux', 'er','err']
+                        'ERRSTIS', 'FLUXERR', 'SIGMA', 'sigma', 'sigma_flux',
+                        'er', 'err', 'error']
         sig, sig_tag = get_table_column(sig_tags, hdulist)
         if sig is None:
             ivar_tags = ['IVAR', 'IVAR_OPT']
