@@ -14,6 +14,8 @@ from astropy import units as u
 from astropy.units.quantity import Quantity
 from astropy.table import QTable, Table, vstack, Column
 
+import copy
+
 # from xastropy.xutils import xdebug as xdb
 
 CACHE = {'full_table': {}, 'data': {}}
@@ -345,9 +347,9 @@ class LineList(object):
             tmp.sort('wrest')
 
         # Return LineList object
-        names = tmp._data['name']
-        return LineList(self.lists, subset=names, sort_subset=sort)
-        # self._data = tmp
+        new = copy.copy(self)
+        new._data = tmp
+        return new
 
     def unknown_line(self):
         """Returns a dictionary of line properties set to an unknown
