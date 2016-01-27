@@ -90,7 +90,7 @@ class ExamineSpecWidget(QtGui.QWidget):
             self.llist = llist
 
         # zsys
-        if not zsys is None:
+        if zsys is not None:
             self.llist['z'] = zsys
 
         # Create the mpl Figure and FigCanvas objects.
@@ -173,19 +173,23 @@ class ExamineSpecWidget(QtGui.QWidget):
         if event.key in ['D', 'R']:
             # Set NHI
             if event.key == 'D':
-                NHI = 20.3
+                NHI = 10**20.3 * u.cm**-2
             elif event.key == 'R':
-                NHI = 19.0
+                NHI = 10**19.0 * u.cm**-2
             zlya = event.xdata/1215.6701 - 1.
             self.llist['z'] = zlya
             # Generate Lya profile
             lya_line = AbsLine(1215.6701*u.AA)
-            lya_line.z = zlya
+            lya_line.attrib['z'] = zlya
             lya_line.attrib['N'] = NHI
-            lya_line.attrib['b'] = 30.
+            lya_line.attrib['b'] = 30. * u.km/u.s
             self.lya_line = ltv.voigt_from_abslines(self.spec.dispersion,
                                                     lya_line, fwhm=3.)
             self.adict['flg'] = 4
+            # QtCore.pyqtRemoveInputHook()
+            # import pdb; pdb.set_trace()
+            # QtCore.pyqtRestoreInputHook()
+
             flg = 1
 
         # ANALYSIS:  EW, AODM column density
