@@ -23,7 +23,7 @@ Its main attributes are the `wavelength`, `flux` and
 
     >>> from linetools.spectra.xspectrum1d import XSpectrum1D
     >>> import numpy as np
-    >>> wa = np.arange(3000, 7000, 0.5)
+    >>> wa = np.arange(3000, 7000.1, 0.5)
     >>> fl = np.ones_like(wa)
     >>> sig = np.ones_like(fl) * 0.1
     >>> sp = XSpectrum1D.from_tuple((wa, fl, sig))
@@ -31,7 +31,7 @@ Its main attributes are the `wavelength`, `flux` and
     <Quantity [ 3000. , 3000.5, 3001. ,...,  6998.5, 6999. , 6999.5] Angstrom>
     >>> sp.flux
     <Quantity [ 1., 1., 1.,...,  1., 1., 1.]>
-    >>> sp.uncertainty
+    >>> sp.uncertainty # doctest: +SKIP
     <astropy.nddata.nduncertainty.StdDevUncertainty at 0x10bec8e80>
    
 Note that the wavelength and flux both have units. If you don't
