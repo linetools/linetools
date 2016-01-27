@@ -36,9 +36,9 @@ Its main attributes are the `wavelength`, `flux` and
    
 Note that the wavelength and flux both have units. If you don't
 specify a unit when you create an new XSpectrum1D instance, Angstroms
-are assumed. In this case the flux is unitless. The one sigma
-uncertainty is assumed to have the same units as the flux, and you can
-access its underlying numpy array via ``sp.uncertainty.array``.
+are assumed for the wavelength. In this case the flux is unitless.
+The one sigma uncertainty is assumed to have the same units as the flux,
+and you can access its underlying numpy array via ``sp.uncertainty.array``.
 
 Methods
 =======
@@ -51,7 +51,7 @@ syntax as `~linetools.spectra.io.readspec`. The easiest way to create
 a new spectrum from data arrays is to use ``sp.from_tuple`` as shown
 above.
 
-To write a spectrum toa file, use either `sp.write_to_fits` or
+To write a spectrum to a file, use either `sp.write_to_fits` or
 `sp.write_to_ascii`. FITS files are preferable because they are
 generally faster to read and write.
 
