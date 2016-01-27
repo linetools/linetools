@@ -71,7 +71,7 @@ to an arbitrary input wavelength array.  Flux is conserved.  If
 is made to conserve S/N.  Generally, neighboring pixels will be
 correlated::
 
-    >>> newspec = sp.rebin(new_wv, do_sig=True)
+    >>> newspec = sp.rebin(new_wv, do_sig=True) # doctest: +SKIP
 
 
 Continuum fitting
