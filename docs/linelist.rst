@@ -229,7 +229,7 @@ with the same keywords as the columns of ``ism._data`` QTable::
     ciii = ism.all_transitions('CIII')
     type(ciii)
     dict
-    >>> print(ciii)
+    print(ciii)
     {'A': <Quantity 1760000000.0 1 / s>,
     'Am': 0,
     'Ej': <Quantity 0.0 1 / cm>,
