@@ -2,10 +2,6 @@
 linetool Scripts
 ****************
 
-
-Quick Plots
-===========
-
 lt_xspec
 --------
 
