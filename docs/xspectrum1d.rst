@@ -27,8 +27,8 @@ Its main attributes are the `wavelength`, `flux` and
     >>> fl = np.ones_like(wa)
     >>> sig = np.ones_like(fl) * 0.1
     >>> sp = XSpectrum1D.from_tuple((wa, fl, sig))
-    >>> sp.wavelength
-    <Quantity [ 3000. , 3000.5, 3001. ,...,  6998.5, 6999. , 6999.5] Angstrom>
+    >>> sp.wavelength # doctest: +SKIP
+    <Quantity [ 3000. , 3000.5, 3001. ,..., 6999. , 6999.5, 7000. ] Angstrom>
     >>> sp.flux
     <Quantity [ 1., 1., 1.,...,  1., 1., 1.]>
     >>> sp.uncertainty # doctest: +SKIP
