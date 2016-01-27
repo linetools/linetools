@@ -361,19 +361,22 @@ Let us now imagine that we are interested in a particular redshift, say
     print(len(transitions))
     33
 
-Will give the 33 transitions available that could correspond to having `z=0.67` in the form of a QTable.
-The output is sorted by strength of the strongest available transition per ion species, and strength is defined
-as `log10(wrest * fosc * abundance)`, where `abundance` is that of the solar composition given by Asplund2009.
-As optional keyword parameters one can specify a minimum strength as `min_strength`, so transitions below this
+Will give the 33 transitions available that could correspond to having
+`z=0.67` in the form of a QTable. The output is sorted by strength of
+the strongest available transition per ion species, and strength is defined
+as `log10(wrest * fosc * abundance)`, where `abundance` is that of the solar
+composition given by Asplund2009. As optional keyword parameters one can
+specify a minimum strength as `min_strength`, so transitions below this
 value are omitted, e.g.::
 
     transitions = ism.available_transitions(wvlims/(1+z),n_max=None,n_max_tuple=None, min_strength=10.5)
     print(len(transitions))
     3
 
-Which correspond to `MgI 2852`, `MgII 2796` and `MgII 2803`. Note than this method does not correct for
-ionization state. Similarly, once can also set a maximum number of transitions to be retrieved satisfying the
-criteria using the optional keyword `n_max`, e.g.::
+Which correspond to `MgI 2852`, `MgII 2796` and `MgII 2803`. Note than this
+method does not correct for ionization state. Similarly, once can also set a
+maximum number of transitions to be retrieved satisfying the criteria using
+the optional keyword `n_max`, e.g.::
 
     transitions = ism.available_transitions(wvlims/(1+z), n_max=4, n_max_tuple=None, min_strength=0.)
     print(transitions['name'])
@@ -384,8 +387,8 @@ criteria using the optional keyword `n_max`, e.g.::
     MgII 2803
     FeII 2382
 
-Finally, one can also specify the maximum number of transitions per ion species tuple using the optional
-keyword parameter `n_max_tuple`, e.g.::
+Finally, one can also specify the maximum number of transitions per ion species
+tuple using the optional keyword parameter `n_max_tuple`, e.g.::
 
     transitions = ism.available_transitions(wvlims/(1+z), n_max=6, n_max_tuple=1, min_strength=0.)
     print(transitions['name'])
@@ -399,4 +402,7 @@ keyword parameter `n_max_tuple`, e.g.::
     MnII 2576
     VII  2683
 
-Which for the case of MgII only retrieves `MgII 2796`.
+Which for the case of MgII only retrieves `MgII 2796`. Following the convention within
+`LineList`, if only 1 transition is retrieved, the output of `available_transitions()`
+is a dictionary; if more than 1 transition are retrieved the output is a QTable. If no
+transition exist satisfying the criteria the output is `None`.
