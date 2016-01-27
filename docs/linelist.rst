@@ -35,6 +35,7 @@ Instantiation
 The LineList Class may be instantiated using one of the keys in the
 list above::
 
+    >>> from linetools.lists.linelist import LineList
     >>> hi = LineList('HI')
     linetools.lists.parse: Reading linelist ---
     /home/ntejos/python/linetools/linetools/data/lines/morton03_table2.fits.gz
