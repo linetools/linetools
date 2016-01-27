@@ -1,11 +1,25 @@
 #/bin/tcsh
-# Converts notebooks to rst
+
+# Converts notebooks to rst and insert a line at the top with a link
+# to the original notebook.
+
 # Requires pandoc https://github.com/jgm/pandoc/releases/tag/1.15.2
 
-ipython nbconvert examples/AbsComponent_examples.ipynb --to rst
-ipython nbconvert examples/AbsComponent_ColumnDensities.ipynb --to rst
-ipython nbconvert examples/AbsSystem_examples.ipynb --to rst
-ipython nbconvert examples/AbsLine_examples.ipynb --to rst
-ipython nbconvert examples/SolarAbund.ipynb --to rst
-ipython nbconvert examples/xspecgui.ipynb --to rst
+for n in AbsComponent_examples \
+    AbsComponent_ColumnDensities \
+    AbsSystem_examples \
+    AbsLine_examples \
+    SolarAbund \
+    xspecgui
 
+do  
+    	echo examples/$n\.ipynb
+	echo $n\.rst
+	ipython nbconvert examples/$n.ipynb --to rst;
+	sed -i '' "5 i\\
+ Download :download:\`examples/$n\.ipynb\` this notebook.\\
+\\
+
+" $n\.rst;
+
+done
