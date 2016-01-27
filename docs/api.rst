@@ -45,6 +45,7 @@ The linetools API
    :skip: QTable
    :skip: Spectrum1D
    :skip: AbsLine
+   :skip: SpectralLine
    :skip: Column
    :skip: SkyCoord
    :no-inheritance-diagram:
@@ -59,6 +60,8 @@ The linetools API
 .. automodapi:: linetools.lists.mk_sets
 
 .. automodapi:: linetools.lists.parse
+   :skip: vstack
+
 
 .. automodapi:: linetools.spectra.convolve
    :skip: convolve
@@ -81,6 +84,7 @@ The linetools API
    :skip: QTable
    :skip: StdDevUncertainty
    :skip: Spectrum1D
+   :skip: AkimaSpline
 
 .. automodapi:: linetools.spectralline
    :skip: Quantity

@@ -411,22 +411,23 @@ or QtAgg backends to enable all interactive plotting commands.
         Uses simple linear interpolation.  The default (and only)
         option conserves counts (and flambda).
 
-        WARNING: Do not trust either edge pixel of the new array
-        Also be aware that neighboring pixels are likely to be correlated
-        in a manner that is not described by the error array.
+        WARNING: Do not trust either edge pixel of the new array.
+        Also be aware that neighboring pixels are likely to be
+        correlated in a manner that is not described by the error
+        array.
 
         Parameters
         ----------
         new_wv : Quantity array
           New wavelength array
         do_sig : bool, optional
-          Rebin error too (if it exists)
-          S/N is only crudely conserved
-          Rejected pixels get propagated
+          Rebin error too (if it exists).
+          S/N is only crudely conserved.
+          Rejected pixels are propagated.
 
         Returns
         -------
-        XSpectrum1D of the rebinned spectrum (without error array)
+        XSpectrum1D of the rebinned spectrum
         """
         from scipy.interpolate import interp1d
 
