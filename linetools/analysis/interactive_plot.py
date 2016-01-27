@@ -1,12 +1,13 @@
-""" Classes useful for making interactive plots.
+""" Classes for making interactive plots.
 """
 from __future__ import division, print_function, unicode_literals, absolute_import
 
 import os
 import numpy as np
-from ..utils import between
+from ..utils import between, loadjson, savejson
 from ..spectra.convolve import convolve_psf
 from ..spectra.plotting import get_flux_plotrange
+from ..guis import utils as ltgu
 from .interp import AkimaSpline
 
 from astropy.modeling import models
@@ -14,28 +15,6 @@ import astropy.units as u
 
 import matplotlib.transforms as mtran
 import matplotlib.pyplot as plt
-
-
-import json
-
-def savejson(filename, obj, overwrite=False, indent=None):
-    """ Save a python object to filename using using the JSON encoder."""
-
-    if os.path.lexists(filename) and not overwrite:
-        raise IOError('%s exists' % filename)
-    if filename.endswith('.gz'):
-        fh = gzip.open(filename, 'wb')
-    else:
-        fh = open(filename, 'wb')
-    json.dump(obj, fh, indent=indent)
-    fh.close()
-
-def loadjson(filename):
-    """ Load a python object saved with savejson."""
-    fh = open(filename, 'rb')
-    obj = json.load(fh)
-    fh.close()
-    return obj
 
 
 def local_median(wa, fl, er, x, npix=10, default=None):
@@ -54,26 +33,27 @@ class PlotWrapBase(object):
     """ A base class that has all the navigation and smoothing
     keypress events.
 
+    Notes
+    -----
     These attributes must be defined in a subclass:
 
-    self.wa, self.fl    Spectrum wavelength and flux
-    self.nsmooth        integer > 0 that determines the smoothing
-    self.ax             Axes where spectrum is plotted
-    self.fig            Figure which holds the axes.
-    self.artists['fl']  The Matplotlib line artist that represents the flux.
-
+     * self.wa, self.fl    Spectrum wavelength and flux
+     * self.nsmooth        integer > 0 that determines the smoothing
+     * self.ax             Axes where spectrum is plotted
+     * self.fig            Figure which holds the axes.
+     * self.artists['fl']  The Matplotlib line artist that represents the flux.
 
     The keypress events need to be connected to the figure with
-    something like:
+    something like::
 
-    def connect(self, fig):
-        cids = dict(key=[])
-        # the top two are methods of PlotWrapBase
-        cids['key'].append(fig.canvas.mpl_connect(
-            'key_press_event', self.on_keypress_navigate))
-        cids['key'].append(fig.canvas.mpl_connect(
-            'key_press_event', self.on_keypress_smooth))
-        self.cids.update(cids)
+      def connect(self, fig):
+          cids = dict(key=[])
+          # the top two are methods of PlotWrapBase
+          cids['key'].append(fig.canvas.mpl_connect(
+              'key_press_event', self.on_keypress_navigate))
+          cids['key'].append(fig.canvas.mpl_connect(
+              'key_press_event', self.on_keypress_smooth))
+          self.cids.update(cids)
     """
     _help_string = """
 i,o          Zoom in/out x limits
@@ -88,66 +68,19 @@ S,U          Smooth/unsmooth spectrum
 """
 
     def __init__(self):
-        pass
+        """ Initialize parameters for plotting the spectrum
+        """
+        self.nav_dict = dict(nav=ltgu.navigate(0, 0, init=True))
 
     def on_keypress_navigate(self, event):
         """ Process a keypress event. Requires attributes self.ax,
         self.fl, self.wa, self.fig
         """
-        # Navigation
-        if event.key == 'i' and event.inaxes:
-            x0,x1 = self.ax.get_xlim()
-            x = event.xdata
-            dx = abs(x1 - x0)
-            self.ax.set_xlim(x - 0.275*dx, x + 0.275*dx)
-            self.fig.canvas.draw()
-        elif event.key == 'o' and event.inaxes:
-            x0,x1 = self.ax.get_xlim()
-            x = event.xdata
-            dx = abs(x1 - x0)
-            self.ax.set_xlim(x - 0.95*dx, x + 0.95*dx)
-            self.fig.canvas.draw()
-        elif event.key == 'Y' and event.inaxes:
-            y0,y1 = self.ax.get_ylim()
-            y = event.ydata
-            dy = abs(y1 - y0)
-            self.ax.set_ylim(y0 - 0.05*dy, y1 + 0.4*dy)
-            self.fig.canvas.draw()
-        elif event.key == 'y' and event.inaxes:
-            x0,x1 = self.ax.get_xlim()
-            y0,y1 = get_flux_plotrange(self.fl[between(self.wa, x0, x1)])
-            self.ax.set_ylim(y0, y1)
-            self.fig.canvas.draw()
-        elif event.key == ']':
-            x0,x1 = self.ax.get_xlim()
-            dx = abs(x1 - x0)
-            self.ax.set_xlim(x1 - 0.1*dx, x1 + 0.9*dx)
-            self.fig.canvas.draw()
-        elif event.key == '[':
-            x0,x1 = self.ax.get_xlim()
-            dx = abs(x1 - x0)
-            self.ax.set_xlim(x0 - 0.9*dx, x0 + 0.1*dx)
-            self.fig.canvas.draw()
-        elif event.key == 'w':
-            self.ax.set_xlim(self.wa[0], self.wa[-1])
-            y0,y1 = get_flux_plotrange(self.fl)
-            self.ax.set_ylim(y0, y1)
-            self.fig.canvas.draw()
-        elif event.key == 'b' and event.inaxes:
-            y0, y1 = self.ax.get_ylim()
-            self.ax.set_ylim(event.ydata, y1)
-            self.fig.canvas.draw()
-        elif event.key == 't' and event.inaxes:
-            y0, y1 = self.ax.get_ylim()
-            self.ax.set_ylim(y0, event.ydata)
-            self.fig.canvas.draw()
-        elif event.key == 'l' and event.inaxes:
-            x0, x1 = self.ax.get_xlim()
-            self.ax.set_xlim(event.xdata, x1)
-            self.fig.canvas.draw()
-        elif event.key == 'r' and event.inaxes:
-            x0, x1 = self.ax.get_xlim()
-            self.ax.set_xlim(x0, event.xdata)
+        # Requiring inaxes for all of these now
+        if (event.key in self.nav_dict['nav']) and event.inaxes:
+            ltgu.navigate(self.nav_dict, event)
+            self.ax.set_xlim(self.nav_dict['x_minmax'])
+            self.ax.set_ylim(self.nav_dict['y_minmax'])
             self.fig.canvas.draw()
 
     def on_keypress_smooth(self, event):
@@ -173,32 +106,44 @@ class PlotWrapNav(PlotWrapBase):
 
     For example, i and o for zooming in y direction, [ and ] for
     panning, S and U for smoothing and unsmoothing.
+
+    Parameters
+    ----------
+    fig : matplotlib Figure
+    ax : matplotlib axes
+      The Axes where the spectrum is plotted.
+    wa, fl : array
+      Wavelength and flux arrays
+    artists : dict
+      A dictionary which must contain a key 'fl', which is the
+      matplotlib artist corresponding to the flux line.
+    printhelp : bool, optional
+      Whether to print a help message when first called.
     """
     def __init__(self, fig, ax, wa, fl, artists, printhelp=True):
-        """
-        Parameters
-        ----------
-        fig : matplotlib Figure
-        ax : matplotlib axes
-          The Axes where the spectrum is plotted.
-        wa, fl : array
-          Wavelength and flux arrays
-        artists : dict
-          A dictionary which must contain a key 'fl', which is the
-          matplotlib artist corresponding to the flux line.
-        printhelp : bool, optional
-          Whether to print a help message when first called.
-        """
-        self.artists = artists
-        self.fig = fig
-        self.ax = ax
+
+
+        super(PlotWrapNav, self).__init__()
+
         if isinstance(wa, u.Quantity):
             wa = wa.value
         self.wa = wa
         if isinstance(fl, u.Quantity):
             fl = fl.value
         self.fl = fl
+
+        xmin = np.min(self.wa)
+        xmax = np.max(self.wa)
+        ymin, ymax = get_flux_plotrange(self.fl)
+        self.nav_dict['x_minmax'] = np.array([xmin, xmax])
+        self.nav_dict['y_minmax'] = [ymin, ymax]
+
+        self.artists = artists
+        self.fig = fig
+        self.ax = ax
+
         self.nsmooth = 0
+        self.last_keypress = None
         # disable existing keypress events (like 's' for save).
         cids = list(fig.canvas.callbacks.callbacks['key_press_event'])
         for cid in cids:
@@ -208,9 +153,11 @@ class PlotWrapNav(PlotWrapBase):
         if printhelp:
             print(self._help_string)
 
-
     def on_keypress(self, event):
         """ Print a help message"""
+
+        # store the last key pressed
+        self.last_keypress = event.key
         if event.key == '?':
             print(self._help_string)
 
@@ -226,6 +173,34 @@ class PlotWrapNav(PlotWrapBase):
         self.cids.update(cids)
 
 class InteractiveCoFit(PlotWrapBase):
+    """ Class for interactively fitting a continuum
+    
+    Parameters
+    ----------
+    wa : Wavelengths
+    fl : Fluxes
+    er : One sigma errors
+    contpoints : list of x,y tuple pairs (None)
+        The points through which a cubic spline is passed,
+        defining the continuum.
+    co : Continuum, optional  
+        The existing continuum, if one is already defined.
+    anchor : bool
+        Whether to prevent modification of the first and last
+        spline knots. Default is None, which means anchor only if
+        co is given.
+
+    Notes
+    -----
+    Updates the following attributes:
+
+      * self.wa, self.fl, self.er :  wa, fl, er
+      * self.contpoints :  Points used to define the continuum.
+      * self.artists :  Dictionary of matplotlib plotting artists.
+      * self.connections :  Callback connections.
+      * self.fig :  The plotting figure instance.
+
+    """
     help_message = PlotWrapBase._help_string + """
 a        : add a new spline knot
 A        : add a new spline knot, and use a flux median to guess y position
@@ -240,31 +215,6 @@ q        : quit
     def __init__(self, wa, fl, er, contpoints, co=None,
                  fig=None, anchor=None):
         """ Initialise figure, plots and variables.
-
-        Parameters
-        ----------
-        wa : Wavelengths
-        fl : Fluxes
-        er : One sigma errors
-        contpoints : list of x,y tuple pairs (None)
-            The points through which a cubic spline is passed,
-            defining the continuum.
-        co : Continuum, optional  
-            The existing continuum, if one is already defined.
-        anchor : bool
-            Whether to prevent modification of the first and last
-            spline knots. Default is None, which means anchor only if
-            co is given.
-
-        Notes
-        -----
-        Updates the following attributes:
-
-         self.wa, self.fl, self.er :  wa, fl, er
-         self.contpoints :  Points used to define the continuum.
-         self.artists :  Dictionary of matplotlib plotting artists.
-         self.connections :  Callback connections.
-         self.fig :  The plotting figure instance.
         """
         #setup
 
@@ -274,12 +224,18 @@ q        : quit
         self.er = er
         self.anchor = anchor
 
+
+
         if os.path.lexists('./_knots.jsn'):
             c = raw_input('knots file exists, use this? (y) ')
             if c.lower() != 'n':
                 contpoints = loadjson('./_knots.jsn')
-        contpoints = sorted(tuple(cp) for cp in contpoints)
+        # need the float call here to make sure values are all float64
+        # and thus json serializable.
+        contpoints = sorted(tuple(float(val) for val in cp) for
+                            cp in contpoints)
 
+        #import pdb; pdb.set_trace()
         if co is not None:
             self.continuum = np.array(co, copy=True)
             if self.anchor is None:
@@ -317,8 +273,8 @@ q        : quit
         contpoints[-1] = wa[i2], y
         self.indices = i1, i2
         if self.anchor:
-            self.anchor_start = wa[i1 - 1], co[i1 - 1]
-            self.anchor_end = wa[i2 + 1], co[i2 + 1]
+            self.anchor_start = wa[i1 - 1], float(co[i1 - 1])
+            self.anchor_end = wa[i2 + 1], float(co[i2 + 1])
         self.contpoints = contpoints
         self.wmin = wmin
         self.wmax = wmax
@@ -344,8 +300,7 @@ q        : quit
         """ Set up the figure and do initial plots.
 
         Updates the following attributes:
-
-          self.artists
+          * self.artists
         """
         wa,fl,er = self.wa, self.fl, self.er
 
@@ -366,7 +321,14 @@ q        : quit
         a1.set_ylim(-4, 4)
         a0.axhline(0, color='0.7')
 
+        # Initial plot limits
         i0,i1 = self.indices
+        xmin = wa[i0]
+        xmax = wa[i1]
+        self.nav_dict = dict(nav=ltgu.navigate(0, 0, init=True))
+        self.nav_dict['xmnx'] = [xmin, xmax]
+        ymin,ymax = get_flux_plotrange(self.fl[between(wa, xmin, xmax)])
+        #
         art = []
         art.append(a0.axvline(wa[i0], color='r', ls='--', lw=2, zorder=10))
         art.append(a0.axvline(wa[i1], color='r', ls='--', lw=2, zorder=10))
@@ -379,10 +341,15 @@ q        : quit
         m2, = a0.plot([0], [0], 'o', mfc='None', mew=2, ms=12, mec='r',
                       alpha=0.7)
 
-        a0.set_xlim(wa[i0], wa[i1])
+        a0.set_xlim(self.nav_dict['xmnx'])
         good = (er[i0:i1] > 0) & ~np.isnan(fl[i0:i1]) & ~np.isinf(fl[i0:i1])
         ymax = 2 * np.abs(np.percentile(fl[i0:i1][good], 95))
-        a0.set_ylim(-0.1*ymax, ymax)
+        ymin = -0.1 * ymax
+        self.nav_dict['ymnx'] = [ymin, ymax]
+        a0.set_ylim(self.nav_dict['ymnx'])
+
+        self.nav_dict['sv_xy'] = [[xmin, xmax], [ymin, ymax]]
+        self.nav_dict['tmp_xy'] = None
 
         # for histogram
         trans = mtran.blended_transform_factory(a1.transAxes, a1.transData)
@@ -402,9 +369,8 @@ q        : quit
         """ Calculates the new continuum, residuals and updates the plots.
 
         Updates the following attributes:
-
-          self.artists
-          self.continuum
+          * self.artists
+          * self.continuum
         """
         wa,fl,er = self.wa, self.fl, self.er
         co = self.continuum
@@ -450,8 +416,7 @@ q        : quit
         """ Interactive fiddling via the keyboard
 
         Updates:
-
-         self.contpoints
+         * self.contpoints
         """
         if event.key == 'q':
             self.finished = True
@@ -464,8 +429,8 @@ q        : quit
             xnew = []
             xnew.extend(np.array(xc[:-1]) + 0.5*np.diff(xc))
             ynew = np.interp(xnew, xc, yc)
-            ynew = [local_median(self.wa, self.fl, self.er, xnew[i],
-                                 default=ynew[i])
+            ynew = [float(local_median(self.wa, self.fl, self.er, xnew[i],
+                                       default=ynew[i]))
                     for i in range(len(xnew))]
             # add to contpoints
             self.contpoints.extend(zip(xnew, ynew))
@@ -488,8 +453,8 @@ q        : quit
                 return
             # add a point to contpoints
             x, y = event.xdata, event.ydata
-            if not self.contpoints or x not in zip(*self.contpoints)[0]:
-                self.contpoints.append((x, y))
+            if not self.contpoints or x not in list(zip(*self.contpoints))[0]:
+                self.contpoints.append((x, float(y)))
                 self.contpoints.sort()
                 self.update()
         if event.key == 'A':
@@ -498,10 +463,10 @@ q        : quit
                 print('Outside fitting region')
                 return
             x = event.xdata
-            if not self.contpoints or x not in zip(*self.contpoints)[0]:
+            if not self.contpoints or x not in list(zip(*self.contpoints))[0]:
                 y = local_median(self.wa, self.fl, self.er, x,
                                  default=event.ydata)
-                self.contpoints.append((x, y))
+                self.contpoints.append((x, float(y)))
                 self.contpoints.sort()
                 self.update()
         elif event.key in ('d', '4'):
@@ -545,10 +510,11 @@ q        : quit
             x, y = event.xdata, event.ydata
             # if M, get y value from a local_median
             if event.key == 'M' and \
-                   (not self.contpoints or x not in zip(*self.contpoints)[0]):
+                   (not self.contpoints or
+                    x not in list(zip(*self.contpoints))[0]):
                 y = local_median(self.wa, self.fl, self.er, x,
                                  default=event.ydata)
-            self.contpoints[ind] = x, y
+            self.contpoints[ind] = x, float(y)
             self.contpoints.sort()
             self.update()
 

@@ -1,14 +1,4 @@
-"""
-#;+ 
-#; NAME:
-#; spectralline
-#;    Version 1.0
-#;
-#; PURPOSE:
-#;    Module for SpectralLine class
-#;   23-Jun-2015 by JXP
-#;-
-#;------------------------------------------------------------------------------
+""" Classes for absorption line component
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -18,435 +8,587 @@ try:
 except NameError:
     basestring = str
 
-import numpy as np
 import pdb
-import copy, imp
+import numpy as np
+import warnings
 
 from astropy import constants as const
 from astropy import units as u
-from astropy.units import Quantity
+from astropy.coordinates import SkyCoord
+from astropy.table import QTable, Column
 
-from linetools.analysis import utils as lau
-from linetools.analysis import absline as laa
-from linetools.lists.linelist import LineList
+from specutils import Spectrum1D
+
+from linetools.analysis import absline as ltaa
+from linetools.analysis import plots as ltap
+from linetools.spectralline import AbsLine, SpectralLine
+from linetools.abund import ions
+from linetools import utils as ltu
 
 #import xastropy.atomic as xatom
 #from xastropy.stats import basic as xsb
 #from xastropy.xutils import xdebug as xdb
 
-# class SpectralLine(object):
-# class AbsLine(SpectralLine):
-# class AbsComponens(AbsLine):
-
 # Class for Components
 class AbsComponent(object):
-    """Class for a spectral line.  Emission or absorption 
+    """
+    Class for an absorption component
 
     Attributes
     ----------
-        init_wrest : str
-          type of line, e.g.  Abs, Emiss
-        wrest : Quantity
-          Rest wavelength
-        z: float
-          Redshift
+    name : str
+        Name of the component, e.g. `Si II`
+    coord : SkyCoord
+        Sky coordinate
+    Zion : tuple 
+        Atomic number, ion -- (int,int)
+        e.g. (8,1) for OI
+    zcomp : float
+        Component redshift
+    vlim : Quantity array
+        Velocity limits of the component
+        e.g.  [-300,300]*u.km/u.s
+    A : int
+        Atomic mass -- used to distinguish isotopes
+    Ej : Quantity
+        Energy of lower level (1/cm)
+    comment : str
+        A comment, default is ``
     """
-    # Initialize with wavelength
-    def __init__(self, ltype, trans, linelist=None, closest=False,
-        z=0.):
+    @classmethod
+    def from_abslines(cls, abslines, stars=None, **kwargs):
+        """Instantiate from a list of AbsLine objects
+
+        Parameters
+        ----------
+        abslines : list 
+          List of AbsLine objects
+        stars : str, optional
+          Asterisks to append to the ion name (e.g. fine-structure, CII*)
+        """
+        # Check
+        if not isinstance(abslines, list):
+            raise IOError("Need a list of AbsLine objects")
+        if not all(isinstance(x, AbsLine) for x in abslines):
+            raise IOError("List needs to contain only AbsLine objects")
+
+        # Instantiate with the first line
+        init_line = abslines[0]
+        slf = cls( init_line.attrib['coord'], (init_line.data['Z'],init_line.data['ion']),
+                   init_line.attrib['z'], init_line.analy['vlim'],
+                   Ej=init_line.data['Ej'], stars=stars)
+        slf._abslines.append(init_line)
+        # Append with component checking
+        if len(abslines) > 1:
+            for absline in abslines[1:]:
+                slf.add_absline(absline, **kwargs)
+        # Return
+        return slf
+
+    @classmethod
+    def from_component(cls, component, **kwargs):
+        """ Instantiate from an AbsComponent object
+
+        Uses RA/DEC, Zion, Ej, A, z, vlim
+
+        Parameters
+        ----------
+        component : AbsComponent
+           An AbsComponent object
+
+        Returns
+        -------
+        AbsComponent
+        """
+        # Check
+        if not isinstance(component, AbsComponent):
+            raise IOError('Need an AbsComponent object')
+        # Return
+        return cls(component.coord, component.Zion, component.zcomp, component.vlim, Ej=component.Ej,
+                   A=component.A, name=component.name, **kwargs)
+
+    @classmethod
+    def from_dict(cls, idict, **kwargs):
+        """ Instantiate from a dict
+
+        Parameters
+        ----------
+        idict : dict
+
+        Returns
+        -------
+
+        """
+        slf = cls(SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg),
+                  tuple(idict['Zion']), idict['zcomp'], idict['vlim']*u.km/u.s,
+                  Ej=idict['Ej']/u.cm, A=idict['A'],
+                  Ntup = tuple([idict[key] for key in ['flag_N', 'logN', 'sig_logN']]),
+                  comment=idict['comment'], name=idict['Name'])
+        # Add lines
+        for key in idict['lines']:
+            iline = SpectralLine.from_dict(idict['lines'][key])
+            slf.add_absline(iline, **kwargs)
+        # Return
+        return slf
+
+    def __init__(self, radec, Zion, z, vlim, Ej=0./u.cm, A=None,
+                 Ntup=None, comment='', name=None, stars=None):
         """  Initiator
 
         Parameters
         ----------
-        ltype : string
-          Type of Spectral line, 'Abs'
-        trans: Quantity or str
-          Quantity: Rest wavelength (e.g. 1215.6700*u.AA)
-          str: Name of transition (e.g. 'CIV 1548')
-        linelist : LineList, optional
-          Class of linelist or str setting LineList
-        closest : bool, optional
-          Take the closest line to input wavelength? [False]
+        radec : tuple or SkyCoord
+            (RA,DEC) in deg or astropy.coordinate
+        Zion : tuple 
+            Atomic number, ion -- (int,int)
+            e.g. (8,1) for OI
+        z : float
+            Absorption component redshift
+        vlim : Quantity array
+            Velocity limits of the component w/r to `z`
+            e.g.  [-300,300]*u.km/u.s
+        A : int, optional
+            Atomic mass -- used to distinguish isotopes
+        Ntup : tuple
+            (int,float,float)
+            (flag_N,logN,sig_N)
+            flag_N : Flag describing N measurement
+            logN : log10 N column density
+            sig_logN : Error in log10 N
+        Ej : Quantity, optional
+            Energy of lower level (1/cm)
+        stars : str, optional
+            asterisks to add to name, e.g. '**' for CI**
+            Required if name=None and Ej>0.
+        comment : str, optional
+            A comment, default is ``
         """
 
         # Required
-        self.ltype = ltype
-        if ltype not in ['Abs']:
-            raise ValueError('spec/lines: Not ready for type {:s}'.format(ltype))
+        if isinstance(radec, (tuple)):
+            self.coord = SkyCoord(ra=radec[0], dec=radec[1])
+        elif isinstance(radec, SkyCoord):
+            self.coord = radec
+        self.Zion = Zion
+        self.zcomp = z
+        self.vlim = vlim
 
-        # Init
-        if not isinstance(trans,(Quantity,basestring)):
-            raise ValueError('Rest wavelength must be a Quantity or str')
-
-        # Other
-        self.data = {} # Atomic/Moleculare Data (e.g. f-value, A coefficient, Elow)
-        self.analy = {'spec': None, # Analysis inputs (e.g. spectrum; from .clm file or AbsID)
-            'wvlim': [0., 0.]*u.AA, # Wavelength interval about the line (observed)
-            'vlim': [0., 0.]*u.km/u.s, # Velocity limit of line, relative to self.attrib['z']
-            'do_analysis': 1 # Analyze
-            }
-        self.attrib = {   # Properties (e.g. column, EW, centroid)
-                       'RA': 0.*u.deg, 'Dec': 0.*u.deg,  #  Coords
-                       'z': z, 'zsig': 0.,  #  Redshift
-                       'v': 0.*u.km/u.s, 'vsig': 0.*u.km/u.s,  #  Velocity relative to z
-                       'EW': 0.*u.AA, 'EWsig': 0.*u.AA, 'flgEW': 0 # EW
-                       }
-
-        # Fill data
-        self.fill_data(trans, linelist=linelist, closest=closest)
-
-    def ismatch(self,inp,Zion=None,RADec=None):
-        '''Query whether input line matches on:  z, Z, ion, RA, Dec
-        Parameters:
-        ----------
-        inp: SpectralLine or tuple
-          SpectralLine -- Other spectral line for comparison
-          tuple -- (z,wrest) float,Quantity
-             e.g. (1.3123, 1215.670*u.AA)
-        Zion: tuple of ints, optional
-          Generally used with tuple input, e.g. (6,2)
-        RADec: tuple of Quantities, optional
-          Generally used with tuple input e.g. (124.132*u.deg, 29.231*u.deg)
-
-        Returns:
-        -------
-        answer: bool
-          True if a match, else False
-        '''
-        if isinstance(inp,SpectralLine):
-            wrest = inp.wrest
-            z = inp.attrib['z']
-            if Zion is None:
-                Zion = (inp.data['Z'], inp.data['ion'])
-            if RADec is None:
-                RADec = (inp.attrib['RA'], inp.attrib['Dec'])
-        elif isinstance(inp,tuple):
-            z = inp[0]
-            wrest = inp[1]
+        # Optional
+        self.A = A
+        self.Ej = Ej
+        self.comment = comment
+        if Ntup is not None:
+            self.flag_N = Ntup[0]
+            self.logN = Ntup[1]
+            self.sig_logN = Ntup[2]
+            _, _ = ltaa.linear_clm(self)  # Set linear quantities
         else:
-            raise ValueError('ismatch: Bad input')
+            self.flag_N = 0
+            self.logN = 0.
+            self.sig_logN = 0.
 
-        # Queries
-        answer = ( np.allclose(self.wrest.to(u.AA).value,
-                               wrest.to(u.AA).value) &
-            np.allclose(self.attrib['z'], z, rtol=1e-6))
-        if Zion is not None:
-            answer = answer & (self.data['Z'] == Zion[0]) & (self.data['ion'] == Zion[1])
-        if RADec is not None:
-            answer = (answer & np.allclose(self.attrib['RA'].to(u.deg).value,
-                                           RADec[0].to(u.deg).value) &
-                      np.allclose(self.attrib['Dec'].to(u.deg).value,
-                                  RADec[1].to(u.deg).value) )
-
-        # Return
-        return answer
-
-    def cut_spec(self, normalize=False, relvel=False):
-        '''Setup spectrum for analysis.  Splice.  Normalize too (as desired)
-
-        Parameters:
-        ----------
-        normalize: bool, optional
-          Normalize if true (and continuum exists)
-        relvel: bool, optional
-          Calculate and return relative velocity [False]
-
-        Returns:
-        ----------
-        fx, sig, dict(wave,velo) -- 
-          Arrays (numpy or Quantity) of flux, error, and wavelength/velocity
-        '''
-        # Checks
-        if self.analy['spec'] is None:
-            raise ValueError('spectralline.cut_spec: Need to set spectrum!')
-        if self.analy['spec'].wcs.unit == 1.:
-            raise ValueError('Expecting a unit!')
-                    # Velocity
-
-        # Pixels for evaluation
-        if np.sum(self.analy['wvlim'].value > 0.):
-            pix = self.analy['spec'].pix_minmax(self.analy['wvlim'])[0]
-        elif np.sum(np.abs(self.analy['vlim'].value) > 0.):
-            pix = self.analy['spec'].pix_minmax(
-                self.attrib['z'], self.wrest, self.analy['vlim'])[0]
-        else:
-            raise ValueError('spectralline.cut_spec: Need to set wvlim or vlim!')
-        self.analy['pix'] = pix
-
-        # Cut for analysis
-        fx = self.analy['spec'].flux[pix]
-        sig = self.analy['spec'].sig[pix]
-        wave = self.analy['spec'].dispersion[pix]
-
-        # Velocity array
-        self.analy['spec'].velo = self.analy['spec'].relative_vel(
-            self.wrest*(1+self.attrib['z']))
-        velo = self.analy['spec'].velo[pix] 
-
-        # Normalize?
-        if normalize:
-            try:
-                fx = fx / self.analy['spec'].conti[pix]
-            except AttributeError:
-                pass
-            else:
-                sig = sig / self.analy['spec'].conti[pix]
-
-       # Return
-        return fx, sig, dict(wave=wave, velo=velo)
-
-
-    # EW 
-    def measure_ew(self, flg=1, initial_guesses=None):
-        """  EW calculation
-        Default is simple boxcar integration
-        Observer frame, not rest-frame (use measure_restew below)
-          wvlim must be set!
-          spec must be set!
-
-        Parameters
-        ----------
-        flg: int, optional
-          1: Boxcar integration
-          2: Gaussian fit
-        
-        initial_guesses, optional: tuple of floats
-          if a model is chosen (e.g. flg=2, Gaussian) a tuple of (amplitude, mean, stddev)
-          can be specified. 
-
-        Fills:
-        -------
-        self.attrib[ 'EW', 'sigEW' ] : 
-          EW and error in observer frame
-        """
-        imp.reload(lau)
-        # Cut spectrum
-        fx, sig, xdict = self.cut_spec(normalize=True)
-        wv = xdict['wave']
-
-        # Calculate
-        if flg == 1: # Boxcar
-            EW, sigEW = lau.box_ew( (wv, fx, sig) )
-        elif flg == 2: #Gaussian
-            EW, sigEW = lau.gaussian_ew( (wv, fx, sig), self.ltype, initial_guesses=initial_guesses)
-        else:
-            raise ValueError('measure_ew: Not ready for this flag {:d}'.format(flg))
-
-        # Fill
-        self.attrib['EW'] = EW 
-        self.attrib['sigEW'] = sigEW 
-
-    # EW 
-    def measure_restew(self,**kwargs):
-        """  Rest EW calculation
-        Return rest-frame.  See "measure_ew" above for details
-        """
-        # Standard call
-        self.measure_ew(**kwargs)
-
-        # Push to rest-frame
-        self.attrib['EW'] = self.attrib['EW'] / (self.attrib['z']+1)
-        self.attrib['sigEW'] = self.attrib['sigEW'] / (self.attrib['z']+1)
-
-    # Output
-    def __repr__(self):
-        txt = '[{:s}:'.format(self.__class__.__name__)
-        try:
-            txt = txt+' {:s},'.format(self.data['name'])
-        except KeyError:
-            pass
-        txt = txt + ' wrest={:g}'.format(self.wrest)
-        txt = txt + ']'
-        return (txt)
-
-# ###########################################
-# Class for Generic Absorption Line System
-class AbsLine(SpectralLine):
-    """Spectral absorption line
-    trans: Quantity or str
-      Quantity: Rest wavelength (e.g. 1215.6700*u.AA)
-      str: Name of transition (e.g. 'CIV 1548')
-        [Note: for an unknown transition use string 'unknown']
-    """
-    # Initialize with a .dat file
-    def __init__(self, trans, **kwargs):
-        # Generate with type
-        SpectralLine.__init__(self,'Abs', trans, **kwargs)
-
-    def print_specline_type(self):
-        """"Return a string representing the type of vehicle this is."""
-        return 'AbsLine'
-
-    def fill_data(self,trans, linelist=None, closest=False):
-        ''' Fill atomic data and setup analy
-        Parameters:
-        -----------
-        trans: Quantity or str
-          Quantity: Rest wavelength (e.g. 1215.6700*u.AA)
-          str: Name of transition (e.g. 'CIV 1548')
-            [Note: for an unknown transition use string 'unknown']
-        linelist : LineList, optional
-          Class of linelist or str setting LineList
-        closest : bool, optional
-          Take the closest line to input wavelength? [False]
-        '''
-
-        # Deal with LineList
-        if linelist is None:
-            llist = LineList('ISM')
-        elif isinstance(linelist,basestring):
-            llist = LineList(linelist)
-        elif isinstance(linelist,LineList):
-            llist = linelist
-        else:
-            raise ValueError('Bad input for linelist')
-
-        # Closest?
-        llist.closest = closest
-
-        # Data
-        newline = llist[trans]
-        self.data.update(newline)
-
-        # Update
-        self.wrest = self.data['wrest']
-        self.trans = self.data['name']
-
-        #
-        self.analy.update( {
-            'flg_eye': 0,
-            'flg_limit': 0, # No limit
-            'datafile': '', 
-            'name': self.data['name']
-            })
-
-        # Additional attributes for Absorption Line
-        self.attrib.update({'N': 0., 'Nsig': 0., 'flagN': 0, # Column
-                       'b': 0.*u.km/u.s, 'bsig': 0.*u.km/u.s  # Doppler
-                       } )
-    # Voigt
-    def generate_voigt(self, wave=None, **kwargs):
-        """  Generate a Voigt profile model for the absorption line
-        in a given spectrum.
-
-        Parameters:
-        ----------
-        wave: Quantity array
-          Wavelength array on which to calculate the line
-          Must be set if self.analy['spec'] is not filled
-
-        Returns:
-        ----------
-        spec: XSpectrum1D
-          Spectrum with the input wavelength and the absorbed flux
-        """
-        from linetools.analysis import voigt as lav
-        reload(lav)
-        # Checks
-        if self.attrib['N'] < 1.:
-            raise ValueError("Need to initialize log column density in attrib['N']")
-        if self.attrib['b'] < 1.*u.km/u.s:
-            raise ValueError("Need to initialize Doppler parameter in attrib['b']")
-        if wave is None:
-            # Assume a spectrum has been loaded already
-            try:
-                wave = self.analy['spec'].dispersion
-            except:
-                raise ('You must provide a wavelength array in generate_voigt')
-
-        # Main call
-        spec = lav.voigt_from_abslines(wave, self, **kwargs)
-        return spec
-
-    # AODM
-    def measure_aodm(self, nsig=3.):
-        """  AODM calculation
-        Parameters
-        ----------
-        nsig: float, optional
-          Number of sigma significance required for a "detection"
-
-        Fills:
-        -------
-        self.attrib[ 'N', 'sigN', 'logN', 'sig_logN' ]  
-          Column densities and errors, linear and log
-        """
-        imp.reload(laa)
-
-        # Cut spectrum
-        fx, sig, xdict = self.cut_spec(normalize=True)
-        velo = xdict['velo']
-
-        # Calculate
-        N,sigN,flg_sat = laa.aodm( (velo, fx, sig), (self.wrest,self.data['f']) )
-
-        # Flag
-        if flg_sat:
-            self.attrib['flagN'] = 2
-        else:
-            if N > nsig*sigN:
-                self.attrib['flagN'] = 1
-            else:
-                self.attrib['flagN'] = 3
-
-        # Values
-        self.attrib['N'] = N
-        self.attrib['sigN'] = sigN
-
-        # Log
-        logN = np.log10( self.attrib['N'].value ) 
-        lgvar = ((1. / (np.log(10.)*self.attrib['N'].value))**2) * self.attrib['sigN'].value**2
-        sig_logN = np.sqrt(lgvar)
-        self.attrib['logN'] = logN # Dimensionless
-        self.attrib['sig_logN'] = sig_logN # Dimensionless
-
-
-    # Output
-    def __repr__(self):
-        txt = '[{:s}:'.format(self.__class__.__name__)
         # Name
-        try:
-            txt = txt+' {:s},'.format(self.data['name'])
-        except KeyError:
+        if name is None:
+            iname = ions.ion_name(self.Zion, nspace=0)
+            if self.Ej.value > 0:  # Need to put *'s in name
+                try:
+                    iname += stars
+                except:
+                    raise IOError("Need to provide 'stars' parameter.")
+            self.name = '{:s}_z{:0.5f}'.format(iname, self.zcomp)
+        else:
+            self.name = name
+        # Other
+        self._abslines = []
+
+    def add_absline(self, absline, tol=0.1*u.arcsec, skip_vel=False):
+        """Add an AbsLine object to the component if it satisfies
+        all of the rules.
+
+        For velocities, we demand that the new line has a velocity
+        range that is fully encompassed by the component.
+
+        Parameters
+        ----------
+        absline : AbsLine
+        tol : Angle, optional
+          Tolerance on matching coordinates
+        skip_vel : bool, optional
+          Skip velocity test?  Not recommended
+        """
+        # Perform easy checks
+        test = bool(self.coord.separation(absline.attrib['coord']) < tol)
+        test = test & (self.Zion[0] == absline.data['Z'])
+        test = test & (self.Zion[1] == absline.data['ion'])
+        test = test & bool(self.Ej == absline.data['Ej'])
+        # Now redshift/velocity
+        if not skip_vel:
+            zlim_line = (1+absline.attrib['z'])*absline.analy['vlim']/const.c.to('km/s')
+            zlim_comp = (1+self.zcomp)*self.vlim/const.c.to('km/s')
+            test = test & (zlim_line[0] >= zlim_comp[0]) & (
+                zlim_line[1] <= zlim_comp[1])
+        # Isotope
+        if self.A is not None:
+            raise ValueError('Not ready for this yet')
+        # Append?
+        if test:
+            self._abslines.append(absline)
+        else:
+            warnings.warn('Input absline with wrest={:g} does not match component rules. Not appending'.format(absline.wrest))
+
+    def build_table(self):
+        """Generate an astropy QTable out of the component.
+        Returns
+        -------
+        comp_tbl : QTable
+        """
+        if len(self._abslines) == 0:
+            return
+        comp_tbl = QTable()
+        comp_tbl.add_column(Column([iline.wrest.to(u.AA).value for iline in self._abslines]*u.AA, name='wrest'))
+        for attrib in ['z', 'flag_N', 'logN', 'sig_logN']:
+            comp_tbl.add_column(Column([iline.attrib[attrib] for iline in self._abslines], name=attrib))
+        # Return
+        return comp_tbl
+
+    def cog(self, redo_EW=False, show_plot=False, **kwargs):
+        """Perform a COG analysis on the component
+
+        Parameters
+        ----------
+        redo_EW : bool, optional
+          Re-analyze each line for its EW
+        show_plot : bool, optional
+          Generate plot and show
+
+        Returns
+        -------
+        logN : float
+          COG column density
+        b : Quantity
+          COG Doppler parameter (km/s)
+        """
+        from linetools.analysis import cog as ltcog
+        reload(ltcog)
+        # Redo EWs?
+        if redo_EW:
+            for aline in self._abslines:
+                aline.measure_restew(**kwargs)
+        # COG setup
+        wrest = np.array([aline.wrest.to('AA').value for aline in self._abslines])*u.AA
+        f = np.array([aline.data['f'] for aline in self._abslines])
+        EW = np.array([aline.attrib['EW'].to('AA').value for aline in self._abslines])*u.AA
+        sig_EW = np.array([aline.attrib['sig_EW'].to('AA').value for aline in self._abslines])*u.AA
+        # COG analysis
+        COG_dict = ltcog.single_cog_analysis(wrest, f, EW, sig_EW=sig_EW)
+        # COG plot
+        if show_plot:
+            ltcog.cog_plot(COG_dict)
+        # Return
+        return COG_dict
+
+    def plot_Na(self, show=True, **kwargs):
+        """Plot apparent column density Na profiles
+        """
+        import matplotlib.pyplot as plt
+        import matplotlib.gridspec as gridspec
+        import matplotlib as mpl
+        try:  # Nicer view, especially in notebook
+            import seaborn as sns
+            sns.set(context="notebook", font_scale=2)
+        except ImportError:
             pass
-        # wrest
-        txt = txt + ' wrest={:.4f}'.format(self.wrest)
-        # fval
-        try:
-            txt = txt+', f={:g}'.format(self.data['fval'])
-        except KeyError:
-            pass
-        txt = txt + ']'
+        mpl.rcParams['font.family'] = 'stixgeneral'
+        mpl.rcParams['font.size'] = 15.
+        # Check for spec
+        gdiline = []
+        for iline in self._abslines:
+            if isinstance(iline.analy['spec'], Spectrum1D):
+                gdiline.append(iline)
+        nplt = len(gdiline)
+        if nplt == 0:
+            print("Load spectra into the absline.analy['spec']")
+            return
+        atom_cst = (const.m_e.cgs*const.c.cgs / (np.pi * (const.e.esu**2).cgs)).to(u.AA*u.s/(u.km*u.cm**2))
+        # Setup plot
+        plt.clf()
+        ax = plt.gca()
+
+        fw_sv = 0.*u.AA
+        ymax = 0.
+        for qq, iline in enumerate(gdiline):
+            # Calculate
+            velo = iline.analy['spec'].relative_vel((1+iline.attrib['z'])*iline.wrest)
+            cst = atom_cst/(iline.data['f']*iline.wrest)  # / (u.km/u.s) / u.cm * (u.AA/u.cm)
+            Na = np.log(1./np.maximum(iline.analy['spec'].flux, iline.analy['spec'].sig)) * cst
+
+            # Figure out ymnx
+            pixmnx = (velo > self.vlim[0]) & (velo < self.vlim[1])
+            if iline.data['f']*iline.wrest > fw_sv:
+                ymax = max(np.max(Na[pixmnx].value), ymax)
+                fw_sv = iline.data['f']*iline.wrest
+            # Plot
+            ax.plot(velo, Na, '-', linestyle='steps-mid', label=iline.data['name'])
+            # ax.plot(velo, iline.analy['spec'].sig, 'r:')
+        # Axes
+        ax.set_xlim(self.vlim.value)
+        ax.set_ylim(-0.2*ymax, 5*ymax)
+        # ax.set_ylim(ymnx)
+        ax.minorticks_on()
+        ax.set_xlabel('Relative Velocity (km/s)')
+        ax.set_ylabel(r'Apparent Column (cm$^{-2}$ per km/s)')
+        # Legend
+        legend = ax.legend(loc='upper left', scatterpoints=1, borderpad=0.3,
+                           handletextpad=0.3, fontsize='large')
+
+        plt.tight_layout(pad=0.2, h_pad=0., w_pad=0.1)
+        if show:
+            plt.show()
+        plt.close()
+
+    def synthesize_colm(self, overwrite=False, redo_aodm=False, **kwargs):
+        """Synthesize column density measurements of the component.
+        Default is to use the current AbsLine values, but the user can
+        request that those be re-calculated with AODM.
+
+        Parameters
+        ----------
+        overwrite : bool, optional
+          Clobber any previous measurement
+        redo_aodm : bool, optional
+          Redo the individual column density measurements (likely AODM)
+
+        Returns
+        -------
+        None
+          Fills the component attributes instead
+        """
+        # Check
+        if (self.flag_N != 0) and (not overwrite):
+            raise IOError("Column densities already set.  Use clobber=True to redo.")
+        # Redo?
+        if redo_aodm:
+            for aline in self._abslines:
+                aline.measure_aodm(**kwargs)
+        # Collate
+        self.flag_N = 0
+        for aline in self._abslines:
+            if np.allclose(aline.attrib['N'].value, 0.):
+                raise ValueError("Need to set N in attrib.  \n Consider linear_clm in linetools.analysis.absline")
+            if aline.attrib['flag_N'] == 1:  # Good value?
+                if self.flag_N == 1:  # Weighted mean
+                    # Original
+                    weight = 1. / self.sig_N**2
+                    mu = self.N * weight
+                    # Update
+                    weight += 1./aline.attrib['sig_N']**2
+                    self.N = (mu + aline.attrib['N']/aline.attrib['sig_N']**2) / weight
+                    self.sig_N = np.sqrt(1./weight)
+                else:  # Fill
+                    self.N = aline.attrib['N']
+                    self.sig_N = aline.attrib['sig_N']
+                    self.flag_N = 1
+            elif aline.attrib['flag_N'] == 2:  # Lower limit
+                if self.flag_N in [0, 3]:
+                    self.N = aline.attrib['N']
+                    self.sig_N = 99.
+                    self.flag_N = 2
+                elif self.flag_N == 2:
+                    self.N = max(self.N, aline.attrib['N'])
+                    self.sig_N = 99.
+                elif self.flag_N == 1:
+                    pass
+            elif aline.attrib['flag_N'] == 3:  # Upper limit
+                if self.flag_N == 0:
+                    self.N = aline.attrib['N']
+                    self.sig_N = aline.attrib['sig_N']
+                    self.flag_N = 3
+                elif self.flag_N in [1, 2]:
+                    pass
+                elif self.flag_N == 3:
+                    if aline.attrib['N'] < self.N:
+                        self.N = aline.attrib['N']
+                        self.sig_N = aline.attrib['sig_N']
+            else:
+                raise ValueError("Bad flag_N value")
+        # Log values
+        self.logN, self.sig_logN = ltaa.log_clm(self)
+
+    def repr_vpfit(self, b=10.*u.km/u.s, tie_strs=('', '', ''), fix_strs=('', '', '')):
+        """
+        String representation for VPFIT (line fitting software) in its fort.26 format
+
+        Parameters
+        ----------
+        b : Quantity, optional
+            Doppler parameter of the component. Default is 10*u.km/u.s
+        tie_strs : tuple of strings, optional
+            Strings to be used for tying parameters (z,b,logN),
+            respectively.  These are all converted to lower case
+            format, following VPFIT convention.
+        fix_strs : tuple of strings, optional
+            Strings to be used for fixing parameters (z,b,logN),
+            respectively.  These are all converted to upper case
+            format, following VPFIT convention.  These will take
+            precedence over tie_strs if different than ''.
+
+        Returns
+        -------
+        repr_vpfit : str
+
+        """
+        # get Doppler parameter to km/s
+        b = b.to('km/s').value
+
+        # Ion name
+        name = ions.ion_name(self.Zion, nspace=1)
+        name = name.replace(' ', '')
+
+        # Deal with fix and tie parameters
+        # Check format first
+        for i, x_strs in enumerate([tie_strs, fix_strs]):
+            if (not isinstance(x_strs, tuple)) or (not all(isinstance(s, (str, basestring)) for s in x_strs)):
+                if i == 0:
+                    raise TypeError('`tie_strs` must be a tuple of strings.')
+                elif i == 1:
+                    raise TypeError('`fix_strs` must be a tuple of strings.')
+            if len(x_strs) != 3:
+                raise SyntaxError('`tie_strs` and `fix_strs` must have len() == 3')
+
+        # reformat for VPFIT standard
+        fix_strs = np.array([s.upper() for s in fix_strs])
+        tie_strs = np.array([s.lower() for s in tie_strs])
+        # preference to fix_strs over tie_strs
+        strs = np.where(fix_strs != '', fix_strs, tie_strs)
+
+        # create the line string
+        s = '{:s} {:.5f}{:s} {:.5f} {:.2f}{:s} {:.2f} {:.2f}{:s} {:.2f}'.format(name, self.zcomp, strs[0], 0, b,
+                                                                                strs[1], 0, self.logN, strs[2], 0)
+        if len(self.comment) > 0:
+            s += '! {:s}'.format(self.comment)
+        s += '\n'
+        return s
+
+    def repr_alis(self, T_kin=1e4*u.K, bturb=0.*u.km/u.s,
+                  tie_strs=('', '', '', ''), fix_strs=('', '', '', '')):
+        """
+        String representation for ALIS (line fitting software)
+
+        Parameters
+        ----------
+        T_kin : Quantity, optional
+            Kinetic temperature. Default 1e4*u.K
+        bturb : Quantity, optional
+            Turbulent Doppler parameter. Default 0.*u.km/u.s
+        tie_strs : tuple of strings, optional
+            Strings to be used for tying parameters
+            (logN,z,bturb,T_kin), respectively.  These are all
+            converted to lower case format, following ALIS convention.
+        fix_strs : tuple of strings, optional
+            Strings to be used for fixing parameters
+            (logN,z,bturb,T_kin), respectively.  These are all
+            converted to upper case format, following ALIS convention.
+            These will take precedence over tie_strs if different from
+            ''.
+
+        Returns
+        -------
+        repr_alis : str
+
+        """
+
+        # Convert to the units ALIS wants
+        T_kin = T_kin.to('K').value
+        bturb = bturb.to('km/s').value
+
+        # A patch for nucleons; todo: come up with a better way to do this using ELEMENTS?
+        if self.Zion[0] == 1:
+            nucleons = 1
+        elif self.Zion[0] > 1:
+            nucleons = 2 * self.Zion[0]
+
+        # name
+        name = ions.ion_name(self.Zion, nspace=1)
+        name = '{}'.format(nucleons)+name.replace(' ', '_')
+
+        # Deal with fix and tie parameters
+        # Check format first
+        for i, x_strs in enumerate([tie_strs, fix_strs]):
+            if (not isinstance(x_strs, tuple)) or (not all(isinstance(s, (str, basestring)) for s in x_strs)):
+                if i == 0:
+                    raise TypeError('`tie_strs` must be a tuple of strings.')
+                elif i == 1:
+                    raise TypeError('`fix_strs` must be a tuple of strings.')
+            if len(x_strs) != 4:
+                raise SyntaxError('`tie_strs` and `fix_strs` must have len()== 4')
+
+        # reformat for ALIS standard
+        fix_strs = np.array([s.upper() for s in fix_strs])
+        tie_strs = np.array([s.lower() for s in tie_strs])
+        # preference to fix_strs over tie_strs
+        strs = np.where(fix_strs != '', fix_strs, tie_strs)
+
+        s = 'voigt   ion={:s} {:.2f}{:s} redshift={:.5f}{:s} {:.1f}{:s} {:.1E}{:s}'.format(name, self.logN, strs[0],
+                                                                                           self.zcomp, strs[1], bturb,
+                                                                                           strs[2], T_kin, strs[3])
+
+        if len(self.comment) > 0:
+            s += '# {:s}'.format(self.comment)
+        s += '\n'
+        return s
+
+    def stack_plot(self, **kwargs):
+        """Show a stack plot of the component, if spec are loaded
+        Assumes the data are normalized.
+
+        Parameters
+        ----------
+        """
+        ltap.stack_plot(self._abslines, vlim=self.vlim, **kwargs)
+
+    def to_dict(self):
+        """ Convert component data to a dict
+        Returns
+        -------
+        cdict : dict
+        """
+        cdict = dict(Zion=self.Zion, zcomp=self.zcomp, vlim=self.vlim.to('km/s').value,
+                     Name=self.name,
+                     RA=self.coord.ra.value, DEC=self.coord.dec.value,
+                     A=self.A, Ej=self.Ej.to('1/cm').value, comment=self.comment,
+                     flag_N=self.flag_N, logN=self.logN, sig_logN=self.sig_logN)
+        # AbsLines
+        cdict['lines'] = {}
+        for iline in self._abslines:
+            cdict['lines'][iline.wrest.value] = iline.to_dict()
+        # Polish
+        cdict = ltu.jsonify_dict(cdict)
+        # Return
+        return cdict
+
+    def __getitem__(self, attrib):
+        """Passback attribute, if it exists
+
+        Useful for columns
+
+        Parameters
+        ----------
+        attrib : str
+        """
+        return getattr(self, attrib)
+
+    def __repr__(self):
+        txt = '<{:s}: {:s} {:s}, Name={:s}, Zion=({:d},{:d}), Ej={:g}, z={:g}, vlim={:g},{:g}'.format(
+            self.__class__.__name__, self.coord.ra.to_string(unit=u.hour,sep=':', pad=True),
+                self.coord.dec.to_string(sep=':',pad=True,alwayssign=True), self.name, self.Zion[0], self.Zion[1], self.Ej, self.zcomp, self.vlim[0], self.vlim[1])
+
+        # Column?
+        if self.flag_N > 0:
+            txt = txt + ', logN={:g}'.format(self.logN)
+            txt = txt + ', sig_N={:g}'.format(self.sig_logN)
+            txt = txt + ', flag_N={:d}'.format(self.flag_N)
+
+        # Finish
+        txt = txt + '>'
         return (txt)
 
-def many_abslines(all_wrest, llist):
-    '''Generate a list of AbsLine objects
-    Useful for when you have many lines (>1000) to generate
-    that have similar wrest.  Uses deepcopy
-
-    Parameters:
-    -----------
-    all_wrest: list of lines
-    llist: LineList
-
-    Returns:
-    ----------
-    abs_lines: list of AbsLine Objects
-    '''
-    # Find unique lines
-    wrestv =  np.array([iwrest.value for iwrest in all_wrest]) 
-    uniq_wrest = np.unique( wrestv )
-
-    # Generate a simple dict
-    adict = {}
-    unit = all_wrest[0].unit
-    for iuni in uniq_wrest:
-        adict[iuni] = AbsLine(iuni*unit,linelist=llist)
-
-    # Copy em up
-    abs_lines = []
-    for iwrestv in wrestv:
-        abs_lines.append(copy.deepcopy(adict[iwrestv]))
-
-    # Return
-    return abs_lines

@@ -1,31 +1,36 @@
-"""
-Module for making set lists
-  INTERNAL USE ONLY
+""" Used to make set lists. Only intended for developer use.
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import os, imp, glob
+import imp, glob
+import copy
 
-from astropy import units as u
-from astropy.units.quantity import Quantity
-from astropy import constants as const
-from astropy.io import fits, ascii
-from astropy.table import QTable, Column, Table
+from astropy.io import ascii
+from astropy.table import Column
+
+from linetools.lists import parse as llp
 
 
 lt_path = imp.find_module('linetools')[1]
-xa_path = imp.find_module('xastropy')[1]
 
-#
+try:
+    xa_path = imp.find_module('xastropy')[1]
+except ImportError:
+    pass
+
+
+'''
 def mk_ism(outfil=None, overwrite=False):
-    ''' Make the ISM list from grb.lst in xastropy
+    """ Make the ISM list from grb.lst in xastropy
+
     SHOULD BE DEPRECATED AFTER v0.0
-    Parameters:
-    -----------
-    outfil: str, optional
+
+    Parameters
+    ----------
+    outfil : str, optional
       Outfil
-    '''
+    """
     raise ValueError('BAD IDEA TO RUN THIS AGAIN')
     raise ValueError('REALLY')
     # Read
@@ -54,17 +59,21 @@ def mk_ism(outfil=None, overwrite=False):
     # Write
     data[['wrest','name','fISM']+oflgs].write(outfil, format='ascii.fixed_width')
     print('mk_ism: Wrote {:s}'.format(outfil))
+'''
 
+'''
 def mk_strong(infil=None, outfil=None):
-    ''' Make the Strong ISM list from lls.lst in xastropy
+    """ Make the Strong ISM list from lls.lst in xastropy
+
     SHOULD BE DEPRECATED AFTER v0.0
-    Parameters:
-    -----------
-    infil: str, optional
+
+    Parameters
+    ----------
+    infil : str, optional
       Starting file.  Should use latest llist_vX.X.ascii
-    outfil: str, optional
+    outfil : str, optional
       Outfil
-    '''
+    """
     if infil is None:
         fils = glob.glob(lt_path+'/lists/sets/llist_v*')
         infil = fils[-1] # Should grab the lateset
@@ -93,20 +102,22 @@ def mk_strong(infil=None, outfil=None):
         outfil = infil
     data.write(outfil, format='ascii.fixed_width')
     print('mk_strong: Wrote {:s}'.format(outfil))
+'''
 
-def mk_hi(infil=None, outfil=None):
-    ''' Make the HI list ISM + HI
-    Parameters:
-    -----------
-    infil: str, optional
+def mk_hi(infil=None, outfil=None, stop=True):
+    """ Make the HI list ISM + HI
+
+    Parameters
+    ----------
+    infil : str, optional
       Starting file.  Should use latest llist_vX.X.ascii
-    outfil: str, optional
+    outfil : str, optional
       Output file.  Default is to use infil
-    '''
+    """
     if infil is None:
         fils = glob.glob(lt_path+'/lists/sets/llist_v*')
         fils.sort()
-        infil = fils[srt][-1] # Should grab the lateset
+        infil = fils[-1] # Should grab the lateset
 
     # Read
     data = ascii.read(infil, format='fixed_width')
@@ -121,7 +132,55 @@ def mk_hi(infil=None, outfil=None):
     if outfil is None:
         outfil = infil
 
-    import pdb
-    pdb.set_trace()
+    if stop:
+        import pdb
+        pdb.set_trace()
     data.write(outfil, format='ascii.fixed_width')
 
+
+def add_galaxy_lines(outfil, infil=None, stop=True):
+    """ Append galaxy lines (as necessary)
+
+    Parameters
+    ----------
+    outfil : str
+      Output file.
+    infil : str, optional
+      Starting file.  Should use latest llist_vX.X.ascii
+    """
+    import pdb
+    if infil is None:
+        fils = glob.glob(lt_path+'/lists/sets/llist_v*')
+        fils.sort()
+        infil = fils[-1]  # Should grab the lateset
+
+    # Read set file
+    data = ascii.read(infil, format='fixed_width')
+
+    # Read galaxy lines (emission)
+    forbidden = llp.read_forbidden()
+    recomb = llp.read_recomb()
+
+    tmp_row = copy.deepcopy(data[0])
+    for key in ['fISM', 'fSI', 'fHI', 'fEUV', 'fAGN']:
+        tmp_row[key] = 0
+    tmp_row['fgE'] = 1
+    # Add if new
+    for row in forbidden:
+        if np.sum(np.abs(row['wrest'].value-data['wrest']) < 0.0001) == 0:
+            tmp_row['wrest'] = row['wrest'].value
+            tmp_row['name'] = row['name']
+            data.add_row(tmp_row)
+    # Add if new
+    for row in recomb:
+        if np.sum(np.abs(row['wrest'].value-data['wrest']) < 0.0001) == 0:
+            tmp_row['wrest'] = row['wrest'].value
+            tmp_row['name'] = row['name'].replace('_',' ')
+            data.add_row(tmp_row)
+
+    # Write
+    print('Make sure you want to do this!')
+    if stop:
+        import pdb
+        pdb.set_trace()
+    data.write(outfil, format='ascii.fixed_width')

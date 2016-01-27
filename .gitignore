@@ -29,7 +29,7 @@ docs/_build
 .idea
 
 # Packages/installer info
-*.egg
+.eggs
 *.egg-info
 dist
 build
@@ -46,5 +46,11 @@ distribute-*.tar.gz
 .*.swp
 *~
 
+# Notebook checkpoints
+*-checkpoint.ipynb
+
 # Mac OSX
 .DS_Store
+
+# Dummy files
+tmp.*

@@ -11,7 +11,8 @@ def test_find_continuum():
     spec = readspec(d + '/spectra/tests/files/q0002m422.txt.gz')
     co, pts = find_continuum(spec, redshift=2.76, divmult=3.5,
                        forest_divmult=3, kind='QSO')
-    assert np.allclose(co[:3], [6810.73400022,  6807.63940372,  6804.54478286])
+    assert np.allclose(co[:3],
+                       [19624.02210835, 19615.23362468, 19606.44507182])
     assert np.allclose(co[-3:],[384.69366713, 384.69095479,   384.68824243])
     assert np.allclose(co[50000:50003],
                        [1575.88179631, 1575.5837134, 1575.28703315])

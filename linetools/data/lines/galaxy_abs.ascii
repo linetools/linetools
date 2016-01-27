@@ -1,0 +1,25 @@
+## J. Moustakas, Siena, 2015 May 7
+## 
+## Line-ratios with respect to H-beta (assuming case B
+## recombination) for H and He recombination lines
+## (see ISEDFIT_NEBULAR in https://github.com/moustakas/impro).
+## Assumes a 0.0897 He/H abundance ratio (see Kotulla+09).
+## 
+## The wavelengths are laboratory wavelengths in vacuum (Angstrom).
+##
+## Z and ion have been added by hand by N.Tejos (Dec 28, 2015)
+##
+# 1 wave
+# 2 name
+# 3 Z
+# 4 ion
+ 2796.3543    MgII_2796 12  2
+ 2803.5315    MgII_2803 12  2
+  3934.777    CaII_3934 20  2
+  3969.591    CaII_3969 20  2
+ 5891.5833     NaI_5891 11  1
+ 5897.5581     NaI_5897 11  1
+   4305.61       G_Band  0  0
+   5168.74     MgI_5168 12  1
+   5174.14     MgI_5174 12  1
+   5185.04     MgI_5185 12  1

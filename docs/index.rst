@@ -3,49 +3,75 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to the documentation for linetools!
-=================================
+Linetools
+=========
 
-linetools is an astropy-affiliated package developed to provide software
-related to 1D spectra (wavelength vs. flux) with emphasis on spectral line
-analysis.  Its core developers work primarily on absorption-line research.
+linetools is an in-development package for the analysis of 1-D
+spectra, with the aim to become an `Astropy`_ `affiliated package
+<http://www.astropy.org/affiliated/index.html>`_. Its core developers
+work primarily on UV/optical/IR absorption line research, so most of the
+functionality is aimed at the identification and analysis of
+absorption lines. The eventual goal is to provide a set of tools
+useful for both absorption and emission lines.
 
-Contents
-++++++++
 
-**Overview**
+.. note::
+
+    linetools is still under active development. While the developers
+    strive to maintain compatibility in new releases, there may
+    backwards-incompatible changes in future versions.
+
+
+
+Getting Started
+---------------
 
 .. toctree::
    :maxdepth: 1
 
    install
-   api
+   changelog
 
-**Core classes**
-
-.. toctree::
-   :maxdepth: 1
-
-   linelist
-   spectralline
-   xspectrum1d
-
-**Methods and Scripts**
+Core classes
+------------
 
 .. toctree::
    :maxdepth: 1
 
-   voigt
+   XSpectrum1D <xspectrum1d>
+   AbsLine <absline>
+   AbsComponent <abscomp>
+   AbsSystem <abssys>
+   SolarAbund <solar>
+   LineList <linelist>
+
+Command line tools
+------------------
+
+.. toctree::
+   :maxdepth: 2
+
    Scripts <scripts>
 
-**Project details**
+
+Reference & API
+---------------
 
 .. toctree::
    :maxdepth: 1
 
-   whatsnew
-   credits
-   license
+   api
+
+
+..
+   **Project details**
+
+   .. toctree::
+      :maxdepth: 1
+
+      whatsnew
+      credits
+      license
 
 
 Indices and tables

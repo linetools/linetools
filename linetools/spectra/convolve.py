@@ -1,7 +1,4 @@
 """ Functions related to convolution.
-      Taken from Barak by JXP
-      May replace with scipy functions
-      NT: replace barak routines with astropy.convolution equivalents
 """ 
 
 # py2.6+ compatibility
@@ -11,7 +8,8 @@ import numpy as np
 from astropy.convolution import convolve, Gaussian1DKernel, CustomKernel
 
 #Updated functions using astropy.convolution
-def convolve_psf(array, fwhm, boundary='fill', fill_value=0., normalize_kernel=False):
+def convolve_psf(array, fwhm, boundary='fill', fill_value=0.,
+                 normalize_kernel=True):
     """ Convolve an array with a gaussian kernel.
 
     Given an array of values `a` and a gaussian full width at half
@@ -58,49 +56,7 @@ def convolve_psf(array, fwhm, boundary='fill', fill_value=0., normalize_kernel=F
     # centre of gaussian is:
     n = np.ceil(const100 * sigma)
     x_size = int(2*n) + 1 # we want this to be odd integer
-    return convolve(array, Gaussian1DKernel(sigma,x_size=x_size),boundary=boundary,fill_value=fill_value,normalize_kernel=normalize_kernel)
+    return convolve(array, Gaussian1DKernel(sigma, x_size=x_size),
+                    boundary=boundary, fill_value=fill_value,
+                    normalize_kernel=normalize_kernel)
 
-def convolve_window(array, window, boundary='fill', fill_value=0., normalize_kernel=True):
-    """ Convolve an array with an arbitrary window kernel.
-
-    Parameters
-    ----------
-    array : array, shape (N,)
-        Array to convolve
-    window : array, shape (M,)
-        The window array must have an odd number of elements.
-    boundary : str, optional
-        A flag indicating how to handle boundaries:
-            * `None`
-                Set the ``result`` values to zero where the kernel
-                extends beyond the edge of the array (default).
-            * 'fill'
-                Set values outside the array boundary to ``fill_value``.
-            * 'wrap'
-                Periodic boundary that wrap to the other side of ``array``.
-            * 'extend'
-                Set values outside the array to the nearest ``array``
-                value.
-    fill_value : float, optional
-        The value to use outside the array when using boundary='fill'
-    normalize_kernel : bool, optional
-        Whether to normalize the kernel prior to convolving
-
-    Returns
-    -------
-    convolved_array : array, shape (N,)
-    
-    Notes
-    -----
-    This function uses astropy.convolution, and astropy.modeling
-
-    If `window` kernel is as large or larger than `array`, it raises an error.
-
-    """
-    if not len(window) % 2:
-        raise ValueError('`window` must have an odd number of elements!')
-
-    if len(window) >= len(array):
-        raise ValueError('`window` is too big for the `array`!')
-
-    return convolve(array, CustomKernel(window),boundary=boundary,fill_value=fill_value,normalize_kernel=normalize_kernel)

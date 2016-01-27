@@ -7,13 +7,12 @@ Also print the line data
   linet_absline 1334.3    13.5 7
   linet_absline 1215.6701 14.0 30
 """
-
 import pdb
-
 
 def plot_absline(wrest,logN,b):
     """Plot an absorption line with N,b properties
-    Parmaeters
+
+    Parameters
     ----------
     wrest : float
       Rest wavelength (Ang)
@@ -55,9 +54,10 @@ def plot_absline(wrest,logN,b):
     xspec.plot()
 
 def main(args=None):
-    from astropy.utils.compat import argparse
+    import argparse
     # Parse
-    parser = argparse.ArgumentParser(description='Parser for linet_absline')
+    parser = argparse.ArgumentParser(
+        description='Plot an absorption line with the given parameters.')
     parser.add_argument("wrest", type=float, help="Rest wavelength in Angstroms")
     parser.add_argument("logN", type=float, help="log10 column density")
     parser.add_argument("b", type=float, help="b-value in km/s")

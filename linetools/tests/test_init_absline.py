@@ -8,7 +8,8 @@ import os, pdb
 import pytest
 from astropy import units as u
 
-from linetools.spectralline import AbsLine
+from linetools.spectralline import AbsLine, SpectralLine
+from linetools import utils as ltu
 
 '''
 def data_path(filename):
@@ -28,3 +29,16 @@ def test_mk_absline():
 	# Init CII 1334 by name
     abslin3 = AbsLine('CII 1334')
     np.testing.assert_allclose(abslin3.data['wrest'], 1334.5323*u.AA)
+
+def test_dicts():
+    # Init HI Lya
+    abslin = AbsLine(1215.6700*u.AA)
+    adict = abslin.to_dict()
+    assert isinstance(adict, dict)
+    # Write
+    #pdb.set_trace()
+    ltu.savejson('tmp.json', adict, overwrite=True)
+    # Read
+    newdict = ltu.loadjson('tmp.json')
+    newlin = SpectralLine.from_dict(newdict)
+    assert newlin.name == 'HI 1215'

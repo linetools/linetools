@@ -1,0 +1,8 @@
+numpy
+scipy
+matplotlib
+Cython
+astropy-helpers
+astropy
+specutils
+pyyaml

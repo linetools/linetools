@@ -52,6 +52,10 @@ setup_cfg = dict(conf.items('metadata'))
 # If your documentation needs a minimal Sphinx version, state it here.
 #needs_sphinx = '1.2'
 
+intersphinx_mapping['astropy'] = ('http://docs.astropy.org/en/latest/', None)
+
+intersphinx_mapping['specutils'] = ('http://specutils.readthedocs.org/en/latest/', None)
+
 # To perform a Sphinx version check that needs to be more specific than
 # major.minor, call `check_sphinx_version("x.y.z")` here.
 # check_sphinx_version("1.2.1")
@@ -76,10 +80,6 @@ copyright = '{0}, {1}'.format(
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
 # built documents.
-extensions = [
-    'sphinx.ext.autodoc',
-    'sphinx.ext.mathjax',
-]
 
 __import__(setup_cfg['package_name'])
 package = sys.modules[setup_cfg['package_name']]
