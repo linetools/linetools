@@ -11,8 +11,10 @@ Overview
 
 `~linetools.spectra.xspectrum1d.XSpectrum1D` describes a 1-d spectrum,
 which usually consists of a wavelength, flux and flux uncertainty
-array. It subclasses the specutils Spectrum1D class, adding several
-new attributes and methods.
+array.  For absorption-line analysis, it also often contains a
+continuum array.  XSpectrum1D subclasses the
+`specutils <https://github.com/astropy/specutils>`_
+Spectrum1D class, adding several new attributes and methods.
 
 Attributes
 ==========
@@ -36,9 +38,11 @@ Its main attributes are the `wavelength`, `flux` and
    
 Note that the wavelength and flux both have units. If you don't
 specify a unit when you create an new XSpectrum1D instance, Angstroms
-are assumed. In this case the flux is unitless. The one sigma
+are assumed. In this case the flux is unitless but still a
+Quantity array. The 1-sigma
 uncertainty is assumed to have the same units as the flux, and you can
-access its underlying numpy array via ``sp.uncertainty.array``.
+access its underlying numpy array via ``sp.uncertainty.array``
+or ``sp.sig``.
 
 Methods
 =======
@@ -51,9 +55,10 @@ syntax as `~linetools.spectra.io.readspec`. The easiest way to create
 a new spectrum from data arrays is to use ``sp.from_tuple`` as shown
 above.
 
-To write a spectrum toa file, use either `sp.write_to_fits` or
+To write a spectrum to a file, use either `sp.write_to_fits` or
 `sp.write_to_ascii`. FITS files are preferable because they are
-generally faster to read and write.
+generally faster to read and write, require less space, and
+are generally easier for other software to read.
 
 Plotting
 --------
@@ -61,6 +66,9 @@ Plotting
 `sp.plot()` plots the spectrum, which you can then navigate around
 using the same keys as `~lt_xspec` (as well as the usual matplotlib
 navigation tools).
+**Note**:  if you are using MacOSX then you will
+probably need to change your *backend* from macosx to TkAgg
+in the matplotlibrc file.
 
 Rebinning
 ---------
@@ -99,7 +107,7 @@ You can join one XSpectrum1D instance with another overlapping
 spectrum using `~linetools.spectra.xspectrum1d.XSpectrum1D.splice`.
 `~linetools.spectra.xspectrum1d.XSpectrum1D.pix_minmax` finds the
 pixel indices corresponding to a wavelength or velocity range, and
-`~linetools.spectra.xspectrum1d.XSpectrum1D.add_noise` add noise to
+`~linetools.spectra.xspectrum1d.XSpectrum1D.add_noise` adds noise to
 the spectrum. For a complete list of all the available methods, see
 the API: `~linetools.spectra.xspectrum1d.XSpectrum1D`.
   

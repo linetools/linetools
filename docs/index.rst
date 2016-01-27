@@ -38,12 +38,12 @@ Core classes
 .. toctree::
    :maxdepth: 1
 
-   XSpectrum1D <xspectrum1d>
-   AbsLine <absline>
    AbsComponent <abscomp>
    AbsSystem <abssys>
    SolarAbund <solar>
    LineList <linelist>
+   SpectralLine <specline>
+   XSpectrum1D <xspectrum1d>
 
 Command line tools
 ------------------
