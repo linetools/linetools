@@ -49,18 +49,12 @@ class LineList(object):
        * 'Galaxy'  :: Lines typically identified in galaxy spectra
        * 'AGN'     :: Key AGN lines (to be implemented)
 
-    subset : list, optional
-      List of subset of lines to use (drawn from input LineList)
-      Needs to be Quantity or str (e.g. [1215.6700*u.AA] or ['HI 1215'])
-    sort_subset : bool, optional
-      Sort the subset? [False]
     verbose : bool, optional
       Give info galore if True
     """
 
     # Init
-    def __init__(self, llst_keys, subset=None, verbose=False,
-                 sort_subset=False, closest=False):
+    def __init__(self, llst_keys, verbose=False, closest=False):
 
         # Error catching
         if not isinstance(llst_keys, (list, basestring)):
@@ -81,10 +75,6 @@ class LineList(object):
         # Set lines for use (from defined LineList)
         self.set_lines(verbose=verbose)
 
-        # Subset of lines for use
-        if subset is not None:
-            new = self.subset_lines(subset, verbose=verbose, sort=sort_subset)
-            self._data = new._data
 
     def load_data(self, tol=1e-3 * u.AA, use_cache=True):
         """Grab the data for the lines of interest
