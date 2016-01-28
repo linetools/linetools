@@ -25,6 +25,19 @@ def test_lines_from_ion():
     lines = ism[(6,2)]
     assert (1334.5323*u.AA in lines['wrest'])
 
+def test_subset():
+    ism = LineList('ISM')
+    subset = np.array([1215.6700, 1608.4511])*u.AA
+    ism = ism.subset_lines(subset)
+    assert len(ism._data) == 2
+    np.testing.assert_allclose(ism['FeII 1608']['wrest'], 1608.4511*u.AA, rtol=1e-7)
+
+    # Now with names
+    ism = LineList('ISM')
+    subset = ['HI 1215', 'HI 1025', 'CIV 1548']
+    ism = ism.subset_lines(subset)
+    np.testing.assert_allclose(ism['HI 1215']['wrest'], 1215.6700*u.AA, rtol=1e-7)
+
 def test_closest():
     ism = LineList('ISM')
     ism.closest=True

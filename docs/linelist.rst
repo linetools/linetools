@@ -132,8 +132,8 @@ This method provides a way to define a subset of lines drawn from the
 original` LineList` object. Consider that for some reason you may want
 only `HI Lya` and `Lyb` in your `LineList`, then you can achieve this by::
 
-    hi = LineList('HI')
-    hi.subset_lines(['HI 1215', 'HI 1025'])
+  hi = LineList('HI')
+  hi = hi.subset_lines(['HI 1215', 'HI 1025'])
 
 Which has only those two transitions loaded.
 
@@ -142,7 +142,7 @@ instance::
 
     ism = LineList('ISM')
     lines = [2796.3543, 2803.5315, 1548.195, 1550.77] * u.AA
-    ism.subset_lines(lines)
+    ism = ism.subset_lines(lines)
     print(ism)
     <LineList: ISM; 4 transitions>
 
@@ -152,7 +152,7 @@ avoid loading the ``LineList('ISM')`` again, you can use the keyword
 subset of lines from the original `LineList`::
 
     lines = ['HI 1215', 'HI 1025']
-    ism.subset_lines(lines, reset_data=True)
+    ism = ism.subset_lines(lines, reset_data=True)
     print(ism)
     <LineList: ISM; 2 transitions>
 
@@ -162,7 +162,7 @@ Finally, if you want the transitions to be sorted by rest-frame
 wavelength you can use the optional keyword `sort`::
 
     lines = [2796.3543, 2803.5315, 1548.195, 1550.77] * u.AA
-    ism.subset_lines(lines, reset_data=True, sort=True)
+    ism = ism.subset_lines(lines, reset_data=True, sort=True)
     ism._data['wrest']
     <Quantity [ 1548.195 , 1550.77  , 2796.3543, 2803.5315] Angstrom>
 

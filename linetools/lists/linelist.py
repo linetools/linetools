@@ -14,6 +14,8 @@ from astropy import units as u
 from astropy.units.quantity import Quantity
 from astropy.table import QTable, Table, vstack, Column
 
+import copy
+
 # from xastropy.xutils import xdebug as xdb
 
 CACHE = {'full_table': {}, 'data': {}}
@@ -37,28 +39,23 @@ class LineList(object):
     Parameters
     ----------
     llst_keys : str or list
-      Input to grab line list.  Current options are:
-       * 'ISM'     :: "All" ISM lines (can be overwhelming!)
-       * 'Strong'  :: Strong ISM lines
-       * 'HI'      :: HI Lyman series
-       * 'H2'      :: H2 (Lyman-Werner)
-       * 'CO'      :: CO UV band-heads
-       * 'EUV'     :: EUV lines (for CASBAH project)
-       * 'Galaxy'  :: Lines typically identified in galaxy spectra
-       * 'AGN'     :: Key AGN lines (to be implemented)
+        Input to grab line list.  Current options are:
+        * 'ISM'     :: "All" ISM lines (can be overwhelming!)
+        * 'Strong'  :: Strong ISM lines
+        * 'HI'      :: HI Lyman series
+        * 'H2'      :: H2 (Lyman-Werner)
+        * 'CO'      :: CO UV band-heads
+        * 'EUV'     :: EUV lines (for CASBAH project)
+        * 'Galaxy'  :: Lines typically identified in galaxy spectra
+        * 'AGN'     :: Key AGN lines (to be implemented)
 
-    subset : list, optional
-      List of subset of lines to use (drawn from input LineList)
-      Needs to be Quantity or str (e.g. [1215.6700*u.AA] or ['HI 1215'])
-    sort_subset : bool, optional
-      Sort the subset? [False]
     verbose : bool, optional
-      Give info galore if True
+        Give info galore if True
+
     """
 
     # Init
-    def __init__(self, llst_keys, subset=None, verbose=False,
-                 sort_subset=False, closest=False):
+    def __init__(self, llst_keys, verbose=False, closest=False, set_lines=True):
 
         # Error catching
         if not isinstance(llst_keys, (list, basestring)):
@@ -76,12 +73,11 @@ class LineList(object):
         # Load Data
         self.load_data()
 
-        # Set lines for use (from defined LineList)
-        self.set_lines(verbose=verbose)
+        if set_lines:
+            # Set lines for use (from defined LineList)
+            # This sets self._data
+            self.set_lines(verbose=verbose)
 
-        # Subset of lines for use
-        if subset is not None:
-            self.subset_lines(subset, verbose=verbose, sort=sort_subset)
 
     def load_data(self, tol=1e-3 * u.AA, use_cache=True):
         """Grab the data for the lines of interest
@@ -282,15 +278,20 @@ class LineList(object):
         Parameters
         ----------
         subset : list or np.ndarray (of Quantity or str)
-          List of wrest or names for lines to use (drawn from input LineList)
-          e.g. (['HI 1215', 'CIV 1548'] or [1215.67 * u.AA, 1548.195 * u.AA])
+            List of wrest or names for lines to use (drawn from current
+            LineList object) e.g. (['HI 1215', 'CIV 1548'] or
+            [1215.67 * u.AA, 1548.195 * u.AA])
         reset_data : bool, optional
-          Reset self._data QTable based on the original list at the
-          initialization(i.e. the default list). This is useful for
-          changing subsets of lines without the need to initialize a
-          different LineList() object. [False]
+            Reset self._data QTable based on the original list at the
+            initialization(i.e. the default list). This is useful for
+            changing subsets of lines without the need to initialize a
+            different LineList() object. Default is False.
         sort : bool, optional
-          Sort this subset? [False]
+            Sort this subset? Default is False.
+
+        Returns
+        -------
+        A new LineList object with the subset of transitions
 
         """
 
@@ -337,8 +338,11 @@ class LineList(object):
         tmp = self._data[indices]
         if sort:
             tmp.sort('wrest')
-        # Finish
-        self._data = tmp
+
+        # Return LineList object
+        new = LineList(self.lists, closest=self.closest, set_lines=False)
+        new._data = tmp
+        return new
 
     def unknown_line(self):
         """Returns a dictionary of line properties set to an unknown

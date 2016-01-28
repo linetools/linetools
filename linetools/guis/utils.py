@@ -136,7 +136,9 @@ def set_llist(llist, in_dict=None, sort=True):
                 if llist == 'OVI':
                     gdlines = u.AA*[629.730, 702.332, 770.409, 780.324, 787.711, 832.927, 972.5367, 977.0201,
                         1025.7222, 1031.9261, 1037.6167, 1206.5, 1215.6700, 1260.4221]
-                    llist_cls = LineList('Strong', subset=gdlines)
+                    llist_cls = LineList('Strong')
+                    llist_cls = llist_cls.subset_lines(gdlines)
+
                     in_dict[llist] = llist_cls
                 else:
                     llist_cls = LineList(llist)
@@ -151,7 +153,8 @@ def set_llist(llist, in_dict=None, sort=True):
         # Fill
         if sort:
             llist.sort()
-        llist_cls = LineList('ISM', subset=llist)
+        llist_cls = LineList('ISM')
+        llist_cls = llist_cls.subset_lines(llist)
         in_dict['input.lst'] = llist_cls
     else:
         raise IOError('Not ready for this type of input')
