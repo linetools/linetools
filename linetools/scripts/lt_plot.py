@@ -6,11 +6,6 @@ from __future__ import (print_function, absolute_import, division,
 
 def plotspec(args):
     """Plot spectrum files
-
-    Parameters
-    ----------
-    filenames : list of str
-      Spectrum filenames
     """
     from linetools.spectra.io import readspec
     import warnings

@@ -30,7 +30,8 @@ class ExamineSpecWidget(QtGui.QWidget):
     """
     def __init__(self, ispec, parent=None, status=None, llist=None,
                  abs_sys=None, norm=True, second_file=None, zsys=None,
-                 key_events=True, vlines=None, plotzero=False, exten=None):
+                 key_events=True, vlines=None, plotzero=False, exten=None,
+                 xlim=None, ylim=None):
         """
         Parameters
         ----------
@@ -48,6 +49,10 @@ class ExamineSpecWidget(QtGui.QWidget):
         key_events : bool, optional
           Use key events? [True]
           Useful when coupling to other widgets
+        xlim : tuple of two floats
+          Initial x plotting limits
+        ylim : tuple of two floats
+          Initial y plotting limits
         """
         super(ExamineSpecWidget, self).__init__(parent)
 
@@ -76,7 +81,7 @@ class ExamineSpecWidget(QtGui.QWidget):
         self.norm = norm
         self.psdict = {}  # Dict for spectra plotting
         self.adict = {}  # Dict for analysis
-        self.init_spec()
+        self.init_spec(xlim=xlim, ylim=ylim)
         self.xval = None  # Used with velplt
 
         # Status Bar?
@@ -120,17 +125,23 @@ class ExamineSpecWidget(QtGui.QWidget):
         self.on_draw()
 
     # Setup the spectrum plotting info
-    def init_spec(self):
+    def init_spec(self, xlim=None, ylim=None):
         """ Initialize parameters for plotting the spectrum
         """
         #xy min/max
-        xmin = np.min(self.spec.dispersion.value)
-        xmax = np.max(self.spec.dispersion.value)
-        from linetools.spectra.plotting import get_flux_plotrange
-        ymin, ymax = get_flux_plotrange(self.spec.flux.value)
+        if xlim is None:
+            xmin = np.min(self.spec.dispersion.value)
+            xmax = np.max(self.spec.dispersion.value)
+        else:
+            xmin, xmax = xlim
+        if ylim is None:
+            from linetools.spectra.plotting import get_flux_plotrange
+            ymin, ymax = get_flux_plotrange(self.spec.flux.value)
+        else:
+            ymin, ymax = ylim
         #QtCore.pyqtRemoveInputHook()
         #xdb.set_trace()
-        #QtCore.pyqtRestoreInputHook()
+        #QtCore.pyqtRestoreInputHook()    
         self.psdict['x_minmax'] = np.array([xmin, xmax])
         self.psdict['y_minmax'] = [ymin, ymax]
         self.psdict['sv_xy_minmax'] = [[xmin, xmax], [ymin, ymax]]
