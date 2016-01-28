@@ -141,7 +141,7 @@ class SpectralLine(object):
         self.fill_data(trans, linelist=linelist, closest=closest)
 
     def ismatch(self, inp, Zion=None, RADec=None):
-        '''Query whether input line matches on:  z, Z, ion, RA, Dec
+        """Query whether input line matches on:  z, Z, ion, RA, Dec
 
         Parameters
         ----------
@@ -158,7 +158,7 @@ class SpectralLine(object):
         -------
         answer : bool
           True if a match, else False
-        '''
+        """
         coord = None
         if isinstance(inp, SpectralLine):
             wrest = inp.wrest
@@ -245,9 +245,10 @@ class SpectralLine(object):
     def measure_ew(self, flg=1, initial_guesses=None):
         """ Measures the observer frame equivalent width
 
-        Note this requires `wvlim` and `spec` attributes must be set!
-        Default is simple boxcar integration. Observer frame, not
-        rest-frame (use measure_restew() for rest-frame).
+        Note this requires the keys `wvlim` and `spec` in analy to
+        be set! Default is simple boxcar integration.
+        Observer frame, not rest-frame (use measure_restew()
+        for rest-frame).
 
         It sets these attributes:
            * self.attrib['EW', 'sig_EW']:
