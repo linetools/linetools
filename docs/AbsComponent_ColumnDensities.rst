@@ -2,6 +2,8 @@
 Column Densities with AbsComponent
 ==================================
 
+Download :download:`examples/AbsComponent_ColumnDensities.ipynb` this notebook.
+
 .. code:: python
 
     %matplotlib inline

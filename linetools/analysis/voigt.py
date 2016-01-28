@@ -121,7 +121,8 @@ def voigt_tau(wave, par):
     return tau
 
 # The primary call
-def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'], skip_wveval=False, debug=False):
+def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'],
+                        skip_wveval=False, debug=False):
     """ Generates a Voigt model from a line or list of AbsLines
 
     This may run *slowly* for many many lines.
@@ -163,9 +164,14 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'], skip_wveval=Fals
         else:
             minb = np.min(np.array(
                 [iline.attrib['b'].value for iline in line]))*u.km/u.s
+        if not isinstance(minb, u.Quantity):
+            # assume km/s
+            raise RuntimeError("line attribute 'b' must have units!")
+
         # Calculate dwave
         dwave = np.median(np.abs(iwave-np.roll(iwave,1)))
         medwave = np.median(iwave)
+
         if const.c.to('km/s')*dwave/medwave > minb/10.:
             wmin = np.min(iwave.to('AA').value)
             wmax = np.max(iwave.to('AA').value)
@@ -193,6 +199,9 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'], skip_wveval=Fals
     tau = np.zeros(wave.size)
     wavecm = wave.to('cm').value
     for iline in lines:
+        if not isinstance(iline.attrib['N'], u.Quantity):
+            # assume km/s
+            raise RuntimeError("line attribute 'N' must have units!")
         if debug:
             print(iline, iline.attrib['N'])
         par = [np.log10(iline.attrib['N'].value),

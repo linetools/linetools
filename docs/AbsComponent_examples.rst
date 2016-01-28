@@ -2,6 +2,8 @@
 Examples for the AbsComponent Class (v0.3)
 ==========================================
 
+Download :download:`examples/AbsComponent_examples.ipynb` this notebook.
+
 .. code:: python
 
     %matplotlib inline

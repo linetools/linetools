@@ -2,6 +2,8 @@
 Examples with the SolarAbund Class (v1.1)
 =========================================
 
+Download :download:`examples/SolarAbund.ipynb` this notebook.
+
 .. code:: python
 
     # import

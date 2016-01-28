@@ -12,7 +12,7 @@ Overview
 ========
 
 This class organizes information about atomic and molecular transition
-lines (e.g. HI Lya, CIV 1548, Hydrogen Balmer series) observed
+lines (e.g. `HI Lya`, `CIV 1548`, Hydrogen Balmer series) observed
 in astrophysical environments.
 
 ..
@@ -34,34 +34,33 @@ Instantiation
 
 The LineList Class may be instantiated using one of the keys in the
 list above::
-  
-	hi = LineList('HI')
 
-  linetools.lists.parse: Reading linelist --- 
-    /home/ntejos/python/linetools/linetools/data/lines/morton03_table2.fits.gz
-  WARNING: UnitsWarning: The unit 'Angstrom' has been deprecated in the FITS standard. Suggested: nm (with data multiplied by 0.1). [astropy.units.format.utils]
-  read_sets: Using set file -- 
+    from linetools.lists.linelist import LineList
+    hi = LineList('HI')
+    linetools.lists.parse: Reading linelist --- # doctest: +SKIP
+    /home/ntejos/python/linetools/linetools/data/lines/morton03_table2.fits.gz # doctest: +SKIP
+    WARNING: UnitsWarning: The unit 'Angstrom' has been deprecated in the FITS standard. Suggested: nm (with data multiplied by 0.1). [astropy.units.format.utils]
+    read_sets: Using set file --
     /home/ntejos/python/linetools/linetools/lists/sets/llist_v0.4.ascii
   
 or a list of keys::
-  
-  euv = LineList(['HI','EUV'])
 
-  linetools.lists.parse: Reading linelist --- 
+    euv = LineList(['HI','EUV'])
+    linetools.lists.parse: Reading linelist ---
     /home/ntejos/python/linetools/linetools/data/lines/morton03_table2.fits.gz
-  linetools.lists.parse: Reading linelist --- 
+    linetools.lists.parse: Reading linelist ---
     /home/ntejos/python/linetools/linetools/data/lines/morton00_table2.fits.gz
-  linetools.lists.parse: Reading linelist --- 
+    linetools.lists.parse: Reading linelist ---
     /home/ntejos/python/linetools/linetools/data/lines/verner94_tab6.fits
-  linetools.lists.parse: Reading linelist --- 
+    linetools.lists.parse: Reading linelist ---
     /home/ntejos/python/linetools/linetools/data/lines/EUV_lines.ascii
-  read_sets: Using set file -- 
+    read_sets: Using set file --
     /home/ntejos/python/linetools/linetools/lists/sets/llist_v0.4.ascii
 
-Here ``hi`` contains only HI Lyman series transitions (e.g. HI Lya),
+Here ``hi`` contains only HI Lyman series transitions (e.g. `HI Lya`),
 and ``euv`` contains both HI Lyman series and extreme UV metal
-transitions (e.g. NeVIII, MgX). Each line list contains a unique set
-of transitions, such that are no duplicate lines.
+transitions (e.g. `HI Lyb`, `NeVIII`, `MgX`). Each line list contains a unique
+set of transitions, such that are no duplicate lines.
 
 
 Accessing single transitions
@@ -70,14 +69,14 @@ Accessing single transitions
 We can now easily access atomic information regarding individual
 transitions either by the rest-frame wavelength::
 
-  wrest = 1215.67 * u.AA  # HI Lya
-  hi[wrest]
+    wrest = 1215.67 * u.AA  # HI Lya
+    hi[wrest]
 
-or by the name convention within linetools, which in the case of HI
-Lya is ``HI 1215``::
+or by the name convention within linetools, which in the case of `HI
+Lya` is ``HI 1215``::
 
-  name = 'HI 1215'
-  hi[name]
+    name = 'HI 1215'
+    hi[name]
 
 both cases will provide the following dictionary::
 
@@ -105,20 +104,20 @@ both cases will provide the following dictionary::
   'nk': 0,                              # Orbital level of upper state (or vibrational level)
   'wrest': <Quantity 1215.67 Angstrom>} # Rest Wavelength (Quantity)  
 
-which summarizes the most important atomic information of HI Lya
+which summarizes the most important atomic information of `HI Lya`
 transition, including the reference where these values come from
-(i.e., ``Morton2003``). One can therefore access any of these by
+(i.e., `Morton2003`). One can therefore access any of these by
 calling its dictionary keywords::
 
-  hi['HI 1215']['wrest']
-  <Quantity 1215.67 Angstrom>
+    hi['HI 1215']['wrest']
+    <Quantity 1215.67 Angstrom>
 
-is the rest-frame wavelength of the HI Lya transition. Similarly,::
+is the rest-frame wavelength of the `HI Lya` transition. Similarly,::
 
-  euv['NeVIII 780']['f']
-  0.050500001758337021
+    euv['NeVIII 780']['f']
+    0.050500001758337021
 
-is the oscillator strength of the NeVIII 780 transition.
+is the oscillator strength of the `NeVIII 780` transition.
 
 
 ::::
@@ -130,8 +129,8 @@ subset_lines()
 ++++++++++++++
 
 This method provides a way to define a subset of lines drawn from the
-original LineList object. Consider that for some reason you may want
-only HI Lya and Lyb in your LineList, then you can achieve this by::
+original` LineList` object. Consider that for some reason you may want
+only `HI Lya` and `Lyb` in your `LineList`, then you can achieve this by::
 
   hi = LineList('HI')
   hi = hi.subset_lines(['HI 1215', 'HI 1025'])
@@ -147,8 +146,8 @@ instance::
     print(ism)
     <LineList: ISM; 4 transitions>
 
-selects only those four transitions of MgII and CIV. In order to
-avoid loading the `LineList('ISM')` again, you can use the keyword
+selects only those four transitions of `MgII` and `CIV`. In order to
+avoid loading the ``LineList('ISM')`` again, you can use the keyword
 `reset_data` in `subset_lines()` to make another arbitrarily different
 subset of lines from the original `LineList`::
 
@@ -157,7 +156,7 @@ subset of lines from the original `LineList`::
     print(ism)
     <LineList: ISM; 2 transitions>
 
-Which only has those HI Lya and Lyb.
+Which only has those `HI Lya` and `Lyb`.
 
 Finally, if you want the transitions to be sorted by rest-frame
 wavelength you can use the optional keyword `sort`::
@@ -194,6 +193,7 @@ Give us the original ism `LineList` with 412 unique transitions.
 
 You may also want to use rest-frame wavelength to define a subset, for
 instance::
+
     ism = LineList('ISM')
     sub_lines = [2796.3543, 2803.5315, 1548.195, 1550.77] * u.AA
     civ_mgii = ism.subset(sub_lines)
@@ -208,7 +208,7 @@ to a given ion species. This can be achieved by the
     ism = LineList('ISM')
     mgii = ism.all_transitions('MgII')
 
-Which give us the information of all the 6 transitions of MgII::
+Which give us the information of all the 6 transitions of `MgII`::
 
     print(mgii)
          A       el  nj  nk group    name       Ek    ...  Jk  Z   gk  gj    gamma    col0 col6
@@ -221,15 +221,15 @@ Which give us the information of all the 6 transitions of MgII::
     262500000.0   0   0   0     1 MgII 2796 35760.848 ... 0.0  12   4   2 262500000.0   --   --
     259500000.0   0   0   0     1 MgII 2803 35669.298 ... 0.0  12   2   2 259500000.0   --   --
 
-In this case `mgii` is a QTable because more than 1
+In this case ``mgii`` is a QTable because more than 1
 transitions were found. In cases were only 1 transition
 exists, the output of `all_transitions()` is a dictionary
-with the same keywords as the columns of `ism._data` QTable::
+with the same keywords as the columns of ``ism._data`` QTable::
 
     ciii = ism.all_transitions('CIII')
     type(ciii)
     dict
-    ciii
+    print(ciii)
     {'A': <Quantity 1760000000.0 1 / s>,
     'Am': 0,
     'Ej': <Quantity 0.0 1 / cm>,
@@ -257,7 +257,7 @@ with the same keywords as the columns of `ism._data` QTable::
 You can also use a rest-frame wavelength to identify the ion species
 of interest::
 
-    wrest =  1260.4221 * u.AA
+    wrest = 1260.4221 * u.AA
     si2 = ism.all_transitions(wrest)
     print(si2['name', 'wrest', 'f'])
        name     wrest          f
@@ -285,7 +285,7 @@ the same answer, e.g.::
 
 are all equivalent. Note that in the last example we only used the
 root name of the transition (i.e. the string before the blank space,
-`HI`), so no prior knowledge of the linetools naming convention is
+``'HI'``), so no prior knowledge of the `linetools` naming convention is
 needed.
 
 
@@ -293,7 +293,7 @@ strongest_transitions()
 +++++++++++++++++++++++
 
 Sometimes it is useful to know the strongest transition for an ion in
-the LineList within some wavelength range. `strongest_transitions()`
+the `LineList` within some wavelength range. `strongest_transitions()`
 gives the strongest `n_max` transitions of a given ion
 between a wavelength range, sorted by relative strength (defined as
 the product of its rest-frame wavelength `wrest` and oscillator
@@ -311,8 +311,8 @@ strength `f`)::
     SiII 1526
 
 The syntax is the same as for `all_transitions()`. Note that you will
-get the same result if you use `line='SiII'`, `line='SiII 1190'`,
-`line='SiII 889'`, or `line=889.7228*u.AA`. By default `n_max=3`.
+get the same result if you use ``line='SiII'``, ``line='SiII 1190'``,
+``line='SiII 889'``, or ``line=889.7228*u.AA``. By default `n_max=3`.
 Depending on the wavelength range, however, the output may vary::
 
     wvlims = [500, 1100] * u.AA
@@ -326,15 +326,82 @@ Depending on the wavelength range, however, the output may vary::
     SiII 1020
 
 Note that despite `n_max=4` we have only retrieved the 3 transitions
-satisfying the criteria of belonging to `wvlims = [500, 1100] * u.AA`.
-Again, note that even though `SiII 1260` is out of `wvlims` range, it
+satisfying the criteria of belonging to ``wvlims = [500, 1100] * u.AA``.
+Again, note that even though `SiII 1260` is out of ``wvlims`` range, it
 can still be used to identify that you are interested in the `SiII` ion
 species.
 
-If you would like to retrieve all the transitions in a given `wvlims`
+If you would like to retrieve all the transitions in a given ``wvlims``
 regardless of its relative strength, you can set `n_max=None`.
 
 Following the convention within `LineList`, if only 1 transition is
 retrieved, the output of `strongest_transitions()` is a dictionary; if
-more than 1 transition are retrieved the output is a QTable. If no
+more than 1 transition are retrieved the output is a `QTable`. If no
 transition exist the output is `None`.
+
+
+available_transitions()
++++++++++++++++++++++++
+
+Sometimes it may be useful to know what are the available
+transition in a given wavelength range found in the LineList
+regardless of the ion species. This is particularly the case when
+someone is trying to identify unknown emission/absorption lines
+in a spectrum. Let us then illustrate the use of this method
+with an example. Imagine that you have an observed spectrum
+covering the following wavelength range::
+
+    wvlims = [3500,5000] * u.AA
+
+Let us now imagine that we are interested in a particular redshift, say
+``z=0.67``. Then, we can do::
+
+    z = 0.67
+    transitions = ism.available_transitions(wvlims/(1+z),n_max=None,n_max_tuple=None, min_strength=0.)
+    print(len(transitions))
+    33
+
+Will give the 33 transitions available that could correspond to having
+``z=0.67`` in the form of a `QTable`. The output is sorted by strength of
+the strongest available transition per ion species, and strength is defined
+as `log10(wrest * fosc * abundance)`, where `abundance` is that of the solar
+composition given by Asplund2009. As optional keyword parameters one can
+specify a minimum strength as `min_strength`, so transitions below this
+value are omitted, e.g.::
+
+    transitions = ism.available_transitions(wvlims/(1+z),n_max=None,n_max_tuple=None, min_strength=10.5)
+    print(len(transitions))
+    3
+
+Which correspond to `MgI 2852`, `MgII 2796` and `MgII 2803`. Note than this
+method does not correct for ionization state. Similarly, once can also set a
+maximum number of transitions to be retrieved satisfying the criteria using
+the optional keyword `n_max`, e.g.::
+
+    transitions = ism.available_transitions(wvlims/(1+z), n_max=4, n_max_tuple=None, min_strength=0.)
+    print(transitions['name'])
+       name
+    ---------
+    MgI 2852
+    MgII 2796
+    MgII 2803
+    FeII 2382
+
+Finally, one can also specify the maximum number of transitions per ion species
+tuple using the optional keyword parameter `n_max_tuple`, e.g.::
+
+    transitions = ism.available_transitions(wvlims/(1+z), n_max=6, n_max_tuple=1, min_strength=0.)
+    print(transitions['name'])
+        name
+    -----------
+    MgI 2852
+    MgII 2796
+    FeII 2382
+    FeII* 2396b
+    MnII 2576
+    VII  2683
+
+Which for the case of `MgII` only retrieves ``'MgII 2796'``. Again, following the convention within
+`LineList`, if only 1 transition is retrieved, the output of `available_transitions()`
+is a dictionary; if more than 1 transition are retrieved the output is a `QTable`. If no
+transition exist satisfying the criteria the output is `None`.
