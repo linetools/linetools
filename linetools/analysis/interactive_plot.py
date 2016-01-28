@@ -123,7 +123,6 @@ class PlotWrapNav(PlotWrapBase):
     def __init__(self, fig, ax, wa, fl, artists, printhelp=True,
                  xlim=None):
 
-
         super(PlotWrapNav, self).__init__()
 
         if isinstance(wa, u.Quantity):
@@ -150,9 +149,13 @@ class PlotWrapNav(PlotWrapBase):
         self.nsmooth = 0
         self.last_keypress = None
         # disable existing keypress events (like 's' for save).
-        cids = list(fig.canvas.callbacks.callbacks['key_press_event'])
-        for cid in cids:
-            fig.canvas.callbacks.disconnect(cid)
+        try:
+            cids = list(fig.canvas.callbacks.callbacks['key_press_event'])
+        except KeyError:
+            pass
+        else:
+            for cid in cids:
+                fig.canvas.callbacks.disconnect(cid)
         self.cids = {}
         self.connect()
         if printhelp:
