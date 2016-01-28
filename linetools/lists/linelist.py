@@ -69,6 +69,7 @@ class LineList(object):
 
         # Take closest line?
         self.closest = closest
+        self.verbose = verbose
 
         # Load Data
         self.load_data()
@@ -340,7 +341,8 @@ class LineList(object):
             tmp.sort('wrest')
 
         # Return LineList object
-        new = LineList(self.lists, closest=self.closest, set_lines=False)
+        new = LineList(self.lists, closest=self.closest, set_lines=False,
+                       verbose=self.verbose)
         new._data = tmp
         return new
 
@@ -699,10 +701,12 @@ class LineList(object):
             # Take closest??
             if self.closest and (not isinstance(k, basestring)):
                 mt = [np.argmin(np.abs(inwv - self.wrest))]
-                print('WARNING: Using {:.4f} for your input {:.4f}'.format(self.wrest[mt[0]],
+                if self.verbose:
+                    print('WARNING: Using {:.4f} for your input {:.4f}'.format(self.wrest[mt[0]],
                                                                            inwv))
             else:
-                print('No such line in the list', k)
+                if self.verbose:
+                    print('No such line in the list', k)
                 return None
 
         # Now we have something
