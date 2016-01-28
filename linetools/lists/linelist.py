@@ -39,22 +39,23 @@ class LineList(object):
     Parameters
     ----------
     llst_keys : str or list
-      Input to grab line list.  Current options are:
-       * 'ISM'     :: "All" ISM lines (can be overwhelming!)
-       * 'Strong'  :: Strong ISM lines
-       * 'HI'      :: HI Lyman series
-       * 'H2'      :: H2 (Lyman-Werner)
-       * 'CO'      :: CO UV band-heads
-       * 'EUV'     :: EUV lines (for CASBAH project)
-       * 'Galaxy'  :: Lines typically identified in galaxy spectra
-       * 'AGN'     :: Key AGN lines (to be implemented)
+        Input to grab line list.  Current options are:
+        * 'ISM'     :: "All" ISM lines (can be overwhelming!)
+        * 'Strong'  :: Strong ISM lines
+        * 'HI'      :: HI Lyman series
+        * 'H2'      :: H2 (Lyman-Werner)
+        * 'CO'      :: CO UV band-heads
+        * 'EUV'     :: EUV lines (for CASBAH project)
+        * 'Galaxy'  :: Lines typically identified in galaxy spectra
+        * 'AGN'     :: Key AGN lines (to be implemented)
 
     verbose : bool, optional
-      Give info galore if True
+        Give info galore if True
+
     """
 
     # Init
-    def __init__(self, llst_keys, verbose=False, closest=False):
+    def __init__(self, llst_keys, verbose=False, closest=False, set_lines=True):
 
         # Error catching
         if not isinstance(llst_keys, (list, basestring)):
@@ -72,8 +73,10 @@ class LineList(object):
         # Load Data
         self.load_data()
 
-        # Set lines for use (from defined LineList)
-        self.set_lines(verbose=verbose)
+        if set_lines:
+            # Set lines for use (from defined LineList)
+            # This sets self._data
+            self.set_lines(verbose=verbose)
 
 
     def load_data(self, tol=1e-3 * u.AA, use_cache=True):
@@ -337,7 +340,7 @@ class LineList(object):
             tmp.sort('wrest')
 
         # Return LineList object
-        new = copy.copy(self)
+        new = LineList(self.lists, closest=self.closest, set_lines=False)
         new._data = tmp
         return new
 
