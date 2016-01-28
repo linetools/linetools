@@ -351,6 +351,8 @@ class XSpectrum1D(Spectrum1D):
           If True (the default), then run the matplotlib.pyplot show
           command to display the plot. Disable this if you are running
           from a script and wish to delay showing the plot.
+        xlim : tuple of two floats
+          The initial x plotting limits (xmin, xmax)
 
         Other keyword arguments are passed to the matplotlib plot
         command.
@@ -361,6 +363,7 @@ class XSpectrum1D(Spectrum1D):
         from ..analysis.interactive_plot import PlotWrapNav
 
         nocolor = (False if 'color' in kwargs else True)
+        xlim = kwargs.pop('xlim', None)
 
         ax = plt.gca()
         fig = plt.gcf()
@@ -387,7 +390,13 @@ class XSpectrum1D(Spectrum1D):
                 ax.plot(self.wavelength, self.co, **kwargs)
 
         ax.set_ylim(*get_flux_plotrange(self.flux))
-        ax.set_xlim(self.wavelength.value[0], self.wavelength.value[-1])
+
+        if xlim is not None:
+            xmin, xmax = xlim
+        else:
+            xmin, xmax = self.wavelength.value[0], self.wavelength.value[-1]
+
+        ax.set_xlim(xmin, xmax)
 
         if plt.get_backend() == 'MacOSX':
             warnings.warn("""\
@@ -398,8 +407,9 @@ or QtAgg backends to enable all interactive plotting commands.
             # Enable xspecplot-style navigation (i/o for zooming, etc).
             # Need to save this as an attribute so it doesn't get
             # garbage-collected.
-            self._plotter = PlotWrapNav(fig, ax, self.wavelength,
-                                        self.flux, artists, printhelp=False)
+            self._plotter = PlotWrapNav(
+                fig, ax, self.wavelength, self.flux, artists, printhelp=False,
+                xlim=(xmin, xmax))
 
             if show:
                 plt.show()
@@ -572,7 +582,7 @@ or QtAgg backends to enable all interactive plotting commands.
         """ Smooth a spectrum with a Gaussian
 
         Note that the uncertainty array is not smoothed.
-        
+
         Parameters
         ----------
         fwhm : float

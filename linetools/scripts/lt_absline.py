@@ -4,12 +4,12 @@
 Plot an absorption line with given parameters.
 Also print the line data
   Examples:
-  linet_absline 1334.3    13.5 7
-  linet_absline 1215.6701 14.0 30
+  lt_absline 1334.3    13.5 7
+  lt_absline 1215.6701 14.0 30
 """
 import pdb
 
-def plot_absline(wrest,logN,b):
+def plot_absline(wrest,logN,b, show=True):
     """Plot an absorption line with N,b properties
 
     Parameters
@@ -20,12 +20,12 @@ def plot_absline(wrest,logN,b):
       Log10 column
     b : float
       Doppler parameter (km/s)
+    show : bool
+      Whether to display the plot (set False for running
+      tests). Default True.
     """
     import numpy as np
-    from linetools.spectra.xspectrum1d import XSpectrum1D
-    from linetools.lists.linelist import LineList
     from linetools.spectralline import AbsLine
-    from linetools.analysis import voigt as lav
     from astropy import units as u
 
     # Search for the closest absline
@@ -37,11 +37,15 @@ def plot_absline(wrest,logN,b):
     wave = np.arange(wrest-wvoff, wrest+wvoff, dwv)
 
     # Generate spectrum with voigt
-    aline.attrib['N'] = logN
+    aline.attrib['N'] = 10**logN * u.cm**-2
     aline.attrib['b'] = b * u.km/u.s
     xspec = aline.generate_voigt(wave=wave*u.AA)
+    # get the plotting limits
+    ind = np.flatnonzero(xspec.flux.value < 0.9)
+    wmin = xspec.wavelength[max(0, ind[1] - 10)]
+    wmax = xspec.wavelength[min(len(xspec.flux) - 1,  ind[-2] + 10)]
+    #import pdb; pdb.set_trace()
     xspec.constant_sig(0.1) # S/N = 10 per pix
-
 
     # Calculate EW
     aline.analy['spec'] = xspec
@@ -51,7 +55,7 @@ def plot_absline(wrest,logN,b):
     print('EW = {:g}'.format(aline.attrib['EW']))
 
     # Plot
-    xspec.plot()
+    xspec.plot(xlim=(wmin.to(u.AA).value, wmax.to(u.AA).value), show=show)
 
 def main(args=None):
     import argparse

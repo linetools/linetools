@@ -231,7 +231,8 @@ class SpectralLine(object):
 
         # Normalize?
         if normalize:
-            if self.analy['spec'].co is not None:
+            if hasattr(self.analy['spec'], 'co') and \
+                   self.analy['spec'].co is not None:
                 fx = fx / self.analy['spec'].co[pix]
                 sig = sig / self.analy['spec'].co[pix]
             else:

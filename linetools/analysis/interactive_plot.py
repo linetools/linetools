@@ -120,8 +120,8 @@ class PlotWrapNav(PlotWrapBase):
     printhelp : bool, optional
       Whether to print a help message when first called.
     """
-    def __init__(self, fig, ax, wa, fl, artists, printhelp=True):
-
+    def __init__(self, fig, ax, wa, fl, artists, printhelp=True,
+                 xlim=None):
 
         super(PlotWrapNav, self).__init__()
 
@@ -132,8 +132,12 @@ class PlotWrapNav(PlotWrapBase):
             fl = fl.value
         self.fl = fl
 
-        xmin = np.min(self.wa)
-        xmax = np.max(self.wa)
+        if xlim is None:
+            xmin = np.min(self.wa)
+            xmax = np.max(self.wa)
+        else:
+            xmin, xmax = xlim
+
         ymin, ymax = get_flux_plotrange(self.fl)
         self.nav_dict['x_minmax'] = np.array([xmin, xmax])
         self.nav_dict['y_minmax'] = [ymin, ymax]
@@ -145,9 +149,13 @@ class PlotWrapNav(PlotWrapBase):
         self.nsmooth = 0
         self.last_keypress = None
         # disable existing keypress events (like 's' for save).
-        cids = list(fig.canvas.callbacks.callbacks['key_press_event'])
-        for cid in cids:
-            fig.canvas.callbacks.disconnect(cid)
+        try:
+            cids = list(fig.canvas.callbacks.callbacks['key_press_event'])
+        except KeyError:
+            pass
+        else:
+            for cid in cids:
+                fig.canvas.callbacks.disconnect(cid)
         self.cids = {}
         self.connect()
         if printhelp:
@@ -174,7 +182,7 @@ class PlotWrapNav(PlotWrapBase):
 
 class InteractiveCoFit(PlotWrapBase):
     """ Class for interactively fitting a continuum
-    
+
     Parameters
     ----------
     wa : Wavelengths
@@ -183,7 +191,7 @@ class InteractiveCoFit(PlotWrapBase):
     contpoints : list of x,y tuple pairs (None)
         The points through which a cubic spline is passed,
         defining the continuum.
-    co : Continuum, optional  
+    co : Continuum, optional
         The existing continuum, if one is already defined.
     anchor : bool
         Whether to prevent modification of the first and last
@@ -489,7 +497,7 @@ q        : quit
             if not between(event.xdata, self.wmin, self.wmax):
                 print('Outside fitting region')
                 return
-            
+
             contx,conty = zip(*self.ax.transData.transform(self.contpoints))
             sep = np.hypot(event.x - np.array(contx),
                            event.y - np.array(conty))
