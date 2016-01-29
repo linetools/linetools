@@ -15,6 +15,12 @@ from linetools.spectralline import AbsLine
 
 import pdb
 
+try:
+    unicode
+except NameError:
+    unicode = str
+
+
 def test_list_of_abslines():
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
     # HI Lya, Lyb

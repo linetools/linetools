@@ -43,24 +43,9 @@ list above::
     read_sets: Using set file --
     /home/ntejos/python/linetools/linetools/lists/sets/llist_v0.4.ascii
   
-or a list of keys::
-
-    euv = LineList(['HI','EUV'])
-    linetools.lists.parse: Reading linelist ---
-    /home/ntejos/python/linetools/linetools/data/lines/morton03_table2.fits.gz
-    linetools.lists.parse: Reading linelist ---
-    /home/ntejos/python/linetools/linetools/data/lines/morton00_table2.fits.gz
-    linetools.lists.parse: Reading linelist ---
-    /home/ntejos/python/linetools/linetools/data/lines/verner94_tab6.fits
-    linetools.lists.parse: Reading linelist ---
-    /home/ntejos/python/linetools/linetools/data/lines/EUV_lines.ascii
-    read_sets: Using set file --
-    /home/ntejos/python/linetools/linetools/lists/sets/llist_v0.4.ascii
-
-Here ``hi`` contains only HI Lyman series transitions (e.g. `HI Lya`),
-and ``euv`` contains both HI Lyman series and extreme UV metal
-transitions (e.g. `HI Lyb`, `NeVIII`, `MgX`). Each line list contains a unique
-set of transitions, such that are no duplicate lines.
+``hi``, for example, contains only HI Lyman series transitions
+(e.g. `HI Lya`), and ``euv`` contains both HI Lyman series and extreme
+UV metal transitions (e.g. `HI Lyb`, `NeVIII`, `MgX`).
 
 
 Accessing single transitions

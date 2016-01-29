@@ -73,6 +73,8 @@ class XSpectrum1D(Spectrum1D):
         simulation parameters, exposure time, telescope name, etc.
     """
 
+
+
     @classmethod
     def from_file(self, ifile, **kwargs):
         """ From file
@@ -197,6 +199,7 @@ class XSpectrum1D(Spectrum1D):
                 pass
         return out
 
+
     def set_diagnostics(self):
         """Generate simple diagnostics on the spectrum.
 
@@ -266,6 +269,14 @@ class XSpectrum1D(Spectrum1D):
         no_check: bool [False]
           Check size of array?
         """
+        # if already normalized give a warning and do nothing
+        try:
+            if self.normed is True:
+                print('The spectrum is already normalized! Aborting.')
+                return
+        except AttributeError: # self.normed is not defined
+            pass
+
         # Sanity check
         if co is None:
             if hasattr(self, 'co') and self.co is not None:
@@ -294,6 +305,58 @@ class XSpectrum1D(Spectrum1D):
             self.uncertainty.array /= co
         if verbose:
             print('spec.utils: Normalizing the spectrum')
+        self.normed = True
+
+     #  Un-Normalize
+    def unnormalize(self, co=None, verbose=False, no_check=False):
+        """ Un-normalize the spectrum with an input continuum
+
+        Parameters
+        ----------
+        co: numpy array [None]
+          Continuum. Use XSpectrum1D.co if None is given.
+        verbose: bool [False]
+        no_check: bool [False]
+          Check size of array?
+        """
+        # if already un-normalized give a warning and do nothing
+        try:
+            if (self.normed is False):
+                print('The spectrum is already un-normalized! Aborting.')
+                return
+        except AttributeError: # self.normed is not defined
+            print('The spectrum has not been normalized! Aborting.')
+            return
+
+        # Sanity check
+        if co is None:
+            if hasattr(self, 'co') and self.co is not None:
+                co = self.co
+            else:
+                raise ValueError(
+                    'Must specify a continuum with `co` keyword.')
+        if (len(co) != len(self.flux)):
+            if no_check:
+                print('WARNING: Continuum length differs from flux')
+                if len(co) > len(self.flux):
+                    self.flux *= co[0:len(self.flux)]
+                    if self.uncertainty is not None:
+                        self.uncertainty.array *= co[0:len(self.flux)]
+                    return
+                else:
+                    raise ValueError(
+                        'normalize: Continuum needs to be longer!')
+            else:
+                raise ValueError(
+                    'normalize: Continuum needs to be same length as flux array')
+
+        # Adjust the flux
+        self.flux *= co
+        if self.uncertainty is not None:
+            self.uncertainty.array *= co
+        if verbose:
+            print('spec.utils: Un-normalizing the spectrum')
+        self.normed = False
 
     #  Grabs spectrum pixels in a velocity window
     def pix_minmax(self, *args):
@@ -378,10 +441,10 @@ class XSpectrum1D(Spectrum1D):
         artists['fl'] = ax.plot(self.wavelength, self.flux,
                                 drawstyle='steps-mid', **kwargs)[0]
 
-        if self.sig is not None:
+        if self.uncertainty.array is not None:
             if nocolor:
                 kwargs.update(color='g')
-            ax.plot(self.wavelength, self.sig, **kwargs)
+            ax.plot(self.wavelength, self.uncertainty.array, **kwargs)
 
         if hasattr(self, 'co'):
             if self.co is not None:
@@ -746,7 +809,7 @@ or QtAgg backends to enable all interactive plotting commands.
                     pdb.set_trace()
 
         if self.meta is not None and len(self.meta) > 0:
-            d = liu.jsonify_dict(self.meta)
+            d = liu.jsonify(self.meta)
             prihdu.header['METADATA'] = json.dumps(d)
 
         hdu.writeto(outfil, clobber=clobber)
@@ -962,12 +1025,21 @@ or QtAgg backends to enable all interactive plotting commands.
         return dir(type(self))
 
     def __repr__(self):
-        txt = '<{:s}: '.format(self.__class__.__name__)
+        txt = '<{:s}'.format(self.__class__.__name__)
+        # Normalized?
+        try:
+            if self.normed is True:
+                txt = txt + ' (normalized): '
+            else:
+                txt = txt + ': '
+        except AttributeError:
+            txt = txt +': '
         # Name
         try:
             txt = txt + 'file={:s},'.format(self.filename)
         except:
             pass
+
         # wrest
         txt = txt + ' wvmin={:g}, wvmax={:g}'.format(
             self.wvmin, self.wvmax)

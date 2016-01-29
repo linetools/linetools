@@ -2,11 +2,15 @@
 Column Densities with AbsComponent
 ==================================
 
-Download :download:`examples/AbsComponent_ColumnDensities.ipynb` this notebook.
+:download:`Download <examples/AbsComponent_ColumnDensities.ipynb>` this notebook.
 
 .. code:: python
 
     %matplotlib inline
+    
+    # suppress warnings for these examples
+    import warnings
+    warnings.filterwarnings('ignore')
 
 .. code:: python
 
@@ -17,27 +21,21 @@ Download :download:`examples/AbsComponent_ColumnDensities.ipynb` this notebook.
         pass
     
     from scipy import integrate
+    import astropy.units as u
     
     from linetools.isgm import abscomponent as lt_abscomp
     from linetools.spectralline import AbsLine
-    from linetools.spectra import io as lsio
+    from linetools.spectra.xspectrum1d import XSpectrum1D
     #
     import imp
     lt_path = imp.find_module('linetools')[1]
-
-
-.. parsed-literal::
-
-    /Users/xavier/anaconda/lib/python2.7/site-packages/matplotlib/__init__.py:872: UserWarning: axes.color_cycle is deprecated and replaced with axes.prop_cycle; please use the latter.
-      warnings.warn(self.msg_depr % (key, alt_key))
-
 
 Read Spec
 ---------
 
 .. code:: python
 
-    xspec = lsio.readspec(lt_path+'/spectra/tests/files/UM184_nF.fits')
+    xspec = XSpectrum1D.from_file(lt_path+'/spectra/tests/files/UM184_nF.fits')
 
 Generate a few AbsLines
 -----------------------
@@ -59,44 +57,14 @@ Generate a few AbsLines
     abslines
 
 
-.. parsed-literal::
-
-    WARNING: UnitsWarning: The unit 'Angstrom' has been deprecated in the FITS standard. Suggested: 10**-1 nm. [astropy.units.format.utils]
-    WARNING:astropy:UnitsWarning: The unit 'Angstrom' has been deprecated in the FITS standard. Suggested: 10**-1 nm.
 
 
 .. parsed-literal::
 
-    linetools.lists.parse: Reading linelist --- 
-       /Users/xavier/local/Python/linetools/linetools/data/lines/morton03_table2.fits.gz
-    linetools.lists.parse: Reading linelist --- 
-       /Users/xavier/local/Python/linetools/linetools/data/lines/morton00_table2.fits.gz
-    linetools.lists.parse: Reading linelist --- 
-       /Users/xavier/local/Python/linetools/linetools/data/lines/verner94_tab6.fits
-
-.. parsed-literal::
-
-    WARNING: UnitsWarning: '0.1nm' did not parse as fits unit: Numeric factor not supported by FITS [astropy.units.core]
-    WARNING:astropy:UnitsWarning: '0.1nm' did not parse as fits unit: Numeric factor not supported by FITS
-
-
-.. parsed-literal::
-
-    
-    linetools.lists.parse: Reading linelist --- 
-       /Users/xavier/local/Python/linetools/linetools/data/lines/EUV_lines.ascii
-    read_sets: Using set file -- 
-      /Users/xavier/local/Python/linetools/linetools/lists/sets/llist_v0.3.ascii
-
-
-
-
-.. parsed-literal::
-
-    [[AbsLine: SiII 1260, wrest=1260.4221 Angstrom],
-     [AbsLine: SiII 1304, wrest=1304.3702 Angstrom],
-     [AbsLine: SiII 1526, wrest=1526.7070 Angstrom],
-     [AbsLine: SiII 1808, wrest=1808.0129 Angstrom]]
+    [<AbsLine: SiII 1260, wrest=1260.4221 Angstrom>,
+     <AbsLine: SiII 1304, wrest=1304.3702 Angstrom>,
+     <AbsLine: SiII 1526, wrest=1526.7070 Angstrom>,
+     <AbsLine: SiII 1808, wrest=1808.0129 Angstrom>]
 
 
 
@@ -105,7 +73,6 @@ Generate the Component
 
 .. code:: python
 
-    reload(lt_abscomp)
     abscomp = lt_abscomp.AbsComponent.from_abslines(abslines)
 
 .. code:: python
@@ -139,22 +106,22 @@ Synthesize/Measure AODM Column Densities
 
 .. parsed-literal::
 
-    13.594447075294818
+    13.594445560856554
 
 
 
 .. code:: python
 
     for iline in abscomp._abslines:
-        print(iline.wrest, iline.attrib['flagN'], iline.attrib['logN'], iline.attrib['sig_logN'])
+        print(iline.wrest, iline.attrib['flag_N'], iline.attrib['logN'], iline.attrib['sig_logN'])
 
 
 .. parsed-literal::
 
-    (<Quantity 1260.4221 Angstrom>, 1, 13.588374631008852, 0.015074558585718052)
-    (<Quantity 1304.3702 Angstrom>, 1, 13.770868841899777, 0.086201339463221296)
-    (<Quantity 1526.707 Angstrom>, 1, 13.670736035998091, 0.064085769638602866)
-    (<Quantity 1808.0129 Angstrom>, 3, 0.0, 0.50977321571018408)
+    1260.4221 Angstrom 1 13.5883729709 0.0150745701489
+    1304.3702 Angstrom 1 13.7708705955 0.0862006463782
+    1526.707 Angstrom 1 13.6707360009 0.0640855113383
+    1808.0129 Angstrom 3 0.0 0.50976387151
 
 
 --------------
@@ -205,14 +172,28 @@ Definition
 
 .. code:: python
 
-    xdb.xplot(lgt,Ftau, xtwo=damp_lgt, ytwo=1.015*damp_Ftau)
+    import matplotlib.pyplot as plt
+    plt.plot(lgt, Ftau, damp_lgt, 1.015*damp_Ftau)
+
+
+
+
+.. parsed-literal::
+
+    [<matplotlib.lines.Line2D at 0x10c48b5c0>,
+     <matplotlib.lines.Line2D at 0x10c464e10>]
+
+
+
+
+.. image:: AbsComponent_ColumnDensities_files/AbsComponent_ColumnDensities_25_1.png
+
 
 Perform and Plot
 ~~~~~~~~~~~~~~~~
 
 .. code:: python
 
-    reload(lt_abscomp)
     abscomp = lt_abscomp.AbsComponent.from_abslines(abslines)
     COG_dict = abscomp.cog(redo_EW=True, show_plot=True)
 
@@ -238,9 +219,10 @@ Perform and Plot
      'parm': <single_cog_model(logN=13.693355878125537, b=49.22868767597288)>,
      'redEW': array([  3.42186280e-04,   5.22125891e-05,   7.29522068e-05,
              -1.07897867e-05]),
-     'sigEW': <Quantity [ 0.0129661 , 0.01440996, 0.01686854, 0.02102034] Angstrom>,
-     'sig_b': 6.3563811850594583,
+     'sig_EW': <Quantity [ 0.0129661 , 0.01440996, 0.01686854, 0.02102034] Angstrom>,
+     'sig_b': <Quantity 6.356381185059458 km / s>,
      'sig_logN': 0.054323725737309987,
      'wrest': <Quantity [ 1260.4221, 1304.3702, 1526.707 , 1808.0129] Angstrom>}
+
 
 
