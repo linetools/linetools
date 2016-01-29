@@ -180,7 +180,7 @@ class PlotWrapNav(PlotWrapBase):
             'key_press_event', self.on_keypress_smooth))
         self.cids.update(cids)
 
-class InteractiveCoFit(PlotWrapBase):
+class InteractiveCoFit(PlotWrapNav):
     """ Class for interactively fitting a continuum
 
     Parameters
@@ -209,7 +209,7 @@ class InteractiveCoFit(PlotWrapBase):
       * self.fig :  The plotting figure instance.
 
     """
-    help_message = PlotWrapBase._help_string + """
+    help_message = PlotWrapNav._help_string + """
 a        : add a new spline knot
 A        : add a new spline knot, and use a flux median to guess y position
 +        : double the number of spline knots
@@ -224,15 +224,18 @@ q        : quit
                  fig=None, anchor=None):
         """ Initialise figure, plots and variables.
         """
-        #setup
+
+        self.artists = {}
+        if fig is None:
+            self.fig = plt.figure()
+        else:
+            self.fig = fig
 
         self.nsmooth = 0
         self.wa = wa
         self.fl = fl
         self.er = er
         self.anchor = anchor
-
-
 
         if os.path.lexists('./_knots.jsn'):
             c = raw_input('knots file exists, use this? (y) ')
@@ -287,11 +290,6 @@ q        : quit
         self.wmin = wmin
         self.wmax = wmax
 
-        self.artists = {}
-        if fig is None:
-            self.fig = plt.figure()
-        else:
-            self.fig = fig
         # disable any existing key press callbacks
         cids = list(self.fig.canvas.callbacks.callbacks['key_press_event'])
         for cid in cids:
@@ -300,6 +298,11 @@ q        : quit
         self.connections = []
         self.finished = False
         self.plotinit()
+
+        #setup
+        super(InteractiveCoFit, self).__init__(
+            self.fig, self.ax, wa, fl, self.artists, printhelp=False)
+
         self.update()
         self.modifypoints()
         plt.draw()

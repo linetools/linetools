@@ -45,6 +45,14 @@ Core classes
    SpectralLine <specline>
    XSpectrum1D <xspectrum1d>
 
+Graphical User Interfaces (GUIs)
+--------------------------------
+
+.. toctree::
+   :maxdepth: 2
+
+   guis.rst
+
 Command line tools
 ------------------
 

@@ -10,14 +10,15 @@ for n in AbsComponent_examples \
     AbsSystem_examples \
     AbsLine_examples \
     SolarAbund \
-    xspecgui
+    xspecgui \
+    Interactive_continuum_fitting_example
 
 do  
     	echo examples/$n\.ipynb
 	echo $n\.rst
 	ipython nbconvert examples/$n.ipynb --to rst;
 	sed -i '' "5 i\\
- Download :download:\`examples/$n\.ipynb\` this notebook.\\
+ :download:\`Download <examples/$n\.ipynb>\` this notebook.\\
 \\
 
 " $n\.rst;

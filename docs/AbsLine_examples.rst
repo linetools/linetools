@@ -2,15 +2,19 @@
 Examples for AbsLine class (v1.2)
 =================================
 
-Download :download:`examples/AbsLine_examples.ipynb` this notebook.
+:download:`Download <examples/AbsLine_examples.ipynb>` this notebook.
 
 .. code:: python
 
+    # suppress warnings for these examples
+    import warnings
+    warnings.filterwarnings('ignore')
+    
     # import
+    import astropy.units as u
     from linetools.spectralline import AbsLine, SpectralLine
     from linetools import spectralline as ltsp
-    
-    from linetools.spectra import io as lsio
+    from linetools.spectra.xspectrum1d import XSpectrum1D
 
 Generate a line
 ---------------
@@ -23,34 +27,18 @@ Generate a line
 
 .. parsed-literal::
 
-    WARNING: UnitsWarning: The unit 'Angstrom' has been deprecated in the FITS standard. Suggested: 10**-1 nm. [astropy.units.format.utils]
-    WARNING:astropy:UnitsWarning: The unit 'Angstrom' has been deprecated in the FITS standard. Suggested: 10**-1 nm.
-
-
-.. parsed-literal::
-
     linetools.lists.parse: Reading linelist --- 
-       /Users/xavier/local/Python/linetools/linetools/data/lines/morton03_table2.fits.gz
+       /Users/ncrighton/Code/Repo/linetools/build/lib.macosx-10.5-x86_64-3.4/linetools/data/lines/morton03_table2.fits.gz
     linetools.lists.parse: Reading linelist --- 
-       /Users/xavier/local/Python/linetools/linetools/data/lines/morton00_table2.fits.gz
+       /Users/ncrighton/Code/Repo/linetools/build/lib.macosx-10.5-x86_64-3.4/linetools/data/lines/morton00_table2.fits.gz
     linetools.lists.parse: Reading linelist --- 
-       /Users/xavier/local/Python/linetools/linetools/data/lines/verner96_tab1.fits.gz
+       /Users/ncrighton/Code/Repo/linetools/build/lib.macosx-10.5-x86_64-3.4/linetools/data/lines/verner96_tab1.fits.gz
     linetools.lists.parse: Reading linelist --- 
-       /Users/xavier/local/Python/linetools/linetools/data/lines/verner94_tab6.fits
-
-.. parsed-literal::
-
-    WARNING: UnitsWarning: '0.1nm' did not parse as fits unit: Numeric factor not supported by FITS [astropy.units.core]
-    WARNING:astropy:UnitsWarning: '0.1nm' did not parse as fits unit: Numeric factor not supported by FITS
-
-
-.. parsed-literal::
-
-    
+       /Users/ncrighton/Code/Repo/linetools/build/lib.macosx-10.5-x86_64-3.4/linetools/data/lines/verner94_tab6.fits
     linetools.lists.parse: Reading linelist --- 
-       /Users/xavier/local/Python/linetools/linetools/data/lines/EUV_lines.ascii
+       /Users/ncrighton/Code/Repo/linetools/build/lib.macosx-10.5-x86_64-3.4/linetools/data/lines/EUV_lines.ascii
     read_sets: Using set file -- 
-      /Users/xavier/local/Python/linetools/linetools/lists/sets/llist_v1.0.ascii
+      /Users/ncrighton/Code/Repo/linetools/build/lib.macosx-10.5-x86_64-3.4/linetools/lists/sets/llist_v1.0.ascii
 
 
 
@@ -113,39 +101,40 @@ As dict
 
 .. parsed-literal::
 
-    {'analy': {u'datafile': u'',
-      u'do_analysis': 1,
-      u'flg_eye': 0,
-      u'flg_limit': 0,
-      u'name': 'CIV 1548',
-      u'vlim': {'unit': u'km / s', 'value': [0.0, 0.0]},
-      u'wvlim': {'unit': u'Angstrom', 'value': [0.0, 0.0]}},
-     'attrib': {u'DEC': 0.0,
-      u'EW': {'unit': u'Angstrom', 'value': 0.0},
-      u'N': {'unit': u'1 / cm2', 'value': 0.0},
-      u'RA': 0.0,
-      u'b': {'unit': u'km / s', 'value': 0.0},
-      u'flag_EW': 0,
-      u'flag_N': 0,
-      u'sig_EW': {'unit': u'Angstrom', 'value': 0.0},
-      u'sig_N': {'unit': u'1 / cm2', 'value': 0.0},
-      u'sig_b': {'unit': u'km / s', 'value': 0.0},
-      u'sig_v': {'unit': u'km / s', 'value': 0.0},
-      u'sig_z': 0.0,
-      u'v': {'unit': u'km / s', 'value': 0.0},
-      u'z': 0.0},
-     'data': {'A': {'unit': u'1 / s', 'value': 0.0},
+    {'analy': {'datafile': '',
+      'do_analysis': 1,
+      'flag_kin': 0,
+      'flg_eye': 0,
+      'flg_limit': 0,
+      'name': 'CIV 1548',
+      'vlim': {'unit': 'km / s', 'value': [0.0, 0.0]},
+      'wvlim': {'unit': 'Angstrom', 'value': [0.0, 0.0]}},
+     'attrib': {'DEC': 0.0,
+      'EW': {'unit': 'Angstrom', 'value': 0.0},
+      'N': {'unit': '1 / cm2', 'value': 0.0},
+      'RA': 0.0,
+      'b': {'unit': 'km / s', 'value': 0.0},
+      'flag_EW': 0,
+      'flag_N': 0,
+      'sig_EW': {'unit': 'Angstrom', 'value': 0.0},
+      'sig_N': {'unit': '1 / cm2', 'value': 0.0},
+      'sig_b': {'unit': 'km / s', 'value': 0.0},
+      'sig_v': {'unit': 'km / s', 'value': 0.0},
+      'sig_z': 0.0,
+      'v': {'unit': 'km / s', 'value': 0.0},
+      'z': 0.0},
+     'data': {'A': {'unit': '1 / s', 'value': 0.0},
       'Am': 0,
-      'Ej': {'unit': u'1 / cm', 'value': 0.0},
-      'Ek': {'unit': u'1 / cm', 'value': 0.0},
-      'Ex': {'unit': u'1 / cm', 'value': 0.0},
+      'Ej': {'unit': '1 / cm', 'value': 0.0},
+      'Ek': {'unit': '1 / cm', 'value': 0.0},
+      'Ex': {'unit': '1 / cm', 'value': 0.0},
       'Jj': 0.0,
       'Jk': 0.0,
       'Ref': 'Verner1994',
       'Z': 6,
       'el': 0,
       'f': 0.18999999761581421,
-      'gamma': {'unit': u'1 / s', 'value': 0.0},
+      'gamma': {'unit': '1 / s', 'value': 0.0},
       'gj': 2,
       'gk': 4,
       'group': 1,
@@ -154,10 +143,10 @@ As dict
       'name': 'CIV 1548',
       'nj': 0,
       'nk': 0,
-      'wrest': {'unit': u'Angstrom', 'value': 1548.195}},
-     'ltype': u'Abs',
-     'trans': 'CIV 1548',
-     'wrest': {'unit': u'Angstrom', 'value': 1548.195}}
+      'wrest': {'unit': 'Angstrom', 'value': 1548.195}},
+     'ltype': 'Abs',
+     'name': 'CIV 1548',
+     'wrest': {'unit': 'Angstrom', 'value': 1548.195}}
 
 
 
@@ -184,7 +173,7 @@ Measure an EW
 .. code:: python
 
     # Set spectrum
-    abslin.analy['spec'] = lsio.readspec('../../linetools/spectra/tests/files/UM184_nF.fits')
+    abslin.analy['spec'] = XSpectrum1D.from_file('../../linetools/spectra/tests/files/UM184_nF.fits')
 
 .. code:: python
 
@@ -223,6 +212,6 @@ Measure AODM
 
 .. parsed-literal::
 
-    logN = 13.9051, siglogN = 0.0207027
+    logN = 13.9051, siglogN = 0.0207026
 
 
