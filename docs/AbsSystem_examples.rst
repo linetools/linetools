@@ -27,7 +27,6 @@ Standard init
 
 .. code:: python
 
-    imp.reload(lt_absys)
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
     gensys = lt_absys.GenericAbsSystem(radec, 1.244, [-500,500]*u.km/u.s, NHI=16.)
     gensys
@@ -79,7 +78,6 @@ One component
 .. code:: python
 
     # HILyman system
-    imp.reload(lt_absys)
     HIsys = lt_absys.LymanAbsSystem.from_components([abscomp])
     print(HIsys)
     print(HIsys._components)

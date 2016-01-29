@@ -27,8 +27,6 @@ Download :download:`examples/AbsComponent_examples.ipynb` this notebook.
     from linetools.spectra import io as lsio
     from linetools.isgm.abscomponent import AbsComponent
     
-    
-    #
     import imp
     lt_path = imp.find_module('linetools')[1]
 
@@ -63,23 +61,6 @@ From one line
     lya = AbsLine(1215.670*u.AA)
     lya.analy['vlim'] = [-300.,300.]*u.km/u.s
     lya.attrib['z'] = 2.92939
-
-
-.. parsed-literal::
-
-    linetools.lists.parse: Reading linelist --- 
-       /Users/ncrighton/Code/Repo/linetools/build/lib.macosx-10.5-x86_64-3.4/linetools/data/lines/morton03_table2.fits.gz
-    linetools.lists.parse: Reading linelist --- 
-       /Users/ncrighton/Code/Repo/linetools/build/lib.macosx-10.5-x86_64-3.4/linetools/data/lines/morton00_table2.fits.gz
-    linetools.lists.parse: Reading linelist --- 
-       /Users/ncrighton/Code/Repo/linetools/build/lib.macosx-10.5-x86_64-3.4/linetools/data/lines/verner96_tab1.fits.gz
-    linetools.lists.parse: Reading linelist --- 
-       /Users/ncrighton/Code/Repo/linetools/build/lib.macosx-10.5-x86_64-3.4/linetools/data/lines/verner94_tab6.fits
-    linetools.lists.parse: Reading linelist --- 
-       /Users/ncrighton/Code/Repo/linetools/build/lib.macosx-10.5-x86_64-3.4/linetools/data/lines/EUV_lines.ascii
-    read_sets: Using set file -- 
-      /Users/ncrighton/Code/Repo/linetools/build/lib.macosx-10.5-x86_64-3.4/linetools/lists/sets/llist_v1.0.ascii
-
 
 .. code:: python
 
@@ -139,8 +120,6 @@ Generate a Component Table
 
 .. code:: python
 
-    import imp
-    imp.reload(laa)
     lya.attrib['logN'] = 14.1
     lya.attrib['sig_logN'] = 0.15
     lya.attrib['flag_N'] = 1
@@ -171,7 +150,7 @@ Generate a Component Table
 .. raw:: html
 
     &lt;QTable length=2&gt;
-    <table id="table4507725552">
+    <table id="table4496182240">
     <thead><tr><th>wrest</th><th>z</th><th>flag_N</th><th>logN</th><th>sig_logN</th></tr></thead>
     <thead><tr><th>Angstrom</th><th></th><th></th><th></th><th></th></tr></thead>
     <thead><tr><th>float64</th><th>float64</th><th>int64</th><th>float64</th><th>float64</th></tr></thead>
@@ -226,8 +205,8 @@ Synthesize multiple components
 .. parsed-literal::
 
     [<AbsComponent: 00:00:00 +00:00:00, Name=HI_z2.92939, Zion=(1,1), Ej=0 1 / cm, z=2.92939, vlim=-300 km / s,300 km / s, logN=14.1172, sig_N=0.117912, flag_N=1>,
-     <AbsComponent: 00:00:00 +00:00:00, Name=SiII_z2.92939, Zion=(14,2), Ej=0 1 / cm, z=2.92939, vlim=-300 km / s,50 km / s, logN=13.1121, sig_N=0.0893676, flag_N=1>,
-     <AbsComponent: 00:00:00 +00:00:00, Name=SiII_z2.92939, Zion=(14,2), Ej=0 1 / cm, z=2.92939, vlim=50 km / s,300 km / s, logN=13.4314, sig_N=0.0948459, flag_N=1>]
+     <AbsComponent: 00:00:00 +00:00:00, Name=SiII_z2.92939, Zion=(14,2), Ej=0 1 / cm, z=2.92939, vlim=-300 km / s,50 km / s, logN=12.9226, sig_N=0.112727, flag_N=1>,
+     <AbsComponent: 00:00:00 +00:00:00, Name=SiII_z2.92939, Zion=(14,2), Ej=0 1 / cm, z=2.92939, vlim=50 km / s,300 km / s, logN=13.8523, sig_N=0.0897197, flag_N=1>]
 
 
 
@@ -241,7 +220,7 @@ Synthesize multiple components
 
 .. parsed-literal::
 
-    <AbsComponent: 00:00:00 +00:00:00, Name=SiII_z2.92939, Zion=(14,2), Ej=0 1 / cm, z=2.92939, vlim=-300 km / s,300 km / s, logN=13.6015, sig_N=0.0703485, flag_N=1>
+    <AbsComponent: 00:00:00 +00:00:00, Name=SiII_z2.92939, Zion=(14,2), Ej=0 1 / cm, z=2.92939, vlim=-300 km / s,300 km / s, logN=13.9006, sig_N=0.0811523, flag_N=1>
 
 
 
@@ -250,7 +229,6 @@ Generate multiple components from abslines
 
 .. code:: python
 
-    imp.reload(ltiu)
     comps = ltiu.build_components_from_abslines([lya,lyb,SiIIlines[0],SiIIlines[1]])
     comps
 
@@ -269,7 +247,6 @@ Generate an Ion Table
 
 .. code:: python
 
-    imp.reload(ltiu)
     tbl = ltiu.iontable_from_components([abscomp,SiIIcomp,SiIIcomp2])
     tbl
 
@@ -279,12 +256,12 @@ Generate an Ion Table
 .. raw:: html
 
     &lt;QTable length=2&gt;
-    <table id="table4515788896">
+    <table id="table4499067512">
     <thead><tr><th>Z</th><th>ion</th><th>A</th><th>Ej</th><th>z</th><th>vmin</th><th>vmax</th><th>flag_N</th><th>logN</th><th>sig_logN</th></tr></thead>
     <thead><tr><th></th><th></th><th></th><th></th><th></th><th>km / s</th><th>km / s</th><th></th><th></th><th></th></tr></thead>
     <thead><tr><th>int64</th><th>int64</th><th>int64</th><th>float64</th><th>float64</th><th>float64</th><th>float64</th><th>int64</th><th>float64</th><th>float64</th></tr></thead>
     <tr><td>1</td><td>1</td><td>0</td><td>0.0</td><td>2.92939</td><td>-300.0</td><td>300.0</td><td>1</td><td>14.1172024817</td><td>0.117911610801</td></tr>
-    <tr><td>14</td><td>2</td><td>0</td><td>0.0</td><td>2.92939</td><td>-300.0</td><td>300.0</td><td>1</td><td>13.6015026841</td><td>0.070348495532</td></tr>
+    <tr><td>14</td><td>2</td><td>0</td><td>0.0</td><td>2.92939</td><td>-300.0</td><td>300.0</td><td>1</td><td>13.9006157733</td><td>0.0811522506077</td></tr>
     </table>
 
 

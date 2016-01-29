@@ -1,10 +1,6 @@
-.. _xspec
 
-===================
 xspec Documentation
 ===================
-
-.. index:: xspec
 
 Download :download:`examples/xspecgui.ipynb` this notebook.
 

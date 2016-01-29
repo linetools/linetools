@@ -14,14 +14,13 @@ Init
 
 .. code:: python
 
-    reload(labsol)
     sol = labsol.SolarAbund()
 
 
 .. parsed-literal::
 
     Loading abundances from Asplund2009
-    Abundances are relative, by number on a logarithmic scale with H=12
+    Abundances are relative by number on a logarithmic scale with H=12
 
 
 .. code:: python
@@ -33,7 +32,7 @@ Init
 
 .. parsed-literal::
 
-    [SolarAbund: Asplund2009]
+    <SolarAbund: Asplund2009>
 
 
 
@@ -86,6 +85,15 @@ Bits and pieces
 
     # Ion name
     laions.ion_name((6,2))
+
+
+
+
+.. parsed-literal::
+
+    'CII'
+
+
 
 .. code:: python
 
