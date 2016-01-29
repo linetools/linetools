@@ -355,7 +355,7 @@ class XSpectrum1D(Spectrum1D):
         if self.uncertainty is not None:
             self.uncertainty.array *= co
         if verbose:
-            print('spec.utils: Normalizing the spectrum')
+            print('spec.utils: Un-normalizing the spectrum')
         self.normed = False
 
     #  Grabs spectrum pixels in a velocity window

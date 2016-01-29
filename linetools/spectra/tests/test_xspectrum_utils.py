@@ -172,12 +172,14 @@ def test_continuum_utils(spec):
     #test reset
     spec.reset_continuum()
     np.testing.assert_allclose(spec.co, 1.)
-    # normalize
-    spec.normalize()
 
     # test normalize/unnormalize
+    flux_old = spec.flux
+    spec.normalize()
     assert spec.normed == True
     spec.unnormalize()
     assert spec.normed == False
+    np.testing.assert_allclose(spec.flux,flux_old)
+
 
 
