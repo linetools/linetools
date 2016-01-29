@@ -14,7 +14,9 @@ from astropy import units as u
 from astropy.units.quantity import Quantity
 from astropy.table import QTable, Table, vstack, Column
 
-import copy
+import imp
+
+lt_path = imp.find_module('linetools')[1]
 
 # from xastropy.xutils import xdebug as xdb
 
@@ -28,7 +30,7 @@ from linetools.lists import parse as lilp
 # but that may not be the best approach...
 
 class LineList(object):
-    """ 
+    """
     This Class is designed to organize and handle information about
     atomic and/or molecular transition lines (e.g. HI Lya, CIV 1548,
     Hydrogen Balmer series, etc.) observed in a variety of
@@ -38,7 +40,7 @@ class LineList(object):
 
     Parameters
     ----------
-    llst_keys : str or list
+    llst_key : str
         Input to grab line list.  Current options are:
         * 'ISM'     :: "All" ISM lines (can be overwhelming!)
         * 'Strong'  :: Strong ISM lines
@@ -52,38 +54,41 @@ class LineList(object):
     verbose : bool, optional
         Give info galore if True
 
+    use_ISM_table : bool [default True]
+        Developer use only. Read from a stored fits table with all ISM
+        transitions, rather than from the original source files.
     """
 
     # Init
-    def __init__(self, llst_keys, verbose=False, closest=False, set_lines=True):
+    def __init__(self, llst_key, verbose=False, closest=False, set_lines=True,
+                 use_ISM_table=True, use_cache=True):
 
         # Error catching
-        if not isinstance(llst_keys, (list, basestring)):
+        if not isinstance(llst_key, basestring):
             raise TypeError('LineList__init__: Wrong type for LineList input')
 
         # Save
-        if isinstance(llst_keys, basestring):
-            self.lists = [llst_keys]
-        else:
-            self.lists = llst_keys
+        self.list = llst_key
 
         # Take closest line?
         self.closest = closest
 
-        # Load Data
-        self.load_data()
+        if not use_ISM_table or llst_key not in ('ISM', 'HI', 'Strong', 'EUV'):
+            # Load Data
+            self.load_data(use_cache=use_cache)
 
         if set_lines:
             # Set lines for use (from defined LineList)
             # This sets self._data
-            self.set_lines(verbose=verbose)
+            self.set_lines(use_ISM_table=use_ISM_table, verbose=verbose,
+                           use_cache=use_cache)
 
 
-    def load_data(self, tol=1e-3 * u.AA, use_cache=True):
+    def load_data(self, use_ISM_table=True, tol=1e-3 * u.AA, use_cache=True):
         """Grab the data for the lines of interest
         """
         global CACHE
-        key = tuple(self.lists + [tol])
+        key = self.list, tol
         if use_cache and key in CACHE['full_table']:
             self._fulltable = CACHE['full_table'][key]
             return
@@ -99,38 +104,28 @@ class LineList(object):
             'galaxy': [lilp.read_forbidden, lilp.read_recomb, lilp.read_galabs],
         }
 
-        # Loop on lists
         sets = []
         flag_fval = False  # Update f-values?
         flag_wrest = False  # Update wavelengths?
         flag_gamma = True  # Update gamma values (recommended)
-        for llist in self.lists:
-            if str(llist) == 'H2':
-                sets.append('molecules')
-            elif str(llist) == 'CO':
-                sets.append('molecules')
-            elif str(llist) == 'ISM':
-                sets.append('ism')
-                flag_fval = True
-                flag_wrest = True
-            elif str(llist) == 'Strong':
-                sets.append('ism')
-                flag_fval = True
-                flag_wrest = True
-            elif str(llist) == 'HI':
-                sets.append('hi')
-            elif str(llist) == 'EUV':
-                sets.append('ism')
+
+        if self.list in ('H2', 'CO'):
+            sets.append('molecules')
+        elif self.list in ('ISM', 'Strong', 'EUV'):
+            flag_fval = True
+            flag_wrest = True
+            sets.append('ism')
+            if self.list == 'EUV':
                 sets.append('euv')
-                flag_fval = True
-                flag_wrest = True
-            elif str(llist) == 'Galaxy':
-                sets.append('galaxy')
-            else:
-                # import pdb
-                # pdb.set_trace()
-                raise ValueError(
-                    'load_data: Not ready for this: {:s}'.format(llist))
+        elif self.list == 'HI':
+            sets.append('hi')
+        elif self.list == 'Galaxy':
+            sets.append('galaxy')
+        else:
+            # import pdb
+            # pdb.set_trace()
+            raise ValueError(
+                'load_data: Not ready for this: {:s}'.format(llist))
 
         full_table = None
         all_func = []
@@ -182,7 +177,7 @@ class LineList(object):
         CACHE['full_table'][key] = self._fulltable
 
     #####
-    def set_lines(self, verbose=True, use_cache=True):  # , gd_lines=None):
+    def set_lines(self, verbose=True, use_cache=True, use_ISM_table=True):
         """ Parse the lines of interest
 
         Parameters
@@ -190,13 +185,24 @@ class LineList(object):
         verbose : bool, optional
         use_cache : bool, optional
           cache the linelist for faster repeat performance
+        use_ISM_table : bool, optional
+          For speed, use a saved ISM table instead of reading from original source files.
         """
         import warnings
 
         global CACHE
-        key = tuple(self.lists)
+        key = self.list
         if use_cache and key in CACHE['data']:
             self._data = CACHE['data'][key]
+            return
+        elif use_ISM_table and self.list in ('ISM', 'Strong', 'EUV', 'HI'):
+            data = QTable(Table.read(lt_path + '/data/lines/ISM_table.fits'))
+            if self.list != 'ISM':
+                cond = data['is_'  + self.list]
+                self._data = data[cond]
+            else:
+                self._data = data
+            CACHE['data'][key] = self._data
             return
 
         indices = []
@@ -204,27 +210,26 @@ class LineList(object):
 
         # Default list
         # Loop on lines
-        for llist in self.lists:
-            if llist in ['H2', 'CO']:
-                gdi = np.where(self._fulltable['mol'] == llist)[0]
-                if len(gdi) == 0:
-                    raise IndexError(
-                        'set_lines: Found no {:s} molecules! Read more data'.format(llist))
-                indices.append(gdi)
-            elif llist == 'ISM':
-                set_flags.append('fISM')
-            elif llist == 'Strong':
-                set_flags.append('fSI')
-            elif llist == 'HI':
-                set_flags.append('fHI')
-            elif llist == 'EUV':
-                set_flags.append('fEUV')
-            elif llist == 'Galaxy':
-                set_flags.append('fgE')
-                set_flags.append('fgA')
-            else:
-                raise ValueError(
-                    'set_lines: Not ready for this: {:s}'.format(llist))
+        if self.list in ['H2', 'CO']:
+            gdi = np.where(self._fulltable['mol'] == self.list)[0]
+            if len(gdi) == 0:
+                raise IndexError(
+                    'set_lines: Found no {:s} molecules! Read more data'.format(self.list))
+            indices.append(gdi)
+        elif self.list == 'ISM':
+            set_flags.append('fISM')
+        elif self.list == 'Strong':
+            set_flags.append('fSI')
+        elif self.list == 'HI':
+            set_flags.append('fHI')
+        elif self.list == 'EUV':
+            set_flags.append('fEUV')
+        elif self.list == 'Galaxy':
+            set_flags.append('fgE')
+            set_flags.append('fgA')
+        else:
+            raise ValueError(
+                'set_lines: Not ready for this: {:s}'.format(self.list))
 
         # Deal with Defined sets
         # import pdb
@@ -340,7 +345,7 @@ class LineList(object):
             tmp.sort('wrest')
 
         # Return LineList object
-        new = LineList(self.lists, closest=self.closest, set_lines=False)
+        new = LineList(self.list, closest=self.closest, set_lines=False)
         new._data = tmp
         return new
 
@@ -537,7 +542,7 @@ class LineList(object):
         from linetools.abund.solar import SolarAbund
         from linetools.abund import ions as laions
         solar = SolarAbund()
-        
+
         if all((isinstance(n, int) or (n is None)) for n in [n_max, n_max_tuple]):
             if (n_max is not None) and (n_max < 1):
                 return None
@@ -718,10 +723,51 @@ class LineList(object):
 
     # Printing
     def __repr__(self):
-        # Generate sets string
-        for kk, llist in enumerate(self.lists):
-            if kk == 0:
-                sstr = llist
+        return '<LineList: {:s}; {} transitions>'.format(self.list, len(self._data))
+
+
+def _write_ref_ISM_table():
+    """ Write a reference table enabling faster I/O for ISM-related lists
+
+    For developer use only.
+
+    Note that after running this, you need to manually copy the table
+    produced to linetools/data/lines/ISM_table.fits inside the github
+    repository, and then check it in.
+    """
+
+    ism = LineList('ISM', use_ISM_table=False)
+    strong = LineList('Strong', use_ISM_table=False)
+    euv = LineList('EUV', use_ISM_table=False)
+    hi = LineList('HI', use_ISM_table=False)
+
+    # need a Table, not QTable to write
+    tab = Table(ism._data.copy())
+    tab.sort(('wrest'))
+
+    # Using np.in1d doesn't work for some reason. Do it the long way
+    cond = []
+    for table in (strong, euv, hi):
+        igood = []
+        for row in Table(table._data):
+            ind = tab['wrest'].searchsorted(row['wrest'])
+            dw = abs(tab['wrest'][ind] - row['wrest'])
+            if abs(tab['wrest'][ind+1] - row['wrest']) < dw:
+                ind = ind + 1
+            rism = tab[ind]
+            # check this is the right row.
+            if all(row[k] == rism[k] for k in hi._data.colnames if
+                   not hasattr(row[k], 'mask') or not row[k].mask):
+                igood.append(ind)
             else:
-                sstr = sstr + ',' + llist
-        return '<LineList: {:s}; {} transitions>'.format(sstr, len(self._data))
+                raise RuntimeError('No match found!')
+
+        cond.append(np.zeros(len(tab), dtype=bool))
+        cond[-1][np.array(igood)] = True
+
+    col1 = Column(cond[0], name='is_Strong')
+    col2 = Column(cond[1], name='is_EUV')
+    col3 = Column(cond[2], name='is_HI')
+    tab.add_columns([col1, col2, col3])
+
+    tab.write('ISM_table.fits', overwrite=True)

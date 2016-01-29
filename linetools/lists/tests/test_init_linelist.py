@@ -14,20 +14,18 @@ from linetools.lists.linelist import LineList
 from linetools.lists import mk_sets as llmk
 
 
-#import pdb
-#pdb.set_trace()
-# Set of Input lines
 
-def test_other():
-    pytest.raises(TypeError, LineList, 1, [])
-    #
-    ism = LineList(['ISM'])
+def test_ism_read_source_catalogues():
+    ism = LineList('ISM', use_ISM_table=False)
+    np.testing.assert_allclose(ism['HI 1215']['wrest'],
+                               1215.6700*u.AA, rtol=1e-7)
 
 # ISM LineList
 def test_ism():
     ism = LineList('ISM')
     #
-    np.testing.assert_allclose(ism['HI 1215']['wrest'], 1215.6700*u.AA, rtol=1e-7)
+    np.testing.assert_allclose(ism['HI 1215']['wrest'],
+                               1215.6700*u.AA, rtol=1e-7)
 
 # Test update_fval
 def test_updfval():
