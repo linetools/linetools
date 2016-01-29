@@ -1,9 +1,12 @@
 
+Interactive continuum fitting
+=============================
+
+:download:`Download <examples/Interactive_continuum_fitting_example.ipynb>` this notebook.
+
 .. code:: python
 
     # suppress warnings for these examples
-:download:`Download <examples/Interactive_continuum_fitting_example.ipynb>` this notebook.
-
     import warnings
     warnings.filterwarnings('ignore')
     
