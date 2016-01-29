@@ -381,7 +381,7 @@ class AbsLine(SpectralLine):
         """ Return a string representing the type of vehicle this is."""
         return 'AbsLine'
 
-    def fill_data(self, trans, linelist=None, closest=False, verbose=verbose):
+    def fill_data(self, trans, linelist=None, closest=False, verbose=True):
         """ Fill atomic data and setup analy.
 
         Parameters

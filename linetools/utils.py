@@ -70,7 +70,7 @@ def radec_to_coord(radec):
             coord = SkyCoord(radec[0]+DEC, frame='fk5',
                                   unit=(u.hourangle, u.deg))
         else:
-            coord = SkyCoord(ra=radec[0], dec=radec[1])
+            coord = SkyCoord(ra=radec[0], dec=radec[1], unit='deg')
     elif isinstance(radec,SkyCoord):
         coord = radec
     elif isinstance(radec,basestring):
