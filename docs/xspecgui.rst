@@ -2,7 +2,7 @@
 xspec Documentation
 ===================
 
-Download :download:`examples/xspecgui.ipynb` this notebook.
+:download:`Download <examples/xspecgui.ipynb>` this notebook.
 
 This ipython Notebook is intended to provide documentation for the
 linetools GUI named XSpecGUI.

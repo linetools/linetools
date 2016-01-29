@@ -2,7 +2,7 @@
 Examples for AbsLine class (v1.2)
 =================================
 
-Download :download:`examples/AbsLine_examples.ipynb` this notebook.
+:download:`Download <examples/AbsLine_examples.ipynb>` this notebook.
 
 .. code:: python
 

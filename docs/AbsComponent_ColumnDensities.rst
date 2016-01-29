@@ -2,7 +2,7 @@
 Column Densities with AbsComponent
 ==================================
 
-Download :download:`examples/AbsComponent_ColumnDensities.ipynb` this notebook.
+:download:`Download <examples/AbsComponent_ColumnDensities.ipynb>` this notebook.
 
 .. code:: python
 

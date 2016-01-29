@@ -19,6 +19,11 @@ For example::
 You can explore the data, perform simple analysis (e.g. EW
 measurements) and more. See the Notebook for more.
 
+.. warning::
+ 
+  The xspec gui is still in an experimental stage and some aspects
+  might not work as expected.
+
 
 lt_plot
 -------

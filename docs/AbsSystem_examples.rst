@@ -2,7 +2,7 @@
 Examples for AbsSystem Class (v1.1)
 ===================================
 
-Download :download:`examples/AbsSystem_examples.ipynb` this notebook.
+:download:`Download <examples/AbsSystem_examples.ipynb>` this notebook.
 
 .. code:: python
 
