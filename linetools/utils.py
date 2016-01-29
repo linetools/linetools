@@ -111,32 +111,42 @@ def scipy_rebin(a, *args):
     return eval(''.join(evList))
 
 
-def jsonify_dict(d):
-    """ Process a dictionary so it can be serialised in json format.
+def jsonify(obj):
+    """ Recursively process an object so it can be serialised in json
+    format.
 
-    Currently this simply converts array values to lists.
+    WARNING - the input object may be modified if it's a dictionary or
+    list!
 
     Parameters
     ----------
-    d : dict
-      Input dictionary
+    obj : any object
 
     Returns
     -------
-    dout : dict
-      A copy of the input dictionary in json-friendly format
+    obj - the same obj is json_friendly format (arrays turned to
+    lists, np.int64 converted to int, and so on).
+
     """
-    dout = {}
-    for key, value in d.items():
-        if isinstance(value, dict):
-            dout[key] = jsonify_dict(value)
-        elif isinstance(value, np.ndarray):
-            dout[key] = value.tolist()
-        elif isinstance(value, np.int64):  # Python 3.x
-            dout[key] = int(value)
-        else:
-            dout[key] = value
-    return dout
+    if isinstance(obj, np.int64):
+        obj = int(obj)
+    if isinstance(obj, np.bool_):
+        obj = bool(obj)
+    elif isinstance(obj, np.ndarray):
+        obj = obj.tolist()
+    elif isinstance(obj, dict):
+        for key, value in obj.items():
+            obj[key] = jsonify(value)
+    elif isinstance(obj, list):
+        for i,item in enumerate(obj):
+            obj[i] = jsonify(item)
+    elif isinstance(obj, tuple):
+        obj = list(obj)
+        for i,item in enumerate(obj):
+            obj[i] = jsonify(item)
+        obj = tuple(obj)
+
+    return obj
 
 
 def savejson(filename, obj, overwrite=False, indent=None):

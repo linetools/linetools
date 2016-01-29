@@ -342,7 +342,7 @@ class SpectralLine(object):
                 adict['analy'][key] = self.analy[key]
 
         # Polish for JSON
-        adict = ltu.jsonify_dict(adict)
+        adict = ltu.jsonify(adict)
         # Return
         return adict
 

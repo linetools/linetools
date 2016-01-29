@@ -899,3 +899,50 @@ def update_wrest(table, verbose=True):
     table['Ek'][mt[0]] = 52330.33 / u.cm
     '''
 #
+
+
+def _write_ref_ISM_table():
+    """ Write a reference table enabling faster I/O for ISM-related lists
+
+    For developer use only.
+
+    Note that after running this, you need to manually copy the table
+    produced to linetools/data/lines/ISM_table.fits inside the github
+    repository, and then check it in.
+    """
+
+    ism = LineList('ISM', use_ISM_table=False)
+    strong = LineList('Strong', use_ISM_table=False)
+    euv = LineList('EUV', use_ISM_table=False)
+    hi = LineList('HI', use_ISM_table=False)
+
+    # need a Table, not QTable to write
+    tab = Table(ism._data.copy())
+    tab.sort(('wrest'))
+
+    # Using np.in1d doesn't work for some reason. Do it the long way
+    cond = []
+    for table in (strong, euv, hi):
+        igood = []
+        for row in Table(table._data):
+            ind = tab['wrest'].searchsorted(row['wrest'])
+            dw = abs(tab['wrest'][ind] - row['wrest'])
+            if abs(tab['wrest'][ind+1] - row['wrest']) < dw:
+                ind = ind + 1
+            rism = tab[ind]
+            # check this is the right row.
+            if all(row[k] == rism[k] for k in hi._data.colnames if
+                   not hasattr(row[k], 'mask') or not row[k].mask):
+                igood.append(ind)
+            else:
+                raise RuntimeError('No match found!')
+
+        cond.append(np.zeros(len(tab), dtype=bool))
+        cond[-1][np.array(igood)] = True
+
+    col1 = Column(cond[0], name='is_Strong')
+    col2 = Column(cond[1], name='is_EUV')
+    col3 = Column(cond[2], name='is_HI')
+    tab.add_columns([col1, col2, col3])
+
+    tab.write('ISM_table.fits', overwrite=True)

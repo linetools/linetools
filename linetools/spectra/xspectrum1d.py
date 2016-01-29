@@ -746,7 +746,7 @@ or QtAgg backends to enable all interactive plotting commands.
                     pdb.set_trace()
 
         if self.meta is not None and len(self.meta) > 0:
-            d = liu.jsonify_dict(self.meta)
+            d = liu.jsonify(self.meta)
             prihdu.header['METADATA'] = json.dumps(d)
 
         hdu.writeto(outfil, clobber=clobber)
