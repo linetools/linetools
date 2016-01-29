@@ -562,7 +562,7 @@ class AbsComponent(object):
         for iline in self._abslines:
             cdict['lines'][iline.wrest.value] = iline.to_dict()
         # Polish
-        cdict = ltu.jsonify_dict(cdict)
+        cdict = ltu.jsonify(cdict)
         # Return
         return cdict
 
