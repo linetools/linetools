@@ -23,7 +23,7 @@ measurements) and more. See the Notebook for more.
 lt_plot
 -------
 
-Plot one or more spectra. This has fewer features than lt_xpsec above,
+Plot one or more spectra. This has fewer features than lt_xspec above,
 but is faster.
 
 For example::
@@ -41,14 +41,17 @@ To list all the command line options available, use::
 lt_absline
 ----------
 
-Simple script to plot a single absorption line.  Requires the rest
-wavelength (Ang), log10 column density, and Doppler parameter (km/s).
+This plots a single absorption line, given a transition rest
+wavelength (Angstroms), log10 column density, and Doppler parameter
+(km/s).
 
-Here is a simple example::
+For example::
 
 	lt_absline 1215.6701 14.0 30
 
-A plot will appear and the line info and EW as well, i.e. ::
+plots a Hydrogen Ly-a line with column density of 10\ :sup:`14` cm\
+:sup:`-2` and b=30 km/s. A plot will appear and the line info and EW
+as well, i.e. ::
 
 	[AbsLine: HI 1215, wrest=1215.6700 Angstrom]
 	EW = 0.268851 Angstrom
