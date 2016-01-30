@@ -45,7 +45,7 @@ If you plan to play around with the code and possibly contribute
 changes, then follow the instructions in the section below,
 :ref:`installsource`. Otherwise simply use::
 
-    pip install --no-deps git+https://github.com/linetools/linetools.git
+    pip install linetools
 
 and you're done!
 
