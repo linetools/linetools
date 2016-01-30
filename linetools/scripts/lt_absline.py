@@ -41,9 +41,12 @@ def plot_absline(wrest,logN,b, show=True):
     aline.attrib['b'] = b * u.km/u.s
     xspec = aline.generate_voigt(wave=wave*u.AA)
     # get the plotting limits
-    ind = np.flatnonzero(xspec.flux.value < 0.9)
-    wmin = xspec.wavelength[max(0, ind[1] - 10)]
-    wmax = xspec.wavelength[min(len(xspec.flux) - 1,  ind[-2] + 10)]
+    # remove first and last pixels
+    fl = xspec.flux.value[1:-2]
+    ind = np.flatnonzero(fl < 1 - 0.1 * (1 - np.min(fl)))
+    ind += 1
+    wmin = xspec.wavelength[max(0, ind[0] - 10)]
+    wmax = xspec.wavelength[min(len(xspec.flux) - 1,  ind[-1] + 10)]
     #import pdb; pdb.set_trace()
     xspec.constant_sig(0.1) # S/N = 10 per pix
 
