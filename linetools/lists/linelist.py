@@ -72,6 +72,7 @@ class LineList(object):
 
         # Take closest line?
         self.closest = closest
+        self.verbose = verbose
 
         if not use_ISM_table or llst_key not in ('ISM', 'HI', 'Strong', 'EUV'):
             # Load Data
@@ -125,7 +126,7 @@ class LineList(object):
             # import pdb
             # pdb.set_trace()
             raise ValueError(
-                'load_data: Not ready for this: {:s}'.format(llist))
+                'load_data: Not ready for this: {:s}'.format(self.list))
 
         full_table = None
         all_func = []
@@ -345,7 +346,8 @@ class LineList(object):
             tmp.sort('wrest')
 
         # Return LineList object
-        new = LineList(self.list, closest=self.closest, set_lines=False)
+        new = LineList(self.list, closest=self.closest, set_lines=False,
+                       verbose=self.verbose)
         new._data = tmp
         return new
 
@@ -704,10 +706,12 @@ class LineList(object):
             # Take closest??
             if self.closest and (not isinstance(k, basestring)):
                 mt = [np.argmin(np.abs(inwv - self.wrest))]
-                print('WARNING: Using {:.4f} for your input {:.4f}'.format(self.wrest[mt[0]],
+                if self.verbose:
+                    print('WARNING: Using {:.4f} for your input {:.4f}'.format(self.wrest[mt[0]],
                                                                            inwv))
             else:
-                print('No such line in the list', k)
+                if self.verbose:
+                    print('No such line in the list', k)
                 return None
 
         # Now we have something

@@ -109,8 +109,8 @@ class SpectralLine(object):
         return sline
 
     # Initialize with wavelength
-    def __init__(self, ltype, trans, linelist=None, closest=False,
-        z=0.):
+    def __init__(self, ltype, trans, linelist=None, closest=False, z=0.,
+                 verbose=True):
 
         # Required
         self.ltype = ltype
@@ -138,7 +138,7 @@ class SpectralLine(object):
             }
 
         # Fill data
-        self.fill_data(trans, linelist=linelist, closest=closest)
+        self.fill_data(trans, linelist=linelist, closest=closest, verbose=verbose)
 
     def ismatch(self, inp, Zion=None, RADec=None):
         """Query whether input line matches on:  z, Z, ion, RA, Dec
@@ -381,7 +381,7 @@ class AbsLine(SpectralLine):
         """ Return a string representing the type of vehicle this is."""
         return 'AbsLine'
 
-    def fill_data(self, trans, linelist=None, closest=False):
+    def fill_data(self, trans, linelist=None, closest=False, verbose=True):
         """ Fill atomic data and setup analy.
 
         Parameters

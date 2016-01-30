@@ -112,7 +112,7 @@ def build_components_from_abslines(iabslines, clmdict=None, coord=None,
         # Generate component
         if lines[0].data['Ej'].value > 0.:
             # Grab stars from transition name
-            nstars = lines[0].trans.count('*')
+            nstars = lines[0].name.count('*')
             if nstars == 0:
                 raise ValueError("Should have at least one *")
             stars = '*'*nstars
