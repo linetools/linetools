@@ -31,6 +31,13 @@ The example spectrum file used below is part of the linetools package.
     lt_path = imp.find_module('linetools')[1]
     spec_fil = lt_path+'/spectra/tests/files/PH957_f.fits'
 
+Before Launching the GUI
+------------------------
+
+If you are a Mac user, we **highly** recommend that you set your
+matplotlib backend from macosx to TkAgg (or another option),
+`backend <http://matplotlib.org/faq/usage_faq.html#what-is-a-backend>`_.
+
 Launching the GUI
 -----------------
 
