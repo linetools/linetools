@@ -17,11 +17,10 @@ Notebooks
 Overview
 ========
 
-This Class is designed to organize and analyze an
-absorption system.  This is generally constructed
-of one or more (:ref:`AbsComponent`).
-The base class is abstract, i.e. one must instantiate
-one of its flavors (e.g. HILyman, MgII, LLS, DLA).
+This Class is designed to organize and analyze an absorption system.
+This is generally constructed of one or more :ref:`AbsComponent`.
+The base class is abstract, i.e. one must instantiate one of its
+flavors (e.g. HILyman, MgII, LLS, DLA).
 
 By definition, an AbsSystem is a unique collection of
 absorption components.  It is specified by:

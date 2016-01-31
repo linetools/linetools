@@ -55,7 +55,6 @@ The linetools API
    :skip: QTable
    :skip: Table
    :skip: Column
-   :skip: basestring
 
 .. automodapi:: linetools.lists.mk_sets
 
