@@ -12,7 +12,6 @@ Linetools depends on these packages:
 * `astropy`_ version 1.0 or later
 * `scipy <http://www.scipy.org/>`_ version 0.16 or later
 * `matplotlib <http://matplotlib.org/>`_  version 1.4 or later
-* `pyyaml <http://pyyaml.org/wiki/PyYAML>`_ version 3.11 or later
 * `specutils <https://github.com/astropy/specutils>`_ version 0.2 or later
 * `PyQT4 <https://wiki.python.org/moin/PyQt>`_ version 4 (for GUIs)
 
@@ -46,7 +45,7 @@ If you plan to play around with the code and possibly contribute
 changes, then follow the instructions in the section below,
 :ref:`installsource`. Otherwise simply use::
 
-    pip install --no-deps git+https://github.com/linetools/linetools.git
+    pip install linetools
 
 and you're done!
 

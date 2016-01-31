@@ -37,11 +37,9 @@ list above::
 
     from linetools.lists.linelist import LineList
     hi = LineList('HI')
-    linetools.lists.parse: Reading linelist --- # doctest: +SKIP
-    /home/ntejos/python/linetools/linetools/data/lines/morton03_table2.fits.gz # doctest: +SKIP
-    WARNING: UnitsWarning: The unit 'Angstrom' has been deprecated in the FITS standard. Suggested: nm (with data multiplied by 0.1). [astropy.units.format.utils]
-    read_sets: Using set file --
-    /home/ntejos/python/linetools/linetools/lists/sets/llist_v0.4.ascii
+    #
+    euv = LineList('EUV')
+
   
 ``hi``, for example, contains only HI Lyman series transitions
 (e.g. `HI Lya`), and ``euv`` contains both HI Lyman series and extreme
@@ -60,10 +58,10 @@ transitions either by the rest-frame wavelength::
 or by the name convention within linetools, which in the case of `HI
 Lya` is ``HI 1215``::
 
-    name = 'HI 1215'
+    name = 'HI 1215'   #  We adopt the convention of *not* rounding in the name
     hi[name]
 
-both cases will provide the following dictionary::
+Both cases will provide the following dictionary::
 
   {'A': <Quantity 626500000.0 1 / s>,   # Einstein coefficient
   'Am': 0,                              # Mass number (often written as "A"; only used for D) 
@@ -141,7 +139,7 @@ subset of lines from the original `LineList`::
     print(ism)
     <LineList: ISM; 2 transitions>
 
-Which only has those `HI Lya` and `Lyb`.
+which now has only `HI Lya` and `Lyb`.
 
 Finally, if you want the transitions to be sorted by rest-frame
 wavelength you can use the optional keyword `sort`::
@@ -207,7 +205,7 @@ Which give us the information of all the 6 transitions of `MgII`::
     259500000.0   0   0   0     1 MgII 2803 35669.298 ... 0.0  12   2   2 259500000.0   --   --
 
 In this case ``mgii`` is a QTable because more than 1
-transitions were found. In cases were only 1 transition
+transition was found. In cases were only 1 transition
 exists, the output of `all_transitions()` is a dictionary
 with the same keywords as the columns of ``ism._data`` QTable::
 
