@@ -29,17 +29,17 @@ Continuum fitting
 =================
 
 This enables interactive fitting of the unabsorbed continuum for a
-spectrum. A series of 'knots' positions are estimated, and these are
-are joined with a spline to produce a continuum. Spline points can
-then be interactively added, deleted or moved to improve the
-continuum. See the notebook for an example.
+spectrum. A series of 'knot' positions are estimated, and these are
+then joined with a spline to produce a continuum. Spline points can be
+interactively added, deleted or moved to improve the continuum. See
+the notebook for an example.
 
 XSpecGUI
 ========
 
 This enables visual inspection of a spectrum.  Simple analysis
-(e.g. EW measurements) may also be performed.  See the notebook for
-details.
+(e.g. equivalent width measurements) may also be performed.  See the
+notebook for details.
 
 
 

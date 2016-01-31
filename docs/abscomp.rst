@@ -19,10 +19,7 @@ Overview
 ========
 
 This Class is designed to organize and analyze a set of
-absorption lines 
-
-..
-   (:ref:`AbsLine Class`).  add this back in when written
+absorption lines.
 
 By definition, an AbsComponent is a unique collection of
 absorption lines specified by:
@@ -47,7 +44,8 @@ The default sets the properties listed above::
 
 	abscomp = AbsComponent((10.0*u.deg, 45*u.deg), (14,2), 1.0, [-300,300]*u.km/u.s)
 
-More commonly, one will instantiate with one AbsLine object::
+More commonly, one will instantiate with one
+`~linetools.spectralline.AbsLine` object::
 
     lya = AbsLine(1215.670*u.AA)
     lya.analy['vlim'] = [-300.,300.]*u.km/u.s
@@ -76,8 +74,8 @@ Here are a few simple methods to explore/inspect the class.
 Generate a QTable
 +++++++++++++++++
 
-If the class contains one or more AbsLines, you may generate a QTable
-from their attributes and data::
+If the class contains one or more AbsLines, you may generate a
+`~astropy.table.QTable` from their attributes and data::
 
     comp_tbl = abscomp.build_table()
 
