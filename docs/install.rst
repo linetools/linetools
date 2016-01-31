@@ -19,18 +19,18 @@ We strongly recommend that you use `Anaconda
 <https://www.continuum.io/downloads>`_ to install them. With Anaconda
 you can check for the presence and versions of the dependencies with::
 
-  conda list "^python$|numpy|astropy$|scipy$|matplotlib|pyyaml|specutils|PyQT"
+  conda list "^python$|numpy|astropy$|scipy$|matplotlib|specutils|PyQT"
 
 If you're missing any, install them with (for example)::
 
-  conda install astropy pyyaml matplotlib
+  conda install astropy scipy matplotlib PyQT
 
 If their versions are too old, update them with (for example)::
 
   conda update astropy
 
-Specutils can't be installed with conda; instead it needs to be
-installed using `pip <https://pip.pypa.io/en/latest/>`_::
+Specutils can't be installed with conda; use `pip
+<https://pip.pypa.io/en/latest/>`_ instead::
   
   pip install --no-deps specutils
 
@@ -84,14 +84,12 @@ use to submit code changes to the main repository.
 Running Tests
 =============
 
-If you install linetools from source, then you can run tests to see
-whether your installation works correctly. From the source directory
-run::
+To test your installation, run::
 
-    python setup.py test
+    python -c 'import linetools; linetools.test()'
 
-This takes a couple of minutes to run. If you notice any failures,
-we'd love you to report them on the `linetools issue tracker
+This takes a couple of minutes. If you notice any failures, we'd love
+you to report them on the `linetools issue tracker
 <http://github.com/linetools/linetools/issues>`_.
 
 
@@ -99,18 +97,16 @@ Building Documentation
 ======================
 
 Only do this if you're a developer! If you want build the
-documentation, you also need to install Sphinx (version 1.3+) and
-astropy_helpers::
+documentation, you also need to install Sphinx (version 1.3+)::
 
   conda install sphinx
-  pip install astropy-helpers
 
-If you want the generate inheritance diagrams in the docs then you
+If you'd like to generate inheritance diagrams in the docs then you
 also need to install graphviz (`MacOSX
 <http://www.graphviz.org/Download_macos.php>`_, `Ubuntu
 <http://www.graphviz.org/Download_linux_ubuntu.php>`_), but this isn't
-required. Once you've installed the dependencies, change to the
-`/docs` directory under the source directory and run::
+required. Once sphinx is installed, change to the `/docs` directory
+under the source directory and run::
 
   make html
 

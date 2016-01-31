@@ -18,9 +18,8 @@ useful for both absorption and emission lines.
 .. note::
 
     linetools is still under active development. While the developers
-    strive to maintain compatibility in new releases, there may
+    strive to maintain compatibility in new releases, there may be
     backwards-incompatible changes in future versions.
-
 
 
 Getting Started
