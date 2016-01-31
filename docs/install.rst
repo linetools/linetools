@@ -88,8 +88,8 @@ To test your installation, run::
 
     python -c 'import linetools; linetools.test()'
 
-This takes a couple of minutes. If you notice any failures, we'd love
-you to report them on the `linetools issue tracker
+The tests take a couple of minutes to finish. If you notice any
+failures, we'd love you to report them on the `linetools issue tracker
 <http://github.com/linetools/linetools/issues>`_.
 
 
