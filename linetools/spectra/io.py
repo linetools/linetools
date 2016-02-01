@@ -120,7 +120,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
                         'er', 'err', 'error']
         sig, sig_tag = get_table_column(sig_tags, hdulist)
         if sig is None:
-            ivar_tags = ['IVAR', 'IVAR_OPT']
+            ivar_tags = ['IVAR', 'IVAR_OPT', 'ivar']
             ivar, ivar_tag = get_table_column(ivar_tags, hdulist, idx=exten)
             if ivar is None:
                 var_tags = ['VAR', 'var']
@@ -132,9 +132,9 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
                 sig[gdi] = np.sqrt(1./ivar[gdi])
         # Wavelength
         wave_tags = ['WAVE','WAVELENGTH','LAMBDA','LOGLAM',
-                     'WAVESTIS', 'WAVE_OPT', 'wa', 'wave']
+                     'WAVESTIS', 'WAVE_OPT', 'wa', 'wave', 'loglam']
         wave, wave_tag = get_table_column(wave_tags, hdulist, idx=exten)
-        if wave_tag == 'LOGLAM':
+        if wave_tag in ['LOGLAM','loglam']:
             wave = 10.**wave
         if wave is None:
             print('Binary FITS Table but no wavelength tag')
