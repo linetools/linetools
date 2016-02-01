@@ -214,10 +214,8 @@ def read_spec(ispec, exten=None, norm=True):
 
     # Normalize?
     if norm:
-        try:
+        if spec.co is not None:
             spec.normalize()
-        except ValueError:
-            norm = False
 
     # Return
     return spec, spec_fil
