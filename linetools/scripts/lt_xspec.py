@@ -16,7 +16,7 @@ def main(*args, **kwargs):
     parser = argparse.ArgumentParser(description='Parse for XSpec')
     parser.add_argument("file", type=str, help="Spectral file")
     parser.add_argument("-zsys", type=float, help="System Redshift")
-    parser.add_argument("--un_norm", help="Spectrum is NOT normalized",
+    parser.add_argument("--norm", help="Show spectrum continuum normalized (if one exists)",
                         action="store_true")
     parser.add_argument("-exten", type=int, help="FITS extension")
 
@@ -27,8 +27,9 @@ def main(*args, **kwargs):
     from linetools.guis.xspecgui import XSpecGui
 
     # Normalized?
-    norm = True
-    if pargs.un_norm:
+    if pargs.norm is True:
+        norm = True
+    else:
         norm = False
 
     # Extension

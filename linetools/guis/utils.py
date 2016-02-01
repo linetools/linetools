@@ -164,7 +164,7 @@ def set_llist(llist, in_dict=None, sort=True):
 
 
 # Read spectrum, pass back it and spec_file name
-def read_spec(ispec, exten=None):
+def read_spec(ispec, exten=None, norm=True):
     """Parse spectrum out of the input
 
     If 2 spectra are given, the 2nd is scaled to the first
@@ -211,6 +211,10 @@ def read_spec(ispec, exten=None):
             spec.filename=spec_fil
     else:
         raise ValueError('Bad input to read_spec: {:s}'.format(type(ispec)))
+
+    # Normalize?
+    if norm:
+        spec.normalize()
 
     # Return
     return spec, spec_fil
