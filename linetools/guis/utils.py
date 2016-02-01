@@ -214,7 +214,10 @@ def read_spec(ispec, exten=None, norm=True):
 
     # Normalize?
     if norm:
-        spec.normalize()
+        try:
+            spec.normalize()
+        except ValueError:
+            norm = False
 
-    # Return
+   t# Return
     return spec, spec_fil
