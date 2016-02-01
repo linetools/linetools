@@ -219,5 +219,5 @@ def read_spec(ispec, exten=None, norm=True):
         except ValueError:
             norm = False
 
-   t# Return
+    # Return
     return spec, spec_fil
