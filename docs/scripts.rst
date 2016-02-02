@@ -72,7 +72,7 @@ lt_continuumfit
 
 Launch the GUI to continuum fit a spectrum.
 If a redshift is supplied by zsys, then the
-script assume this is a QSO.::
+script assumes this is a QSO.::
 
    lt_continuumfit fitsfile.fits
 

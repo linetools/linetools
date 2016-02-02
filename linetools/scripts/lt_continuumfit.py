@@ -13,11 +13,11 @@ def main(*args, **kwargs):
     """
     import argparse
 
-    parser = argparse.ArgumentParser(description='Parse for Continuum Fitting')
+    parser = argparse.ArgumentParser(description='Fit a continuum to a spectrum')
     parser.add_argument("file", type=str, help="Spectral file")
     parser.add_argument("outfil", type=str, help="Output file [can be the same]")
-    parser.add_argument("-zsys", type=float, help="Redshift of the Source")
-    parser.add_argument("-wchunk", type=float, help="Width of a 'chunk' (Ang)")
+    parser.add_argument("--redshift", type=float, help="Redshift of the Source")
+    parser.add_argument("--wchunk", type=float, help="Width of a 'chunk' (Ang)")
     #parser.add_argument("-exten", type=int, help="FITS extension")
 
     pargs = parser.parse_args()
@@ -34,9 +34,9 @@ def main(*args, **kwargs):
         kwrds['dw'] = pargs.wchunk
 
     # Redshift
-    if pargs.zsys is not None:
+    if pargs.redshift is not None:
         kwrds['kind'] = 'QSO'
-        kwrds['redshift'] = pargs.zsys
+        kwrds['redshift'] = pargs.redshift
 
     # Run
     print("WARNING: QUIT with q keystroke, not by clicking to kill.")
