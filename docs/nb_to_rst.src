@@ -1,20 +1,23 @@
-#/bin/tcsh
+#/bin/bash
 
 # Converts notebooks to rst and insert a line at the top with a link
 # to the original notebook.
 
 # Requires pandoc https://github.com/jgm/pandoc/releases/tag/1.15.2
 
-for n in AbsComponent_examples \
-    AbsComponent_ColumnDensities \
-    AbsSystem_examples \
-    AbsLine_examples \
-    SolarAbund \
-    xspecgui \
-    Interactive_continuum_fitting_example
+filenames=( #AbsComponent_examples
+     #AbsComponent_ColumnDensities
+     #AbsSystem_examples
+     #AbsLine_examples
+     #SolarAbund
+     xspecgui
+     #Interactive_continuum_fitting_example
+     )
 
-do  
-    	echo examples/$n\.ipynb
+for n in "${filenames[@]}"
+
+do
+	echo examples/$n\.ipynb
 	echo $n\.rst
 	ipython nbconvert examples/$n.ipynb --to rst;
 	sed -i '' "5 i\\
