@@ -2,8 +2,9 @@
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
+
 import numpy as np
-import os
+import pdb
 
 from PyQt4 import QtGui
 from PyQt4 import QtCore
@@ -16,8 +17,11 @@ u.def_unit(['mAA', 'milliAngstrom'], 0.001 * u.AA, namespace=globals()) # mA
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
+from astropy.modeling import models, fitting
+
 from linetools.guis import utils as ltgu
 from linetools.guis import line_widgets as ltgl
+from linetools.spectra.xspectrum1d import XSpectrum1D
 from ..spectralline import AbsLine
 from ..analysis import voigt as ltv
 
@@ -57,7 +61,7 @@ class ExamineSpecWidget(QtGui.QWidget):
         super(ExamineSpecWidget, self).__init__(parent)
 
         # Spectrum
-        spec, spec_fil = ltgu.read_spec(ispec, exten=exten)
+        spec, spec_fil = ltgu.read_spec(ispec, exten=exten, norm=norm)
         self.orig_spec = spec  # For smoothing
         self.spec = self.orig_spec
 
@@ -203,8 +207,8 @@ class ExamineSpecWidget(QtGui.QWidget):
 
             flg = 1
 
-        # ANALYSIS:  EW, AODM column density
-        if event.key in ['N', 'E', '$']:
+        # ANALYSIS:  AODM, EW, Stats, Gaussian
+        if event.key in ['N', 'E', '$', 'G']:
             # If column check for line list
             #QtCore.pyqtRemoveInputHook()
             #xdb.set_trace()
@@ -247,6 +251,35 @@ class ExamineSpecWidget(QtGui.QWidget):
                     S2N = median / stdv
                     mssg = 'Mean={:g}, Median={:g}, S/N={:g}'.format(
                             mean,median,S2N)
+                elif event.key == 'G':  #  Fit a Gaussian
+                    # Good pixels
+                    pix = self.spec.pix_minmax(iwv)[0]
+                    # EW
+                    EW = np.sum(self.spec.conti[pix]-self.spec.flux[pix])
+                    if EW > 0.:  # Absorption line
+                        sign=-1
+                    else:  # Emission
+                        sign=1
+                    # Amplitude
+                    Aguess = np.max(self.spec.flux[pix]-self.spec.conti[pix])
+                    Cguess = np.mean(self.spec.dispersion[pix])
+                    sguess = 0.1*np.abs(self.adict['wv_1']-self.adict['wv_2'])
+                    #QtCore.pyqtRemoveInputHook()
+                    #pdb.set_trace()
+                    #QtCore.pyqtRestoreInputHook()
+                    g_init = models.Gaussian1D(amplitude=Aguess, mean=Cguess, stddev=sguess)
+                    fitter = fitting.LevMarLSQFitter()
+                    parm = fitter(g_init, self.spec.wavelength[pix].value,
+                                  sign*(self.spec.flux[pix]-self.spec.conti[pix]))
+                    g_final = models.Gaussian1D(amplitude=parm.amplitude.value, mean=parm.mean.value, stddev=parm.stddev.value)
+                    # Plot
+                    model_Gauss = g_final(self.spec.dispersion.value)
+                    self.model = XSpectrum1D.from_tuple((self.spec.wavelength, self.spec.conti + sign*model_Gauss))
+                    # Message
+                    mssg = 'Gaussian Fit: '
+                    mssg = mssg+' ::  Mean={:g}, Amplitude={:g}, sigma={:g}, flux={:g}'.format(
+                            parm.mean.value, parm.amplitude.value, parm.stddev.value,
+                            parm.stddev.value*(parm.amplitude.value-np.median(self.spec.conti[pix]))*np.sqrt(2*np.pi))
                 else:
                     # Find the spectral line (or request it!)
                     rng_wrest = iwv / (self.llist['z']+1)
