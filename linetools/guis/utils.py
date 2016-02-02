@@ -6,8 +6,10 @@ import copy
 from astropy import units as u
 
 from linetools.spectra import plotting as ltsp
+from linetools.utils import between
 
-def navigate(psdict, event, init=False):
+
+def navigate(psdict, event, init=False, wave=None, flux=None):
     """ Method to Navigate spectrum
 
     Updates the dict
@@ -16,11 +18,16 @@ def navigate(psdict, event, init=False):
     ----------
     init :  (False) Initialize
       Just pass back valid key strokes
+
+    wave, flux : array of floats, optional
+      The spectrum wavelength and flux values (both unitless). Only
+      used for the 'y' option.
+
     """
     # Initalize
     if init is True:
         return ['l','r','b','t','T','i','I', 'o','O',
-                '[',']','W','Z', 'Y', '{', '}', 's']
+                '[',']','W','Z', 'y', 'Y', '{', '}', 's']
     #
     if (not isinstance(event.xdata,float)) or (not isinstance(event.ydata,float)):
         print('Navigate: You entered the {:s} key out of bounds'.format(
@@ -59,6 +66,12 @@ def navigate(psdict, event, init=False):
     elif event.key == 'O':  # Zoom in (and center)
         deltx = psdict['x_minmax'][1]-psdict['x_minmax'][0]
         psdict['x_minmax'] = [event.xdata-2*deltx, event.xdata+2*deltx]
+    elif event.key == 'y' and wave is not None and flux is not None:
+        # guess y limits
+        x0,x1 = psdict['x_minmax']
+        y0,y1 = ltsp.get_flux_plotrange(
+            flux[between(wave, x0, x1)], perc=90, mult_pos=2)
+        psdict['y_minmax'] = [y0, y1]
     elif event.key == 'Y':  # Zoom in (and center)
         delty = psdict['y_minmax'][1]-psdict['y_minmax'][0]
         psdict['y_minmax'] = [event.ydata-delty, event.ydata+delty]

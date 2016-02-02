@@ -35,8 +35,8 @@ Before Launching the GUI
 ------------------------
 
 If you are a Mac user, we **highly** recommend that you set your
-matplotlib backend from macosx to TkAgg (or another option),
-`backend <http://matplotlib.org/faq/usage_faq.html#what-is-a-backend>`_.
+matplotlib backend from MacOSX to TkAgg (or another option, see
+`backends <http://matplotlib.org/faq/usage_faq.html#what-is-a-backend>`__).
 
 Launching the GUI
 -----------------
@@ -68,7 +68,7 @@ Here are the current command-line options:
     optional arguments:
       -h, --help  show this help message and exit
       -zsys ZSYS  System Redshift
-      --un_norm   Spectrum is NOT normalized
+      --norm      Show spectrum normalized
       -exten EXTEN  FITS extension
 
 From within ipython or equivalent
@@ -104,6 +104,11 @@ Zoom in/out Wavelength
 -  I -- Zoom in extra fast
 -  o -- Zoom out
 -  O -- Zoom out extra fast
+
+Best estimate Flux limits
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  y -- Make a guess for the flux plotting limits
 
 Zoom out Flux
 ~~~~~~~~~~~~~
@@ -160,21 +165,13 @@ Plot GUI.
 Simple Analysis
 ---------------
 
-Gaussian Fit
-~~~~~~~~~~~~
-
-You can fit a Gaussian to any single feature in the spectrum
-as follows: 1. Click "G" at the continuum at one edge of the feature 1. And then another "G"
-at the other edge (also at the continuum) 1. A simple Gaussian is
-fit and reported.
-
 Equivalent Width
 ~~~~~~~~~~~~~~~~
 
 You can measure the rest EW of a spectral feature as follows: 1. Click
 "E" at the continuum at one edge of the feature 1. And then another "E"
 at the other edge (also at the continuum) 1. A simple boxcar integration
-is performed and reported.
+is performed and reported
 
 Apparent Column Density
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -182,7 +179,7 @@ Apparent Column Density
 You can measure the apparent column via AODM as follows: 1. Click "N" at
 the continuum at one edge of the feature 1. And then another "EN" at the
 other edge (also at the continuum) 1. A simple AODM integration is
-performed and reported.
+performed and reported
 
 Ly\ :math:`\alpha` Lines
 ~~~~~~~~~~~~~~~~~~~~~~~~
