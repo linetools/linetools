@@ -166,7 +166,9 @@ class ExamineSpecWidget(QtGui.QWidget):
 
         # NAVIGATING
         if event.key in self.psdict['nav']:
-            flg = ltgu.navigate(self.psdict, event)
+            flg = ltgu.navigate(self.psdict, event,
+                                flux=self.spec.flux.value,
+                                wave=self.spec.wavelength.value)
 
         # DOUBLETS
         if event.key in ['C', 'M', 'X', '4', '8', 'B']:
