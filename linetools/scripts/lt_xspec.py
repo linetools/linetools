@@ -15,10 +15,10 @@ def main(*args, **kwargs):
 
     parser = argparse.ArgumentParser(description='Parse for XSpec')
     parser.add_argument("file", type=str, help="Spectral file")
-    parser.add_argument("-zsys", type=float, help="System Redshift")
+    parser.add_argument("--zsys", type=float, help="System Redshift")
     parser.add_argument("--norm", help="Show spectrum continuum normalized (if one exists)",
                         action="store_true")
-    parser.add_argument("-exten", type=int, help="FITS extension")
+    parser.add_argument("--exten", type=int, help="FITS extension")
 
     pargs = parser.parse_args()
 
