@@ -165,13 +165,21 @@ Plot GUI.
 Simple Analysis
 ---------------
 
+Gaussian Fit
+~~~~~~~~~~~~
+
+You can fit a Gaussian to any single feature in the spectrum as follows:
+1. Click "G" at the continuum at one edge of the feature 1. And then
+another "G" at the other edge (also at the continuum) 1. A simple
+Gaussian is fit and reported.
+
 Equivalent Width
 ~~~~~~~~~~~~~~~~
 
 You can measure the rest EW of a spectral feature as follows: 1. Click
 "E" at the continuum at one edge of the feature 1. And then another "E"
 at the other edge (also at the continuum) 1. A simple boxcar integration
-is performed and reported
+is performed and reported.
 
 Apparent Column Density
 ~~~~~~~~~~~~~~~~~~~~~~~
@@ -179,7 +187,7 @@ Apparent Column Density
 You can measure the apparent column via AODM as follows: 1. Click "N" at
 the continuum at one edge of the feature 1. And then another "EN" at the
 other edge (also at the continuum) 1. A simple AODM integration is
-performed and reported
+performed and reported.
 
 Ly\ :math:`\alpha` Lines
 ~~~~~~~~~~~~~~~~~~~~~~~~
