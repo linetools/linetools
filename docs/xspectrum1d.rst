@@ -114,7 +114,7 @@ the API: `~linetools.spectra.xspectrum1d.XSpectrum1D`.
 Files Read
 ==========
 
-Below is an table of the types of spectra files that
+Below is a table of the types of spectra files that
 can be read by `~linetools.spectra.io.readspec`.  If
 your file cannot be read, contact the authors and
 stand by.
