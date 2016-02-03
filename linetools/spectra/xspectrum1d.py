@@ -675,7 +675,7 @@ or QtAgg backends to enable all interactive plotting commands.
         ----------
         spec2 : Spectrum1D
           The overlapping spectrum. It should cover wavelengths
-          *shorter* than the original spectrum.
+          *longer* than the original spectrum.
         wvmx : Quantity, optional
           Wavelength to begin splicing *after*
         scale : float, optional
