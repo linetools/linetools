@@ -52,7 +52,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
     format : str, optional
       Format for ASCII table input ['ascii']
     exten : int, optional
-      FITS extension (mainly for multiple binary FITS tables)
+      FITS extension (mainly for multiple binary FITS tables or bricks)
 
     Returns
     -------
@@ -236,12 +236,24 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
                 tmpsig[gdp] = np.sqrt(1./sig[gdp])
                 sig = tmpsig
                 wave = 10.**wave
-    elif (head0['NAXIS'] == 2) and (head0['NAXIS2'] == 5): # SDSS .fit format
-        fx = hdulist[0].data[0,:].flatten()
-        sig = hdulist[0].data[2,:].flatten()
-        wave = setwave(head0)
+    elif head0['NAXIS'] == 2:
+        if (hdulist[0].name == 'FLUX') and (hdulist[2].name == 'WAVELENGTH'):  # DESI
+            if exten is None:
+                exten = 0
+            fx = hdulist[0].data[exten, :]
+            # Sig
+            ivar = hdulist[1].data[exten, :]
+            sig = np.zeros(ivar.size)
+            gdi = ivar > 0.
+            sig[gdi] = np.sqrt(1./ivar[gdi])
+            # Wave
+            wave = hdulist[2].data
+        else:  # SDSS
+            fx = hdulist[0].data[0, :].flatten()
+            sig = hdulist[0].data[2, :].flatten()
+            wave = setwave(head0)
     else:  # Should not be here
-        print('Looks like an image')
+        print('Not sure what has been input.  Send to JXP.')
         return
 
 

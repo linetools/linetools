@@ -275,7 +275,7 @@ class AbsSystem(object):
                 for iline in component._abslines]
 
     def to_dict(self):
-        """ Write AbsSystem data to a dict
+        """ Write AbsSystem data to a dict that can be written with JSON
         """
         import datetime
         import getpass
@@ -292,7 +292,7 @@ class AbsSystem(object):
         # Components
         outdict['components'] = {}
         for component in self._components:
-            outdict['components'][component.name] = component.to_dict()
+            outdict['components'][component.name] = ltu.jsonify(component.to_dict())
         # Polish
         outdict = ltu.jsonify(outdict)
         # Return
