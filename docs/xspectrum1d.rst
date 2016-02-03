@@ -111,8 +111,8 @@ pixel indices corresponding to a wavelength or velocity range, and
 the spectrum. For a complete list of all the available methods, see
 the API: `~linetools.spectra.xspectrum1d.XSpectrum1D`.
   
-Files Read
-==========
+File Formats Read
+=================
 
 Below is a table of the types of spectra files that
 can be read by `~linetools.spectra.io.readspec`.  If
@@ -125,6 +125,7 @@ Description                                                Instruments
 simple 1D FITS files                                       ESI, HIRES, etc.
 binary FITS table from LowRedux                            LRIS,Kast,etc.
 multi-extension 1D FITS files from LowRedux                LRIS,Kast,etc.
+binary FITS tables from many other sources                 COS, SDSS, etc.
 multi-extension binary FITS tables from PYPIT              LRIS,Kast,etc.
 brick files (2D images: flux, ivar; 1D image: wavelength)  DESI
 ========================================================== =================
