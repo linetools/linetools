@@ -340,6 +340,19 @@ def chk_for_gz(filenm):
         chk=False
         return None, chk
 
+def give_wv_units(wave):
+    """ Give a wavelength array units of Angstroms, if unitless.
+    """
+    if not hasattr(wave, 'unit'):
+        uwave = u.Quantity(wave, unit=u.AA)
+    elif wave.unit is None:
+        uwave = u.Quantity(wave, unit=u.AA)
+    else:
+        uwave = u.Quantity(wave)
+
+    return uwave
+
+
 def is_UVES_popler(hd):
     """ Check if this header is UVES_popler output.
     """
@@ -453,18 +466,6 @@ def parse_DESI_brick(hdulist, exten=None):
     wave = give_wv_units(wave)
     xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, None))
     return xspec1d
-
-def give_wv_units(wave):
-    """ Give a wavelength array units of Angstroms, if unitless.
-    """
-    if not hasattr(wave, 'unit'):
-        uwave = u.Quantity(wave, unit=u.AA)
-    elif wave.unit is None:
-        uwave = u.Quantity(wave, unit=u.AA)
-    else:
-        uwave = u.Quantity(wave)
-
-    return uwave
 
 
 def parse_two_file_format(specfil, hdulist, efil=None):
