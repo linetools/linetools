@@ -118,6 +118,7 @@ class ExamineSpecWidget(QtGui.QWidget):
 
         # Make two plots
         self.ax = self.fig.add_subplot(1, 1, 1)
+        self.show_restframe = False
         self.fig.subplots_adjust(hspace=0.1, wspace=0.1)
 
         vbox = QtGui.QVBoxLayout()
@@ -456,6 +457,22 @@ class ExamineSpecWidget(QtGui.QWidget):
                 pass
             self.ax.set_xlabel('Wavelength')
             self.ax.set_ylabel('Flux')
+
+            # Rest-frame axis
+            if self.show_restframe:
+                def tick_function(z, X):
+                    V = X/(1+z)
+                    return ["{:d}".format(int(round(x))) for x in V]
+                self.ax2 = self.ax.twiny()
+                self.ax2.set_xlim(self.ax.get_xlim())
+                #QtCore.pyqtRemoveInputHook()
+                #pdb.set_trace()
+                #QtCore.pyqtRestoreInputHook()
+                xtcks = self.ax.get_xticks()
+                self.ax2.set_xticks(xtcks)
+                z = self.rest_z
+                self.ax2.set_xticklabels(tick_function(z, xtcks))
+                self.ax2.set_xlabel("Rest Wavelength (z={:g})".format(z))
 
             # Continuum?
             if self.continuum is not None:
