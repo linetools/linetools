@@ -18,7 +18,6 @@ from astropy.nddata import StdDevUncertainty
 from astropy.table import QTable
 
 import linetools.utils as liu
-import linetools.spectra.io as lsio
 
 from .plotting import get_flux_plotrange
 
@@ -84,7 +83,9 @@ class XSpectrum1D(Spectrum1D):
         ifile : str
           Filename
         """
-        slf = lsio.readspec(ifile, **kwargs)
+        # put import here to avoid circular import with io.py
+        from .io import readspec
+        slf = readspec(ifile, **kwargs)
         return slf
 
     @classmethod
@@ -95,6 +96,8 @@ class XSpectrum1D(Spectrum1D):
         slf = cls(flux=spec1d.flux, wcs=spec1d.wcs, unit=spec1d.unit,
                   uncertainty=spec1d.uncertainty, mask=spec1d.mask,
                   meta=spec1d.meta.copy())
+        slf.co = (spec1d.co if hasattr(spec1d, 'co') else None)
+
         return slf
 
     @classmethod
@@ -122,14 +125,18 @@ class XSpectrum1D(Spectrum1D):
         if sort:
             srt = np.argsort(uwave)
             uwave = uwave[srt]
-            for ii in range(1, len(ituple)):
-                ltuple[ii] = ituple[ii][srt]
+            for i in range(1, len(ituple)):
+                if ltuple[i] is not None:
+                    ltuple[i] = ituple[i][srt]
         # Generate
         if len(ltuple) == 2:  # wave, flux
             spec = cls.from_array(uwave, u.Quantity(ltuple[1]), **kwargs)
+            spec.uncertainty = None
+            spec.co = None
         elif len(ltuple) == 3:
             spec = cls.from_array(uwave, u.Quantity(ltuple[1]),
                 uncertainty=StdDevUncertainty(ltuple[2]), **kwargs)
+            spec.co = None
         else:
             spec = cls.from_array(uwave, u.Quantity(ltuple[1]),
                 uncertainty=StdDevUncertainty(ltuple[2]), **kwargs)
