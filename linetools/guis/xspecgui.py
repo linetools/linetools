@@ -19,8 +19,9 @@ class XSpecGui(QtGui.QMainWindow):
     def __init__(self, ispec, parent=None, zsys=None, norm=None, exten=None):
         QtGui.QMainWindow.__init__(self, parent)
         """
-        ispec = Spectrum1D or tuple of arrays
-          Input spectrum.  If tuple then (wave,fx) or (wave,fx,sig)
+        ispec = str, Spectrum1D or tuple of arrays
+          Input spectrum or spectrum filename.  If tuple then (wave,
+          fx), (wave, fx, sig) or (wave, fx, sig, co)
         parent : Widget parent, optional
         zsys : float, optional
           intial redshift
