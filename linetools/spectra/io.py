@@ -35,23 +35,24 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
     ----------
     specfil : str or Table
       Input file. If str:
-        * FITS file must include in '.fit'
-        * ASCII must either have a proper Table format
-          or be 3 columns with WAVE,FLUX,ERROR
+        * FITS file are detected by searching for '.fit' in their filename.
+        * ASCII must either have a proper Table format or be 3 (WAVE,
+          FLUX, ERROR) or 4 (WAVE, FLUX, ERROR, CONTINUUM) columns.
     efil : string, optional
-      Explicit filename for Error array.  Code will attempt to find this
-      file on its own.
+      A filename for Error array, if it's in a separate file to the
+      flux. The code will attempt to find this file on its own.
     multi_ivar : bool, optional
-      If True, assume BOSS format of flux, ivar, log10(wave) in
+      If True, assume BOSS format of flux, ivar, log10(wave) in a
       multi-extension FITS.
     format : str, optional
-      Format for ASCII table input ['ascii']
+      Format for ASCII table input. Default 'ascii'.
     exten : int, optional
       FITS extension (mainly for multiple binary FITS tables or bricks)
 
     Returns
     -------
     An XSpectrum1D class
+
     """
     from specutils.io import read_fits as spec_read_fits
     from linetools.spectra.xspectrum1d import XSpectrum1D
@@ -342,6 +343,17 @@ def chk_for_gz(filenm):
 
 def give_wv_units(wave):
     """ Give a wavelength array units of Angstroms, if unitless.
+
+    Parameters
+    ----------
+    wave : array or Quantity
+      Input wavelength array
+
+    Returns
+    -------
+    uwave: Quantity
+      Output wavelengths in Angstroms if input is unitless, or the
+      input array unchanged otherwise.
     """
     if not hasattr(wave, 'unit'):
         uwave = u.Quantity(wave, unit=u.AA)
@@ -355,6 +367,14 @@ def give_wv_units(wave):
 
 def is_UVES_popler(hd):
     """ Check if this header is UVES_popler output.
+
+    Parameters
+    ----------
+    hd : FITS header
+    
+    Returns
+    -------
+    True if a UVES_popler file, False otherwise.
     """
     if 'history' not in hd:
         return False
@@ -365,6 +385,15 @@ def is_UVES_popler(hd):
 
 def parse_UVES_popler(hdulist):
     """ Read a spectrum from a UVES_popler-style fits file.
+
+    Parameters
+    ----------
+    hdulist : FITS HDU list
+    
+    Returns
+    -------
+    xspec1d : XSpectrum1D
+      Parsed spectrum
     """
     from linetools.spectra.xspectrum1d import XSpectrum1D
 
@@ -378,6 +407,17 @@ def parse_UVES_popler(hdulist):
 
 def parse_FITS_binary_table(hdulist, exten=None):
     """ Read a spectrum from a FITS binary table
+
+    Parameters
+    ----------
+    hdulist : FITS HDU list
+    exten : int, optional
+      Extension for the binary table.
+
+    Returns
+    -------
+    xspec1d : XSpectrum1D
+      Parsed spectrum
     """
     # Flux
     flux_tags = ['SPEC', 'FLUX', 'FLAM', 'FX',
@@ -423,6 +463,17 @@ def parse_FITS_binary_table(hdulist, exten=None):
 
 def parse_linetools_spectrum_format(hdulist):
     """ Parse a linetools-format spectrum from an hdulist
+
+    Parameters
+    ----------
+    hdulist : FITS HDU list
+
+    Returns
+    -------
+    xspec1d : XSpectrum1D
+      Parsed spectrum
+
+
     """
     if 'WAVELENGTH' not in hdulist:
         spec1d = spec_read_fits.read_fits_spectrum1d(
@@ -452,6 +503,17 @@ def parse_linetools_spectrum_format(hdulist):
 
 def parse_DESI_brick(hdulist, exten=None):
     """ Read a spectrum from a DESI brick format HDU list
+
+    Parameters
+    ----------
+    hdulist : FITS HDU list
+    exten : int, optional
+      Extension for the date. Default is 0 (the primary HDU).
+
+    Returns
+    -------
+    xspec1d : XSpectrum1D
+      Parsed spectrum
     """
     if exten is None:
         exten = 0
@@ -470,6 +532,21 @@ def parse_DESI_brick(hdulist, exten=None):
 
 def parse_two_file_format(specfil, hdulist, efil=None):
     """ Parse old two file format (one for flux, another for error).
+
+    Parameters
+    ----------
+    specfil : str
+      Flux filename
+    hdulist : FITS HDU list
+    efil : str, optional
+      Error filename. By default this is inferred from the flux
+      filename.
+
+    Returns
+    -------
+    xspec1d : XSpectrum1D
+      Parsed spectrum
+
     """
     head0 = hdulist[0].header
     # Error
