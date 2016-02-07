@@ -84,15 +84,13 @@ class XSpectrum1D(object):
     @classmethod
     def from_spec1d(cls, spec1d):
         """ Input Spectrum1D
-        """
-        # Giddy up
-        slf = cls(spec1d.dispersion.value, spec1d.flux.value,
-                  units=dict(wave=spec1d.dispersion.unit, flux=spec1d.flux.unit))
-        slf = cls(flux=spec1d.flux, wcs=spec1d.wcs, unit=spec1d.unit,
-                  uncertainty=spec1d.uncertainty, mask=spec1d.mask,
-                  meta=spec1d.meta.copy())
-        slf.co = (spec1d.co if hasattr(spec1d, 'co') else None)
 
+        Avoids error array for now
+        """
+        slf = cls.from_tuple((spec1d.dispersion, spec1d.flux))
+        #slf = cls(flux=spec1d.flux, wcs=spec1d.wcs, unit=spec1d.unit,
+        #          uncertainty=spec1d.uncertainty, mask=spec1d.mask,
+        #          meta=spec1d.meta.copy())
         return slf
 
     @classmethod
@@ -148,7 +146,8 @@ class XSpectrum1D(object):
         # Return
         return spec
 
-    def __init__(self, wave, flux, sig=None, co=None, units=None, select=0):
+    def __init__(self, wave, flux, sig=None, co=None, units=None, select=0,
+                 meta=None):
         """
         Parameters
         ----------
@@ -215,7 +214,10 @@ class XSpectrum1D(object):
         self.normed = False
 
         # Meta
-        self.meta = {}
+        if meta is None:
+            self.meta = {}
+        else:
+            self.meta = meta
 
         # Filename
         self.filename = 'none'
@@ -230,8 +232,7 @@ class XSpectrum1D(object):
         #
         new = XSpectrum1D(data['wave'], data['flux'], data['sig'], data['co'],
                           units=units, meta=meta)
-        new._data = data
-        return data
+        return new
 
     @property
     def wavelength(self):
@@ -322,18 +323,17 @@ class XSpectrum1D(object):
         '''
         # Seed
         np.random.seed(seed=seed)
-        #
-        npix = len(self.flux)
+
         # Random numbers
-        rand = np.random.normal(size=npix)
+        rand = np.random.normal(size=self.npix)
 
         # Modify the flux
         if s2n is not None:
             sig = 1. / s2n
         else:
-            sig = self.sig
+            sig = self.sig.value
         #
-        self.flux = self.flux + (rand * sig) * self.flux.unit
+        self._data[self.select]['flux'] = self.flux.value + (rand * sig)
 
     def constant_sig(self, sigv=0.):
         """Set the uncertainty array to a constant value.
@@ -731,7 +731,7 @@ or QtAgg backends to enable all interactive plotting commands.
         # Concatenate
         new_wv = np.concatenate((self.wavelength.value,
                                  spec2.wavelength.value[gdp]))
-        uwave = u.Quantity(new_wv, unit=self.wcs.unit)
+        uwave = u.Quantity(new_wv, unit=self.units['wave'])
         new_fx = np.concatenate((self.flux.value,
                                  spec2.flux.value[gdp] * scale))
         if self.flag_sig:
@@ -1035,7 +1035,8 @@ or QtAgg backends to enable all interactive plotting commands.
 
         #update continuum
         co = self._interp_continuum(x, y)
-        self.co = co
+        self.normalize(co=co)
+        #self.co = co
 
     def reset_continuum(self):
         """Resets the continuum to its original value.
@@ -1060,7 +1061,8 @@ or QtAgg backends to enable all interactive plotting commands.
 
         #update continuum
         co = self._interp_continuum(x, y)
-        self.co = co
+        self.normalize(co=co)
+        #self.co = co
 
     def __dir__(self):
         """ Does something more sensible than what Spectrum1D provides

@@ -315,7 +315,7 @@ def find_continuum(spec, edges=None, ax=None, debug=False, kind='QSO',
       continuum from these knots.
     """
 
-    s = np.rec.fromarrays([spec.dispersion.value,
+    s = np.rec.fromarrays([spec.wavelength.value,
                            spec.flux.value,
                            spec.sig], names=str('wa,fl,er'))
 

@@ -206,7 +206,7 @@ class SpectralLine(object):
         # Checks
         if self.analy['spec'] is None:
             raise ValueError('spectralline.cut_spec: Need to set spectrum!')
-        if self.analy['spec'].wcs.unit == 1.:
+        if self.analy['spec'].wavelength.unit == 1.:
             raise ValueError('Expecting a unit!')
 
         # Pixels for evaluation
@@ -222,7 +222,7 @@ class SpectralLine(object):
         # Cut for analysis
         fx = self.analy['spec'].flux[pix]
         sig = self.analy['spec'].sig[pix]
-        wave = self.analy['spec'].dispersion[pix]
+        wave = self.analy['spec'].wavelength[pix]
 
         # Velocity array created within the XSpectrum1D class and cut afterwards
         self.analy['spec'].velo = self.analy['spec'].relative_vel(
@@ -455,7 +455,7 @@ class AbsLine(SpectralLine):
         if wave is None:
             # Assume a spectrum has been loaded already
             try:
-                wave = self.analy['spec'].dispersion
+                wave = self.analy['spec'].wavelength
             except:
                 raise ('You must provide a wavelength array in generate_voigt')
 

@@ -22,8 +22,10 @@ def data_path(filename):
 
 # From arrays
 def test_from_tuple():
-    idl = ascii.read(data_path('UM184.dat.gz'), names=['wave', 'flux', 'sig'])
-    spec = XSpectrum1D.from_tuple((idl['wave'],idl['flux'],idl['sig']))
+    tmp = ascii.read(data_path('UM184.dat.gz'), names=['wave', 'flux', 'sig'])
+    idl = dict(wave=np.array(tmp['wave']), flux=np.array(tmp['flux']),
+               sig=np.array(tmp['sig']))
+    spec = XSpectrum1D.from_tuple((idl['wave'],idl['flux'], idl['sig']))
     #
     np.testing.assert_allclose(spec.wavelength.value, idl['wave'])
     np.testing.assert_allclose(spec.sig, idl['sig'], atol=2e-3, rtol=0)
@@ -39,7 +41,7 @@ def test_from_tuple():
 
     co = None
     spec = XSpectrum1D.from_tuple((idl['wave'],idl['flux'],idl['sig'], co))
-    np.testing.assert_allclose(spec.dispersion.value, idl['wave'])
+    np.testing.assert_allclose(spec.wavelength.value, idl['wave'])
 
 # From file
 def test_from_spec1d():

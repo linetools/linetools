@@ -234,7 +234,7 @@ def get_table_column(tags, hdulist, idx=None):
     names = set(tab.dtype.names)
     for tag in tags:
         if tag in names:
-            dat = tab[tag]
+            dat = np.array(tab[tag])
             break  # Break with first hit
 
     # Return
@@ -467,6 +467,7 @@ def parse_FITS_binary_table(hdulist, exten=None):
         return
     co_tags = ['CONT', 'CO', 'CONTINUUM', 'co', 'cont']
     co, co_tag = get_table_column(co_tags, hdulist, idx=exten)
+    # Finish
     xspec1d = XSpectrum1D.from_tuple((give_wv_units(wave), fx, sig, co))
     return xspec1d
 
