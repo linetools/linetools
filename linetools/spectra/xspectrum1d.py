@@ -74,6 +74,7 @@ class XSpectrum1D(object):
         ifile : str
           Filename
         """
+        reload(lsio)
         slf = lsio.readspec(ifile, **kwargs)
         return slf
 
@@ -103,6 +104,7 @@ class XSpectrum1D(object):
             wv_unit = ituple[0].unit
         except AttributeError:
             iwave = ituple[0]
+            warnings.warn("Assuming wavelength unit is Angstroms")
             wv_unit = u.AA
         else:
             if wv_unit is None:
@@ -120,25 +122,21 @@ class XSpectrum1D(object):
                 fx_unit = u.dimensionless_unscaled
             iflux = ituple[1].value
 
-        # Sort
+        # Sort and append None
         ltuple = list(ituple)
+        for ii in range(len(ltuple),4):
+            ltuple.append(None)
         if sort:
             srt = np.argsort(iwave)
             iwave = iwave[srt]
             iflux = iflux[srt]
-            for ii in range(1, len(ituple)):
-                if ituple is not None:
+            for ii in range(1, len(ltuple)):
+                if ltuple[ii] is not None:
                     ltuple[ii] = ituple[ii][srt]
-                else:
-                    ltuple[ii] = None
 
         # Generate
-        spec = cls(iwave, iflux, units=dict(wave=wv_unit, flux=fx_unit), **kwargs)
-        if len(ltuple) >= 3: # wave, flux, sig
-            if ltuple[2] is not None:
-                spec._data['sig']=ltuple[2]
-        if len(ltuple) == 4: # wave, flux, sig, co
-            spec._data['co']=ltuple[3]
+        spec = cls(iwave, iflux, sig=ltuple[2], co=ltuple[3], units=dict(wave=wv_unit, flux=fx_unit), **kwargs)
+
         # Return
         return spec
 
@@ -189,11 +187,12 @@ class XSpectrum1D(object):
         if units is not None:
             if not isinstance(units, dict):
                 raise IOError("Units must be dict like")
-            for key in units.keys:
+            for key in units.keys():
                 if key not in ['wave', 'flux']:
                     raise IOError("Units must have key: {:s}".format(key))
             self.units = units
         else:
+            warnings.warn("Assuming wavelength unit is Angstroms")
             self.units = dict(wave=u.AA, flux=u.dimensionless_unscaled)
 
         # Continuum
@@ -750,7 +749,7 @@ or QtAgg backends to enable all interactive plotting commands.
     def write_to_fits(self, outfil, clobber=True, add_wave=False):
         """ Write to a FITS file.
 
-        Note that this does not generate a binary FITS table format.
+        This generates a binary FITS table format.
 
         Parameters
         ----------
@@ -765,11 +764,16 @@ or QtAgg backends to enable all interactive plotting commands.
         # TODO
         #  1. Add unit support for wavelength arrays
 
-        prihdu = fits.PrimaryHDU(self._data)  # Not for binary table format
-        prihdu.name = 'FLUX'
+        # Dummy hdu
+        prihdu = fits.PrimaryHDU()
 
-        hdu = fits.HDUList([prihdu])
+        #
+        tblhdu = fits.BinTableHDU(self._data, name='DATA')
+        # List
 
+        hdulist = fits.HDUList([prihdu, tblhdu])
+
+        """
         # Type
         if type(self.wcs) is False:#Spectrum1DPolynomialWCS:  # CRVAL1, etc. WCS
             # WCS
@@ -799,11 +803,7 @@ or QtAgg backends to enable all interactive plotting commands.
         else:
             raise ValueError(
                 'write_to_fits: Not ready for this for wavelength WCS')
-
-        if hasattr(self, 'co') and self.co is not None:
-            cohdu = fits.ImageHDU(self.co)
-            cohdu.name = 'CONTINUUM'
-            hdu.append(cohdu)
+        """
 
         # Deal with header
         if hasattr(self, 'head'):
@@ -833,7 +833,7 @@ or QtAgg backends to enable all interactive plotting commands.
             d = liu.jsonify(self.meta)
             prihdu.header['METADATA'] = json.dumps(d)
 
-        hdu.writeto(outfil, clobber=clobber)
+        hdulist.writeto(outfil, clobber=clobber)
         print('Wrote spectrum to {:s}'.format(outfil))
 
 

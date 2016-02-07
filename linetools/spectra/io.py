@@ -17,9 +17,9 @@ import os, pdb
 import json
 
 from astropy.io import fits
-from astropy.nddata import StdDevUncertainty
 from astropy import units as u
 from astropy.table import Table, Column
+from linetools.spectra.xspectrum1d import XSpectrum1D
 from astropy.io.fits.hdu.table import BinTableHDU
 
 #from xastropy.xutils import xdebug as xdb
@@ -58,16 +58,13 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
     -------
     An XSpectrum1D class
     """
-    from specutils.io import read_fits as spec_read_fits
-    from linetools.spectra.xspectrum1d import XSpectrum1D
 
     # Initialize
-
     if inflg == None:
         inflg = 0
 
     # Check specfil type
-    if isinstance(specfil, Table):  # MAYBE SHOULD USE SPECUTILS FROM_TABLE
+    if isinstance(specfil, Table):
         datfil = 'None'
         # Dummy hdulist
         hdulist = [fits.PrimaryHDU(), specfil]
@@ -142,12 +139,12 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         co_tags = ['CONT', 'CO', 'CONTINUUM', 'co', 'cont']
         co, co_tag = get_table_column(co_tags, hdulist, idx=exten)
 
-    elif head0['NAXIS'] == 1: # Data in the zero extension
+    elif head0['NAXIS'] == 1:  # Data in the zero extension
 
         # How many entries?
         if len(hdulist) == 1: # Old school (one file per flux, error)
             # Error
-            if efil == None:
+            if efil is None:
                 ipos = max(specfil.find('F.fits'),
                     specfil.find('f.fits'), specfil.find('flx.fits'))
                 if ipos < 0:
@@ -167,9 +164,8 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             # Error file
             if efil is not None:
                 sig = fits.getdata(efil)
-                uncertainty = StdDevUncertainty(sig)
             else:
-                uncertainty = None
+                sig = None
 
             #Log-Linear?
             try:
@@ -181,8 +177,9 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             # Read
             if dc_flag == 0:
                 # Read FITS file
-                spec1d = spec_read_fits.read_fits_spectrum1d(os.path.expanduser(datfil), dispersion_unit='AA')
-                spec1d.uncertainty = uncertainty
+                pdb.set_trace()
+                #spec1d = spec_read_fits.read_fits_spectrum1d(os.path.expanduser(datfil), dispersion_unit='AA')
+                #spec1d.uncertainty = uncertainty
                 xspec1d = XSpectrum1D.from_spec1d(spec1d)
             elif dc_flag == 1: # Generate wavelengths and use array approach
                 fx = hdulist[0].data
@@ -194,23 +191,25 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
         elif hdulist[0].name == 'FLUX':
             # NEW SCHOOL (one file for flux and error)
             if 'WAVELENGTH' not in hdulist:
-                spec1d = spec_read_fits.read_fits_spectrum1d(
-                    os.path.expanduser(datfil), dispersion_unit='AA')
-                xspec1d = XSpectrum1D.from_spec1d(spec1d)
+                pdb.set_trace()
+                #spec1d = spec_read_fits.read_fits_spectrum1d(
+                #    os.path.expanduser(datfil), dispersion_unit='AA')
+                wave = setwave(head0)
             else:
                 wave = hdulist['WAVELENGTH'].data * u.AA
                 fx = hdulist['FLUX'].data
-                xspec1d = XSpectrum1D.from_tuple((wave, fx))
 
             # Error array
             if 'ERROR' in hdulist:
                 sig = hdulist['ERROR'].data
-                xspec1d.uncertainty = StdDevUncertainty(sig)
             else:
                 sig = None
 
             if 'CONTINUUM' in hdulist:
-                xspec1d.co = hdulist['CONTINUUM'].data
+                co = hdulist['CONTINUUM'].data
+            else:
+                co = None
+            xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, co))
 
             if 'METADATA' in head0:
                 xspec1d.meta.update(json.loads(head0['METADATA']))
@@ -266,26 +265,24 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, flux_tags=None,
             uwave = u.Quantity(wave, unit=u.AA)
         else:
             uwave = u.Quantity(wave)
-        if sig is not None:
-            xspec1d = XSpectrum1D.from_tuple((uwave, fx, sig))
-        else:
-            xspec1d = XSpectrum1D.from_tuple((uwave, fx))
+        xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, co))
 
-    if np.any(np.isnan(xspec1d.dispersion)):
+    if np.any(np.isnan(xspec1d.wavelength)):
         warnings.warn('WARNING: Some wavelengths are NaN')
 
     # Filename
     xspec1d.filename = datfil
 
-    if not hasattr(xspec1d, 'co'):
-        xspec1d.co = co
+    if not xspec1d.flag_co:
         # Final check for continuum in a separate file
         if isinstance(specfil,basestring):
             if co is None and specfil.endswith('.fits'):
                 try:
-                    xspec1d.co = fits.getdata(specfil.replace('.fits', '_c.fits'))
+                    co = fits.getdata(specfil.replace('.fits', '_c.fits'))
                 except IOError:
                     pass
+                else:
+                    xspec1d._data['co'] = co
 
     # Add in the header
     xspec1d.head = head0
