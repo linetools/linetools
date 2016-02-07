@@ -5,10 +5,12 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import json
 import gzip, os
 import warnings
+import pdb
 
 import numpy as np
 from astropy import constants as const
 from astropy import units as u
+from astropy.units import Quantity, Unit
 
 def between(a, vmin, vmax):
     """ Return a boolean array True where vmin <= a < vmax.
@@ -145,6 +147,12 @@ def jsonify(obj):
         for i,item in enumerate(obj):
             obj[i] = jsonify(item)
         obj = tuple(obj)
+    elif isinstance(obj, Quantity):
+        obj = dict(value=obj.value, unit=obj.unit.name)
+    elif isinstance(obj, Unit):
+        obj = obj.name
+    elif obj is u.dimensionless_unscaled:
+        obj = 'dimensionless_unit'
 
     return obj
 
