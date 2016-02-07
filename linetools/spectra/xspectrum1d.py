@@ -74,8 +74,9 @@ class XSpectrum1D(object):
         ifile : str
           Filename
         """
-        reload(lsio)
-        slf = lsio.readspec(ifile, **kwargs)
+        # put import here to avoid circular import with io.py
+        from .io import readspec
+        slf = readspec(ifile, **kwargs)
         return slf
 
     @classmethod
@@ -85,6 +86,11 @@ class XSpectrum1D(object):
         # Giddy up
         slf = cls(spec1d.dispersion.value, spec1d.flux.value,
                   units=dict(wave=spec1d.dispersion.unit, flux=spec1d.flux.unit))
+        slf = cls(flux=spec1d.flux, wcs=spec1d.wcs, unit=spec1d.unit,
+                  uncertainty=spec1d.uncertainty, mask=spec1d.mask,
+                  meta=spec1d.meta.copy())
+        slf.co = (spec1d.co if hasattr(spec1d, 'co') else None)
+
         return slf
 
     @classmethod

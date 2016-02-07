@@ -114,10 +114,10 @@ the API: `~linetools.spectra.xspectrum1d.XSpectrum1D`.
 File Formats Read
 =================
 
-Below is a table of the types of spectra files that
-can be read by `~linetools.spectra.io.readspec`.  If
-your file cannot be read, contact the authors and
-stand by.
+Below is a table of the types of spectra files that can be read by
+`~linetools.spectra.io.readspec`.  If your file cannot be read, please
+open an issue on the `linetools issue tracker
+<http://github.com/linetools/linetools/issues>`_.
 
 ========================================================== =================
 Description                                                Instruments
@@ -128,4 +128,7 @@ multi-extension 1D FITS files from LowRedux                LRIS,Kast,etc.
 binary FITS tables from many other sources                 COS, SDSS, etc.
 multi-extension binary FITS tables from PYPIT              LRIS,Kast,etc.
 brick files (2D images: flux, ivar; 1D image: wavelength)  DESI
+`UVES_popler`_ output files                                UVES
 ========================================================== =================
+
+.. _UVES_popler: http://astronomy.swin.edu.au/~mmurphy/UVES_popler/

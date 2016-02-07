@@ -39,7 +39,7 @@ class ExamineSpecWidget(QtGui.QWidget):
         """
         Parameters
         ----------
-        ispec : Spectrum1D or tuple of arrays
+        ispec : Spectrum1D, tuple of arrays or filename
         exten : int, optional
           extension for the spectrum in multi-extension FITS file
         parent : Widget parent, optional
@@ -65,6 +65,11 @@ class ExamineSpecWidget(QtGui.QWidget):
         self.orig_spec = spec  # For smoothing
         self.spec = self.orig_spec
 
+        if spec.co is not None:
+            self.continuum = XSpectrum1D.from_tuple((spec.wavelength,spec.co))
+        else:
+            self.continuum = None
+
         self.vlines = []
         if vlines is not None:
             self.vlines.extend(vlines)
@@ -72,7 +77,6 @@ class ExamineSpecWidget(QtGui.QWidget):
         self.plotzero = plotzero
 
         # Other bits (modified by other widgets)
-        self.continuum = None
         self.model = None
         self.bad_model = None  # Discrepant pixels in model
         self.use_event = 1
@@ -146,7 +150,7 @@ class ExamineSpecWidget(QtGui.QWidget):
             ymin, ymax = ylim
         #QtCore.pyqtRemoveInputHook()
         #xdb.set_trace()
-        #QtCore.pyqtRestoreInputHook()    
+        #QtCore.pyqtRestoreInputHook()
         self.psdict['x_minmax'] = np.array([xmin, xmax])
         self.psdict['y_minmax'] = [ymin, ymax]
         self.psdict['sv_xy_minmax'] = [[xmin, xmax], [ymin, ymax]]
@@ -447,6 +451,7 @@ class ExamineSpecWidget(QtGui.QWidget):
           Draw the screen on the canvas?
         """
         #
+
         if replot is True:
             self.ax.clear()
             self.ax.plot(self.spec.dispersion, self.spec.flux,
@@ -573,4 +578,3 @@ class ExamineSpecWidget(QtGui.QWidget):
                      'E/E: EW (boxcar)',
                      '$/$: stats on spectrum'
                      ]
-

@@ -37,6 +37,9 @@ def test_from_tuple():
     spec = XSpectrum1D.from_tuple((idl['wave'],idl['flux'],idl['sig'], co))
     np.testing.assert_allclose(spec.wavelength.value, idl['wave'])
 
+    co = None
+    spec = XSpectrum1D.from_tuple((idl['wave'],idl['flux'],idl['sig'], co))
+    np.testing.assert_allclose(spec.dispersion.value, idl['wave'])
 
 # From file
 def test_from_spec1d():
