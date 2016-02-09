@@ -66,7 +66,12 @@ class ExamineSpecWidget(QtGui.QWidget):
         self.spec = self.orig_spec
 
         if spec.co is not None:
-            self.continuum = XSpectrum1D.from_tuple((spec.wavelength,spec.co))
+            if norm:
+                self.continuum = XSpectrum1D.from_tuple(
+                    (spec.wavelength, np.ones_like(spec.flux)))
+            else:
+                self.continuum = XSpectrum1D.from_tuple(
+                    (spec.wavelength,spec.co))
         else:
             self.continuum = None
 
@@ -411,6 +416,10 @@ class ExamineSpecWidget(QtGui.QWidget):
         # Dummy keys
         if event.key in ['shift', 'control', 'shift+super', 'super+shift']:
             flg = 0
+
+        if event.key == '?': # open the XSpecGUI help page
+            import webbrowser
+            webbrowser.open("http://linetools.readthedocs.org/en/latest/xspecgui.html#navigating-these-key-strokes-help-you-explore-the-spectrum-be-sure-to-click-in-the-spectrum-panel-first")
 
         # Draw
         if flg==1: # Default is not to redraw
