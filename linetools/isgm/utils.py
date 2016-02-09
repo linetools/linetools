@@ -151,7 +151,7 @@ def build_components_from_dict(idict, coord=None, **kwargs):
     if 'components' in idict.keys():
         # Components
         for key in idict['components']:
-            components.append(AbsComponent.from_dict(idict['components'][key]))
+            components.append(AbsComponent.from_dict(idict['components'][key], **kwargs))
     elif 'lines' in idict.keys():  # to be deprecated
         lines = []
         for key in idict['lines']:

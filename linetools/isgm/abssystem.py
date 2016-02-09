@@ -119,7 +119,7 @@ class AbsSystem(object):
         return slf
 
     @classmethod
-    def from_dict(cls, idict):
+    def from_dict(cls, idict, **kwargs):
         """ Instantiate from a dict.  Usually read from the hard-drive
 
         Parameters

@@ -65,7 +65,7 @@ class ExamineSpecWidget(QtGui.QWidget):
         self.orig_spec = spec  # For smoothing
         self.spec = self.orig_spec
 
-        if spec.co is not None:
+        if spec.flag_co is True:
             self.continuum = XSpectrum1D.from_tuple((spec.wavelength,spec.co))
         else:
             self.continuum = None
@@ -139,8 +139,8 @@ class ExamineSpecWidget(QtGui.QWidget):
         """
         #xy min/max
         if xlim is None:
-            xmin = np.min(self.spec.dispersion.value)
-            xmax = np.max(self.spec.dispersion.value)
+            xmin = np.min(self.spec.wavelength.value)
+            xmax = np.max(self.spec.wavelength.value)
         else:
             xmin, xmax = xlim
         if ylim is None:
@@ -205,7 +205,7 @@ class ExamineSpecWidget(QtGui.QWidget):
             lya_line.attrib['z'] = zlya
             lya_line.attrib['N'] = NHI
             lya_line.attrib['b'] = 30. * u.km/u.s
-            self.lya_line = ltv.voigt_from_abslines(self.spec.dispersion,
+            self.lya_line = ltv.voigt_from_abslines(self.spec.wavelength,
                                                     lya_line, fwhm=3.)
             self.adict['flg'] = 4
             # QtCore.pyqtRemoveInputHook()
@@ -248,7 +248,7 @@ class ExamineSpecWidget(QtGui.QWidget):
                 # Calculate the continuum (linear fit)
                 param = np.polyfit(iwv, ic, 1)
                 cfunc = np.poly1d(param)
-                self.spec.conti = cfunc(self.spec.dispersion)
+                self.spec.conti = cfunc(self.spec.wavelength)
 
                 if event.key == '$': # Simple stats
                     pix = self.spec.pix_minmax(iwv)[0]
@@ -269,7 +269,7 @@ class ExamineSpecWidget(QtGui.QWidget):
                         sign=1
                     # Amplitude
                     Aguess = np.max(self.spec.flux[pix]-self.spec.conti[pix])
-                    Cguess = np.mean(self.spec.dispersion[pix])
+                    Cguess = np.mean(self.spec.wavelength[pix])
                     sguess = 0.1*np.abs(self.adict['wv_1']-self.adict['wv_2'])
                     #QtCore.pyqtRemoveInputHook()
                     #pdb.set_trace()
@@ -280,7 +280,7 @@ class ExamineSpecWidget(QtGui.QWidget):
                                   sign*(self.spec.flux[pix]-self.spec.conti[pix]))
                     g_final = models.Gaussian1D(amplitude=parm.amplitude.value, mean=parm.mean.value, stddev=parm.stddev.value)
                     # Plot
-                    model_Gauss = g_final(self.spec.dispersion.value)
+                    model_Gauss = g_final(self.spec.wavelength.value)
                     self.model = XSpectrum1D.from_tuple((self.spec.wavelength, self.spec.conti + sign*model_Gauss))
                     # Message
                     mssg = 'Gaussian Fit: '
@@ -454,10 +454,10 @@ class ExamineSpecWidget(QtGui.QWidget):
 
         if replot is True:
             self.ax.clear()
-            self.ax.plot(self.spec.dispersion, self.spec.flux,
+            self.ax.plot(self.spec.wavelength, self.spec.flux,
                 'k-',drawstyle='steps-mid')
             try:
-                self.ax.plot(self.spec.dispersion, self.spec.sig, 'r:')
+                self.ax.plot(self.spec.wavelength, self.spec.sig, 'r:')
             except ValueError:
                 pass
             self.ax.set_xlabel('Wavelength')
@@ -481,15 +481,15 @@ class ExamineSpecWidget(QtGui.QWidget):
 
             # Continuum?
             if self.continuum is not None:
-                self.ax.plot(self.continuum.dispersion, self.continuum.flux,
+                self.ax.plot(self.continuum.wavelength, self.continuum.flux,
                     color='purple')
 
             # Model?
             if self.model is not None:
-                self.ax.plot(self.model.dispersion, self.model.flux,
+                self.ax.plot(self.model.wavelength, self.model.flux,
                     color='cyan')
                 if self.bad_model is not None:
-                    self.ax.scatter(self.model.dispersion[self.bad_model],
+                    self.ax.scatter(self.model.wavelength[self.bad_model],
                         self.model.flux[self.bad_model],  marker='o',
                         color='red', s=3.)
 
@@ -530,8 +530,8 @@ class ExamineSpecWidget(QtGui.QWidget):
                             continue
                         # Paint spectrum red
                         wvlim = wvobs[jj]*(1 + lines[jj].analy['vlim']/const.c.to('km/s'))
-                        pix = np.where( (self.spec.dispersion > wvlim[0]) & (self.spec.dispersion < wvlim[1]))[0]
-                        self.ax.plot(self.spec.dispersion[pix], self.spec.flux[pix], '-',drawstyle='steps-mid',
+                        pix = np.where( (self.spec.wavelength > wvlim[0]) & (self.spec.wavelength < wvlim[1]))[0]
+                        self.ax.plot(self.spec.wavelength[pix], self.spec.flux[pix], '-',drawstyle='steps-mid',
                                      color=clrs[ii])
                         # Label
                         lbl = lines[jj].analy['name']+' z={:g}'.format(abs_sys.zabs)
@@ -545,7 +545,7 @@ class ExamineSpecWidget(QtGui.QWidget):
                 self.adict['flg'] = 0
             # Lya line?
             if self.adict['flg'] == 4:
-                self.ax.plot(self.spec.dispersion,
+                self.ax.plot(self.spec.wavelength,
                     self.lya_line.flux, color='green')
 
         # Reset window limits

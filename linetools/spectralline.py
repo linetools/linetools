@@ -57,13 +57,14 @@ class SpectralLine(object):
     """
 
     @classmethod
-    def from_dict(cls, idict):
+    def from_dict(cls, idict, warn_only=False):
         """ Initialize from a dict (usually read from disk)
 
         Parameters
         ----------
         idict : dict
           dict with the Line parameters
+        warn_only : bool, optional
 
         Returns
         -------
@@ -83,9 +84,14 @@ class SpectralLine(object):
         # Check data
         for key in idict['data']:
             if isinstance(idict['data'][key], dict):  # Assume Quantity
-                assert sline.data[key].value == idict['data'][key]['value']
+                val = idict['data'][key]['value']
             else:
-                assert sline.data[key] == idict['data'][key]
+                val = idict['data'][key]
+            try:
+                assert sline.data[key] == val
+            except AssertionError:
+                if warn_only:
+                    warnings.warn("Different data value for {:s}: {}, {}".format(key,sline.data[key],val))
         # Set analy
         for key in idict['analy']:
             if isinstance(idict['analy'][key], dict):  # Assume Quantity

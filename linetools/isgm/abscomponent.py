@@ -125,7 +125,7 @@ class AbsComponent(object):
                   Ntup = tuple([idict[key] for key in ['flag_N', 'logN', 'sig_logN']]),
                   comment=idict['comment'], name=idict['Name'])
         # Add lines
-        for key in idict['lines']:
+        for key in idict['lines'].keys():
             iline = SpectralLine.from_dict(idict['lines'][key])
             slf.add_absline(iline, **kwargs)
         # Return
