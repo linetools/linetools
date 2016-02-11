@@ -412,6 +412,10 @@ class ExamineSpecWidget(QtGui.QWidget):
         if event.key in ['shift', 'control', 'shift+super', 'super+shift']:
             flg = 0
 
+        if event.key == '?': # open the XSpecGUI help page
+            import webbrowser
+            webbrowser.open("http://linetools.readthedocs.org/en/latest/xspecgui.html#navigating-these-key-strokes-help-you-explore-the-spectrum-be-sure-to-click-in-the-spectrum-panel-first")
+
         # Draw
         if flg==1: # Default is not to redraw
             self.on_draw()
