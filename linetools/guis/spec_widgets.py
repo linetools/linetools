@@ -241,7 +241,7 @@ class ExamineSpecWidget(QtGui.QWidget):
 
                 # Sort em + make arrays
                 iwv = np.array(sorted([self.adict['wv_1'],
-                                       self.adict['wv_2']])) * self.spec.wcs.unit
+                                       self.adict['wv_2']])) * self.spec.units['wave']
                 ic = np.array(sorted([self.adict['C_1'],
                                       self.adict['C_2']]))
 

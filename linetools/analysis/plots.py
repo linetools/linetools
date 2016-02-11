@@ -2,10 +2,12 @@
 """
 from __future__ import division, print_function, unicode_literals, absolute_import
 
-import numpy as np
-from specutils import Spectrum1D
+
+import pdb
 
 import astropy.units as u
+
+from linetools.spectra.xspectrum1d import XSpectrum1D
 
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
@@ -36,7 +38,7 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True,
     # Check for spec (required)
     gdiline = []
     for iline in abslines:
-        if isinstance(iline.analy['spec'], Spectrum1D):
+        if isinstance(iline.analy['spec'], XSpectrum1D):
             gdiline.append(iline)
     nplt = len(gdiline)
     if nplt == 0:

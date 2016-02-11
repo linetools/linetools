@@ -26,7 +26,7 @@ from .xspectrum1d import XSpectrum1D
 #from xastropy.xutils import xdebug as xdb
 
 def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
-             format='ascii', exten=None, debug=False, select=0):
+             format='ascii', exten=None, debug=False, select=0, **kwargs):
     """ Read a FITS file (or astropy Table or ASCII file) into a
     Spectrum1D class
 
@@ -99,7 +99,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
         # Binary FITS table
         if debug:
             print('linetools.spectra.io.readspec(): Assuming binary fits table')
-        xspec1d = parse_FITS_binary_table(hdulist, exten=exten)
+        xspec1d = parse_FITS_binary_table(hdulist, exten=exten, **kwargs)
 
     elif head0['NAXIS'] == 1: # Data in the zero extension
 
@@ -414,7 +414,8 @@ def parse_UVES_popler(hdulist):
     xspec1d = XSpectrum1D.from_tuple((uwave, fx, sig, co))
     return xspec1d
 
-def parse_FITS_binary_table(hdulist, exten=None):
+def parse_FITS_binary_table(hdulist, exten=None, flux_tag=None,
+                            sig_tag=None):
     """ Read a spectrum from a FITS binary table
 
     Parameters
@@ -422,6 +423,8 @@ def parse_FITS_binary_table(hdulist, exten=None):
     hdulist : FITS HDU list
     exten : int, optional
       Extension for the binary table.
+    flux_tag : str, optional
+    sig_tag : str, optional
 
     Returns
     -------
@@ -429,18 +432,24 @@ def parse_FITS_binary_table(hdulist, exten=None):
       Parsed spectrum
     """
     # Flux
-    flux_tags = ['SPEC', 'FLUX', 'FLAM', 'FX',
-                 'FLUXSTIS', 'FLUX_OPT', 'fl', 'flux', 'counts',
-                 'COUNTS']
+    if flux_tag is None:
+        flux_tags = ['SPEC', 'FLUX', 'FLAM', 'FX', 'FNORM',
+                     'FLUXSTIS', 'FLUX_OPT', 'fl', 'flux', 'counts',
+                     'COUNTS']
+    else:
+        flux_tags = [flux_tag]
     fx, fx_tag = get_table_column(flux_tags, hdulist, idx=exten)
     if fx is None:
         print('Binary FITS Table but no Flux tag. Searched fo these tags:\n',
               flux_tags)
         return
     # Error
-    sig_tags = ['ERROR','ERR','SIGMA_FLUX','FLAM_SIG', 'SIGMA_UP',
-                'ERRSTIS', 'FLUXERR', 'SIGMA', 'sigma', 'sigma_flux',
-                'er', 'err', 'error']
+    if sig_tag is None:
+        sig_tags = ['ERROR','ERR','SIGMA_FLUX','ENORM', 'FLAM_SIG', 'SIGMA_UP',
+                    'ERRSTIS', 'FLUXERR', 'SIGMA', 'sigma', 'sigma_flux',
+                    'er', 'err', 'error']
+    else:
+        sig_tags = [sig_tag]
     sig, sig_tag = get_table_column(sig_tags, hdulist)
     if sig is None:
         ivar_tags = ['IVAR', 'IVAR_OPT', 'ivar']

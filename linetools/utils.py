@@ -133,7 +133,11 @@ def jsonify(obj, debug=False):
     """
     if isinstance(obj, np.float64):
         obj = float(obj)
-    if isinstance(obj, np.int64):
+    elif isinstance(obj, np.float32):
+        obj = float(obj)
+    elif isinstance(obj, np.int32):
+        obj = int(obj)
+    elif isinstance(obj, np.int64):
         obj = int(obj)
     elif isinstance(obj, np.int16):
         obj = int(obj)

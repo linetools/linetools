@@ -929,7 +929,7 @@ or QtAgg backends to enable all interactive plotting commands.
 
         if knots is None:
             knots, indices, masked = prepare_knots(
-                wa, self.flux.value, self.uncertainty.array, edges)
+                wa, self.flux.value, self.sig.value, edges)
         else:
             knots = [list(k) for k in knots]
 
@@ -947,7 +947,7 @@ or QtAgg backends to enable all interactive plotting commands.
         import matplotlib.pyplot as plt
         fig = plt.figure(figsize=(11, 7))
         fig.subplots_adjust(left=0.05, right=0.95, bottom=0.1, top=0.95)
-        wrapper = InteractiveCoFit(wa, self.flux.value, self.uncertainty.array,
+        wrapper = InteractiveCoFit(wa, self.flux.value, self.sig.value,
                                    contpoints, co=co, fig=fig, anchor=anchor)
 
         # wait until the interactive fitting has finished
@@ -955,7 +955,8 @@ or QtAgg backends to enable all interactive plotting commands.
             plt.waitforbuttonpress()
 
         print('Updating continuum')
-        self.co = wrapper.continuum
+        self._data['co'] = wrapper.continuum
+        #self.co = wrapper.continuum
         if 'contpoints' not in self.meta:
             self.meta['contpoints'] = []
         self.meta['contpoints'].extend(
