@@ -27,7 +27,7 @@ Its main attributes are the `wavelength`, `flux` and
     >>> wa = np.arange(3000, 7000.1, 0.5)
     >>> fl = np.ones_like(wa)
     >>> sig = np.ones_like(fl) * 0.1
-    >>> sp = XSpectrum1D.from_tuple((wa, fl, sig))
+    >>> sp = XSpectrum1D.from_tuple((wa, fl, sig), verbose=False)
     >>> sp.wavelength # doctest: +SKIP
     <Quantity [ 3000. , 3000.5, 3001. ,..., 6999. , 6999.5, 7000. ] Angstrom>
     >>> sp.flux

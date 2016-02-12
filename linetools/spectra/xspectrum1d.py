@@ -148,7 +148,7 @@ class XSpectrum1D(object):
         return spec
 
     def __init__(self, wave, flux, sig=None, co=None, units=None, select=0,
-                 meta=None):
+                 meta=None, verbose=True):
         """
         Parameters
         ----------
@@ -178,8 +178,9 @@ class XSpectrum1D(object):
             self.npix = wave.shape[1]
         self.select = select
 
-        print("We have {:d} spectra with {:d} pixels each.".format(self.nspec,
-                                                                   self.npix))
+        if verbose:
+            print("We have {:d} spectra with {:d} pixels each.".format(
+                self.nspec, self.npix))
 
         # Data array
         self._data = np.empty((self.nspec,), #self.npix),

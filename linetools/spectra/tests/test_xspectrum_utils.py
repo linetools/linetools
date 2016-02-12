@@ -38,16 +38,16 @@ def test_rebin(spec):
     i2 = np.argmin(np.abs(newspec.wavelength-5000.*u.AA))
     s2n_2 = newspec.flux[i2] / newspec.sig[i2]
     """
-    np.testing.assert_allclose(newspec.sig[1000], 0.014321873163459941)
+    np.testing.assert_allclose(newspec.sig[1000].value, 0.01432187, rtol=1e-5)
 
 def test_addnoise(spec):
     #
     spec.add_noise(seed=12)
-    np.testing.assert_allclose(spec.flux[1000], 0.44806158542633057)
+    np.testing.assert_allclose(spec.flux[1000].value, 0.4480615, rtol=1e-5)
 
     # With S/N input
     spec.add_noise(seed=19,s2n=10.)
-    np.testing.assert_allclose(spec.flux[1000], 0.24104823059199412)
+    np.testing.assert_allclose(spec.flux[1000].value, 0.24104823, rtol=1e-5)
 
 
 def test_box_smooth(spec):
