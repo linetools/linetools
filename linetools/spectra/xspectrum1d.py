@@ -95,11 +95,12 @@ class XSpectrum1D(object):
 
     @classmethod
     def from_tuple(cls, ituple, sort=True, **kwargs):
-        """Make an XSpectrum1D from a tuple of arrays.
+        """Make an XSpectrum1D from a tuple of numpy arrays or Quantity arrays
 
         Parameters
         ----------
         ituple : (wave,flux), (wave,flux,sig) or (wave,flux,sig,cont)
+          ndarray or Quantity array
           If wave is unitless, Angstroms are assumed
           If flux is unitless, it is made dimensionless
         sort : bool, optional
@@ -177,12 +178,15 @@ class XSpectrum1D(object):
             self.npix = wave.shape[1]
         self.select = select
 
+        print("We have {:d} spectra with {:d} pixels each.".format(self.nspec,
+                                                                   self.npix))
+
         # Data array
-        self._data = np.empty((self.nspec, self.npix),
-                               dtype=[(str('wave'), 'float64'),
-                                      (str('flux'), 'float32'),
-                                      (str('sig'),  'float32'),
-                                      (str('co'),   'float32'),
+        self._data = np.empty((self.nspec,), #self.npix),
+                               dtype=[(str('wave'), 'float64', (self.npix)),
+                                      (str('flux'), 'float32', (self.npix)),
+                                      (str('sig'),  'float32', (self.npix)),
+                                      (str('co'),   'float32', (self.npix)),
                                      ])
         self._data['wave'] = np.reshape(wave, (self.nspec, self.npix))
         self._data['flux'] = np.reshape(flux, (self.nspec, self.npix))
@@ -856,7 +860,8 @@ or QtAgg backends to enable all interactive plotting commands.
             prihdu.header['METADATA'] = json.dumps(d)
 
         # Units
-        d = liu.jsonify(self.units)
+        units = self.units.copy()
+        d = liu.jsonify(units)
         prihdu.header['UNITS'] = json.dumps(d)
 
         # Write

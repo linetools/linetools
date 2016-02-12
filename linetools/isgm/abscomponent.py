@@ -391,11 +391,11 @@ class AbsComponent(object):
             elif aline.attrib['flag_N'] == 2:  # Lower limit
                 if self.flag_N in [0, 3]:
                     self.N = aline.attrib['N']
-                    self.sig_N = 99.
+                    self.sig_N = 99. / u.cm**2
                     self.flag_N = 2
                 elif self.flag_N == 2:
                     self.N = max(self.N, aline.attrib['N'])
-                    self.sig_N = 99.
+                    self.sig_N = 99. / u.cm**2
                 elif self.flag_N == 1:
                     pass
             elif aline.attrib['flag_N'] == 3:  # Upper limit

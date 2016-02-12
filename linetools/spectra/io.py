@@ -447,7 +447,7 @@ def parse_FITS_binary_table(hdulist, exten=None, flux_tag=None,
     if sig_tag is None:
         sig_tags = ['ERROR','ERR','SIGMA_FLUX','ENORM', 'FLAM_SIG', 'SIGMA_UP',
                     'ERRSTIS', 'FLUXERR', 'SIGMA', 'sigma', 'sigma_flux',
-                    'er', 'err', 'error']
+                    'er', 'err', 'error', 'sig']
     else:
         sig_tags = [sig_tag]
     sig, sig_tag = get_table_column(sig_tags, hdulist)
@@ -478,6 +478,9 @@ def parse_FITS_binary_table(hdulist, exten=None, flux_tag=None,
     co, co_tag = get_table_column(co_tags, hdulist, idx=exten)
     # Finish
     xspec1d = XSpectrum1D.from_tuple((give_wv_units(wave), fx, sig, co))
+
+    if 'METADATA' in hdulist[0].header:
+        xspec1d.meta.update(json.loads(hdulist[0].header['METADATA']))
     return xspec1d
 
 def parse_linetools_spectrum_format(hdulist):

@@ -109,7 +109,6 @@ def test_write_ascii(spec):
     np.testing.assert_allclose(spec.wavelength, spec2.wavelength)
 
 
-"""
 def test_write_fits(spec, spec2):
     # Write. Should be replaced with tempfile.TemporaryFile
     spec.write_to_fits(data_path('tmp.fits'))
@@ -124,7 +123,7 @@ def test_write_fits(spec, spec2):
 
 
 def test_readwrite_without_sig():
-    sp = XSpectrum1D.from_tuple(([5,6,7], np.ones(3)))
+    sp = XSpectrum1D.from_tuple((np.array([5,6,7]), np.ones(3)))
     sp.write_to_fits(data_path('tmp.fits'))
     sp1 = io.readspec(data_path('tmp.fits'))
     np.testing.assert_allclose(sp1.wavelength.value, sp.wavelength.value)
@@ -142,7 +141,6 @@ def test_readwrite_metadata(spec):
     np.testing.assert_allclose(spec2.meta['c'], d['c'])
     np.testing.assert_allclose(spec2.meta['d'], d['d'])
     assert spec2.meta['e'] == d['e']
-"""
 
 
 def test_copy(spec):

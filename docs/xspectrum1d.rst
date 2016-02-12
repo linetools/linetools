@@ -12,15 +12,14 @@ Overview
 `~linetools.spectra.xspectrum1d.XSpectrum1D` describes a 1-d spectrum,
 which usually consists of a wavelength, flux and flux uncertainty
 array.  For absorption-line analysis, it also often contains a
-continuum array.  XSpectrum1D subclasses the
-`specutils <https://github.com/astropy/specutils>`_
-Spectrum1D class, adding several new attributes and methods.
+continuum array.  The data are held in a numpy array which
+can contain multiple spectra.
 
 Attributes
 ==========
 
 Its main attributes are the `wavelength`, `flux` and
-`uncertainty`. Let's create a spectrum using the
+`sig`. Let's create a spectrum using the
 `~linetools.spectra.xspectrum1d.XSpectrum1D.from_tuple` method::
 
     >>> from linetools.spectra.xspectrum1d import XSpectrum1D
@@ -33,16 +32,22 @@ Its main attributes are the `wavelength`, `flux` and
     <Quantity [ 3000. , 3000.5, 3001. ,..., 6999. , 6999.5, 7000. ] Angstrom>
     >>> sp.flux
     <Quantity [ 1., 1., 1.,...,  1., 1., 1.]>
-    >>> sp.uncertainty # doctest: +SKIP
-    <astropy.nddata.nduncertainty.StdDevUncertainty at 0x10bec8e80>
-   
-Note that the wavelength and flux both have units. If you don't
+    >>> sp.sig # doctest: +SKIP
+    <Quantity [ 1., 1., 1.,...,  1., 1., 1.]>
+
+Note that all three arrays have units. If you don't
 specify a unit when you create an new XSpectrum1D instance, Angstroms
 are assumed. In this case the flux is unitless but still a
 Quantity array. The 1-sigma
-uncertainty is assumed to have the same units as the flux, and you can
-access its underlying numpy array via ``sp.uncertainty.array``
-or ``sp.sig``.
+uncertainty is assumed to have the same units as the flux.
+All of these are specified in the sp.units dict.
+
+If one loads multiple 1D spectra (e.g. a brick of data from DESI),
+the selected spectrum is given by the spec.select index.
+
+All of the values are stored in the spec._data numpy array
+with columns `wave`, `flux`, `sig`, and `co` (the latter is
+for a continuum).
 
 Methods
 =======
@@ -90,11 +95,13 @@ to interactively fit a continuum to the spectrum. Currently it's
 optimised to estimate the continuum for high-resolution quasar
 spectra, but it should be applicable to any spectrum with a slowly
 varying continuum level and narrow absorption features. Once a
-continuum has been fitted, it can be accessed using under the `co`
-attribute. The spectrum can also be normalised (i.e the flux is
-divided by the continuum) with the
+continuum has been fitted, it can be accessed using the `co`
+attribute. The spectrum can also be normalised (i.e the flux values
+returned by spec.flux are divided by the continuum) with the
 `~linetools.spectra.xspectrum1d.XSpectrum1D.normalize`
-method. Finally, you can apply small variations to the continuum
+method.  This also sets spec.normed to True.
+
+Finally, you can apply small variations to the continuum
 anchor points with
 `~linetools.spectra.xspectrum1d.XSpectrum1D.perturb_continuum` to see
 how changes in the continuum level affect your analysis.
