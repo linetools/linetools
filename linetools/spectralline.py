@@ -225,6 +225,11 @@ class SpectralLine(object):
             raise ValueError('spectralline.cut_spec: Need to set wvlim or vlim!')
         self.analy['pix'] = pix
 
+        # Normalize?
+        if normalize:
+            sv_normed = self.analy['spec'].normed
+            self.analy['spec'].normed = True
+
         # Cut for analysis
         fx = self.analy['spec'].flux[pix]
         sig = self.analy['spec'].sig[pix]
@@ -235,14 +240,9 @@ class SpectralLine(object):
             self.wrest*(1 + self.attrib['z']))
         velo = self.analy['spec'].velo[pix]
 
-        # Normalize?
+        # Set it back
         if normalize:
-            if hasattr(self.analy['spec'], 'co') and \
-                   self.analy['spec'].co is not None:
-                fx = fx / self.analy['spec'].co[pix]
-                sig = sig / self.analy['spec'].co[pix]
-            else:
-                warnings.warn("{} does not have a spectrum with continuum. Not normalizing.".format(self))
+            self.analy['spec'].normed = sv_normed
 
         # Return
         return fx, sig, dict(wave=wave, velo=velo)
