@@ -25,7 +25,6 @@ def data_path(filename):
 def test_rebin(spec):
     # Rebin
     new_wv = np.arange(3000., 9000., 5) * u.AA
-    pdb.set_trace()
     newspec = spec.rebin(new_wv)
     # Test
     np.testing.assert_allclose(newspec.flux[1000], 0.9999280967617779)
