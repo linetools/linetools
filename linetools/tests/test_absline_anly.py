@@ -37,7 +37,6 @@ def test_aodm_absline():
     #
     abslin.measure_aodm()
     N, sig_N, flgN = [abslin.attrib[key] for key in ['N','sig_N','flag_N']]
-    pdb.set_trace()
     np.testing.assert_allclose(N.value, 80369217498895.17)
     return
 
