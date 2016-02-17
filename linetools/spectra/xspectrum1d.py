@@ -229,7 +229,7 @@ class XSpectrum1D(object):
         """ Return the flux with units
         """
         flux =  self.data[self.select]['flux'] * self.units['flux']
-        if self.normed:
+        if self.normed and self.co_is_set:
             flux /= self.data[self.select]['co']
         return flux
 
@@ -251,7 +251,7 @@ class XSpectrum1D(object):
             return np.nan
         #
         sig = self.data[self.select]['sig'] * self.units['flux']
-        if self.normed:
+        if self.normed and self.co_is_set:
             sig /= self.data[self.select]['co']
         return sig
 
@@ -271,7 +271,7 @@ class XSpectrum1D(object):
         """
         if not self.co_is_set:
             warnings.warn("This spectrum does not contain an input continuum array")
-            return 1.  # This avoids buggering up the flux and sig arrays
+            return np.nan
         return self.data[self.select]['co'] * self.units['flux']
 
     @property
@@ -481,7 +481,7 @@ class XSpectrum1D(object):
         ax.plot(self.wavelength, self.sig, **kwargs)
 
         # Continuum
-        if not np.isnan(self.data[self.select]['co'][0]):
+        if (not np.isnan(self.data[self.select]['co'][0])) and (not self.normed):
             if nocolor:
                 kwargs.update(color='r')
             ax.plot(self.wavelength, self.co, **kwargs)
