@@ -70,7 +70,7 @@ def aodm(spec, idata):
 
     # Sum it
     ntot = np.sum( nndt*delv )
-    tvar = np.sum( (delv*cst*sig/fx)**2 )
+    tvar = np.sum((delv*cst*sig/fx)**2)
 
     # Return
     return ntot, np.sqrt(tvar), flg_sat

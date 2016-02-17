@@ -104,7 +104,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
     elif head0['NAXIS'] == 1: # Data in the zero extension
 
         # How many entries?
-        if len(hdulist) == 1: # Old school (one file per flux, error)
+        if len(hdulist) == 1:  # Old school (one file per flux, error)
             if debug:
                 print(
   'linetools.spectra.io.readspec(): Assuming flux and err in separate files')

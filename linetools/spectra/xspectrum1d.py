@@ -126,7 +126,7 @@ class XSpectrum1D(object):
         return spec
 
     def __init__(self, wave, flux, sig=None, co=None, units=None, select=0,
-                 meta=None, verbose=True):
+                 meta=None, verbose=False):
         """
         Parameters
         ----------

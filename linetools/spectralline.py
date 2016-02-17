@@ -489,7 +489,7 @@ class AbsLine(SpectralLine):
         velo = xdict['velo']
 
         # Calculate
-        N,sig_N,flg_sat = laa.aodm( (velo, fx, sig), (self.wrest,self.data['f']) )
+        N, sig_N, flg_sat = laa.aodm((velo, fx, sig), (self.wrest,self.data['f']))
 
         # Flag
         if flg_sat:
