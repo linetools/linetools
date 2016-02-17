@@ -226,9 +226,8 @@ def read_spec(ispec, exten=None, norm=True):
 
     # Normalize?
     if norm:
-        #if hasattr(spec, 'co') and spec.co is not None:
-        if spec.flag_co:
-            spec.normalize()
+        if spec.co_is_set:
+            spec.normed=True
 
     # Return
     return spec, spec_fil
