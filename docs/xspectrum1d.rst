@@ -45,7 +45,7 @@ All of these are specified in the sp.units dict.
 If one loads multiple 1D spectra (e.g. a brick of data from DESI),
 the selected spectrum is given by the spec.select index.
 
-All of the values are stored in the spec._data numpy array
+All of the values are stored in the spec.data numpy array
 with columns `wave`, `flux`, `sig`, and `co` (the latter is
 for a continuum).
 

@@ -65,11 +65,6 @@ class ExamineSpecWidget(QtGui.QWidget):
         self.orig_spec = spec  # For smoothing
         self.spec = self.orig_spec
 
-        if spec.flag_co is True:
-            self.continuum = XSpectrum1D.from_tuple((spec.wavelength,spec.co))
-        else:
-            self.continuum = None
-
         self.vlines = []
         if vlines is not None:
             self.vlines.extend(vlines)
@@ -232,11 +227,11 @@ class ExamineSpecWidget(QtGui.QWidget):
 
             if self.adict['flg'] == 0:
                 self.adict['wv_1'] = event.xdata # wavelength
-                self.adict['C_1'] = event.ydata # continuum
+                self.adict['C_1'] = event.ydata # local continuum
                 self.adict['flg'] = 1 # Plot dot
             else:
                 self.adict['wv_2'] = event.xdata # wavelength
-                self.adict['C_2'] = event.ydata # continuum
+                self.adict['C_2'] = event.ydata # local continuum
                 self.adict['flg'] = 2 # Ready to plot + print
 
                 # Sort em + make arrays
@@ -484,9 +479,8 @@ class ExamineSpecWidget(QtGui.QWidget):
                 self.ax2.set_xlabel("Rest Wavelength (z={:g})".format(z))
 
             # Continuum?
-            if self.continuum is not None:
-                self.ax.plot(self.continuum.wavelength, self.continuum.flux,
-                    color='purple')
+            if self.co_is_set:
+                self.ax.plot(self.wavelength, self.flux, color='purple')
 
             # Model?
             if self.model is not None:

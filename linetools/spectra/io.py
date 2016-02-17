@@ -165,6 +165,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
 
 
     # Generate, as needed
+    """
     if 'xspec1d' not in locals():
         # Give Ang as default
         if not hasattr(wave, 'unit'):
@@ -174,6 +175,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
         else:
             uwave = u.Quantity(wave)
         xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, None))
+    """
 
     if np.any(np.isnan(xspec1d.wavelength)):
         warnings.warn('WARNING: Some wavelengths are NaN')
@@ -181,16 +183,12 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
     # Filename
     xspec1d.filename = datfil
 
-    if not xspec1d.flag_co:
+    if not xspec1d.co_is_set:
         # Final check for continuum in a separate file
-        if isinstance(specfil,basestring):
-            if specfil.endswith('.fits'):
-                try:
-                    co = fits.getdata(specfil.replace('.fits', '_c.fits'))
-                except IOError:
-                    pass
-                else:
-                    xspec1d._data['co'] = co
+        if isinstance(specfil, basestring) and specfil.endswith('.fits'):
+            co_filename = specfil.replace('.fits', '_c.fits')
+            if os.path.exists(co_filename):
+                xspec1d.data['co'] = fits.getdata(co_filename)
 
     # Add in the header
     xspec1d.head = head0
@@ -415,7 +413,7 @@ def parse_UVES_popler(hdulist):
     return xspec1d
 
 def parse_FITS_binary_table(hdulist, exten=None, flux_tag=None,
-                            sig_tag=None):
+                            sig_tag=None, co_tag=None):
     """ Read a spectrum from a FITS binary table
 
     Parameters
@@ -425,6 +423,7 @@ def parse_FITS_binary_table(hdulist, exten=None, flux_tag=None,
       Extension for the binary table.
     flux_tag : str, optional
     sig_tag : str, optional
+    co_tag : str, optional
 
     Returns
     -------
@@ -474,7 +473,10 @@ def parse_FITS_binary_table(hdulist, exten=None, flux_tag=None,
         print('Binary FITS Table but no wavelength tag. Searched for these tags:\n',
               wave_tags)
         return
-    co_tags = ['CONT', 'CO', 'CONTINUUM', 'co', 'cont']
+    if co_tag is None:
+        co_tags = ['CONT', 'CO', 'CONTINUUM', 'co', 'cont']
+    else:
+        co_tags = [co_tag]
     co, co_tag = get_table_column(co_tags, hdulist, idx=exten)
     # Finish
     xspec1d = XSpectrum1D.from_tuple((give_wv_units(wave), fx, sig, co))
@@ -546,7 +548,8 @@ def parse_DESI_brick(hdulist, select=0):
     # Wave
     wave = hdulist[2].data
     wave = give_wv_units(wave)
-    wave = np.outer(np.ones(fx.shape[0]), wave)
+    #wave = np.outer(np.ones(fx.shape[0]), wave)
+    wave = np.tile(wave, (fx.shape[0],1))
     # Finish
     xspec1d = XSpectrum1D(wave, fx, sig, select=select)
     return xspec1d

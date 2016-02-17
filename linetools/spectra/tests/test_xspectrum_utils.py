@@ -42,12 +42,12 @@ def test_rebin(spec):
 
 def test_addnoise(spec):
     #
-    spec.add_noise(seed=12)
-    np.testing.assert_allclose(spec.flux[1000].value, 0.4480615, rtol=1e-5)
+    newspec = spec.add_noise(seed=12)
+    np.testing.assert_allclose(newspec.flux[1000].value, 0.4480615, rtol=1e-5)
 
     # With S/N input
-    spec.add_noise(seed=19,s2n=10.)
-    np.testing.assert_allclose(spec.flux[1000].value, 0.24104823, rtol=1e-5)
+    newspec2 = spec.add_noise(seed=19,s2n=10.)
+    np.testing.assert_allclose(newspec2.flux[1000].value, -0.3028939, rtol=1e-5)
 
 
 def test_box_smooth(spec):
@@ -160,7 +160,7 @@ def test_continuum_utils(spec):
     xy = xy.transpose()
     x, y = xy[0], xy[1]
     # test interpolate
-    spec.normalize(co=spec._interp_continuum(x, y))
+    spec.normalize(spec._interp_continuum(x, y))
     np.testing.assert_allclose(spec.co, 1.)
     co_old = spec.co
     # test perturb
@@ -174,10 +174,8 @@ def test_continuum_utils(spec):
 
     # test normalize/unnormalize
     flux_old = spec.flux
-    spec.normalize()
-    assert spec.normed == True
     spec.unnormalize()
-    assert spec.normed == False
+    assert spec.normed is False
     np.testing.assert_allclose(spec.flux,flux_old)
 
 
