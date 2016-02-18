@@ -8,4 +8,7 @@ especially quasar and galaxy spectra.
 
 Check out the documentation at https://linetools.readthedocs.org/en/latest
 
+Development status
+------------------
 [![Build Status](https://travis-ci.org/linetools/linetools.svg?branch=master)](https://travis-ci.org/linetools/linetools)
+[![Coverage Status](https://coveralls.io/repos/github/linetools/linetools/badge.svg?branch=master)](https://coveralls.io/github/linetools/linetools?branch=master)
