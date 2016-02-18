@@ -169,6 +169,7 @@ class XSpectrum1D(object):
                                      ])
         self.data['wave'] = np.reshape(wave, (self.nspec, self.npix))
         self.data['flux'] = np.reshape(flux, (self.nspec, self.npix))
+
         if sig is not None:
             if wave.shape[0] != sig.shape[0]:
                 raise IOError("Shape of wave and sig vectors must be identical")
@@ -263,7 +264,6 @@ class XSpectrum1D(object):
             return False
         else:
             return True
-
 
     @property
     def co(self):
@@ -381,15 +381,8 @@ class XSpectrum1D(object):
         self.normed = True
 
     def unnormalize(self):
-        """ Un-normalize the spectrum with an input continuum
+        """ Un-normalize the spectrum to the original flux values
 
-        Parameters
-        ----------
-        co: numpy array [None]
-          Continuum. Use XSpectrum1D.co if None is given.
-        verbose: bool [False]
-        no_check: bool [False]
-          Check size of array?
         """
         self.normed = False
 
@@ -702,9 +695,15 @@ or QtAgg backends to enable all interactive plotting commands.
         new_fx = lsc.convolve_psf(
             self.flux.value, fwhm, **kwargs) * self.flux.unit
 
+        # Get the right sigma
+        if self.sig_is_set:
+            new_sig = self.sig.value
+        else:
+            new_sig = None
+
         # Return
         return XSpectrum1D.from_tuple(
-            (self.wavelength, new_fx, self.sig), meta=self.meta.copy())
+            (self.wavelength, new_fx, new_sig), meta=self.meta.copy())
 
     # Splice two spectra together
     def splice(self, spec2, wvmx=None, scale=1.):
