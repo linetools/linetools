@@ -341,7 +341,7 @@ class XSpectrum1D(object):
             sig = self.sig.value
         # Copy
         newspec = self.copy()
-        newspec.data[self.select]['flux'] = self.flux.value + (rand * sig)
+        newspec.data['flux'][self.select] = self.flux.value + (rand * sig)
         #
         return newspec
 

@@ -12,7 +12,6 @@ Linetools depends on these packages:
 * `astropy`_ version 1.0 or later
 * `scipy <http://www.scipy.org/>`_ version 0.16 or later
 * `matplotlib <http://matplotlib.org/>`_  version 1.4 or later
-* `specutils <https://github.com/astropy/specutils>`_ version 0.2 or later
 * `PyQT4 <https://wiki.python.org/moin/PyQt>`_ version 4 (for GUIs)
 
 We strongly recommend that you use `Anaconda
