@@ -57,13 +57,14 @@ class SpectralLine(object):
     """
 
     @classmethod
-    def from_dict(cls, idict):
+    def from_dict(cls, idict, warn_only=False):
         """ Initialize from a dict (usually read from disk)
 
         Parameters
         ----------
         idict : dict
           dict with the Line parameters
+        warn_only : bool, optional
 
         Returns
         -------
@@ -83,9 +84,14 @@ class SpectralLine(object):
         # Check data
         for key in idict['data']:
             if isinstance(idict['data'][key], dict):  # Assume Quantity
-                assert sline.data[key].value == idict['data'][key]['value']
+                val = idict['data'][key]['value']
             else:
-                assert sline.data[key] == idict['data'][key]
+                val = idict['data'][key]
+            try:
+                assert sline.data[key] == val
+            except AssertionError:
+                if warn_only:
+                    warnings.warn("Different data value for {:s}: {}, {}".format(key,sline.data[key],val))
         # Set analy
         for key in idict['analy']:
             if isinstance(idict['analy'][key], dict):  # Assume Quantity
@@ -206,7 +212,7 @@ class SpectralLine(object):
         # Checks
         if self.analy['spec'] is None:
             raise ValueError('spectralline.cut_spec: Need to set spectrum!')
-        if self.analy['spec'].wcs.unit == 1.:
+        if self.analy['spec'].wavelength.unit == 1.:
             raise ValueError('Expecting a unit!')
 
         # Pixels for evaluation
@@ -219,24 +225,24 @@ class SpectralLine(object):
             raise ValueError('spectralline.cut_spec: Need to set wvlim or vlim!')
         self.analy['pix'] = pix
 
+        # Normalize?
+        if normalize:
+            sv_normed = self.analy['spec'].normed
+            self.analy['spec'].normed = True
+
         # Cut for analysis
         fx = self.analy['spec'].flux[pix]
         sig = self.analy['spec'].sig[pix]
-        wave = self.analy['spec'].dispersion[pix]
+        wave = self.analy['spec'].wavelength[pix]
 
         # Velocity array created within the XSpectrum1D class and cut afterwards
         self.analy['spec'].velo = self.analy['spec'].relative_vel(
             self.wrest*(1 + self.attrib['z']))
         velo = self.analy['spec'].velo[pix]
 
-        # Normalize?
+        # Set it back
         if normalize:
-            if hasattr(self.analy['spec'], 'co') and \
-                   self.analy['spec'].co is not None:
-                fx = fx / self.analy['spec'].co[pix]
-                sig = sig / self.analy['spec'].co[pix]
-            else:
-                warnings.warn("{} does not have a spectrum with continuum. Not normalizing.".format(self))
+            self.analy['spec'].normed = sv_normed
 
         # Return
         return fx, sig, dict(wave=wave, velo=velo)
@@ -455,7 +461,7 @@ class AbsLine(SpectralLine):
         if wave is None:
             # Assume a spectrum has been loaded already
             try:
-                wave = self.analy['spec'].dispersion
+                wave = self.analy['spec'].wavelength
             except:
                 raise ('You must provide a wavelength array in generate_voigt')
 
@@ -483,7 +489,7 @@ class AbsLine(SpectralLine):
         velo = xdict['velo']
 
         # Calculate
-        N,sig_N,flg_sat = laa.aodm( (velo, fx, sig), (self.wrest,self.data['f']) )
+        N, sig_N, flg_sat = laa.aodm((velo, fx, sig), (self.wrest,self.data['f']))
 
         # Flag
         if flg_sat:

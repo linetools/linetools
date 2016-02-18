@@ -6,8 +6,6 @@ import pytest
 import pdb
 from astropy import units as u
 import numpy as np
-from astropy.io import fits, ascii
-from astropy.table import QTable, Table, Column
 
 from linetools.spectra import io
 from linetools.spectra.xspectrum1d import XSpectrum1D
@@ -30,7 +28,7 @@ def test_rebin(spec):
     newspec = spec.rebin(new_wv)
     # Test
     np.testing.assert_allclose(newspec.flux[1000], 0.9999280967617779)
-    assert newspec.flux.unit == u.dimensionless_unscaled
+    assert newspec.flux.unit is u.dimensionless_unscaled
     # With sigma
     newspec = spec.rebin(new_wv, do_sig=True)
     """
@@ -39,16 +37,16 @@ def test_rebin(spec):
     i2 = np.argmin(np.abs(newspec.wavelength-5000.*u.AA))
     s2n_2 = newspec.flux[i2] / newspec.sig[i2]
     """
-    np.testing.assert_allclose(newspec.sig[1000], 0.014321873163459941)
+    np.testing.assert_allclose(newspec.sig[1000].value, 0.01432187, rtol=1e-5)
 
 def test_addnoise(spec):
     #
-    spec.add_noise(seed=12)
-    np.testing.assert_allclose(spec.flux[1000], 0.44806158542633057)
+    newspec = spec.add_noise(seed=12)
+    np.testing.assert_allclose(newspec.flux[1000].value, 0.4480615, rtol=1e-5)
 
     # With S/N input
-    spec.add_noise(seed=19,s2n=10.)
-    np.testing.assert_allclose(spec.flux[1000], 0.24104823059199412)
+    newspec2 = spec.add_noise(seed=19,s2n=10.)
+    np.testing.assert_allclose(newspec2.flux[1000].value, -0.3028939, rtol=1e-5)
 
 
 def test_box_smooth(spec):
@@ -107,7 +105,7 @@ def test_write_ascii(spec):
     # 
     spec2 = io.readspec(data_path('tmp.ascii'))
     # check a round trip works
-    np.testing.assert_allclose(spec.dispersion, spec2.dispersion)
+    np.testing.assert_allclose(spec.wavelength, spec2.wavelength)
 
 
 def test_write_fits(spec, spec2):
@@ -115,19 +113,19 @@ def test_write_fits(spec, spec2):
     spec.write_to_fits(data_path('tmp.fits'))
     specin = io.readspec(data_path('tmp.fits'))
     # check a round trip works
-    np.testing.assert_allclose(spec.dispersion, specin.dispersion)
+    np.testing.assert_allclose(spec.wavelength, specin.wavelength)
     # ESI
     spec2.write_to_fits(data_path('tmp2.fits'))
     specin2 = io.readspec(data_path('tmp2.fits'))
     # check a round trip works
-    np.testing.assert_allclose(spec2.dispersion, specin2.dispersion)
+    np.testing.assert_allclose(spec2.wavelength, specin2.wavelength)
 
 
 def test_readwrite_without_sig():
-    sp = XSpectrum1D.from_tuple(([5,6,7], np.ones(3)))
+    sp = XSpectrum1D.from_tuple((np.array([5,6,7]), np.ones(3)))
     sp.write_to_fits(data_path('tmp.fits'))
     sp1 = io.readspec(data_path('tmp.fits'))
-    np.testing.assert_allclose(sp1.dispersion.value, sp.dispersion.value)
+    np.testing.assert_allclose(sp1.wavelength.value, sp.wavelength.value)
     np.testing.assert_allclose(sp1.flux.value, sp.flux.value)
 
 
@@ -161,7 +159,7 @@ def test_continuum_utils(spec):
     xy = xy.transpose()
     x, y = xy[0], xy[1]
     # test interpolate
-    spec.co = spec._interp_continuum(x, y)
+    spec.normalize(spec._interp_continuum(x, y))
     np.testing.assert_allclose(spec.co, 1.)
     co_old = spec.co
     # test perturb
@@ -175,10 +173,8 @@ def test_continuum_utils(spec):
 
     # test normalize/unnormalize
     flux_old = spec.flux
-    spec.normalize()
-    assert spec.normed == True
     spec.unnormalize()
-    assert spec.normed == False
+    assert spec.normed is False
     np.testing.assert_allclose(spec.flux,flux_old)
 
 

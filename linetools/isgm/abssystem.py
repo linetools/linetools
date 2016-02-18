@@ -119,12 +119,13 @@ class AbsSystem(object):
         return slf
 
     @classmethod
-    def from_dict(cls, idict):
+    def from_dict(cls, idict, skip_components=False, **kwargs):
         """ Instantiate from a dict.  Usually read from the hard-drive
 
         Parameters
         ----------
         idict : dict
+        skip_components : bool, optional
 
         Returns
         -------
@@ -134,26 +135,28 @@ class AbsSystem(object):
         slf = cls(idict['abs_type'],
                   SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg),
                   idict['zabs'], idict['vlim']*u.km/u.s,
-                  zem=idict['zem'], NHI=idict['NHI'],
-                  sig_NHI=idict['sig_NHI'], name=idict['Name']
+                  zem=idict['zem'], NHI=idict['NHI'], sig_NHI=idict['sig_NHI'],
+                  flag_NHI=idict['flag_NHI'], name=idict['Name']
                   )
-        # Components
-        components = ltiu.build_components_from_dict(idict)
-        for component in components:
-            # This is to insure the components follow the rules
-            slf.add_component(component)
+        if not skip_components:
+            # Components
+            components = ltiu.build_components_from_dict(idict)
+            for component in components:
+                # This is to insure the components follow the rules
+                slf.add_component(component)
 
         # Return
         return slf
 
     def __init__(self, abs_type, radec, zabs, vlim, zem=0.,
-                 NHI=0., sig_NHI=np.zeros(2), name=None):
+                 NHI=0., sig_NHI=np.zeros(2), flag_NHI=0, name=None):
 
         self.zabs = zabs
         self.zem = zem
         self.vlim = vlim
         self.NHI = NHI
         self.sig_NHI = sig_NHI
+        self.flag_NHI = flag_NHI
         self.coord = ltu.radec_to_coord(radec)
         if name is None:
             self.name = 'J{:s}{:s}_z{:.3f}'.format(
@@ -284,7 +287,7 @@ class AbsSystem(object):
         # Generate the dict
         outdict = dict(Name=self.name, abs_type=self.abs_type, zabs=self.zabs,
                        vlim=self.vlim.to('km/s').value, zem=self.zem,
-                       NHI=self.NHI, sig_NHI=self.sig_NHI,
+                       NHI=self.NHI, sig_NHI=self.sig_NHI, flag_NHI=self.flag_NHI,
                        RA=self.coord.ra.value, DEC=self.coord.dec.value,
                        kin=self.kin, Refs=self.Refs, CreationDate=date,
                        user=user

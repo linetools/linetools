@@ -22,39 +22,43 @@ def data_path(filename):
 
 # From arrays
 def test_from_tuple():
-    idl = ascii.read(data_path('UM184.dat.gz'), names=['wave', 'flux', 'sig'])
-    spec = XSpectrum1D.from_tuple((idl['wave'],idl['flux'],idl['sig']))
+    tmp = ascii.read(data_path('UM184.dat.gz'), names=['wave', 'flux', 'sig'])
+    idl = dict(wave=np.array(tmp['wave']), flux=np.array(tmp['flux']),
+               sig=np.array(tmp['sig']))
+    spec = XSpectrum1D.from_tuple((idl['wave'],idl['flux'], idl['sig']))
     #
-    np.testing.assert_allclose(spec.dispersion.value, idl['wave'])
+    np.testing.assert_allclose(spec.wavelength.value, idl['wave'])
     np.testing.assert_allclose(spec.sig, idl['sig'], atol=2e-3, rtol=0)
 
-    assert spec.dispersion.unit == u.Unit('AA')
+    assert spec.wavelength.unit == u.Unit('AA')
     #
     spec = XSpectrum1D.from_tuple((idl['wave'],idl['flux']))
-    np.testing.assert_allclose(spec.dispersion.value, idl['wave'])
+    np.testing.assert_allclose(spec.wavelength.value, idl['wave'])
     # continuum
     co = np.ones_like(idl['flux'])
     spec = XSpectrum1D.from_tuple((idl['wave'],idl['flux'],idl['sig'], co))
-    np.testing.assert_allclose(spec.dispersion.value, idl['wave'])
+    np.testing.assert_allclose(spec.wavelength.value, idl['wave'])
 
     co = None
     spec = XSpectrum1D.from_tuple((idl['wave'],idl['flux'],idl['sig'], co))
-    np.testing.assert_allclose(spec.dispersion.value, idl['wave'])
+    np.testing.assert_allclose(spec.wavelength.value, idl['wave'])
 
+"""
 # From file
 def test_from_spec1d():
     spec = Spectrum1D.from_array(np.array([1,2,3]), np.array([1,1,1]))
     xspec = XSpectrum1D.from_spec1d(spec)
+"""
 
 # From file
 def test_from_file():
     spec = XSpectrum1D.from_file(data_path('UM184_nF.fits'))
     idl = ascii.read(data_path('UM184.dat.gz'), names=['wave', 'flux', 'sig'])
 
-    np.testing.assert_allclose(spec.dispersion.value, idl['wave'])
+    np.testing.assert_allclose(spec.wavelength.value, idl['wave'])
     np.testing.assert_allclose(spec.sig, idl['sig'], atol=2e-3, rtol=0)
 
-    assert spec.dispersion.unit == u.Unit('AA')
+    assert spec.wavelength.unit == u.Unit('AA')
 
 # Attributes
 def test_attrib():

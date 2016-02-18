@@ -11,7 +11,6 @@ import numpy as np
 from astropy.io import fits
 
 from linetools.spectra import io
-from linetools.spectra.xspectrum1d import XSpectrum1D
 
 
 def data_path(filename):
@@ -28,10 +27,10 @@ def test_get_cdelt_dcflag():
 def test_sep_files():
     spec = io.readspec(data_path('UM184_nF.fits'))
     idl = ascii.read(data_path('UM184.dat.gz'), names=['wave', 'flux', 'sig'])
-    np.testing.assert_allclose(spec.dispersion.value, idl['wave'])
+    np.testing.assert_allclose(spec.wavelength.value, idl['wave'])
     np.testing.assert_allclose(spec.sig, idl['sig'], atol=2e-3, rtol=0)
 
-    assert spec.dispersion.unit == u.Unit('AA')
+    assert spec.wavelength.unit == u.Unit('AA')
 
 def test_setwave():
     hd = fits.getheader(data_path('UM184_nF.fits'))
@@ -45,17 +44,17 @@ def test_setwave():
 # ASCII format
 def test_read_ascii():
     spec = io.readspec(data_path('UM184.dat.gz'))
-    assert spec.dispersion.unit == u.Unit('AA')
+    assert spec.wavelength.unit == u.Unit('AA')
     spec = io.readspec(data_path('q0002m422.txt.gz'))
     assert spec.filename.endswith('q0002m422.txt.gz')
 
 def test_uves_popler():
     spec = io.readspec(data_path('popler_sample.fits'))
-    assert spec.dispersion.unit == u.Unit('AA')
+    assert spec.wavelength.unit == u.Unit('AA')
     assert spec.filename.endswith('popler_sample.fits')
 
 def test_read_table():
     t = Table([(1,2,3), (1,2,3), (1,2,3)], names=['WAVE', 'FLUX', 'ERR'])
     spec = io.readspec(t)
-    np.testing.assert_allclose(spec.dispersion[0].value, 1)
+    np.testing.assert_allclose(spec.wavelength[0].value, 1)
     np.testing.assert_allclose(spec.flux[0], 1)

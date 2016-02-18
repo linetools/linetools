@@ -50,7 +50,7 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True):
         iline.attrib['flag_N'] = 1
         iline.analy['spec'] = xspec
         iline.analy['vlim'] = vlim
-        _,_ = ltaa.linear_clm(iline.attrib) # Loads N, sig_N
+        _,_ = ltaa.linear_clm(iline.attrib)  # Loads N, sig_N
         abslines.append(iline)
     # Component
     abscomp = AbsComponent.from_abslines(abslines)

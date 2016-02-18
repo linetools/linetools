@@ -5,10 +5,12 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import json
 import gzip, os
 import warnings
+import pdb
 
 import numpy as np
 from astropy import constants as const
 from astropy import units as u
+from astropy.units import Quantity, Unit
 
 def between(a, vmin, vmax):
     """ Return a boolean array True where vmin <= a < vmax.
@@ -111,7 +113,7 @@ def scipy_rebin(a, *args):
     return eval(''.join(evList))
 
 
-def jsonify(obj):
+def jsonify(obj, debug=False):
     """ Recursively process an object so it can be serialised in json
     format.
 
@@ -121,31 +123,50 @@ def jsonify(obj):
     Parameters
     ----------
     obj : any object
+    debug : bool, optional
 
     Returns
     -------
     obj - the same obj is json_friendly format (arrays turned to
-    lists, np.int64 converted to int, and so on).
+    lists, np.int64 converted to int, np.float64 to float, and so on).
 
     """
-    if isinstance(obj, np.int64):
+    if isinstance(obj, np.float64):
+        obj = float(obj)
+    elif isinstance(obj, np.float32):
+        obj = float(obj)
+    elif isinstance(obj, np.int32):
         obj = int(obj)
-    if isinstance(obj, np.bool_):
+    elif isinstance(obj, np.int64):
+        obj = int(obj)
+    elif isinstance(obj, np.int16):
+        obj = int(obj)
+    elif isinstance(obj, np.bool_):
         obj = bool(obj)
+    elif isinstance(obj, np.string_):
+        obj = str(obj)
     elif isinstance(obj, np.ndarray):
         obj = obj.tolist()
     elif isinstance(obj, dict):
         for key, value in obj.items():
-            obj[key] = jsonify(value)
+            obj[key] = jsonify(value, debug=debug)
     elif isinstance(obj, list):
         for i,item in enumerate(obj):
-            obj[i] = jsonify(item)
+            obj[i] = jsonify(item, debug=debug)
     elif isinstance(obj, tuple):
         obj = list(obj)
         for i,item in enumerate(obj):
-            obj[i] = jsonify(item)
+            obj[i] = jsonify(item, debug=debug)
         obj = tuple(obj)
+    elif isinstance(obj, Quantity):
+        obj = dict(value=obj.value, unit=obj.unit.name)
+    elif isinstance(obj, Unit):
+        obj = obj.name
+    elif obj is u.dimensionless_unscaled:
+        obj = 'dimensionless_unit'
 
+    if debug:
+        print(type(obj))
     return obj
 
 

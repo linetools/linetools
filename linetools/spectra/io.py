@@ -17,7 +17,6 @@ import os, pdb
 import json
 
 from astropy.io import fits
-from astropy.nddata import StdDevUncertainty
 from astropy import units as u
 from astropy.table import Table, Column
 from astropy.io.fits.hdu.table import BinTableHDU
@@ -27,7 +26,7 @@ from .xspectrum1d import XSpectrum1D
 #from xastropy.xutils import xdebug as xdb
 
 def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
-             format='ascii', exten=None, debug=False):
+             format='ascii', exten=None, debug=False, select=0, **kwargs):
     """ Read a FITS file (or astropy Table or ASCII file) into a
     Spectrum1D class
 
@@ -47,23 +46,22 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
     format : str, optional
       Format for ASCII table input. Default 'ascii'.
     exten : int, optional
-      FITS extension (mainly for multiple binary FITS tables or bricks)
+      FITS extension (mainly for multiple binary FITS tables)
+    select : int, optional
+      Selected spectrum (for sets of 1D spectra, e.g. DESI brick)
 
     Returns
     -------
     An XSpectrum1D class
 
     """
-    from specutils.io import read_fits as spec_read_fits
-    from linetools.spectra.xspectrum1d import XSpectrum1D
 
     # Initialize
-
-    if inflg == None:
+    if inflg is None:
         inflg = 0
 
     # Check specfil type
-    if isinstance(specfil, Table):  # MAYBE SHOULD USE SPECUTILS FROM_TABLE
+    if isinstance(specfil, Table):
         datfil = 'None'
         # Dummy hdulist
         hdulist = [fits.PrimaryHDU(), specfil]
@@ -101,12 +99,12 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
         # Binary FITS table
         if debug:
             print('linetools.spectra.io.readspec(): Assuming binary fits table')
-        xspec1d = parse_FITS_binary_table(hdulist, exten=exten)
+        xspec1d = parse_FITS_binary_table(hdulist, exten=exten, **kwargs)
 
     elif head0['NAXIS'] == 1: # Data in the zero extension
 
         # How many entries?
-        if len(hdulist) == 1: # Old school (one file per flux, error)
+        if len(hdulist) == 1:  # Old school (one file per flux, error)
             if debug:
                 print(
   'linetools.spectra.io.readspec(): Assuming flux and err in separate files')
@@ -151,7 +149,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
         if (hdulist[0].name == 'FLUX') and (hdulist[2].name == 'WAVELENGTH'):  # DESI
             if debug:
                 print('linetools.spectra.io.readspec(): Assuming DESI brick')
-            xspec1d = parse_DESI_brick(hdulist, exten=exten)
+            xspec1d = parse_DESI_brick(hdulist, select=select)
 
         else:  # SDSS
             if debug:
@@ -165,26 +163,35 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
         print('Not sure what has been input.  Send to JXP.')
         return
 
-    if np.any(np.isnan(xspec1d.dispersion)):
+
+    # Generate, as needed
+    """
+    if 'xspec1d' not in locals():
+        # Give Ang as default
+        if not hasattr(wave, 'unit'):
+            uwave = u.Quantity(wave, unit=u.AA)
+        elif wave.unit is None:
+            uwave = u.Quantity(wave, unit=u.AA)
+        else:
+            uwave = u.Quantity(wave)
+        xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, None))
+    """
+
+    if np.any(np.isnan(xspec1d.wavelength)):
         warnings.warn('WARNING: Some wavelengths are NaN')
 
     # Filename
     xspec1d.filename = datfil
-    # Add in the header
-    xspec1d.head = head0
 
-    if xspec1d.co is None:
+    if not xspec1d.co_is_set:
         # Final check for continuum in a separate file
         if isinstance(specfil, basestring) and specfil.endswith('.fits'):
             co_filename = specfil.replace('.fits', '_c.fits')
             if os.path.exists(co_filename):
-                xspec1d.co = fits.getdata(co_filename)
+                xspec1d.data['co'] = fits.getdata(co_filename)
 
-    if debug:
-        if xspec1d.co is None:
-            print('linetools.spectra.io.readspec(): No continuum found')
-        else:
-            print('linetools.spectra.io.readspec(): Found continuum')
+    # Add in the header
+    xspec1d.head = head0
 
     # Return
     return xspec1d
@@ -225,7 +232,7 @@ def get_table_column(tags, hdulist, idx=None):
     names = set(tab.dtype.names)
     for tag in tags:
         if tag in names:
-            dat = tab[tag]
+            dat = np.array(tab[tag])
             break  # Break with first hit
 
     # Return
@@ -371,7 +378,7 @@ def is_UVES_popler(hd):
     Parameters
     ----------
     hd : FITS header
-    
+
     Returns
     -------
     True if a UVES_popler file, False otherwise.
@@ -389,7 +396,7 @@ def parse_UVES_popler(hdulist):
     Parameters
     ----------
     hdulist : FITS HDU list
-    
+
     Returns
     -------
     xspec1d : XSpectrum1D
@@ -405,7 +412,8 @@ def parse_UVES_popler(hdulist):
     xspec1d = XSpectrum1D.from_tuple((uwave, fx, sig, co))
     return xspec1d
 
-def parse_FITS_binary_table(hdulist, exten=None):
+def parse_FITS_binary_table(hdulist, exten=None, flux_tag=None,
+                            sig_tag=None, co_tag=None):
     """ Read a spectrum from a FITS binary table
 
     Parameters
@@ -413,6 +421,9 @@ def parse_FITS_binary_table(hdulist, exten=None):
     hdulist : FITS HDU list
     exten : int, optional
       Extension for the binary table.
+    flux_tag : str, optional
+    sig_tag : str, optional
+    co_tag : str, optional
 
     Returns
     -------
@@ -420,18 +431,24 @@ def parse_FITS_binary_table(hdulist, exten=None):
       Parsed spectrum
     """
     # Flux
-    flux_tags = ['SPEC', 'FLUX', 'FLAM', 'FX',
-                 'FLUXSTIS', 'FLUX_OPT', 'fl', 'flux', 'counts',
-                 'COUNTS']
+    if flux_tag is None:
+        flux_tags = ['SPEC', 'FLUX', 'FLAM', 'FX', 'FNORM',
+                     'FLUXSTIS', 'FLUX_OPT', 'fl', 'flux', 'counts',
+                     'COUNTS']
+    else:
+        flux_tags = [flux_tag]
     fx, fx_tag = get_table_column(flux_tags, hdulist, idx=exten)
     if fx is None:
         print('Binary FITS Table but no Flux tag. Searched fo these tags:\n',
               flux_tags)
         return
     # Error
-    sig_tags = ['ERROR','ERR','SIGMA_FLUX','FLAM_SIG', 'SIGMA_UP',
-                'ERRSTIS', 'FLUXERR', 'SIGMA', 'sigma', 'sigma_flux',
-                'er', 'err', 'error']
+    if sig_tag is None:
+        sig_tags = ['ERROR','ERR','SIGMA_FLUX','ENORM', 'FLAM_SIG', 'SIGMA_UP',
+                    'ERRSTIS', 'FLUXERR', 'SIGMA', 'sigma', 'sigma_flux',
+                    'er', 'err', 'error', 'sig']
+    else:
+        sig_tags = [sig_tag]
     sig, sig_tag = get_table_column(sig_tags, hdulist)
     if sig is None:
         ivar_tags = ['IVAR', 'IVAR_OPT', 'ivar']
@@ -456,13 +473,20 @@ def parse_FITS_binary_table(hdulist, exten=None):
         print('Binary FITS Table but no wavelength tag. Searched for these tags:\n',
               wave_tags)
         return
-    co_tags = ['CONT', 'CO', 'CONTINUUM', 'co', 'cont']
+    if co_tag is None:
+        co_tags = ['CONT', 'CO', 'CONTINUUM', 'co', 'cont']
+    else:
+        co_tags = [co_tag]
     co, co_tag = get_table_column(co_tags, hdulist, idx=exten)
+    # Finish
     xspec1d = XSpectrum1D.from_tuple((give_wv_units(wave), fx, sig, co))
+
+    if 'METADATA' in hdulist[0].header:
+        xspec1d.meta.update(json.loads(hdulist[0].header['METADATA']))
     return xspec1d
 
 def parse_linetools_spectrum_format(hdulist):
-    """ Parse a linetools-format spectrum from an hdulist
+    """ Parse an old linetools-format spectrum from an hdulist
 
     Parameters
     ----------
@@ -473,60 +497,61 @@ def parse_linetools_spectrum_format(hdulist):
     xspec1d : XSpectrum1D
       Parsed spectrum
 
-
     """
     if 'WAVELENGTH' not in hdulist:
-        spec1d = spec_read_fits.read_fits_spectrum1d(
-            os.path.expanduser(datfil), dispersion_unit='AA')
+        pdb.set_trace()
+        #spec1d = spec_read_fits.read_fits_spectrum1d(
+        #    os.path.expanduser(datfil), dispersion_unit='AA')
         xspec1d = XSpectrum1D.from_spec1d(spec1d)
     else:
         wave = hdulist['WAVELENGTH'].data * u.AA
         fx = hdulist['FLUX'].data
-        xspec1d = XSpectrum1D.from_tuple((wave, fx, None, None))
 
     # Error array
     if 'ERROR' in hdulist:
         sig = hdulist['ERROR'].data
-        xspec1d.uncertainty = StdDevUncertainty(sig)
     else:
-        xspec1d.uncertainty = None
+        sig = None
 
     if 'CONTINUUM' in hdulist:
-        xspec1d.co = hdulist['CONTINUUM'].data
+        co = hdulist['CONTINUUM'].data
     else:
-        xspec1d.co = None
+        co = None
+
+    xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, co))
 
     if 'METADATA' in hdulist[0].header:
         xspec1d.meta.update(json.loads(hdulist[0].header['METADATA']))
 
     return xspec1d
 
-def parse_DESI_brick(hdulist, exten=None):
+def parse_DESI_brick(hdulist, select=0):
     """ Read a spectrum from a DESI brick format HDU list
 
     Parameters
     ----------
     hdulist : FITS HDU list
-    exten : int, optional
-      Extension for the date. Default is 0 (the primary HDU).
+    select : int, optional
+      Spectrum selected. Default is 0
 
     Returns
     -------
     xspec1d : XSpectrum1D
       Parsed spectrum
     """
-    if exten is None:
-        exten = 0
-    fx = hdulist[0].data[exten, :]
+    fx = hdulist[0].data
     # Sig
-    ivar = hdulist[1].data[exten, :]
-    sig = np.zeros(ivar.size)
+    ivar = hdulist[1].data
+    sig = np.zeros_like(ivar)
     gdi = ivar > 0.
     sig[gdi] = np.sqrt(1./ivar[gdi])
     # Wave
     wave = hdulist[2].data
     wave = give_wv_units(wave)
-    xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, None))
+    #wave = np.outer(np.ones(fx.shape[0]), wave)
+    wave = np.tile(wave, (fx.shape[0],1))
+    # Finish
+    xspec1d = XSpectrum1D(wave, fx, sig, select=select)
     return xspec1d
 
 
@@ -569,9 +594,8 @@ def parse_two_file_format(specfil, hdulist, efil=None):
     if efil is not None:
         efil = os.path.expanduser(efil)
         sig = fits.getdata(efil)
-        uncertainty = StdDevUncertainty(sig)
     else:
-        uncertainty = None
+        sig = None
 
     #Log-Linear?
     try:
@@ -583,16 +607,19 @@ def parse_two_file_format(specfil, hdulist, efil=None):
     # Read
     if dc_flag == 0:
         # Read FITS file
-        spec1d = spec_read_fits.read_fits_spectrum1d(
-            os.path.expanduser(specfil), dispersion_unit='AA')
-        spec1d.uncertainty = uncertainty
+        pdb.set_trace()
+        #spec1d = spec_read_fits.read_fits_spectrum1d(
+        #    os.path.expanduser(specfil), dispersion_unit='AA')
+        #spec1d.uncertainty = uncertainty
         xspec1d = XSpectrum1D.from_spec1d(spec1d)
-    elif dc_flag == 1: # Generate wavelengths and use array approach
+    elif dc_flag == 1:  # Generate wavelengths and use array approach
         fx = hdulist[0].data
         # Generate wave
         wave = setwave(head0)
-        xspec1d = XSpectrum1D.from_tuple((wave, fx, uncertainty, None))
     else:
         raise ValueError('DC-FLAG has unusual value {:d}'.format(dc_flag))
+
+    # Finish
+    xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, None))
 
     return xspec1d

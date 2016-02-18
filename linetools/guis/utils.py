@@ -194,15 +194,14 @@ def read_spec(ispec, exten=None, norm=True):
     spec : XSpectrum1D
     spec_file : str
     """
-    from specutils.spectrum1d import Spectrum1D
     from linetools.spectra import xspectrum1d as lsx
     #
     if isinstance(ispec,basestring):
         spec_fil = ispec
         spec = lsx.XSpectrum1D.from_file(spec_fil, exten=exten)
-    elif isinstance(ispec,Spectrum1D):
+    elif isinstance(ispec, lsx.XSpectrum1D):
         spec = ispec
-        spec_fil = spec.filename # Grab from Spectrum1D
+        spec_fil = spec.filename  # Grab from Spectrum1D
     elif isinstance(ispec,tuple):
         spec = lsx.XSpectrum1D.from_tuple(ispec)
         spec_fil = 'none'
@@ -227,8 +226,8 @@ def read_spec(ispec, exten=None, norm=True):
 
     # Normalize?
     if norm:
-        if hasattr(spec, 'co') and spec.co is not None:
-            spec.normalize()
+        if spec.co_is_set:
+            spec.normed=True
 
     # Return
     return spec, spec_fil
