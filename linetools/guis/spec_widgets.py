@@ -479,7 +479,7 @@ class ExamineSpecWidget(QtGui.QWidget):
                 self.ax2.set_xlabel("Rest Wavelength (z={:g})".format(z))
 
             # Continuum?
-            if self.co_is_set:
+            if self.spec.co_is_set:
                 self.ax.plot(self.wavelength, self.flux, color='purple')
 
             # Model?
