@@ -223,7 +223,7 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'],
 
     # Flux
     flux = np.exp(-1.0*tau)
-    vmodel = XSpectrum1D.from_tuple((wave,flux))
+    vmodel = XSpectrum1D.from_tuple((wave, flux))
 
     # Rebin?
     if flg_rebin:
