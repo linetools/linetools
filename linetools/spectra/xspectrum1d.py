@@ -225,6 +225,12 @@ class XSpectrum1D(object):
         """
         return self.data[self.select]['wave'] * self.units['wave']
 
+    @wavelength.setter
+    def wavelength(self, value):
+        self.data['wave'][self.select] = value
+        if hasattr(value, 'unit'):
+            self.units['wave'] = value.unit
+
     @property
     def flux(self):
         """ Return the flux with units
@@ -233,6 +239,12 @@ class XSpectrum1D(object):
         if self.normed and self.co_is_set:
             flux /= self.data[self.select]['co']
         return flux
+
+    @flux.setter
+    def flux(self, value):
+        self.data['flux'][self.select] = value
+        if hasattr(value, 'unit'):
+            self.units['flux'] = value.unit
 
     @property
     def sig_is_set(self):
@@ -256,6 +268,13 @@ class XSpectrum1D(object):
             sig /= self.data[self.select]['co']
         return sig
 
+    @sig.setter
+    def sig(self, value):
+        """ Assumes units are the same as the flux
+        """
+        self.data['sig'][self.select] = value
+
+
     @property
     def co_is_set(self):
         """ Returns whether a continuum is defined
@@ -273,6 +292,13 @@ class XSpectrum1D(object):
             warnings.warn("This spectrum does not contain an input continuum array")
             return np.nan
         return self.data[self.select]['co'] * self.units['flux']
+
+    @co.setter
+    def co(self, value):
+        """ Assumes units are the same as the flux
+        """
+        self.data['co'][self.select] = value
+
 
     @property
     def wvmin(self):
