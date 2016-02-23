@@ -102,7 +102,7 @@ def test_splice(spec, spec2):
 def test_write_ascii(spec):
     # Write. Should be replaced with tempfile.TemporaryFile
     spec.write_to_ascii(data_path('tmp.ascii'))
-    # 
+    #
     spec2 = io.readspec(data_path('tmp.ascii'))
     # check a round trip works
     np.testing.assert_allclose(spec.wavelength, spec2.wavelength)
@@ -178,4 +178,14 @@ def test_continuum_utils(spec):
     np.testing.assert_allclose(spec.flux,flux_old)
 
 
-
+def test_assignment(spec):
+    temp = np.arange(1, len(spec.wavelength) + 1)
+    spec.wavelength =  temp * u.m
+    assert spec.wavelength[0] == temp[0] * u.m
+    unit = u.erg / u.s / u.cm**2 / u.AA
+    spec.flux = temp * unit
+    assert spec.flux[0] == temp[0] * unit
+    spec.sig = temp
+    assert spec.sig[0] == temp[0] * unit
+    spec.co = temp
+    assert spec.co[0] == temp[0] * unit
