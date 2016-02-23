@@ -480,7 +480,7 @@ class ExamineSpecWidget(QtGui.QWidget):
 
             # Continuum?
             if self.spec.co_is_set:
-                self.ax.plot(self.wavelength, self.flux, color='purple')
+                self.ax.plot(self.spec.wavelength, self.spec.co, color='purple')
 
             # Model?
             if self.model is not None:
@@ -507,6 +507,7 @@ class ExamineSpecWidget(QtGui.QWidget):
                     self.ax.plot(wrest*np.array([z+1,z+1]), self.psdict['y_minmax'], 'b--')
                     # Label
                     self.ax.text(wrest*(z+1), ylbl, lbl, color='blue', rotation=90., size='small')
+
 
             # Abs Sys?
             if not self.abs_sys is None:
@@ -543,8 +544,10 @@ class ExamineSpecWidget(QtGui.QWidget):
                 self.adict['flg'] = 0
             # Lya line?
             if self.adict['flg'] == 4:
-                self.ax.plot(self.spec.wavelength,
-                    self.lya_line.flux, color='green')
+                model = self.lya_line.flux
+                if self.spec.co_is_set and not self.norm:
+                    model *= self.spec.co
+                self.ax.plot(self.spec.wavelength, model, color='green')
 
         # Reset window limits
         self.ax.set_xlim(self.psdict['x_minmax'])

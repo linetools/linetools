@@ -112,9 +112,9 @@ class XSpecGui(QtGui.QMainWindow):
 
 
 def main(args, **kwargs):
-    from specutils.spectrum1d import Spectrum1D
+    from linetools.spectra.xspectrum1d import XSpectrum1D
 
-    if not isinstance(args,(Spectrum1D,tuple,basestring)):
+    if not isinstance(args,(XSpectrum1D,tuple,basestring)):
         raise IOError("Bad input")
     # Run
     app = QtGui.QApplication(sys.argv)
