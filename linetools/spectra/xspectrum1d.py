@@ -1029,10 +1029,14 @@ or QtAgg backends to enable all interactive plotting commands.
         if not len(knots) > 0:
             raise RuntimeError('Problem generating continuum spline knots')
 
-        co = (self.co if hasattr(self, 'co') else None)
-        if co is not None:
+        # set the initial continuum for the fitter
+        if self.co_is_set:
+            co_init = self.co
+        else:
+            co_init = None
+        if co_init is not None:
             x = [k[0] for k in knots]
-            ynew = np.interp(x, wa, co)
+            ynew = np.interp(x, wa, co_init)
             for i in range(len(knots)):
                 knots[i][1] = ynew[i]
 
@@ -1041,7 +1045,7 @@ or QtAgg backends to enable all interactive plotting commands.
         fig = plt.figure(figsize=(11, 7))
         fig.subplots_adjust(left=0.05, right=0.95, bottom=0.1, top=0.95)
         wrapper = InteractiveCoFit(wa, self.flux.value, self.sig.value,
-                                   contpoints, co=co, fig=fig, anchor=anchor)
+                                   contpoints, co=co_init, fig=fig, anchor=anchor)
 
         # wait until the interactive fitting has finished
         while not wrapper.finished:
