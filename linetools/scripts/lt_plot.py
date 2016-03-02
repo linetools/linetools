@@ -12,7 +12,9 @@ def plotspec(args):
     import matplotlib.pyplot as plt
     import matplotlib as mpl
     warnings.simplefilter('ignore', mpl.mplDeprecation)
-    
+
+    plt.rcParams['axes.formatter.useoffset'] = False  # avoid scientific notation in axes tick labels
+
     spec_cache = {}
 
     fig = plt.figure(figsize=(10,5))
