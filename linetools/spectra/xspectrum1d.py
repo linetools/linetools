@@ -477,6 +477,7 @@ class XSpectrum1D(object):
         #matplotlib.use('Agg')
         import matplotlib.pyplot as plt
         from ..analysis.interactive_plot import PlotWrapNav
+        plt.rcParams['axes.formatter.useoffset'] = False  # avoid scientific notation in axes tick labels
 
         nocolor = (False if 'color' in kwargs else True)
         xlim = kwargs.pop('xlim', None)

@@ -39,6 +39,7 @@ class XSpecGui(QtGui.QMainWindow):
 
         # Needed to avoid crash in large spectral files
         rcParams['agg.path.chunksize'] = 20000
+        rcParams['axes.formatter.useoffset'] = False  # avoid scientific notation in axes tick labels
 
         # Build a widget combining several others
         self.main_widget = QtGui.QWidget()
