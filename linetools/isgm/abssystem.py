@@ -106,7 +106,16 @@ class AbsSystem(object):
         init_comp = components[0]
         if vlim is None:
             vlim = init_comp.vlim
-        slf = cls(init_comp.coord, init_comp.zcomp, vlim)
+        # System specific inits
+        if cls.__name__ == 'DLASystem':  # From pyigm
+            # NHI
+            HI_comps = [comp for comp in components if comp.Zion == (1,1)]
+            NHI = 0.
+            for HI_comp in HI_comps:  # Takes only the first line in each list
+                NHI += HI_comp._abslines[0].attrib['N'].value
+            slf = cls(init_comp.coord, init_comp.zcomp, vlim, np.log10(NHI))
+        else:
+            slf = cls(init_comp.coord, init_comp.zcomp, vlim)
         if slf.chk_component(init_comp):
             slf._components.append(init_comp)
         else:
