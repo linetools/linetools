@@ -51,7 +51,7 @@ class LSF(object):
         if self.name == 'COS':
             self.pixel_scale , self._data = self.load_COS_data()
 
-        # IMPORTANT: make sure that LSFs are given in linear wavelength scales 
+        # IMPORTANT: make sure that LSFs are given in linear wavelength scales !!!
                 
         #reformat self._data
         self.check_and_reformat_data()
@@ -206,15 +206,15 @@ class LSF(object):
         # read data
         data = ascii.read(file_name, data_start=1, names=col_names)
         
-        return pixel_scale , data
+        return pixel_scale, data
 
-    def interpolate_to_wv0(self,wv0):
+    def interpolate_to_wv0(self, wv0):
         """Retrieves a unique LSF valid at wavelength wv0
 
         This is done by linearly interpolating from tabulated values
         at different wavelengths (this tabulated values (stored in
         self._data) are usually given as calibration products by
-        intrument developers and should be loaded by
+        instrument developers and should be loaded by
         self.load_XX_data() in the initialization stage of LSF(),
         where XX is the name of the instrument)
 
@@ -229,30 +229,47 @@ class LSF(object):
             The interpolated lsf at wv0. This table has two 
             columns: 'wv' and 'kernel' 
         """
-        #get wa0 to Angstroms
-        wv0 = wv0.to('AA')
+        # get wa0 to Angstroms
+        wv0 = wv0.to('AA').value
 
-        #transform to wavelength in float() form assuming Angstroms
+        # transform to wavelength in float() form assuming Angstroms
         col_names = self._data.keys()
-        col_waves = [float(name.split('A')[0]) for name in col_names[1:]]
-                    
+        col_waves = np.array([float(name.split('A')[0]) for name in col_names[1:]])
+
+        # find out the closest 3 columns to wv0, assuming wavelength columns are sorted
+        for i, wave in enumerate(col_waves):
+            if wave > wv0:
+                ind = i - 1
+                break
+        # sanity check
+        if ind <= 0:
+            ind == 1
+        if ind >= len(col_waves) - 1:
+            ind = len(col_waves) - 2
+
+        # create a smaller version of self._data with the 3 most relevant columns
+        good_keys = col_names[1+ind-1:1+ind+2]  # the first name is always 'rel_pix'
+        data_aux = self._data[good_keys]
+        col_waves_aux = col_waves[ind-1:ind+2]
+
         lsf_vals = []
-        for row in self._data:
+        for row in data_aux:
             aux_val = []
-            for i in range(1,len(row)):
+            for i in range(0, len(row)):
                 aux_val += [row[i]]
-            f = interp1d(col_waves,aux_val,bounds_error=True,kind='linear') #we do not want to extrapolate
-            lsf_vals += [f(wv0.value)]
+            # import pdb; pdb.set_trace()
+            f = interp1d(col_waves_aux, aux_val, bounds_error=True, kind='linear') # we do not want to extrapolate
+            lsf_vals += [f(wv0)]
         lsf_vals = np.array(lsf_vals)
         #normalize
         lsf_vals /= np.max(lsf_vals)
 
         #create Column to store the interpolated LSF
         #lsf_vals = Column(name='{:.0f}A'.format(wv0.value),data=lsf_vals)
-        lsf_vals = Column(name='kernel',data=lsf_vals)
+        lsf_vals = Column(name='kernel', data=lsf_vals)
         
         #create column of relative pixel in absolute wavelength
-        wv_array = [(self.pixel_scale * self._data['rel_pix'][i] + wv0).value for i in range(len(self._data))]
+        wv_array = [(self.pixel_scale * self._data['rel_pix'][i] + wv0*u.AA).value for i in range(len(self._data))]
         wv = Column(name='wv',data=wv_array, unit=u.AA)
 
         #create lsf Table
