@@ -106,7 +106,7 @@ class LSF(object):
         # always the center value. Here we assume rel_pix are 
         # given in linear scale, which should be checked in load_XX_data()
 
-        n = len(rel_pix_array) // 2 #this should be always integer
+        n = len(rel_pix_array) // 2  # this should be always integer
         rel_pixel_array = np.arange(-n,n+1,1)
         self._data['rel_pix'] = rel_pixel_array
 
@@ -146,7 +146,7 @@ class LSF(object):
 
         if channel_dict[grating] == 'NUV': #there is only 1 LSF file for NUV data
             file_name = 'nuv_all_lp1.txt'
-        #COS
+        # COS
         elif channel_dict[grating] == 'FUV':
             # Use the ones corrected by scattering when possible
             # (currently, these are only available for lifetime-position 1)
@@ -156,8 +156,8 @@ class LSF(object):
             except:
                 raise SyntaxError('`life_position` keyword missing in `instr_config` dictionary.')
 
-            if life_position not in ['1','2']:
-                raise ValueError('HST/COS `life_position` should be either `1` or `2` (strings)') 
+            if life_position not in ['1','2','3']:
+                raise ValueError('HST/COS `life_position` should be either `1` or `2` or `3` (strings)')
 
             if life_position == '1':
                 if grating == 'G140L': #use theoretical values 
@@ -169,7 +169,7 @@ class LSF(object):
                 elif grating == 'G160M': #use empirical values corrected by scattering
                     file_name = 'fuv_G160M_lp1_empir.txt'
             
-            elif life_position == '2':
+            elif life_position in ['2','3']:
                 try:
                     cen_wave = self.instr_config['cen_wave']
                 except:
@@ -178,28 +178,33 @@ class LSF(object):
                 if cen_wave.endswith('A'): #adjust format
                     cen_wave = cen_wave[:-1]
                 
-                #filenames in this case have a well defined naming convention
-                file_name = 'fuv_{}_{}_lp2.txt'.format(grating,cen_wave)
-        
-        else: #this should never happen
+                #filenames in this case have a well defined naming convention, and strict format.
+                if life_position == '2':
+                    file_name = 'fuv_{}_{}_lp2.txt'.format(grating,cen_wave)
+                elif life_position == '3':
+                    file_name = 'fuv_{}_{}_lp3.txt'.format(grating,cen_wave)
+                else: # this should never happen
+                    raise NotImplementedError('Unexpected error: please contact linetools developers!')
+
+        else: # Wrong COS channel
             raise NotImplementedError('Not ready for the given HST/COS channel; only `NUV` and `FUV` channels allowed.')
         
-        #point to the right file
+        # point to the right file
         file_name = lt_path + '/data/lsf/{}/{}'.format(self.name,file_name)
         
-        #get column names
+        # get column names
         f = open(file_name,'r')
         line = f.readline() #first line of file
         f.close()
-        #get rid of '\n'
+        # get rid of '\n' in first line
         line = line.split('\n')[0]
-        #by construction first column should be separated by `,`
+        # by construction first column should be separated by `,`
         col_names = line.split(',')
         col_names[0] = 'rel_pix'
         
-        pixel_scale = pixel_scale_dict[grating] #read from dictionary defined above
-        #read data
-        data = ascii.read(file_name,data_start=1,names=col_names)
+        pixel_scale = pixel_scale_dict[grating]  # read from dictionary defined above
+        # read data
+        data = ascii.read(file_name, data_start=1, names=col_names)
         
         return pixel_scale , data
 
