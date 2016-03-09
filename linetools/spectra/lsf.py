@@ -241,11 +241,14 @@ class LSF(object):
             if wave > wv0:
                 ind = i - 1
                 break
+            else:
+                ind = i
         # sanity check
         if ind <= 0:
-            ind == 1
+            ind = 1
         if ind >= len(col_waves) - 1:
             ind = len(col_waves) - 2
+        # import pdb; pdb.set_trace()
 
         # create a smaller version of self._data with the 3 most relevant columns
         good_keys = col_names[1+ind-1:1+ind+2]  # the first name is always 'rel_pix'
@@ -267,7 +270,7 @@ class LSF(object):
         #create Column to store the interpolated LSF
         #lsf_vals = Column(name='{:.0f}A'.format(wv0.value),data=lsf_vals)
         lsf_vals = Column(name='kernel', data=lsf_vals)
-        
+
         #create column of relative pixel in absolute wavelength
         wv_array = [(self.pixel_scale * self._data['rel_pix'][i] + wv0*u.AA).value for i in range(len(self._data))]
         wv = Column(name='wv',data=wv_array, unit=u.AA)
