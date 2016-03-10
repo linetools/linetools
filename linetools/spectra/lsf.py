@@ -239,9 +239,9 @@ class LSF(object):
         # find out the closest 3 columns to wv0, for simplicity
         # find the closest column first
         ind_min = np.where(np.fabs(col_waves - wv0) == np.min(np.fabs(col_waves - wv0)))[0][0]
-        # find the middle column
+        # find out which will be the middle column out of the three
         if ind_min == len(col_waves) - 1:
-            #  i.e. the minimum is the last columnc
+            #  i.e. the minimum is the last column
             ind_mid = ind_min - 1
         elif ind_min == 0:
             #  i.e. the minimum is the first column
