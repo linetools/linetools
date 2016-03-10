@@ -51,7 +51,7 @@ class LSF(object):
         if self.name == 'COS':
             self.pixel_scale , self._data = self.load_COS_data()
 
-        # IMPORTANT: make sure that LSFs are given in linear wavelength scales 
+        # IMPORTANT: make sure that LSFs are given in linear wavelength scales !!!
                 
         #reformat self._data
         self.check_and_reformat_data()
@@ -106,7 +106,7 @@ class LSF(object):
         # always the center value. Here we assume rel_pix are 
         # given in linear scale, which should be checked in load_XX_data()
 
-        n = len(rel_pix_array) // 2 #this should be always integer
+        n = len(rel_pix_array) // 2  # this should be always integer
         rel_pixel_array = np.arange(-n,n+1,1)
         self._data['rel_pix'] = rel_pixel_array
 
@@ -146,7 +146,7 @@ class LSF(object):
 
         if channel_dict[grating] == 'NUV': #there is only 1 LSF file for NUV data
             file_name = 'nuv_all_lp1.txt'
-        #COS
+        # COS
         elif channel_dict[grating] == 'FUV':
             # Use the ones corrected by scattering when possible
             # (currently, these are only available for lifetime-position 1)
@@ -156,8 +156,8 @@ class LSF(object):
             except:
                 raise SyntaxError('`life_position` keyword missing in `instr_config` dictionary.')
 
-            if life_position not in ['1','2']:
-                raise ValueError('HST/COS `life_position` should be either `1` or `2` (strings)') 
+            if life_position not in ['1','2','3']:
+                raise ValueError('HST/COS `life_position` should be either `1` or `2` or `3` (strings)')
 
             if life_position == '1':
                 if grating == 'G140L': #use theoretical values 
@@ -169,7 +169,7 @@ class LSF(object):
                 elif grating == 'G160M': #use empirical values corrected by scattering
                     file_name = 'fuv_G160M_lp1_empir.txt'
             
-            elif life_position == '2':
+            elif life_position in ['2','3']:
                 try:
                     cen_wave = self.instr_config['cen_wave']
                 except:
@@ -178,38 +178,43 @@ class LSF(object):
                 if cen_wave.endswith('A'): #adjust format
                     cen_wave = cen_wave[:-1]
                 
-                #filenames in this case have a well defined naming convention
-                file_name = 'fuv_{}_{}_lp2.txt'.format(grating,cen_wave)
-        
-        else: #this should never happen
+                #filenames in this case have a well defined naming convention, and strict format.
+                if life_position == '2':
+                    file_name = 'fuv_{}_{}_lp2.txt'.format(grating,cen_wave)
+                elif life_position == '3':
+                    file_name = 'fuv_{}_{}_lp3.txt'.format(grating,cen_wave)
+                else: # this should never happen
+                    raise NotImplementedError('Unexpected error: please contact linetools developers!')
+
+        else: # Wrong COS channel
             raise NotImplementedError('Not ready for the given HST/COS channel; only `NUV` and `FUV` channels allowed.')
         
-        #point to the right file
+        # point to the right file
         file_name = lt_path + '/data/lsf/{}/{}'.format(self.name,file_name)
         
-        #get column names
+        # get column names
         f = open(file_name,'r')
         line = f.readline() #first line of file
         f.close()
-        #get rid of '\n'
+        # get rid of '\n' in first line
         line = line.split('\n')[0]
-        #by construction first column should be separated by `,`
+        # by construction first column should be separated by `,`
         col_names = line.split(',')
         col_names[0] = 'rel_pix'
         
-        pixel_scale = pixel_scale_dict[grating] #read from dictionary defined above
-        #read data
-        data = ascii.read(file_name,data_start=1,names=col_names)
+        pixel_scale = pixel_scale_dict[grating]  # read from dictionary defined above
+        # read data
+        data = ascii.read(file_name, data_start=1, names=col_names)
         
-        return pixel_scale , data
+        return pixel_scale, data
 
-    def interpolate_to_wv0(self,wv0):
+    def interpolate_to_wv0(self, wv0):
         """Retrieves a unique LSF valid at wavelength wv0
 
         This is done by linearly interpolating from tabulated values
         at different wavelengths (this tabulated values (stored in
         self._data) are usually given as calibration products by
-        intrument developers and should be loaded by
+        instrument developers and should be loaded by
         self.load_XX_data() in the initialization stage of LSF(),
         where XX is the name of the instrument)
 
@@ -224,30 +229,50 @@ class LSF(object):
             The interpolated lsf at wv0. This table has two 
             columns: 'wv' and 'kernel' 
         """
-        #get wa0 to Angstroms
-        wv0 = wv0.to('AA')
+        # get wa0 to Angstroms
+        wv0 = wv0.to('AA').value
 
-        #transform to wavelength in float() form assuming Angstroms
+        # transform to wavelength in float() form assuming Angstroms
         col_names = self._data.keys()
-        col_waves = [float(name.split('A')[0]) for name in col_names[1:]]
-                    
+        col_waves = np.array([float(name.split('A')[0]) for name in col_names[1:]])
+
+        # find out the closest 3 columns to wv0, for simplicity
+        # find the closest column first
+        ind_min = np.where(np.fabs(col_waves - wv0) == np.min(np.fabs(col_waves - wv0)))[0][0]
+        # find out which will be the middle column out of the three
+        if ind_min == len(col_waves) - 1:
+            #  i.e. the minimum is the last column
+            ind_mid = ind_min - 1
+        elif ind_min == 0:
+            #  i.e. the minimum is the first column
+            ind_mid = ind_min + 1
+        else:
+            ind_mid = ind_min
+
+        # create a smaller version of self._data with the 3 most relevant columns
+        good_keys = col_names[1:] # get rid of the first name, i.e. 'rel_pix'
+        good_keys = good_keys[ind_mid - 1 : ind_mid + 2]
+        data_aux = self._data[good_keys]
+        col_waves_aux = col_waves[ind_mid - 1 : ind_mid + 2]
+
         lsf_vals = []
-        for row in self._data:
+        for row in data_aux:
             aux_val = []
-            for i in range(1,len(row)):
+            for i in range(0, len(row)):
                 aux_val += [row[i]]
-            f = interp1d(col_waves,aux_val,bounds_error=True,kind='linear') #we do not want to extrapolate
-            lsf_vals += [f(wv0.value)]
+            # import pdb; pdb.set_trace()
+            f = interp1d(col_waves_aux, aux_val, bounds_error=True, kind='linear') # we do not want to extrapolate
+            lsf_vals += [f(wv0)]
         lsf_vals = np.array(lsf_vals)
         #normalize
         lsf_vals /= np.max(lsf_vals)
 
         #create Column to store the interpolated LSF
         #lsf_vals = Column(name='{:.0f}A'.format(wv0.value),data=lsf_vals)
-        lsf_vals = Column(name='kernel',data=lsf_vals)
-        
+        lsf_vals = Column(name='kernel', data=lsf_vals)
+
         #create column of relative pixel in absolute wavelength
-        wv_array = [(self.pixel_scale * self._data['rel_pix'][i] + wv0).value for i in range(len(self._data))]
+        wv_array = [(self.pixel_scale * self._data['rel_pix'][i] + wv0*u.AA).value for i in range(len(self._data))]
         wv = Column(name='wv',data=wv_array, unit=u.AA)
 
         #create lsf Table
