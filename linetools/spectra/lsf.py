@@ -236,24 +236,24 @@ class LSF(object):
         col_names = self._data.keys()
         col_waves = np.array([float(name.split('A')[0]) for name in col_names[1:]])
 
-        # find out the closest 3 columns to wv0, assuming wavelength columns are sorted
-        for i, wave in enumerate(col_waves):
-            if wave > wv0:
-                ind = i - 1
-                break
-            else:
-                ind = i
-        # sanity check
-        if ind <= 0:
-            ind = 1
-        if ind >= len(col_waves) - 1:
-            ind = len(col_waves) - 2
-        # import pdb; pdb.set_trace()
+        # find out the closest 3 columns to wv0, for simplicity
+        # find the closest column first
+        ind_min = np.where(np.fabs(col_waves - wv0) == np.min(np.fabs(col_waves - wv0)))[0][0]
+        # find the middle column
+        if ind_min == len(col_waves) - 1:
+            #  i.e. the minimum is the last columnc
+            ind_mid = ind_min - 1
+        elif ind_min == 0:
+            #  i.e. the minimum is the first column
+            ind_mid = ind_min + 1
+        else:
+            ind_mid = ind_min
 
         # create a smaller version of self._data with the 3 most relevant columns
-        good_keys = col_names[1+ind-1:1+ind+2]  # the first name is always 'rel_pix'
+        good_keys = col_names[1:] # get rid of the first name, i.e. 'rel_pix'
+        good_keys = good_keys[ind_mid - 1 : ind_mid + 2]
         data_aux = self._data[good_keys]
-        col_waves_aux = col_waves[ind-1:ind+2]
+        col_waves_aux = col_waves[ind_mid - 1 : ind_mid + 2]
 
         lsf_vals = []
         for row in data_aux:
