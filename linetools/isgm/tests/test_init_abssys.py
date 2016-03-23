@@ -15,11 +15,6 @@ from linetools.spectralline import AbsLine
 
 import pdb
 
-class DLASystem(AbsSystem):
-    def __init__(self, radec, zabs, vlim, NHI, **kwargs):
-        AbsSystem.__init__(self, 'DLA', radec, zabs, vlim, NHI=NHI, **kwargs)
-        pass
-
 def test_init():
     # Simple properties
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
@@ -46,6 +41,7 @@ def test_one_component():
     lya = AbsLine(1215.670*u.AA)
     lya.analy['vlim'] = [-300.,300.]*u.km/u.s
     lya.attrib['z'] = 2.92939
+    lya.attrib['N'] = 1e17 /  u.cm**2
     lyb = AbsLine(1025.7222*u.AA)
     lyb.analy['vlim'] = [-300.,300.]*u.km/u.s
     lyb.attrib['z'] = lya.attrib['z']
@@ -66,6 +62,7 @@ def test_multi_components():
     lya = AbsLine(1215.670*u.AA)
     lya.analy['vlim'] = [-300.,300.]*u.km/u.s
     lya.attrib['z'] = 2.92939
+    lya.attrib['N'] = 1e17 /  u.cm**2
     lyb = AbsLine(1025.7222*u.AA)
     lyb.analy['vlim'] = [-300.,300.]*u.km/u.s
     lyb.attrib['z'] = lya.attrib['z']
@@ -85,5 +82,6 @@ def test_multi_components():
     # Instantiate
     LLSsys = GenericAbsSystem.from_components([abscomp,SiII_comp])
     # Test
+    np.testing.assert_allclose(LLSsys.NHI, 17.0)
     assert len(LLSsys._components) == 2
 
