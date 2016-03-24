@@ -33,8 +33,7 @@ def generate_stau(velo, flux, sig, kbin=22.*u.km/u.s, debug=False):
     pix = np.arange(npix).astype(int)
 
     # Calculate dv
-    imn = np.argmin( np.fabs(velo) )
-    dv = np.abs(velo[imn] - velo[imn+1])
+    dv = np.abs(np.median(velo-np.roll(velo,1)))
 
     # Test for bad pixels
     badzero=np.where((flux == 0) & (sig <= 0))[0]
