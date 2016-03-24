@@ -95,8 +95,10 @@ class SpectralLine(object):
         # Set analy
         for key in idict['analy']:
             if isinstance(idict['analy'][key], dict):  # Assume Quantity
-                sline.analy[key] = Quantity(idict['analy'][key]['value'],
-                                             unit=idict['analy'][key]['unit'])
+                #sline.analy[key] = Quantity(idict['analy'][key]['value'],
+                #                             unit=idict['analy'][key]['unit'])
+                sline.analy[key] = ltu.convert_quantity_in_dict(
+                        idict['analy'][key])
             elif key == 'spec_file':
                 warnings.warn("You will need to load {:s} into attrib['spec'] yourself".format(
                         idict['analy'][key]))
@@ -104,9 +106,9 @@ class SpectralLine(object):
                 sline.analy[key] = idict['analy'][key]
         # Set attrib
         for key in idict['attrib']:
-            if isinstance(idict['attrib'][key], dict):  # Assume Quantity
-                sline.attrib[key] = Quantity(idict['attrib'][key]['value'],
-                                             unit=idict['attrib'][key]['unit'])
+            if isinstance(idict['attrib'][key], dict):
+                sline.attrib[key] = ltu.convert_quantity_in_dict(
+                        idict['attrib'][key])
             elif key in ['RA','DEC']:
                 sline.attrib['coord'] = SkyCoord(ra=idict['attrib']['RA']*u.deg,
                                               dec=idict['attrib']['DEC']*u.deg)
@@ -204,7 +206,7 @@ class SpectralLine(object):
 
         Returns
         -------
-        fx, sig, dict(wave, velo)
+        fx, sig, dict(wave, velo, pix)
             Arrays (numpy or Quantity) of flux, error, and wavelength/velocity
             The velocity is calculated relative to self.attrib['z']
         """
@@ -245,10 +247,8 @@ class SpectralLine(object):
             self.analy['spec'].normed = sv_normed
 
         # Return
-        return fx, sig, dict(wave=wave, velo=velo)
+        return fx, sig, dict(wave=wave, velo=velo, pix=pix)
 
-
-    # EW 
     def measure_ew(self, flg=1, initial_guesses=None):
         """ Measures the observer frame equivalent width
 
@@ -287,7 +287,6 @@ class SpectralLine(object):
         self.attrib['EW'] = EW 
         self.attrib['sig_EW'] = sig_EW
 
-    # EW 
     def measure_restew(self, **kwargs):
         """  Measure the rest-frame equivalent width
 
@@ -299,6 +298,18 @@ class SpectralLine(object):
         # Push to rest-frame
         self.attrib['EW'] = self.attrib['EW'] / (self.attrib['z']+1)
         self.attrib['sig_EW'] = self.attrib['sig_EW'] / (self.attrib['z']+1)
+
+
+    def measure_kin(self, **kwargs):
+        """  Measure Kinematics
+        """
+        from linetools.analysis import abskin
+        fx, sig, cdict = self.cut_spec()
+        stau = abskin.generate_stau(cdict['velo'], fx, sig)
+        # Measure
+        kin_data = abskin.pw97_kin(cdict['velo'], stau)
+        # Save
+        self.attrib['kin'] = kin_data
 
     # EW
     def to_dict(self):

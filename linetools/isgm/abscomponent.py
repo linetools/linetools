@@ -217,16 +217,20 @@ class AbsComponent(object):
           Skip velocity test?  Not recommended
         """
         # Perform easy checks
-        test = bool(self.coord.separation(absline.attrib['coord']) < tol)
-        test = test & (self.Zion[0] == absline.data['Z'])
-        test = test & (self.Zion[1] == absline.data['ion'])
-        test = test & bool(self.Ej == absline.data['Ej'])
+        testc = bool(self.coord.separation(absline.attrib['coord']) < tol)
+        testZ = self.Zion[0] == absline.data['Z']
+        testi = self.Zion[1] == absline.data['ion']
+        testE = bool(self.Ej == absline.data['Ej'])
         # Now redshift/velocity
         if not skip_vel:
             zlim_line = (1+absline.attrib['z'])*absline.analy['vlim']/const.c.to('km/s')
             zlim_comp = (1+self.zcomp)*self.vlim/const.c.to('km/s')
-            test = test & (zlim_line[0] >= zlim_comp[0]) & (
+            testv = (zlim_line[0] >= zlim_comp[0]) & (
                 zlim_line[1] <= zlim_comp[1])
+        else:
+            testv = True
+        # Combine
+        test = testc & testZ & testi & testE & testv
         # Isotope
         if self.A is not None:
             raise ValueError('Not ready for this yet')
@@ -235,6 +239,7 @@ class AbsComponent(object):
             self._abslines.append(absline)
         else:
             warnings.warn('Input absline with wrest={:g} does not match component rules. Not appending'.format(absline.wrest))
+            pdb.set_trace()
 
     def build_table(self):
         """Generate an astropy QTable out of the component.
@@ -345,6 +350,24 @@ class AbsComponent(object):
         if show:
             plt.show()
         plt.close()
+
+    def reset_vlim_from_abslines(self, verbose=False):
+        """ Resets the vlim value using the AbsLines
+
+        Parameters
+        ----------
+
+        """
+        for aline in self._abslines:
+            if aline.analy['vlim'][0] < self.vlim[0]:
+                if verbose:
+                    print('Resetting vlim0 from {}'.format(aline))
+                self.vlim[0] = aline.analy['vlim'][0]
+            if aline.analy['vlim'][1] > self.vlim[1]:
+                if verbose:
+                    print('Resetting vlim1 from {}'.format(aline))
+                self.vlim[1] = aline.analy['vlim'][1]
+
 
     def synthesize_colm(self, overwrite=False, redo_aodm=False, **kwargs):
         """Synthesize column density measurements of the component.

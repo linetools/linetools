@@ -763,13 +763,21 @@ or QtAgg backends to enable all interactive plotting commands.
         uwave = u.Quantity(new_wv, unit=self.units['wave'])
         new_fx = np.concatenate((self.flux.value,
                                  spec2.flux.value[gdp] * scale))
+        # Error
         if self.sig_is_set:
             new_sig = np.concatenate((self.sig, spec2.sig[gdp] * scale))
         else:
             new_sig = None
+
+        # Continuum
+        if self.sig_is_set:
+            new_co = np.concatenate((self.co, spec2.co[gdp] * scale))
+        else:
+            new_co = None
+
         # Generate
         spec3 = XSpectrum1D.from_tuple(
-            (uwave, u.Quantity(new_fx), new_sig), meta=self.meta.copy())
+            (uwave, u.Quantity(new_fx), new_sig, new_co), meta=self.meta.copy())
         # Return
         return spec3
 
