@@ -13,7 +13,7 @@ from linetools.spectra.lsf import LSF
 def test_lsf_COS():
     
     gratings = ['G130M','G160M', 'G140L','G230L', 'G185M', 'G225M', 'G285M']
-    life_positions = ['1','2']
+    life_positions = ['1','2','3']
     cen_waves_G160M = ['1577','1589','1600','1611','1623']
     cen_waves_G130M = ['1291','1300','1309','1318','1327']
 
@@ -21,7 +21,7 @@ def test_lsf_COS():
         for lp in life_positions:
             
             instr_config = dict(name='COS',grating=grating,life_position=lp)
-            if lp == '2':
+            if lp in ['2','3']:
                 if grating not in ['G130M','G160M']:
                         continue
                 if grating == 'G130M':

@@ -498,7 +498,8 @@ class XSpectrum1D(object):
         # Error
         if nocolor:
             kwargs.update(color='g')
-        ax.plot(self.wavelength, self.sig, **kwargs)
+        if self.sig_is_set:
+            ax.plot(self.wavelength, self.sig, **kwargs)
 
         # Continuum
         if (not np.isnan(self.data[self.select]['co'][0])) and (not self.normed):
