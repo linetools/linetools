@@ -1039,7 +1039,7 @@ or QtAgg backends to enable all interactive plotting commands.
             [tuple(pts) for pts in wrapper.contpoints])
         self.meta['contpoints'].sort()
 
-    def _interp_continuum(self, x, y, wv):
+    def _interp_continuum(self, x, y, wv=None):
         """ Interpolate the continuum from spline knots.
 
         Returns an interpolation of the continuum using knots at
@@ -1053,8 +1053,9 @@ or QtAgg backends to enable all interactive plotting commands.
             Assumed to be in Angstroms.
         y : array, shape(N,)
             The y positions of the knots to interpolate through
-        wv : array, shape(M,)
-            The wavelength array for final interpolation
+        wv : array, shape(M,); optional
+            The wavelength array for final interpolation. If None,
+            it uses self.wavelength.value
 
         Returns
         -------
@@ -1062,6 +1063,8 @@ or QtAgg backends to enable all interactive plotting commands.
             Values of the interpolated continuum for each `wv` point
 
         """
+        if wv is None:
+            wv = self.wavelength.value
 
         if len(y) >= 5:
             # need 5 points to define an Akima Spline
