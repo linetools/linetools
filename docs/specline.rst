@@ -100,6 +100,19 @@ are filled::
    specline.measure_ew()
 
 
+measure_kin
+-----------
+
+Measure kinematic characteristics of an AbsLine.
+To perform the calculation, the line must be associated to
+a spectrum (see `Analysis_`) and vlim must
+be specified.  When executed, the 'kin' attribute is filled
+with a dict of measurements.  Default set of measurements
+are the v90, fedg, and fmm statistics of Prochaska & Wolfe 1997::
+
+   specline.measure_kin()
+
+
 measure_restew
 --------------
 

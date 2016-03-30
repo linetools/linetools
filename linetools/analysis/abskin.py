@@ -36,7 +36,7 @@ def generate_stau(velo, flux, sig, kbin=22.*u.km/u.s, debug=False):
     dv = np.abs(np.median(velo-np.roll(velo,1)))
 
     # Test for bad pixels
-    badzero=np.where((flux == 0) & (sig <= 0))[0]
+    badzero = np.where((flux == 0) & (sig <= 0))[0]
     if len(badzero) > 0:
         if np.max(badzero)-np.min(badzero) >= 5:
             raise ValueError('orig_kin: too many or too large sections of bad data')
@@ -87,7 +87,7 @@ def pw97_kin(velo, stau, per=0.05):
         cumtau = np.cumsum(stau) / tottau
         lft = (np.where(cumtau > per)[0])[0]
         rgt = (np.where(cumtau > (1.-per))[0])[0] - 1
-        kin_data['Dv'] = np.round(np.abs(velo[rgt]-velo[lft]))
+        kin_data['Dv'] = np.round(np.abs(velo[rgt]-velo[lft]))  # Nearest km/s
 
         # Mean/Median
         vcen = (velo[rgt]+velo[lft])/2.

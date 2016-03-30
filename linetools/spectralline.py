@@ -299,7 +299,6 @@ class SpectralLine(object):
         self.attrib['EW'] = self.attrib['EW'] / (self.attrib['z']+1)
         self.attrib['sig_EW'] = self.attrib['sig_EW'] / (self.attrib['z']+1)
 
-
     def measure_kin(self, **kwargs):
         """  Measure Kinematics
         """

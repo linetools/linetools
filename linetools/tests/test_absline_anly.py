@@ -15,6 +15,10 @@ def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), '../spectra/tests/files')
     return os.path.join(data_dir, filename)
 
+
+
+
+
 def test_aodm_absline():
     # Init CIV 1548
     abslin = AbsLine(1548.195*u.AA)
@@ -82,15 +86,16 @@ def test_gaussew_absline():
     np.testing.assert_allclose(ew.value, 1.02/(1+abslin.attrib['z']),atol=0.01)
 
 
-def test_ismatch():
-    # Init CIV 1548
-    abslin = AbsLine(1548.195*u.AA)
-    abslin.attrib['z'] = 1.2322
+def test_measurekin_absline():
+    # Test Simple kinematics
+    abslin = AbsLine('NiII 1741')
 
-    abslin2 = AbsLine(1548.195*u.AA)
-    abslin2.attrib['z'] = 1.2322
+    # Set spectrum
+    abslin.analy['spec'] = lsio.readspec(data_path('PH957_f.fits'))
+    abslin.analy['vlim'] = [-70., 70.]*u.km/u.s
+    abslin.attrib['z'] = 2.307922
 
-    assert abslin.ismatch(abslin2)
-    # tuples
-    assert abslin.ismatch((1.2322,1548.195*u.AA))
-    assert abslin.ismatch((1.2322,1548.195*u.AA),Zion=(6,4))
+    # Measure Kin
+    abslin.measure_kin()
+    np.testing.assert_allclose(abslin.attrib['kin']['Dv'].value, 75.)
+    np.testing.assert_allclose(abslin.attrib['kin']['fedg'], 0.20005782376000183)
