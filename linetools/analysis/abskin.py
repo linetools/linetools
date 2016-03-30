@@ -4,16 +4,11 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import pdb
-import warnings
 
 from astropy import units as u
-from astropy import constants as const
 from astropy.convolution import convolve, Box1DKernel
 
-from linetools.spectra.xspectrum1d import XSpectrum1D
 
-
-########################## ##########################
 def generate_stau(velo, flux, sig, kbin=22.*u.km/u.s, debug=False):
     """ Generate the smoothed tau array for kinematic tests
 
@@ -22,6 +17,9 @@ def generate_stau(velo, flux, sig, kbin=22.*u.km/u.s, debug=False):
     velo : Quantity array (usually km/s)
     flux : Quantity array (flux)
     sig :  Quantity array (sig)
+    kbin : Quantity (velocity), optional
+      Kernel size for Gaussian smoothing of optical depth array
+    debug : bool, optional
 
     Returns
     -------
