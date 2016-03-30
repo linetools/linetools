@@ -159,7 +159,7 @@ def test_continuum_utils(spec):
     xy = xy.transpose()
     x, y = xy[0], xy[1]
     # test interpolate
-    spec.normalize(spec._interp_continuum(x, y))
+    spec.normalize(spec._interp_continuum(x, y, spec.wavelength.value))
     np.testing.assert_allclose(spec.co, 1.)
     co_old = spec.co
     # test perturb

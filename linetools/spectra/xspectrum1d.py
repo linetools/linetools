@@ -567,7 +567,7 @@ or QtAgg backends to enable all interactive plotting commands.
         npix = len(self.wavelength)
         wvh = (self.wavelength + np.roll(self.wavelength, -1)) / 2.
         wvh[npix - 1] = self.wavelength[npix - 1] + \
-            (self.wavelength[npix - 1] - self.wavelength[npix - 2]) / 2.
+                        (self.wavelength[npix - 1] - self.wavelength[npix - 2]) / 2.
         dwv = wvh - np.roll(wvh, 1)
         dwv[0] = 2 * (wvh[0] - self.wavelength[0])
         med_dwv = np.median(dwv.value)
@@ -590,7 +590,7 @@ or QtAgg backends to enable all interactive plotting commands.
         nnew = len(new_wv)
         nwvh = (new_wv + np.roll(new_wv, -1)) / 2.
         nwvh[nnew - 1] = new_wv[nnew - 1] + \
-            (new_wv[nnew - 1] - new_wv[nnew - 2]) / 2.
+                         (new_wv[nnew - 1] - new_wv[nnew - 2]) / 2.
         # Pad starting point
         bwv = np.zeros(nnew + 1) * new_wv.unit
         bwv[0] = new_wv[0] - (new_wv[1] - new_wv[0]) / 2.
@@ -632,9 +632,17 @@ or QtAgg backends to enable all interactive plotting commands.
                 new_sig[bad_new] = 0.
         else:
             new_sig = None
-        # Return
-        newspec = XSpectrum1D.from_tuple((new_wv, new_fx, new_sig),
+
+        # update continuum
+        if self.co_is_set:
+            x, y = self._get_contpoints()
+            new_co = self._interp_continuum(x, y, new_wv)
+        else:
+            new_co = None
+
+        newspec = XSpectrum1D.from_tuple((new_wv, new_fx, new_sig, new_co),
                                          meta=self.meta.copy())
+        # Return
         return newspec
 
     # Velo array
@@ -885,6 +893,7 @@ or QtAgg backends to enable all interactive plotting commands.
         prihdu.header['NPIX'] = self.npix
         units = self.units.copy()
         d = liu.jsonify(units)
+        # import pdb; pdb.set_trace()
         prihdu.header['UNITS'] = json.dumps(d)
 
         hdu.writeto(outfil, clobber=clobber)
@@ -1062,7 +1071,7 @@ or QtAgg backends to enable all interactive plotting commands.
             [tuple(pts) for pts in wrapper.contpoints])
         self.meta['contpoints'].sort()
 
-    def _interp_continuum(self, x, y):
+    def _interp_continuum(self, x, y, wv=None):
         """ Interpolate the continuum from spline knots.
 
         Returns an interpolation of the continuum using knots at
@@ -1076,22 +1085,46 @@ or QtAgg backends to enable all interactive plotting commands.
             Assumed to be in Angstroms.
         y : array, shape(N,)
             The y positions of the knots to interpolate through
+        wv : array, shape(M,); optional
+            The wavelength array for final interpolation. If None,
+            it uses self.wavelength.value
 
         Returns
         -------
         co : array, shape(M,)
-            Values of the interpolated continuum for each self.wavelength point
+            Values of the interpolated continuum for each `wv` point
 
         """
+        if wv is None:
+            wv = self.wavelength.value
 
         if len(y) >= 5:
             # need 5 points to define an Akima Spline
             spline = AkimaSpline(x, y)
-            co = spline(self.wavelength.value)
+            co = spline(wv)
         else:
-            co = np.interp(self.wavelength.value, x, y)
+            co = np.interp(wv, x, y)
 
         return co
+
+    def _get_contpoints(self):
+        """Gets the x and y values from the metadata meta['contpoints'] as
+        arrays
+
+        Returns
+        -------
+        x, y : tuple of np.arrays()
+            The positions of the contpoint knots in the `x` and `y` axes respectively
+        """
+
+        try:
+            contpoints = self.meta['contpoints']
+        except:
+            raise RuntimeError('Meta data `contpoints` does not exist; cannot get contpoints!')
+        xy = np.array(contpoints)
+        xy = xy.transpose()
+        x, y = xy[0], xy[1]
+        return x, y
 
     def perturb_continuum(self, rel_var=0.05, seed=None):
         """ Perturb an existing continuum.
@@ -1115,13 +1148,8 @@ or QtAgg backends to enable all interactive plotting commands.
         Note: To reset to the original continuum use reset_continuum()
 
         """
-        try:
-            contpoints = self.meta['contpoints']
-        except:
-            raise RuntimeError('Meta data `contpoints` does not exist; cannot perturb the continuum.')
-        xy = np.array(contpoints)
-        xy = xy.transpose()
-        x, y = xy[0], xy[1]
+
+        x, y = self._get_contpoints()
 
         # Get indices in the full spectrum
         # inds = np.array([np.where(np.fabs(x[i]-self.dispersion.value)<0.01)[0][0] for i in range(len(x))])
@@ -1134,7 +1162,7 @@ or QtAgg backends to enable all interactive plotting commands.
         y += np.random.normal(0, y * rel_var, len(y))
 
         #update continuum
-        co = self._interp_continuum(x, y)
+        co = self._interp_continuum(x, y, self.wavelength.value)
         self.normalize(co=co)
         #self.co = co
 
@@ -1150,17 +1178,10 @@ or QtAgg backends to enable all interactive plotting commands.
         This is mainly for use with XSpectrum1D.perturb_continuum
         """
 
-        try:
-            contpoints = self.meta['contpoints']
-        except:
-            raise RuntimeError('Meta data `contpoints` does not exist; cannot reset the continuum.')
-
-        xy = np.array(contpoints)
-        xy = xy.transpose()
-        x, y = xy[0], xy[1]
+        x, y = self._get_contpoints()
 
         #update continuum
-        co = self._interp_continuum(x, y)
+        co = self._interp_continuum(x, y, self.wavelength.value)
         self.normalize(co=co)
         #self.co = co
 
