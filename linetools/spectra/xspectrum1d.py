@@ -779,7 +779,7 @@ or QtAgg backends to enable all interactive plotting commands.
             new_sig = None
 
         # Continuum
-        if self.sig_is_set:
+        if self.co_is_set:
             new_co = np.concatenate((self.co, spec2.co[gdp] * scale))
         else:
             new_co = None
