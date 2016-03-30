@@ -337,7 +337,7 @@ class XSpectrum1D(object):
         self._wvmax = np.max(self.wavelength[gdpx])
 
     #  Add noise
-    def add_noise(self, seed=None, s2n=None):
+    def add_noise(self, seed=None, s2n=None, rstate=None):
         """Add noise to the spectrum.
 
         Uses the uncertainty array unless s2n is specified.
@@ -349,16 +349,20 @@ class XSpectrum1D(object):
         s2n : float, optional
           S/N per pixel for the output spectrum. If None, use the
           uncertainty array.
+        rstate : RandomState
+          allows regeneration of the same noise
 
         Returns
         -------
         newspec : A new XSpectrum1D with noise added
         """
         # Seed
-        np.random.seed(seed=seed)
+        if rstate is None:
+            rstate=np.random.RandomState(seed)
 
         # Random numbers
-        rand = np.random.normal(size=self.npix)
+        #rand = np.random.normal(size=self.npix)
+        rand = rstate.randn(self.npix)
 
         # Modify the flux
         if s2n is not None:
