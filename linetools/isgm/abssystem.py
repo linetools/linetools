@@ -271,6 +271,31 @@ class AbsSystem(object):
         else:
             return [abslines[ii] for ii in mt]
 
+
+    def get_comp_from_absline(self, aline):
+        """ Returns the component that holds the input AbsLine
+
+        Parameters
+        ----------
+        aline : AbsLine
+
+        Returns
+        -------
+        comp -- AbsComponent object that holds this AbsLine
+        """
+        # Loop on components
+        for comp in self._components:
+            # Is the line present?
+            try:
+                idx = comp._abslines.index(aline)
+            except ValueError:
+                pass
+            else:
+                return comp
+        # Raise error?
+        warnings.warn("Input absorption line is not in any component")
+        return None
+
     def list_of_abslines(self):
         """ Generate a list of the absorption lines in this system
 

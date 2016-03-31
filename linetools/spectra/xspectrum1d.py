@@ -337,7 +337,7 @@ class XSpectrum1D(object):
         self._wvmax = np.max(self.wavelength[gdpx])
 
     #  Add noise
-    def add_noise(self, seed=None, s2n=None):
+    def add_noise(self, seed=None, s2n=None, rstate=None):
         """Add noise to the spectrum.
 
         Uses the uncertainty array unless s2n is specified.
@@ -349,16 +349,20 @@ class XSpectrum1D(object):
         s2n : float, optional
           S/N per pixel for the output spectrum. If None, use the
           uncertainty array.
+        rstate : RandomState
+          allows regeneration of the same noise
 
         Returns
         -------
         newspec : A new XSpectrum1D with noise added
         """
         # Seed
-        np.random.seed(seed=seed)
+        if rstate is None:
+            rstate=np.random.RandomState(seed)
 
         # Random numbers
-        rand = np.random.normal(size=self.npix)
+        #rand = np.random.normal(size=self.npix)
+        rand = rstate.randn(self.npix)
 
         # Modify the flux
         if s2n is not None:
@@ -368,6 +372,7 @@ class XSpectrum1D(object):
         # Copy
         newspec = self.copy()
         newspec.data['flux'][self.select] = self.flux.value + (rand * sig)
+        newspec.data['sig'][self.select] = np.ones_like(self.flux) * sig
         #
         return newspec
 
@@ -772,13 +777,21 @@ or QtAgg backends to enable all interactive plotting commands.
         uwave = u.Quantity(new_wv, unit=self.units['wave'])
         new_fx = np.concatenate((self.flux.value,
                                  spec2.flux.value[gdp] * scale))
+        # Error
         if self.sig_is_set:
             new_sig = np.concatenate((self.sig, spec2.sig[gdp] * scale))
         else:
             new_sig = None
+
+        # Continuum
+        if self.co_is_set:
+            new_co = np.concatenate((self.co, spec2.co[gdp] * scale))
+        else:
+            new_co = None
+
         # Generate
         spec3 = XSpectrum1D.from_tuple(
-            (uwave, u.Quantity(new_fx), new_sig), meta=self.meta.copy())
+            (uwave, u.Quantity(new_fx), new_sig, new_co), meta=self.meta.copy())
         # Return
         return spec3
 

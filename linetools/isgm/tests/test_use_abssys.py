@@ -27,22 +27,23 @@ def test_list_of_abslines():
     lya = AbsLine(1215.670*u.AA)
     lya.analy['vlim'] = [-300.,300.]*u.km/u.s
     lya.attrib['z'] = 2.92939
+    lya.attrib['coord'] = radec
     lyb = AbsLine(1025.7222*u.AA)
     lyb.analy['vlim'] = [-300.,300.]*u.km/u.s
     lyb.attrib['z'] = lya.attrib['z']
+    lyb.attrib['coord'] = radec
     abscomp = AbsComponent.from_abslines([lya,lyb])
-    abscomp.coord = radec
     # SiII
     SiIItrans = ['SiII 1260', 'SiII 1304', 'SiII 1526', 'SiII 1808']
     abslines = []
     for trans in SiIItrans:
         iline = AbsLine(trans)
         iline.attrib['z'] = 2.92939
+        iline.attrib['coord'] = radec
         iline.analy['vlim'] = [-250.,80.]*u.km/u.s
         abslines.append(iline)
     #
     SiII_comp = AbsComponent.from_abslines(abslines)
-    SiII_comp.coord = radec
     # Instantiate
     gensys = GenericAbsSystem.from_components([abscomp,SiII_comp])
     # Now the list
@@ -62,17 +63,19 @@ def test_todict():
     lya = AbsLine(1215.670*u.AA)
     lya.analy['vlim'] = [-300.,300.]*u.km/u.s
     lya.attrib['z'] = 2.92939
+    lya.attrib['coord'] = radec
     lyb = AbsLine(1025.7222*u.AA)
     lyb.analy['vlim'] = [-300.,300.]*u.km/u.s
     lyb.attrib['z'] = lya.attrib['z']
+    lyb.attrib['coord'] = radec
     abscomp = AbsComponent.from_abslines([lya,lyb])
-    abscomp.coord = radec
     # Instantiate
     HIsys = LymanAbsSystem.from_components([abscomp])
     # Dict
     adict = HIsys.to_dict()
     assert isinstance(adict, dict)
     # Instantiate
+    #pdb.set_trace()
     newsys = AbsSystem.from_dict(adict)
     assert isinstance(newsys, AbsSystem)
 
@@ -83,11 +86,12 @@ def test_todict_withjson():
     lya = AbsLine(1215.670*u.AA)
     lya.analy['vlim'] = [-300.,300.]*u.km/u.s
     lya.attrib['z'] = 2.92939
+    lya.attrib['coord'] = radec
     lyb = AbsLine(1025.7222*u.AA)
     lyb.analy['vlim'] = [-300.,300.]*u.km/u.s
     lyb.attrib['z'] = lya.attrib['z']
+    lyb.attrib['coord'] = radec
     abscomp = AbsComponent.from_abslines([lya,lyb])
-    abscomp.coord = radec
     # Instantiate
     HIsys = LymanAbsSystem.from_components([abscomp])
     # Dict

@@ -37,6 +37,30 @@ def between(a, vmin, vmax):
     c &= a >= vmin
     return c
 
+
+def convert_quantity_in_dict(idict):
+    """ Return a dict where Quantities (usually from a JSON file)
+    have been converted from unit/value
+
+    Parameters
+    ----------
+    idict : dict
+      Input dict
+
+    Returns
+    -------
+    obj : dict or Quantity
+    """
+    if 'unit' in idict.keys():  # Simple dict of Quantity (e.g. from jsonify)
+        obj = Quantity(idict['value'], unit=idict['unit'])
+        return obj
+    else:  # Nested dict (possibly)
+        for key in idict.keys():
+            if isinstance(idict[key], dict):
+                idict[key] = convert_quantity_in_dict(idict[key])
+        return idict
+
+
 def radec_to_coord(radec):
     """ Converts one of many of Celestial Coordinates
     `radec` formats to an astropy SkyCoord object. Assumes
@@ -145,7 +169,9 @@ def jsonify(obj, debug=False):
         obj = bool(obj)
     elif isinstance(obj, np.string_):
         obj = str(obj)
-    elif isinstance(obj, np.ndarray):
+    elif isinstance(obj, Quantity):
+        obj = dict(value=obj.value, unit=obj.unit.to_string())
+    elif isinstance(obj, np.ndarray):  # Must come after Quantity
         obj = obj.tolist()
     elif isinstance(obj, dict):
         for key, value in obj.items():
@@ -158,8 +184,6 @@ def jsonify(obj, debug=False):
         for i,item in enumerate(obj):
             obj[i] = jsonify(item, debug=debug)
         obj = tuple(obj)
-    elif isinstance(obj, Quantity):
-        obj = dict(value=obj.value, unit=obj.unit.name)
     elif isinstance(obj, Unit):
         obj = obj.name
     elif obj is u.dimensionless_unscaled:

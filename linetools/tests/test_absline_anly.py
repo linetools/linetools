@@ -10,10 +10,13 @@ from astropy import units as u
 
 from linetools.spectralline import AbsLine
 from linetools.spectra import io as lsio
+from linetools import spectralline
+from linetools.lists.linelist import LineList
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), '../spectra/tests/files')
     return os.path.join(data_dir, filename)
+
 
 def test_aodm_absline():
     # Init CIV 1548
@@ -82,15 +85,41 @@ def test_gaussew_absline():
     np.testing.assert_allclose(ew.value, 1.02/(1+abslin.attrib['z']),atol=0.01)
 
 
+def test_measurekin_absline():
+    # Test Simple kinematics
+    abslin = AbsLine('NiII 1741')
+
+    # Set spectrum
+    abslin.analy['spec'] = lsio.readspec(data_path('PH957_f.fits'))
+    abslin.analy['vlim'] = [-70., 70.]*u.km/u.s
+    abslin.attrib['z'] = 2.307922
+
+    # Measure Kin
+    abslin.measure_kin()
+    np.testing.assert_allclose(abslin.attrib['kin']['Dv'].value, 75.)
+    np.testing.assert_allclose(abslin.attrib['kin']['fedg'], 0.20005782376000183)
+
+
 def test_ismatch():
-    # Init CIV 1548
-    abslin = AbsLine(1548.195*u.AA)
-    abslin.attrib['z'] = 1.2322
+    # Test Simple kinematics
+    abslin1 = AbsLine('NiII 1741')
+    abslin1.attrib['z'] = 1.
+    abslin2 = AbsLine('NiII 1741')
+    abslin2.attrib['z'] = 1.
+    # Run
+    answer = abslin1.ismatch(abslin2)
+    assert answer == True
+    # Tuple too
+    answer2 = abslin1.ismatch((1., abslin1.wrest))
+    assert answer2 == True
 
-    abslin2 = AbsLine(1548.195*u.AA)
-    abslin2.attrib['z'] = 1.2322
+def test_repr():
+    abslin = AbsLine('NiII 1741')
+    print(abslin)
 
-    assert abslin.ismatch(abslin2)
-    # tuples
-    assert abslin.ismatch((1.2322,1548.195*u.AA))
-    assert abslin.ismatch((1.2322,1548.195*u.AA),Zion=(6,4))
+def test_manyabslines():
+    lines = [1215.670*u.AA, 1025.7222*u.AA, 972.5367*u.AA]*2
+    llist = LineList('HI')
+    alines = spectralline.many_abslines(lines, llist)
+
+

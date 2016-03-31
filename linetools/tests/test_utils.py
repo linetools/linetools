@@ -1,10 +1,21 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 from ..utils import between, v_from_z, savejson, loadjson, z_from_v
-from ..utils import radec_to_coord
+from ..utils import radec_to_coord, convert_quantity_in_dict
 import numpy as np
 from astropy import units as u
 import pdb
+
+def test_convert_qdict():
+    vlim = dict(unit='km/s', value=50.)
+    time = dict(unit='s', value=100.)
+    mass = dict(unit='g', value=10.)
+    idict = dict(vlim=vlim, nest=dict(time=time, mass=mass))
+    newdict = convert_quantity_in_dict(idict)
+    assert newdict['nest']['mass'] == 10*u.g
+    # Simple one
+    obj = convert_quantity_in_dict(vlim)
+    assert obj.unit == u.km/u.s
 
 def test_between():
     x = [1,2,3,4,5]
@@ -43,3 +54,5 @@ def test_radeccoord():
         coord = radec_to_coord(radec)
         # Test
         np.testing.assert_allclose(coord.ra.value, 191.2958333333333)
+
+
