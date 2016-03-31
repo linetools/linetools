@@ -116,7 +116,7 @@ def voigt_tau(wave, par):
     uvoigt = ((c_cgs / (wave/zp1)) - nujk) / dnu
     # Voigt
     cne = 0.014971475 * cold * par[4] #line.data['f'] * u.cm * u.cm * u.Hz
-    tau = cne * voigt_wofz(uvoigt,avoigt) / dnu 
+    tau = cne * voigt_wofz(uvoigt,avoigt) / dnu
     #
     return tau
 
@@ -277,6 +277,6 @@ class single_voigt_model(FittableModel):
     def evaluate(wave,logN,b,z,wrest,f,gamma,fwhm):
         tau = voigt_tau(wave/1e8, [logN,z,b*1e5,wrest/1e8,f,gamma])
         fx = np.exp(-1*tau)
-        if fwhm > 0.: 
+        if fwhm > 0.:
             fx = lsc.convolve_psf(fx, fwhm)
         return fx 

@@ -372,6 +372,7 @@ class XSpectrum1D(object):
         # Copy
         newspec = self.copy()
         newspec.data['flux'][self.select] = self.flux.value + (rand * sig)
+        newspec.data['sig'][self.select] = np.ones_like(self.flux) * sig
         #
         return newspec
 
