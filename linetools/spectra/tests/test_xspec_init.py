@@ -44,9 +44,9 @@ def test_from_tuple():
     spec = XSpectrum1D.from_tuple((idl['wave'],idl['flux'],idl['sig'], co))
     np.testing.assert_allclose(spec.wavelength.value, idl['wave'])
 
-def test_from_tuple_array():
+def test_from_tuple_Column():
     wv = astropy.table.Column(np.arange(10.), name='wave', unit=None)
-    fx = np.ones(len(wv))
+    fx = astropy.table.Column(np.ones(len(wv)), name='flux', unit=None)
     sig = np.ones(len(fx))
     spec = XSpectrum1D.from_tuple((wv, fx, sig))
     assert spec.wavelength.unit == u.Angstrom
