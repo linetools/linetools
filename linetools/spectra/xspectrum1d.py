@@ -94,7 +94,10 @@ class XSpectrum1D(object):
         else:
             if wv_unit is None:
                 wv_unit = u.AA
-            iwave = ituple[0].value
+            try:
+                iwave = ituple[0].value
+            except AttributeError:
+                iwave = ituple[0]
 
         # Parse flux
         try:

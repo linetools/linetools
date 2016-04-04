@@ -9,6 +9,7 @@ import pdb
 import astropy.io.ascii as ascii
 from astropy import units as u
 from astropy.io import fits
+import astropy.table
 
 from specutils.spectrum1d import Spectrum1D
 
@@ -42,6 +43,14 @@ def test_from_tuple():
     co = None
     spec = XSpectrum1D.from_tuple((idl['wave'],idl['flux'],idl['sig'], co))
     np.testing.assert_allclose(spec.wavelength.value, idl['wave'])
+
+def test_from_tuple_array():
+    wv = astropy.table.Column(np.arange(10.), name='wave', unit=None)
+    fx = np.ones(len(wv))
+    sig = np.ones(len(fx))
+    spec = XSpectrum1D.from_tuple((wv, fx, sig))
+    assert spec.wavelength.unit == u.Angstrom
+
 
 """
 # From file
