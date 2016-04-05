@@ -94,7 +94,10 @@ class XSpectrum1D(object):
         else:
             if wv_unit is None:
                 wv_unit = u.AA
-            iwave = ituple[0].value
+            try:
+                iwave = ituple[0].value
+            except AttributeError:
+                iwave = ituple[0]
 
         # Parse flux
         try:
@@ -105,7 +108,10 @@ class XSpectrum1D(object):
         else:
             if fx_unit is None:
                 fx_unit = u.dimensionless_unscaled
-            iflux = ituple[1].value
+            try:
+                iflux = ituple[1].value
+            except AttributeError:
+                iflux = ituple[1]
 
         # Sort and append None
         ltuple = list(ituple)

@@ -1,7 +1,11 @@
 0.2 (unreleased)
 ----------------
 
-- No changes yet
+Bug fixes
+.........
+
+- Fix `XSpectrum1D.from_tuple` to allow an astropy table column to
+  specify wavelengths and fluxes.
 
 
 0.1 (2016-01-31)
