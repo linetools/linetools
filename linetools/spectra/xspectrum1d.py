@@ -423,6 +423,18 @@ class XSpectrum1D(object):
         """
         self.normed = False
 
+    def normalized_spec(self):
+        """ Generate and pass back a normalized version of the spectrum
+        """
+        if self.normed is False:
+            raise IOError("Spectrum must be normalized!")
+        #
+        # Generate
+        newspec = XSpectrum1D.from_tuple((self.wavelength, self.flux, self.sig),
+                                         meta=self.meta.copy())
+        # Return
+        return newspec
+
     def pix_minmax(self, *args):
         """ Find pixel indices given a wavelength or velocity range
 

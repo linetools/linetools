@@ -167,15 +167,23 @@ def test_continuum_utils(spec):
     assert all(co_old != spec.co)
     np.testing.assert_allclose(np.max(spec.co), 1.2319426067564621)
     np.testing.assert_allclose(np.min(spec.co), 0.86589518482815)
+
     #test reset
     spec.reset_continuum()
     np.testing.assert_allclose(spec.co, 1.)
+
+    # Test generation of normalized spec
+    norm_spec = spec.normalized_spec()
+    assert isinstance(norm_spec, XSpectrum1D)
+    assert norm_spec.normed is False
 
     # test normalize/unnormalize
     flux_old = spec.flux
     spec.unnormalize()
     assert spec.normed is False
     np.testing.assert_allclose(spec.flux,flux_old)
+
+
 
 
 def test_assignment(spec):
