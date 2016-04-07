@@ -456,8 +456,9 @@ def parse_FITS_binary_table(hdulist, exten=None, flux_tag=None,
         if ivar is None:
             var_tags = ['VAR', 'var']
             var, var_tag = get_table_column(var_tags, hdulist, idx=exten)
-            warnings.warn('No error tag found. Searched for these tags:\n',
-                          sig_tags + ivar_tag + var_tag)
+            if var is None:
+                warnings.warn('No error tag found. Searched for these tags:\n',
+                              sig_tags + ivar_tags + var_tags)
             sig = np.sqrt(var)
         else:
             sig = np.zeros(ivar.size)
