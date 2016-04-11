@@ -2,6 +2,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import copy
+import pdb
 
 from astropy import units as u
 
@@ -177,7 +178,7 @@ def set_llist(llist, in_dict=None, sort=True):
 
 
 # Read spectrum, pass back it and spec_file name
-def read_spec(ispec, exten=None, norm=True):
+def read_spec(ispec, exten=None, norm=True, **kwargs):
     """Parse spectrum out of the input
 
     If 2 spectra are given, the 2nd is scaled to the first
@@ -198,7 +199,14 @@ def read_spec(ispec, exten=None, norm=True):
     #
     if isinstance(ispec,basestring):
         spec_fil = ispec
-        spec = lsx.XSpectrum1D.from_file(spec_fil, exten=exten)
+        if 'rsp_kwargs' in kwargs.keys():
+            spec = lsx.XSpectrum1D.from_file(spec_fil, exten=exten, **kwargs['rsp_kwargs'])
+        else:
+            spec = lsx.XSpectrum1D.from_file(spec_fil, exten=exten)
+        #from PyQt4 import QtCore
+        #QtCore.pyqtRemoveInputHook()
+        #pdb.set_trace()
+        #QtCore.pyqtRestoreInputHook()
     elif isinstance(ispec, lsx.XSpectrum1D):
         spec = ispec
         spec_fil = spec.filename  # Grab from Spectrum1D

@@ -19,6 +19,11 @@ def main(*args, **kwargs):
     parser.add_argument("--norm", help="Show spectrum continuum normalized (if one exists)",
                         action="store_true")
     parser.add_argument("--exten", type=int, help="FITS extension")
+    parser.add_argument("--wave_tag", type=str, help="Tag for wave in Table")
+    parser.add_argument("--flux_tag", type=str, help="Tag for flux in Table")
+    parser.add_argument("--sig_tag", type=str, help="Tag for sig in Table")
+    parser.add_argument("--var_tag", type=str, help="Tag for var in Table")
+    parser.add_argument("--ivar_tag", type=str, help="Tag for ivar in Table")
 
     pargs = parser.parse_args()
 
@@ -38,8 +43,22 @@ def main(*args, **kwargs):
     # Second spectral file?
     zsys = (pargs.zsys if hasattr(pargs, 'zsys') else None)
 
+    # Read spec keywords
+    rsp_kwargs = {}
+    if pargs.wave_tag is not None:
+        rsp_kwargs['wave_tag'] = pargs.wave_tag
+    if pargs.flux_tag is not None:
+        rsp_kwargs['flux_tag'] = pargs.flux_tag
+    if pargs.sig_tag is not None:
+        rsp_kwargs['sig_tag'] = pargs.sig_tag
+    if pargs.var_tag is not None:
+        rsp_kwargs['var_tag'] = pargs.var_tag
+    if pargs.ivar_tag is not None:
+        rsp_kwargs['ivar_tag'] = pargs.ivar_tag
 
     app = QtGui.QApplication(sys.argv)
-    gui = XSpecGui(pargs.file, zsys=zsys, norm=norm, exten=exten)
+
+    gui = XSpecGui(pargs.file, zsys=zsys, norm=norm, exten=exten,
+                   rsp_kwargs=rsp_kwargs)
     gui.show()
     app.exec_()

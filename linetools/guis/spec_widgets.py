@@ -35,7 +35,7 @@ class ExamineSpecWidget(QtGui.QWidget):
     def __init__(self, ispec, parent=None, status=None, llist=None,
                  abs_sys=None, norm=True, second_file=None, zsys=None,
                  key_events=True, vlines=None, plotzero=False, exten=None,
-                 xlim=None, ylim=None):
+                 xlim=None, ylim=None, rsp_kwargs=None):
         """
         Parameters
         ----------
@@ -61,7 +61,8 @@ class ExamineSpecWidget(QtGui.QWidget):
         super(ExamineSpecWidget, self).__init__(parent)
 
         # Spectrum
-        spec, spec_fil = ltgu.read_spec(ispec, exten=exten, norm=norm)
+        spec, spec_fil = ltgu.read_spec(ispec, exten=exten, norm=norm,
+                                        rsp_kwargs=rsp_kwargs)
         self.orig_spec = spec  # For smoothing
         self.spec = self.orig_spec
 

@@ -412,8 +412,8 @@ def parse_UVES_popler(hdulist):
     xspec1d = XSpectrum1D.from_tuple((uwave, fx, sig, co))
     return xspec1d
 
-def parse_FITS_binary_table(hdulist, exten=None, flux_tag=None,
-                            sig_tag=None, co_tag=None):
+def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
+                            sig_tag=None, co_tag=None, var_tag=None):
     """ Read a spectrum from a FITS binary table
 
     Parameters
@@ -421,9 +421,11 @@ def parse_FITS_binary_table(hdulist, exten=None, flux_tag=None,
     hdulist : FITS HDU list
     exten : int, optional
       Extension for the binary table.
+    wave_tag : str, optional
     flux_tag : str, optional
     sig_tag : str, optional
     co_tag : str, optional
+    var_tag : str, optional
 
     Returns
     -------
@@ -454,7 +456,10 @@ def parse_FITS_binary_table(hdulist, exten=None, flux_tag=None,
         ivar_tags = ['IVAR', 'IVAR_OPT', 'ivar']
         ivar, ivar_tag = get_table_column(ivar_tags, hdulist, idx=exten)
         if ivar is None:
-            var_tags = ['VAR', 'var']
+            if var_tag is None:
+                var_tags = ['VAR', 'var']
+            else:
+                var_tags = [var_tag]
             var, var_tag = get_table_column(var_tags, hdulist, idx=exten)
             if var is None:
                 warnings.warn('No error tag found. Searched for these tags:\n',
@@ -465,8 +470,11 @@ def parse_FITS_binary_table(hdulist, exten=None, flux_tag=None,
             gdi = np.where( ivar > 0.)[0]
             sig[gdi] = np.sqrt(1./ivar[gdi])
     # Wavelength
-    wave_tags = ['WAVE','WAVELENGTH','LAMBDA','LOGLAM',
-                 'WAVESTIS', 'WAVE_OPT', 'wa', 'wave', 'loglam']
+    if wave_tag is None:
+        wave_tags = ['WAVE','WAVELENGTH','LAMBDA','LOGLAM',
+                     'WAVESTIS', 'WAVE_OPT', 'wa', 'wave', 'loglam']
+    else:
+        wave_tags = [wave_tag]
     wave, wave_tag = get_table_column(wave_tags, hdulist, idx=exten)
     if wave_tag in ['LOGLAM','loglam']:
         wave = 10.**wave
