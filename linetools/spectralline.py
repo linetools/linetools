@@ -304,9 +304,9 @@ class SpectralLine(object):
         """
         from linetools.analysis import abskin
         fx, sig, cdict = self.cut_spec()
-        stau = abskin.generate_stau(cdict['velo'], fx, sig)
+        stau = abskin.generate_stau(cdict['velo'], fx, sig, **kwargs)
         # Measure
-        kin_data = abskin.pw97_kin(cdict['velo'], stau)
+        kin_data = abskin.pw97_kin(cdict['velo'], stau, **kwargs)
         # Save
         self.attrib['kin'] = kin_data
 
