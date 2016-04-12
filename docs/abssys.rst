@@ -99,6 +99,15 @@ or rest-wavelength of a transition, e.g. ::
    # or
    lyb = abssys.get_absline(1025.72*u.AA)  # Nearest 0.01 A is required
 
+
+ionN
+----
+
+Generate a QTable of column densities from the components ::
+
+   abssys.fill_ionN()
+   print(abssys._ionN)
+
 Output
 ======
 

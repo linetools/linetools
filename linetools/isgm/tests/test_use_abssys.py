@@ -55,6 +55,9 @@ def test_list_of_abslines():
     np.testing.assert_allclose(lyb.wrest.value, 1025.7222)
     lyb = gensys.get_absline(1025.72*u.AA)
     np.testing.assert_allclose(lyb.wrest.value, 1025.7222)
+    # ionN
+    gensys.fill_ionN()
+    assert len(gensys._ionN) == 2
 
 
 def test_todict():

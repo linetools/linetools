@@ -235,6 +235,11 @@ class AbsSystem(object):
         """
         return True
 
+    def fill_ionN(self, **kwargs):
+        """ Fills the ionN Table from the list of components
+        """
+        self._ionN = ltiu.iontable_from_components(self._components, **kwargs)
+
     def get_absline(self, inp):
         """ Returns an AbsLine from the AbsSystem
 
