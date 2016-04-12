@@ -59,14 +59,19 @@ def generate_stau(velo, flux, sig, kbin=22.*u.km/u.s, debug=False):
     kernel = Box1DKernel(nbin, mode='center')
     stau = convolve(tau, kernel, boundary='fill', fill_value=0.)
     if debug is True:
-        from xastropy.xutils import xdebug as xdb
-        xdb.xplot(velo, tau, stau)
+        try:
+            from xastropy.xutils import xdebug as xdb
+        except ImportError:
+            pdb.set_trace()
+        else:
+            xdb.xplot(velo, tau, stau)
+            xdb.set_trace()
 
     # Return
     return stau
 
 
-def pw97_kin(velo, stau, per=0.05):
+def pw97_kin(velo, stau, per=0.05, debug=False):
         """ Measure a standard suite of absorption line kinematics
         from Prochaska & Wolfe 1997
 
@@ -86,6 +91,9 @@ def pw97_kin(velo, stau, per=0.05):
         lft = (np.where(cumtau > per)[0])[0]
         rgt = (np.where(cumtau > (1.-per))[0])[0] - 1
         kin_data['Dv'] = np.round(np.abs(velo[rgt]-velo[lft]))  # Nearest km/s
+
+        if debug:
+            pdb.set_trace()
 
         # Mean/Median
         vcen = (velo[rgt]+velo[lft])/2.
