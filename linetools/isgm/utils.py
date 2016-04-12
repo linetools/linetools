@@ -243,7 +243,7 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
         if len(mt) == 1:
             iontbl[mt[0]]['logN'] = NHI_obj.NHI
             iontbl[mt[0]]['sig_logN'] = NHI_obj.sig_NHI
-            iontbl[mt[0]]['flag_logN'] = NHI_obj.flag_NHI
+            iontbl[mt[0]]['flag_N'] = NHI_obj.flag_NHI
         else:
             row = dict(Z=1,ion=1,
                        z=ztbl,
