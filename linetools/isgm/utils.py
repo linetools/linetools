@@ -171,7 +171,7 @@ def build_components_from_dict(idict, coord=None, **kwargs):
     return components
 
 
-def iontable_from_components(components, ztbl=None):
+def iontable_from_components(components, ztbl=None, NHI_obj=None):
     """Generate a QTable from a list of components
 
     Method does *not* perform logic on redshifts or vlim.
@@ -184,6 +184,8 @@ def iontable_from_components(components, ztbl=None):
       list of AbsComponent objects
     ztbl : float, optional
       Redshift for the table
+    NHI_obj : object, optional (with NHI, sig_NHI, flag_NHI attributes)
+      If provided, fill HI with NHI, sig_NHI, flag_NHI
 
     Returns
     -------
@@ -233,6 +235,22 @@ def iontable_from_components(components, ztbl=None):
                    vmax=synth_comp.vlim[1],logN=synth_comp.logN,
                    flag_N=synth_comp.flag_N,sig_logN=synth_comp.sig_logN)
         iontbl.add_row(row)
+
+    # NHI
+    if NHI_obj is not None:
+        # Existing row in Table?
+        mt = np.where((iontbl['Z'] == 1) & (iontbl['ion']==1))[0]
+        if len(mt) == 1:
+            iontbl[mt[0]]['logN'] = NHI_obj.NHI
+            iontbl[mt[0]]['sig_logN'] = NHI_obj.sig_NHI
+            iontbl[mt[0]]['flag_logN'] = NHI_obj.flag_NHI
+        else:
+            row = dict(Z=1,ion=1,
+                       z=ztbl,
+                       Ej=0./u.cm,vmin=synth_comp[0].vlim[0],
+                       vmax=synth_comp[0].vlim[1],logN=NHI_obj.NHI,
+                       flag_N=NHI_obj.flag_NHI,sig_logN=NHI_obj.sig_NHI)
+            iontbl.add_row(row)
 
     # Add zlim to metadata
     meta = OrderedDict()
