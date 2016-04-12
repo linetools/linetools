@@ -58,3 +58,19 @@ def test_read_table():
     spec = io.readspec(t)
     np.testing.assert_allclose(spec.wavelength[0].value, 1)
     np.testing.assert_allclose(spec.flux[0], 1)
+    # Read table with non standard tags
+    t = Table([(1,2,3), (1,2,3), (1,2,3)],
+              names=['dumb_wave', 'dumb_flux', 'dumb_sig'])
+    spec = io.readspec(t, wave_tag='dumb_wave', flux_tag='dumb_flux',
+                       sig_tag='dumb_sig')
+    np.testing.assert_allclose(spec.wavelength[0].value, 1)
+    np.testing.assert_allclose(spec.flux[0], 1)
+    # More..
+    t = Table([(1,2,3), (1,2,3), (1,2,3)],
+              names=['dumb_wave', 'dumb_flux', 'dumb_ivar'])
+    spec = io.readspec(t, wave_tag='dumb_wave', flux_tag='dumb_flux',
+                       ivar_tag='dumb_ivar')
+    t = Table([(1,2,3), (1,2,3), (1,2,3)],
+              names=['dumb_wave', 'dumb_flux', 'dumb_var'])
+    spec = io.readspec(t, wave_tag='dumb_wave', flux_tag='dumb_flux',
+                       var_tag='dumb_var')

@@ -413,7 +413,8 @@ def parse_UVES_popler(hdulist):
     return xspec1d
 
 def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
-                            sig_tag=None, co_tag=None, var_tag=None):
+                            sig_tag=None, co_tag=None, var_tag=None,
+                            ivar_tag=None):
     """ Read a spectrum from a FITS binary table
 
     Parameters
@@ -453,7 +454,10 @@ def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
         sig_tags = [sig_tag]
     sig, sig_tag = get_table_column(sig_tags, hdulist)
     if sig is None:
-        ivar_tags = ['IVAR', 'IVAR_OPT', 'ivar']
+        if ivar_tag is None:
+            ivar_tags = ['IVAR', 'IVAR_OPT', 'ivar']
+        else:
+            ivar_tags = [ivar_tag]
         ivar, ivar_tag = get_table_column(ivar_tags, hdulist, idx=exten)
         if ivar is None:
             if var_tag is None:
