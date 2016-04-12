@@ -103,7 +103,8 @@ or rest-wavelength of a transition, e.g. ::
 ionN
 ----
 
-Generate a QTable of column densities from the components ::
+Fill the _ionN attribute with a QTable of column densities.
+These are derived from the components ::
 
    abssys.fill_ionN()
    print(abssys._ionN)
