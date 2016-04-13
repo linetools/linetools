@@ -245,10 +245,15 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
             iontbl[mt[0]]['sig_logN'] = NHI_obj.sig_NHI
             iontbl[mt[0]]['flag_N'] = NHI_obj.flag_NHI
         else:
-            row = dict(Z=1,ion=1,
-                       z=ztbl,
-                       Ej=0./u.cm,vmin=synth_comp[0].vlim[0],
-                       vmax=synth_comp[0].vlim[1],logN=NHI_obj.NHI,
+            if len(components) > 0:
+                vmin=synth_comp.vlim[0]
+                vmax=synth_comp.vlim[1]
+            else:
+                vmin = -300*u.km/u.s
+                vmax = 300*u.km/u.s
+            #
+            row = dict(Z=1,ion=1, z=ztbl,
+                       Ej=0./u.cm,vmin=vmin, vmax=vmax, logN=NHI_obj.NHI,
                        flag_N=NHI_obj.flag_NHI,sig_logN=NHI_obj.sig_NHI)
             iontbl.add_row(row)
 
