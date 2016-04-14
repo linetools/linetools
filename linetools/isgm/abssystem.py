@@ -148,7 +148,7 @@ class AbsSystem(object):
                   )
         if not skip_components:
             # Components
-            components = ltiu.build_components_from_dict(idict)
+            components = ltiu.build_components_from_dict(idict, **kwargs)
             for component in components:
                 # This is to insure the components follow the rules
                 slf.add_component(component)
