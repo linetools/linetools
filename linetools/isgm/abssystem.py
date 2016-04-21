@@ -148,7 +148,7 @@ class AbsSystem(object):
                   )
         if not skip_components:
             # Components
-            components = ltiu.build_components_from_dict(idict)
+            components = ltiu.build_components_from_dict(idict, **kwargs)
             for component in components:
                 # This is to insure the components follow the rules
                 slf.add_component(component)
@@ -234,6 +234,11 @@ class AbsSystem(object):
 
         """
         return True
+
+    def fill_ionN(self, **kwargs):
+        """ Fills the ionN Table from the list of components
+        """
+        self._ionN = ltiu.iontable_from_components(self._components, **kwargs)
 
     def get_absline(self, inp):
         """ Returns an AbsLine from the AbsSystem
