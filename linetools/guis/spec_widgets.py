@@ -201,8 +201,9 @@ class ExamineSpecWidget(QtGui.QWidget):
             lya_line.attrib['z'] = zlya
             lya_line.attrib['N'] = NHI
             lya_line.attrib['b'] = 30. * u.km/u.s
-            self.lya_line = ltv.voigt_from_abslines(self.spec.wavelength,
-                                                    lya_line, fwhm=3.)
+            lya_spec = ltv.voigt_from_abslines(self.spec.wavelength, lya_line, fwhm=3.)
+            lconti = event.ydata
+            self.lya_line = XSpectrum1D.from_tuple((lya_spec.wavelength, lya_spec.flux*lconti))
             self.adict['flg'] = 4
             # QtCore.pyqtRemoveInputHook()
             # import pdb; pdb.set_trace()
@@ -226,7 +227,7 @@ class ExamineSpecWidget(QtGui.QWidget):
                 return
             flg = 1
 
-            if self.adict['flg'] == 0:
+            if (self.adict['flg'] == 0) or (self.adict['flg'] > 2):
                 self.adict['wv_1'] = event.xdata # wavelength
                 self.adict['C_1'] = event.ydata # local continuum
                 self.adict['flg'] = 1 # Plot dot
@@ -244,13 +245,13 @@ class ExamineSpecWidget(QtGui.QWidget):
                 # Calculate the continuum (linear fit)
                 param = np.polyfit(iwv, ic, 1)
                 cfunc = np.poly1d(param)
-                self.spec.conti = cfunc(self.spec.wavelength)
+                lconti = cfunc(self.spec.wavelength.value)  # Local continuum
 
                 if event.key == '$': # Simple stats
                     pix = self.spec.pix_minmax(iwv)[0]
                     mean = np.mean(self.spec.flux[pix])
                     median = np.median(self.spec.flux[pix])
-                    stdv = np.std(self.spec.flux[pix]-self.spec.conti[pix])
+                    stdv = np.std(self.spec.flux[pix]-lconti[pix])
                     S2N = median / stdv
                     mssg = 'Mean={:g}, Median={:g}, S/N={:g}'.format(
                             mean,median,S2N)
@@ -258,13 +259,13 @@ class ExamineSpecWidget(QtGui.QWidget):
                     # Good pixels
                     pix = self.spec.pix_minmax(iwv)[0]
                     # EW
-                    EW = np.sum(self.spec.conti[pix]-self.spec.flux[pix])
+                    EW = np.sum(lconti[pix]-self.spec.flux[pix])
                     if EW > 0.:  # Absorption line
                         sign=-1
                     else:  # Emission
                         sign=1
                     # Amplitude
-                    Aguess = np.max(self.spec.flux[pix]-self.spec.conti[pix])
+                    Aguess = np.max(self.spec.flux[pix]-lconti[pix])
                     Cguess = np.mean(self.spec.wavelength[pix])
                     sguess = 0.1*np.abs(self.adict['wv_1']-self.adict['wv_2'])
                     #QtCore.pyqtRemoveInputHook()
@@ -273,16 +274,17 @@ class ExamineSpecWidget(QtGui.QWidget):
                     g_init = models.Gaussian1D(amplitude=Aguess, mean=Cguess, stddev=sguess)
                     fitter = fitting.LevMarLSQFitter()
                     parm = fitter(g_init, self.spec.wavelength[pix].value,
-                                  sign*(self.spec.flux[pix]-self.spec.conti[pix]))
-                    g_final = models.Gaussian1D(amplitude=parm.amplitude.value, mean=parm.mean.value, stddev=parm.stddev.value)
+                                  sign*(self.spec.flux[pix]-lconti[pix]))
+                    g_final = models.Gaussian1D(amplitude=parm.amplitude.value,
+                                                mean=parm.mean.value, stddev=parm.stddev.value)
                     # Plot
                     model_Gauss = g_final(self.spec.wavelength.value)
-                    self.model = XSpectrum1D.from_tuple((self.spec.wavelength, self.spec.conti + sign*model_Gauss))
+                    self.model = XSpectrum1D.from_tuple((self.spec.wavelength, lconti + sign*model_Gauss))
                     # Message
                     mssg = 'Gaussian Fit: '
                     mssg = mssg+' ::  Mean={:g}, Amplitude={:g}, sigma={:g}, flux={:g}'.format(
                             parm.mean.value, parm.amplitude.value, parm.stddev.value,
-                            parm.stddev.value*(parm.amplitude.value-np.median(self.spec.conti[pix]))*np.sqrt(2*np.pi))
+                            parm.stddev.value*(parm.amplitude.value-np.median(lconti[pix]))*np.sqrt(2*np.pi))
                 else:
                     # Find the spectral line (or request it!)
                     rng_wrest = iwv / (self.llist['z']+1)
@@ -308,7 +310,11 @@ class ExamineSpecWidget(QtGui.QWidget):
                     # Generate the Spectral Line
                     aline = AbsLine(wrest,linelist=self.llist[self.llist['List']])
                     aline.attrib['z'] = self.llist['z']
-                    aline.analy['spec'] = self.spec
+                    # Generate a temporary spectrum for analysis and apply the local continuum
+                    tspec = XSpectrum1D.from_tuple((self.spec.wavelength,
+                                                    self.spec.flux, self.spec.sig))
+                    tspec.normalize(lconti)
+                    aline.analy['spec'] = tspec
 
                     # AODM
                     if event.key == 'N':
