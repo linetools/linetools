@@ -334,7 +334,7 @@ class XSpectrum1D(object):
         and `_wvmax`.
         """
         # Cut on good pixels
-        if self.sig is not None:
+        if self.sig_is_set:
             gdpx = self.sig > 0.
         else:
             gdpx = np.array([True] * self.data['flux'].size)
