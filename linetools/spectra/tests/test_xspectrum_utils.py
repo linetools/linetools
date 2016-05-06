@@ -184,8 +184,6 @@ def test_continuum_utils(spec):
     np.testing.assert_allclose(spec.flux,flux_old)
 
 
-
-
 def test_assignment(spec):
     temp = np.arange(1, len(spec.wavelength) + 1)
     spec.wavelength =  temp * u.m
@@ -197,3 +195,16 @@ def test_assignment(spec):
     assert spec.sig[0] == temp[0] * unit
     spec.co = temp
     assert spec.co[0] == temp[0] * unit
+
+
+def test_wvmnx():
+    npix = 1000
+    # Without sig
+    spec = XSpectrum1D.from_tuple((np.linspace(5000.,6000,npix), np.ones(npix)))
+    assert spec.wvmin.value == 5000.
+    assert spec.wvmax.value == 6000.
+    # With sig
+    spec = XSpectrum1D.from_tuple((np.linspace(5000.,6000,npix), np.ones(npix),
+                                   np.ones(npix)*0.1))
+    assert spec.wvmin.value == 5000.
+    assert spec.wvmax.value == 6000.
