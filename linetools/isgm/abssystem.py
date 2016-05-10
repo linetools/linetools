@@ -276,6 +276,34 @@ class AbsSystem(object):
         else:
             return [abslines[ii] for ii in mt]
 
+    def get_component(self, inp):
+        """ Returns the component related to the given input
+        TODO: Need to handle fine-structure lines at some point..
+
+        Parameters
+        ----------
+        inp : tuple or AbsLine
+          tuple -- (Z,ion) integers
+          AbsLine -- actual absorption line object
+
+        Returns
+        -------
+        component
+        """
+        if isinstance(inp, tuple):
+            # Assume Zion for now, e.g. (26,2)
+            tuples = [comp.Zion for comp in self._components]
+            try:
+                idx = tuples.index(inp)
+            except ValueError:
+                warnings.warn("Input Zion {} is not in any component".format(inp))
+                return None
+            else:
+                return self._components[idx]
+        elif isinstance(inp, AbsLine):
+            return self.get_comp_from_absline(inp)
+        else:
+            raise IOError("Bad input to get_component method")
 
     def get_comp_from_absline(self, aline):
         """ Returns the component that holds the input AbsLine

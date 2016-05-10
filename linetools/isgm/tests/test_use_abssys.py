@@ -20,8 +20,7 @@ try:
 except NameError:
     unicode = str
 
-
-def test_list_of_abslines():
+def init_system():
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
     # HI Lya, Lyb
     lya = AbsLine(1215.670*u.AA)
@@ -46,6 +45,11 @@ def test_list_of_abslines():
     SiII_comp = AbsComponent.from_abslines(abslines)
     # Instantiate
     gensys = GenericAbsSystem.from_components([abscomp,SiII_comp])
+    return gensys
+
+
+def test_list_of_abslines():
+    gensys = init_system()
     # Now the list
     abslines = gensys.list_of_abslines()
     # Test
@@ -55,6 +59,10 @@ def test_list_of_abslines():
     np.testing.assert_allclose(lyb.wrest.value, 1025.7222)
     lyb = gensys.get_absline(1025.72*u.AA)
     np.testing.assert_allclose(lyb.wrest.value, 1025.7222)
+
+
+def test_ionn():
+    gensys = init_system()
     # ionN
     gensys.fill_ionN()
     assert len(gensys._ionN) == 2
@@ -65,6 +73,13 @@ def test_list_of_abslines():
     gensys.fill_ionN(NHI_obj=gensys)
     HI = np.where(gensys._ionN['Z']==1)
     np.testing.assert_allclose(gensys._ionN[HI]['logN'], 15.3)
+
+
+def test_get_component():
+    gensys = init_system()
+    # Grab SiII
+    SiII = gensys.get_component((14,2))
+    assert isinstance(SiII, AbsComponent)
 
 
 def test_todict():
