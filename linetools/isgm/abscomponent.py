@@ -396,6 +396,10 @@ class AbsComponent(object):
         # Collate
         self.flag_N = 0
         for aline in self._abslines:
+            if aline.attrib['flag_N'] == 0:  # No value
+                warnings.warn("Absline {} has flag=0.  Hopefully you expected that")
+                continue
+            # Check N is filled
             if np.allclose(aline.attrib['N'].value, 0.):
                 raise ValueError("Need to set N in attrib.  \n Consider linear_clm in linetools.analysis.absline")
             if aline.attrib['flag_N'] == 1:  # Good value?
