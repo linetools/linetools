@@ -397,7 +397,7 @@ class AbsComponent(object):
         self.flag_N = 0
         for aline in self._abslines:
             if aline.attrib['flag_N'] == 0:  # No value
-                warnings.warn("Absline {} has flag=0.  Hopefully you expected that")
+                warnings.warn("Absline {} has flag=0.  Hopefully you expected that".format(str(aline)))
                 continue
             # Check N is filled
             if np.allclose(aline.attrib['N'].value, 0.):
