@@ -26,7 +26,8 @@ lt_path = imp.find_module('linetools')[1]
 #pdb.set_trace()
 # Set of Input lines
 
-def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True):
+def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
+            add_trans=False):
     # Read a spectrum Spec
     if add_spec:
         xspec = lsio.readspec(lt_path+'/spectra/tests/files/UM184_nF.fits')
@@ -37,6 +38,8 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True):
         all_trans = ['HI 1215', 'HI 1025']
     elif ctype == 'SiII':
         all_trans = ['SiII 1260', 'SiII 1304', 'SiII 1526', 'SiII 1808']
+        if add_trans:
+            all_trans += ['SiII 1193']
     abslines = []
     for trans in all_trans:
         iline = AbsLine(trans)
@@ -75,18 +78,22 @@ def test_build_table():
     assert isinstance(comp_tbl,QTable)
 
 def test_synthesize_colm():
-    abscomp,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True)
+    abscomp,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True,
+                        add_trans=True)
     # Column
     abscomp.synthesize_colm(redo_aodm=True)
     # Test
     np.testing.assert_allclose(abscomp.logN, 13.594445560856554)
     # Reset flags (for testing)
-    abscomp2,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True, use_rand=False)
+    abscomp2,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True, use_rand=False,
+                         add_trans=True)
     for iline in abscomp2._abslines:
         if iline.data['name'] == 'SiII 1260':
             iline.attrib['flag_N'] = 2
         elif iline.data['name'] == 'SiII 1808':
             iline.attrib['flag_N'] = 3
+        elif iline.data['name'] == 'SiII 1193':
+            iline.attrib['flag_N'] = 0
         else:
             iline.attrib['flag_N'] = 1
     abscomp2.synthesize_colm()

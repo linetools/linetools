@@ -396,6 +396,10 @@ class AbsComponent(object):
         # Collate
         self.flag_N = 0
         for aline in self._abslines:
+            if aline.attrib['flag_N'] == 0:  # No value
+                warnings.warn("Absline {} has flag=0.  Hopefully you expected that".format(str(aline)))
+                continue
+            # Check N is filled
             if np.allclose(aline.attrib['N'].value, 0.):
                 raise ValueError("Need to set N in attrib.  \n Consider linear_clm in linetools.analysis.absline")
             if aline.attrib['flag_N'] == 1:  # Good value?
@@ -432,10 +436,13 @@ class AbsComponent(object):
                     if aline.attrib['N'] < self.N:
                         self.N = aline.attrib['N']
                         self.sig_N = aline.attrib['sig_N']
+            elif aline.attrib['flag_N'] == 0:  # No value
+                warnings.warn("Absline {} has flag=0.  Hopefully you expected that")
             else:
                 raise ValueError("Bad flag_N value")
         # Log values
-        self.logN, self.sig_logN = ltaa.log_clm(self)
+        if self.flag_N > 0:
+            self.logN, self.sig_logN = ltaa.log_clm(self)
 
     def repr_vpfit(self, b=10.*u.km/u.s, tie_strs=('', '', ''), fix_strs=('', '', '')):
         """
