@@ -22,6 +22,26 @@ from linetools.analysis import absline as laa
 from linetools.lists.linelist import LineList
 from linetools import utils as ltu
 
+# A few globals to speed performace
+zero_coord = SkyCoord(ra=0.*u.deg, dec=0.*u.deg)  # Coords
+init_analy = {
+            'spec': None,              # Analysis inputs (e.g. spectrum; from .clm file or AbsID)
+            'wvlim': [0., 0.]*u.AA,    # Wavelength interval about the line (observed)
+            'vlim': [0., 0.]*u.km/u.s, # Rest-frame velocity limit of line, relative to self.attrib['z']
+            'flag_kin': 0,             # Use for kinematic analysis?
+            'do_analysis': 1           # Analyze?
+            }
+init_attrib = {
+            'coord': zero_coord,                           # Coords
+            'z': 0., 'sig_z': 0.,                           # Redshift
+            'v': 0.*u.km/u.s, 'sig_v': 0.*u.km/u.s,        # rest-frame velocity relative to z
+            'EW': 0.*u.AA, 'sig_EW': 0.*u.AA, 'flag_EW': 0 # EW
+            }
+
+#abs_attrib = {'N': 0./u.cm**2, 'sig_N': 0./u.cm**2, 'flag_N': 0, # Column    ## NOT ENOUGH SPEED-UP
+#                    'b': 0.*u.km/u.s, 'sig_b': 0.*u.km/u.s  # Doppler
+#                    }
+
 # Class for Spectral line
 class SpectralLine(object):
     """
@@ -57,7 +77,7 @@ class SpectralLine(object):
     """
 
     @classmethod
-    def from_dict(cls, idict, warn_only=False):
+    def from_dict(cls, idict, coord=None, warn_only=False, skip_data_chk=False, **kwargs):
         """ Initialize from a dict (usually read from disk)
 
         Parameters
@@ -76,29 +96,31 @@ class SpectralLine(object):
         if idict['ltype'] == 'Abs':
             # TODO: remove this try/except eventually
             try:
-                sline = AbsLine(idict['name'])
-            except: #  This is to be compatible JSON files already written with old notation
-                sline = AbsLine(idict['trans'])
+                sline = AbsLine(idict['name'], **kwargs)
+            except KeyError: #  This is to be compatible JSON files already written with old notation
+                pdb.set_trace()
+                sline = AbsLine(idict['trans'], **kwargs)
         else:
             raise ValueError("Not prepared for type {:s}.".format(idict['ltype']))
         # Check data
-        for key in idict['data']:
-            if isinstance(idict['data'][key], dict):  # Assume Quantity
-                val = idict['data'][key]['value']
-            else:
-                val = idict['data'][key]
-            try:
-                assert sline.data[key] == val
-            except AssertionError:
-                if warn_only:
-                    warnings.warn("Different data value for {:s}: {}, {}".format(key,sline.data[key],val))
+        if not skip_data_chk:
+            for key in idict['data']:
+                if isinstance(idict['data'][key], dict):  # Assume Quantity
+                    val = idict['data'][key]['value']
+                else:
+                    val = idict['data'][key]
+                try:
+                    assert sline.data[key] == val
+                except AssertionError:
+                    if warn_only:
+                        warnings.warn("Different data value for {:s}: {}, {}".format(key,sline.data[key],val))
         # Set analy
         for key in idict['analy']:
             if isinstance(idict['analy'][key], dict):  # Assume Quantity
                 #sline.analy[key] = Quantity(idict['analy'][key]['value'],
                 #                             unit=idict['analy'][key]['unit'])
-                sline.analy[key] = ltu.convert_quantity_in_dict(
-                        idict['analy'][key])
+                #pdb.set_trace()
+                sline.analy[key] = ltu.convert_quantity_in_dict(idict['analy'][key])
             elif key == 'spec_file':
                 warnings.warn("You will need to load {:s} into attrib['spec'] yourself".format(
                         idict['analy'][key]))
@@ -107,18 +129,20 @@ class SpectralLine(object):
         # Set attrib
         for key in idict['attrib']:
             if isinstance(idict['attrib'][key], dict):
-                sline.attrib[key] = ltu.convert_quantity_in_dict(
-                        idict['attrib'][key])
+                sline.attrib[key] = ltu.convert_quantity_in_dict(idict['attrib'][key])
             elif key in ['RA','DEC']:
-                sline.attrib['coord'] = SkyCoord(ra=idict['attrib']['RA']*u.deg,
-                                              dec=idict['attrib']['DEC']*u.deg)
+                if coord is None:
+                    sline.attrib['coord'] = SkyCoord(ra=idict['attrib']['RA']*u.deg,
+                                                  dec=idict['attrib']['DEC']*u.deg)
+                else:
+                    sline.attrib['coord'] = coord
             else:
                 sline.attrib[key] = idict['attrib'][key]
         return sline
 
     # Initialize with wavelength
     def __init__(self, ltype, trans, linelist=None, closest=False, z=0.,
-                 verbose=True):
+                 verbose=True, **kwargs):
 
         # Required
         self.ltype = ltype
@@ -131,19 +155,8 @@ class SpectralLine(object):
 
         # Other
         self.data = {} # Atomic/Molecular Data (e.g. f-value, A coefficient, Elow)
-        self.analy = {
-            'spec': None,              # Analysis inputs (e.g. spectrum; from .clm file or AbsID)
-            'wvlim': [0., 0.]*u.AA,    # Wavelength interval about the line (observed)
-            'vlim': [0., 0.]*u.km/u.s, # Rest-frame velocity limit of line, relative to self.attrib['z']
-            'flag_kin': 0,             # Use for kinematic analysis?
-            'do_analysis': 1           # Analyze?
-            }
-        self.attrib = {
-            'coord': SkyCoord(ra=0.*u.deg, dec=0.*u.deg),  # Coords
-            'z': z, 'sig_z': 0.,                           # Redshift
-            'v': 0.*u.km/u.s, 'sig_v': 0.*u.km/u.s,        # rest-frame velocity relative to z
-            'EW': 0.*u.AA, 'sig_EW': 0.*u.AA, 'flag_EW': 0 # EW
-            }
+        self.analy = init_analy
+        self.attrib = init_attrib #{
 
         # Fill data
         self.fill_data(trans, linelist=linelist, closest=closest, verbose=verbose)

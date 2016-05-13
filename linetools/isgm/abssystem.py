@@ -127,13 +127,16 @@ class AbsSystem(object):
         return slf
 
     @classmethod
-    def from_dict(cls, idict, skip_components=False, **kwargs):
+    def from_dict(cls, idict, skip_components=False, use_coord=False, **kwargs):
         """ Instantiate from a dict.  Usually read from the hard-drive
 
         Parameters
         ----------
         idict : dict
         skip_components : bool, optional
+        use_coord : bool, optinal
+          Use coordinates from the system to build the components (and lines)
+          Speeds up performance, but you should know things are OK before using this
 
         Returns
         -------
@@ -148,10 +151,14 @@ class AbsSystem(object):
                   )
         if not skip_components:
             # Components
-            components = ltiu.build_components_from_dict(idict, **kwargs)
+            if use_coord:  # Speed up performance
+                coord = slf.coord
+            else:
+                coord = None
+            components = ltiu.build_components_from_dict(idict, coord=coord, **kwargs)
             for component in components:
                 # This is to insure the components follow the rules
-                slf.add_component(component)
+                slf.add_component(component, **kwargs)
 
         # Return
         return slf
@@ -195,7 +202,7 @@ class AbsSystem(object):
         # Refs (list of references)
         self.Refs = []
 
-    def add_component(self, abscomp, toler=0.2*u.arcsec):
+    def add_component(self, abscomp, toler=0.2*u.arcsec, chk_sep=True, **kwargs):
         """Add an AbsComponent object if it satisfies all of the rules.
 
         For velocities, we demand that the new component has a velocity
@@ -208,9 +215,14 @@ class AbsSystem(object):
         comp : AbsComponent
         toler : Angle, optional
           Tolerance on matching coordinates
+        chk_sep : bool, optional
+          Perform coordinate check (expensive)
         """
         # Coordinates
-        test = bool(self.coord.separation(abscomp.coord) < toler)
+        if chk_sep:
+            test = bool(self.coord.separation(abscomp.coord) < toler)
+        else:
+            test = True
         # Now redshift/velocity
         zlim_comp = (1+abscomp.zcomp)*abscomp.vlim/const.c.to('km/s')
         zlim_sys = (1+self.zabs)*self.vlim/const.c.to('km/s')

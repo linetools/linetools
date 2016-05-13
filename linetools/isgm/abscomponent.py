@@ -108,25 +108,31 @@ class AbsComponent(object):
                    A=component.A, name=component.name, **kwargs)
 
     @classmethod
-    def from_dict(cls, idict, **kwargs):
+    def from_dict(cls, idict, coord=None, **kwargs):
         """ Instantiate from a dict
 
         Parameters
         ----------
         idict : dict
+        use_line_list : str, optional
+          Name of the Linelist to use when generating the SpectralLines
 
         Returns
         -------
 
         """
-        slf = cls(SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg),
-                  tuple(idict['Zion']), idict['zcomp'], idict['vlim']*u.km/u.s,
+        if coord is not None:
+            radec = coord
+        else:
+            radec = SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg)
+        # Init
+        slf = cls(radec, tuple(idict['Zion']), idict['zcomp'], idict['vlim']*u.km/u.s,
                   Ej=idict['Ej']/u.cm, A=idict['A'],
                   Ntup = tuple([idict[key] for key in ['flag_N', 'logN', 'sig_logN']]),
                   comment=idict['comment'], name=idict['Name'])
         # Add lines
         for key in idict['lines'].keys():
-            iline = SpectralLine.from_dict(idict['lines'][key])
+            iline = SpectralLine.from_dict(idict['lines'][key], coord=coord, **kwargs)
             slf.add_absline(iline, **kwargs)
         # Return
         return slf
@@ -201,7 +207,7 @@ class AbsComponent(object):
         # Other
         self._abslines = []
 
-    def add_absline(self, absline, tol=0.1*u.arcsec, skip_vel=False):
+    def add_absline(self, absline, tol=0.1*u.arcsec, skip_vel=False, chk_sep=True, **kwargs):
         """Add an AbsLine object to the component if it satisfies
         all of the rules.
 
@@ -215,9 +221,14 @@ class AbsComponent(object):
           Tolerance on matching coordinates
         skip_vel : bool, optional
           Skip velocity test?  Not recommended
+        chk_sep : bool, optional
+          Perform coordinate check (expensive)
         """
         # Perform easy checks
-        testc = bool(self.coord.separation(absline.attrib['coord']) < tol)
+        if chk_sep:
+            testc = bool(self.coord.separation(absline.attrib['coord']) < tol)
+        else:
+            testc = True
         testZ = self.Zion[0] == absline.data['Z']
         testi = self.Zion[1] == absline.data['ion']
         testE = bool(self.Ej == absline.data['Ej'])
