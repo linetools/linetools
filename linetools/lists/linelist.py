@@ -688,7 +688,7 @@ class LineList(object):
           QTable (tuple when more than 1 lines are found)
         '''
         try:
-            return self.memoize[k]
+            tmp = self.memoize[k].copy()
         except KeyError:
             if isinstance(k, (float, Quantity)):  # Wavelength
                 if isinstance(k, float):  # Assuming Ang
@@ -730,7 +730,8 @@ class LineList(object):
                 raise ValueError(
                     '{:s}: Multiple lines in the list'.format(self.__class__))
             # Finish
-            return self.memoize[k]
+            tmp = self.memoize[k].copy()
+        return tmp
 
     # Printing
     def __repr__(self):

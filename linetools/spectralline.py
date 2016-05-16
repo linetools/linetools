@@ -155,8 +155,8 @@ class SpectralLine(object):
 
         # Other
         self.data = {} # Atomic/Molecular Data (e.g. f-value, A coefficient, Elow)
-        self.analy = init_analy
-        self.attrib = init_attrib
+        self.analy = init_analy.copy()
+        self.attrib = init_attrib.copy()
 
         # Fill data
         self.fill_data(trans, linelist=linelist, closest=closest, verbose=verbose)
@@ -455,7 +455,7 @@ class AbsLine(SpectralLine):
             })
 
         # Additional fundamental attributes for Absorption Line
-        self.attrib.update(abs_attrib)
+        self.attrib.update(abs_attrib.copy())
 
     # Voigt
     def generate_voigt(self, wave=None, **kwargs):
