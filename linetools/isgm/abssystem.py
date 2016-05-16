@@ -25,6 +25,8 @@ from linetools import utils as ltu
 from linetools.spectralline import AbsLine
 from linetools.abund import ions
 
+# Globals to speed things up
+constckms = const.c.to('km/s')
 
 class AbsSystem(object):
     """
@@ -224,8 +226,8 @@ class AbsSystem(object):
         else:
             test = True
         # Now redshift/velocity
-        zlim_comp = (1+abscomp.zcomp)*abscomp.vlim/const.c.to('km/s')
-        zlim_sys = (1+self.zabs)*self.vlim/const.c.to('km/s')
+        zlim_comp = (1+abscomp.zcomp)*abscomp.vlim/constckms
+        zlim_sys = (1+self.zabs)*self.vlim/constckms
         test = test & (zlim_comp[0]>=zlim_sys[0]) & (zlim_comp[1]<=zlim_sys[1])
 
         # Additional checks (specific to AbsSystem type)

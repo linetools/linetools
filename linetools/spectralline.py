@@ -22,7 +22,7 @@ from linetools.analysis import absline as laa
 from linetools.lists.linelist import LineList
 from linetools import utils as ltu
 
-# A few globals to speed performace
+# A few globals to speed up performance (astropy.Quantity issue)
 zero_coord = SkyCoord(ra=0.*u.deg, dec=0.*u.deg)  # Coords
 init_analy = {
             'spec': None,              # Analysis inputs (e.g. spectrum; from .clm file or AbsID)
@@ -38,9 +38,9 @@ init_attrib = {
             'EW': 0.*u.AA, 'sig_EW': 0.*u.AA, 'flag_EW': 0 # EW
             }
 
-#abs_attrib = {'N': 0./u.cm**2, 'sig_N': 0./u.cm**2, 'flag_N': 0, # Column    ## NOT ENOUGH SPEED-UP
-#                    'b': 0.*u.km/u.s, 'sig_b': 0.*u.km/u.s  # Doppler
-#                    }
+abs_attrib = {'N': 0./u.cm**2, 'sig_N': 0./u.cm**2, 'flag_N': 0, # Column    ## NOT ENOUGH SPEED-UP
+                    'b': 0.*u.km/u.s, 'sig_b': 0.*u.km/u.s  # Doppler
+                    }
 
 # Class for Spectral line
 class SpectralLine(object):
@@ -156,7 +156,7 @@ class SpectralLine(object):
         # Other
         self.data = {} # Atomic/Molecular Data (e.g. f-value, A coefficient, Elow)
         self.analy = init_analy
-        self.attrib = init_attrib #{
+        self.attrib = init_attrib
 
         # Fill data
         self.fill_data(trans, linelist=linelist, closest=closest, verbose=verbose)
@@ -455,9 +455,7 @@ class AbsLine(SpectralLine):
             })
 
         # Additional fundamental attributes for Absorption Line
-        self.attrib.update({'N': 0./u.cm**2, 'sig_N': 0./u.cm**2, 'flag_N': 0, # Column
-                       'b': 0.*u.km/u.s, 'sig_b': 0.*u.km/u.s  # Doppler
-                       } )
+        self.attrib.update(abs_attrib)
 
     # Voigt
     def generate_voigt(self, wave=None, **kwargs):

@@ -14,6 +14,7 @@ import warnings
 
 from astropy import constants as const
 from astropy import units as u
+from astropy.units import Quantity
 from astropy.coordinates import SkyCoord
 from astropy.table import QTable, Column
 
@@ -126,6 +127,7 @@ class AbsComponent(object):
         else:
             radec = SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg)
         # Init
+        #slf = cls(radec, tuple(idict['Zion']), idict['zcomp'], Quantity(idict['vlim'], unit='km/s'),
         slf = cls(radec, tuple(idict['Zion']), idict['zcomp'], idict['vlim']*u.km/u.s,
                   Ej=idict['Ej']/u.cm, A=idict['A'],
                   Ntup = tuple([idict[key] for key in ['flag_N', 'logN', 'sig_logN']]),
@@ -137,7 +139,7 @@ class AbsComponent(object):
         # Return
         return slf
 
-    def __init__(self, radec, Zion, z, vlim, Ej=0./u.cm, A=None,
+    def __init__(self, radec, Zion, z, vlim, Ej=Quantity(0., unit='1/cm'), A=None,
                  Ntup=None, comment='', name=None, stars=None):
         """  Initiator
 
