@@ -77,14 +77,18 @@ class SpectralLine(object):
     """
 
     @classmethod
-    def from_dict(cls, idict, coord=None, warn_only=False, skip_data_chk=False, **kwargs):
+    def from_dict(cls, idict, coord=None, warn_only=False, chk_data=True, **kwargs):
         """ Initialize from a dict (usually read from disk)
 
         Parameters
         ----------
         idict : dict
           dict with the Line parameters
+        chk_data : bool, optional
+          Check atomic data in dict against current values in LineList
         warn_only : bool, optional
+          If the chk_data is performed and the values do not match, only
+          throw a Warning as opposed to crashing
 
         Returns
         -------
@@ -103,7 +107,7 @@ class SpectralLine(object):
         else:
             raise ValueError("Not prepared for type {:s}.".format(idict['ltype']))
         # Check data
-        if not skip_data_chk:
+        if chk_data:
             for key in idict['data']:
                 if isinstance(idict['data'][key], dict):  # Assume Quantity
                     val = idict['data'][key]['value']
