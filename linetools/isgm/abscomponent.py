@@ -115,8 +115,6 @@ class AbsComponent(object):
         Parameters
         ----------
         idict : dict
-        use_line_list : str, optional
-          Name of the Linelist to use when generating the SpectralLines
 
         Returns
         -------
@@ -139,7 +137,7 @@ class AbsComponent(object):
         # Return
         return slf
 
-    def __init__(self, radec, Zion, z, vlim, Ej=Quantity(0., unit='1/cm'), A=None,
+    def __init__(self, radec, Zion, z, vlim, Ej=0./u.cm, A=None,
                  Ntup=None, comment='', name=None, stars=None):
         """  Initiator
 
@@ -209,7 +207,7 @@ class AbsComponent(object):
         # Other
         self._abslines = []
 
-    def add_absline(self, absline, tol=0.1*u.arcsec, skip_vel=False, chk_sep=True, **kwargs):
+    def add_absline(self, absline, tol=0.1*u.arcsec, chk_vel=True, chk_sep=True, **kwargs):
         """Add an AbsLine object to the component if it satisfies
         all of the rules.
 
@@ -220,9 +218,9 @@ class AbsComponent(object):
         ----------
         absline : AbsLine
         tol : Angle, optional
-          Tolerance on matching coordinates
-        skip_vel : bool, optional
-          Skip velocity test?  Not recommended
+          Tolerance on matching coordinates.  Only used if chk_sep=True
+        chk_vel : bool, optional
+          Perform velocity test (can often be skipped)
         chk_sep : bool, optional
           Perform coordinate check (expensive)
         """
@@ -235,7 +233,7 @@ class AbsComponent(object):
         testi = self.Zion[1] == absline.data['ion']
         testE = bool(self.Ej == absline.data['Ej'])
         # Now redshift/velocity
-        if not skip_vel:
+        if chk_vel:
             zlim_line = (1+absline.attrib['z'])*absline.analy['vlim']/const.c.to('km/s')
             zlim_comp = (1+self.zcomp)*self.vlim/const.c.to('km/s')
             testv = (zlim_line[0] >= zlim_comp[0]) & (
