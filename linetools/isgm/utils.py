@@ -151,14 +151,14 @@ def build_components_from_dict(idict, coord=None, **kwargs):
     if 'components' in idict.keys():
         # Components
         for key in idict['components']:
-            components.append(AbsComponent.from_dict(idict['components'][key], **kwargs))
+            components.append(AbsComponent.from_dict(idict['components'][key], coord=coord, **kwargs))
     elif 'lines' in idict.keys():  # to be deprecated
         lines = []
         for key in idict['lines']:
             if isinstance(idict['lines'][key], AbsLine):
                 line = idict['lines'][key]
             elif isinstance(idict['lines'][key], dict):
-                line = AbsLine.from_dict(idict['lines'][key])
+                line = AbsLine.from_dict(idict['lines'][key], coord=coord)
             else:
                 raise IOError("Need those lines")
             if coord is not None:

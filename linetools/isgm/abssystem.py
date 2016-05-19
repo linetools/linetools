@@ -25,6 +25,8 @@ from linetools import utils as ltu
 from linetools.spectralline import AbsLine
 from linetools.abund import ions
 
+# Globals to speed things up
+c_mks = const.c.to('km/s')
 
 class AbsSystem(object):
     """
@@ -127,13 +129,18 @@ class AbsSystem(object):
         return slf
 
     @classmethod
-    def from_dict(cls, idict, skip_components=False, **kwargs):
+    def from_dict(cls, idict, skip_components=False, use_coord=False, **kwargs):
         """ Instantiate from a dict.  Usually read from the hard-drive
 
         Parameters
         ----------
         idict : dict
         skip_components : bool, optional
+          If True, absorption components (if any exist) are not loaded from the input dict.
+          Use when you are only interested in the global properties of an AbsSystem
+        use_coord : bool, optinal
+          Use coordinates from the AbsSystem to build the components (and lines)
+          Speeds up performance, but you should know things are OK before using this
 
         Returns
         -------
@@ -148,10 +155,14 @@ class AbsSystem(object):
                   )
         if not skip_components:
             # Components
-            components = ltiu.build_components_from_dict(idict, **kwargs)
+            if use_coord:  # Speed up performance
+                coord = slf.coord
+            else:
+                coord = None
+            components = ltiu.build_components_from_dict(idict, coord=coord, **kwargs)
             for component in components:
                 # This is to insure the components follow the rules
-                slf.add_component(component)
+                slf.add_component(component, **kwargs)
 
         # Return
         return slf
@@ -195,7 +206,7 @@ class AbsSystem(object):
         # Refs (list of references)
         self.Refs = []
 
-    def add_component(self, abscomp, toler=0.2*u.arcsec):
+    def add_component(self, abscomp, tol=0.2*u.arcsec, chk_sep=True, **kwargs):
         """Add an AbsComponent object if it satisfies all of the rules.
 
         For velocities, we demand that the new component has a velocity
@@ -206,15 +217,21 @@ class AbsSystem(object):
         Parameters
         ----------
         comp : AbsComponent
-        toler : Angle, optional
+        tol : Angle, optional
           Tolerance on matching coordinates
+          Only used if chk_sep=True
+        chk_sep : bool, optional
+          Perform coordinate check (expensive)
         """
         # Coordinates
-        test = bool(self.coord.separation(abscomp.coord) < toler)
+        if chk_sep:
+            test = bool(self.coord.separation(abscomp.coord) < tol)
+        else:
+            test = True
         # Now redshift/velocity
-        zlim_comp = (1+abscomp.zcomp)*abscomp.vlim/const.c.to('km/s')
-        zlim_sys = (1+self.zabs)*self.vlim/const.c.to('km/s')
-        test = test & (zlim_comp[0]>=zlim_sys[0]) & (zlim_comp[1]<=zlim_sys[1])
+        zlim_comp = (1+abscomp.zcomp)*abscomp.vlim/c_mks
+        zlim_sys = (1+self.zabs)*self.vlim/c_mks
+        test = test & (zlim_comp[0] >= zlim_sys[0]) & (zlim_comp[1] <= zlim_sys[1])
 
         # Additional checks (specific to AbsSystem type)
         test = test & self.chk_component(abscomp)
