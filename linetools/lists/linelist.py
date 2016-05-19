@@ -9,7 +9,6 @@ except NameError:
     basestring = str
 
 import numpy as np
-import copy
 
 from astropy import units as u
 from astropy.units.quantity import Quantity
