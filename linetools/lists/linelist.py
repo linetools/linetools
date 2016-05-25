@@ -671,8 +671,8 @@ class LineList(object):
         else:
             return out
 
-    def __getitem__(self, k, tol=1e-3 * u.AA):
-        ''' Passback data as a dict (from the table) for the input line
+    def __getitem__(self, k, tol=1e-3*u.AA):
+        """ Passback data as a dict (from the table) for the input line
 
         Parameters
         ----------
@@ -686,7 +686,7 @@ class LineList(object):
         -------
         dict (from row in the data table if only 1 line is found) or
           QTable (tuple when more than 1 lines are found)
-        '''
+        """
         try:
             tmp = self.memoize[k].copy()
         except KeyError:
@@ -700,7 +700,7 @@ class LineList(object):
                 if k == 'unknown':
                     return self.unknown_line()
                 else:
-                    mt = np.where(str(k) == self.name)[0]
+                    mt = np.where(self.name == str(k))[0]
             elif isinstance(k, tuple):  # Zion
                 mt = (self._data['Z'] == k[0]) & (self._data['ion'] == k[1])
             else:
