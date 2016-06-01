@@ -518,6 +518,11 @@ class AbsLine(SpectralLine):
         # Cut spectrum
         fx, sig, xdict = self.cut_spec(normalize=normalize)
         velo = xdict['velo']
+        # Check that there is sufficient data
+        if len(fx) <= 1:
+            warnings.warn("Spectrum does not cover {:g}".format(self.wrest))
+            self.attrib['flag_N'] = 0
+            return
 
         # Calculate
         N, sig_N, flg_sat = laa.aodm((velo, fx, sig), (self.wrest,self.data['f']))
