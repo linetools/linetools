@@ -690,7 +690,7 @@ or QtAgg backends to enable all interactive plotting commands.
         return ((self.wavelength - wv_obs) * const.c / wv_obs).to('km/s')
 
     #  Box car smooth
-    def box_smooth(self, nbox, preserve=False. **kwargs):
+    def box_smooth(self, nbox, preserve=False, **kwargs):
         """ Box car smooth the spectrum
 
         Parameters
