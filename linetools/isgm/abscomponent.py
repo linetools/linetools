@@ -18,7 +18,7 @@ from astropy.units import Quantity
 from astropy.coordinates import SkyCoord
 from astropy.table import QTable, Column
 
-from specutils import Spectrum1D
+from linetools.spectrum.xspectrum1d import XSpectrum1D
 
 from linetools.analysis import absline as ltaa
 from linetools.analysis import plots as ltap
@@ -319,7 +319,7 @@ class AbsComponent(object):
         # Check for spec
         gdiline = []
         for iline in self._abslines:
-            if isinstance(iline.analy['spec'], Spectrum1D):
+            if isinstance(iline.analy['spec'], XSpectrum1D):
                 gdiline.append(iline)
         nplt = len(gdiline)
         if nplt == 0:
