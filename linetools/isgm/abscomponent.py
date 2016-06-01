@@ -18,8 +18,7 @@ from astropy.units import Quantity
 from astropy.coordinates import SkyCoord
 from astropy.table import QTable, Column
 
-from linetools.spectrum.xspectrum1d import XSpectrum1D
-
+from linetools.spectra.xspectrum1d import XSpectrum1D
 from linetools.analysis import absline as ltaa
 from linetools.analysis import plots as ltap
 from linetools.spectralline import AbsLine, SpectralLine
