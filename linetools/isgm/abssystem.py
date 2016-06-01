@@ -130,6 +130,24 @@ class AbsSystem(object):
         return slf
 
     @classmethod
+    def from_json(cls, json_file, **kwargs):
+        """ Load from a JSON file (via from_dict)
+
+        Parameters
+        ----------
+        json_file
+        kwargs
+
+        Returns
+        -------
+        AbsSystem
+
+        """
+        idict = ltu.loadjson(json_file)
+        slf = cls.from_dict(idict, **kwargs)
+        return slf
+
+    @classmethod
     def from_dict(cls, idict, skip_components=False, use_coord=False, **kwargs):
         """ Instantiate from a dict.  Usually read from the hard-drive
 
@@ -148,12 +166,8 @@ class AbsSystem(object):
         AbsSystem
 
         """
-        slf = cls(idict['abs_type'],
-                  SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg),
-                  idict['zabs'], idict['vlim']*u.km/u.s,
-                  zem=idict['zem'], NHI=idict['NHI'], sig_NHI=idict['sig_NHI'],
-                  flag_NHI=idict['flag_NHI'], name=idict['Name']
-                  )
+        #slf = cls(idict['abs_type'], SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg), idict['zabs'], idict['vlim']*u.km/u.s, zem=idict['zem'], NHI=idict['NHI'], sig_NHI=idict['sig_NHI'], flag_NHI=idict['flag_NHI'], name=idict['Name'] )
+        slf = cls(SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg), idict['zabs'], idict['vlim']*u.km/u.s, zem=idict['zem'], NHI=idict['NHI'], sig_NHI=idict['sig_NHI'], flag_NHI=idict['flag_NHI'], name=idict['Name'] )
         if not skip_components:
             # Components
             if use_coord:  # Speed up performance
@@ -168,7 +182,7 @@ class AbsSystem(object):
         # Return
         return slf
 
-    def __init__(self, abs_type, radec, zabs, vlim, zem=0.,
+    def __init__(self, radec, zabs, vlim, zem=0., abs_type=None,
                  NHI=0., sig_NHI=np.zeros(2), flag_NHI=0, name=None):
 
         self.zabs = zabs
@@ -187,7 +201,7 @@ class AbsSystem(object):
             self.name = name
 
         # Abs type
-        if abs_type == None:
+        if abs_type is None:
             self.abs_type = 'NONE'
         else:
             self.abs_type = abs_type
@@ -372,7 +386,7 @@ class GenericAbsSystem(AbsSystem):
     """Class for Generic Absorption Line System
     """
     def __init__(self, radec, zabs, vlim, **kwargs):
-        AbsSystem.__init__(self, 'Generic', radec, zabs, vlim, **kwargs)
+        AbsSystem.__init__(self, radec, zabs, vlim, abs_type='Generic', **kwargs)
         self.name = 'Foo'
 
     def print_abs_type(self):
@@ -383,7 +397,7 @@ class LymanAbsSystem(AbsSystem):
     """Class for HI Lyman Absorption Line System
     """
     def __init__(self, radec, zabs, vlim, **kwargs):
-        AbsSystem.__init__(self, 'HILyman', radec, zabs, vlim, **kwargs)
+        AbsSystem.__init__(self, radec, zabs, vlim, abs_type='HILyman', **kwargs)
 
     def chk_component(self,component):
         """Require components are only of HI

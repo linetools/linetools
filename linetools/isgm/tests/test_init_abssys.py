@@ -4,16 +4,27 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 # TEST_UNICODE_LITERALS
 
+import numpy as np
+import os
+
 import pytest
 from astropy import units as u
 from astropy.coordinates import SkyCoord
-import numpy as np
 
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.isgm.abssystem import GenericAbsSystem, LymanAbsSystem, AbsSystem
 from linetools.spectralline import AbsLine
 
 import pdb
+
+def data_path(filename):
+    data_dir = os.path.join(os.path.dirname(__file__), 'files')
+    return os.path.join(data_dir, filename)
+
+def test_from_json():
+    # Tests from_dict too
+    HIsys = LymanAbsSystem.from_json(data_path('HILya_abssys.json'))
+    np.testing.assert_allclose(HIsys.zabs, 2.92939)
 
 def test_init():
     # Simple properties
@@ -84,4 +95,5 @@ def test_multi_components():
     # Test
     np.testing.assert_allclose(LLSsys.NHI, 17.0)
     assert len(LLSsys._components) == 2
+
 
