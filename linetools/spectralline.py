@@ -291,6 +291,12 @@ class SpectralLine(object):
         # Cut spectrum
         fx, sig, xdict = self.cut_spec(normalize=True)
         wv = xdict['wave']
+        # Check that there is sufficient data
+        if len(fx) <= 1:
+            warnings.warn("Spectrum does not cover {:g}".format(self.wrest))
+            self.attrib['EW'] = 0.
+            self.attrib['sig_EW'] = -1
+            return
 
         # Calculate
         if flg == 1: # Boxcar
