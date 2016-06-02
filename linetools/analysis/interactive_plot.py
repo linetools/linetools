@@ -404,6 +404,7 @@ q        : quit
         w0,w1 = self.fig.axes[1].get_xlim()
         i,j = self.indices
         x,_ = np.histogram(resid[between(wa[i:j], w0, w1)],
+                           range=(bins[0],bins[-1]),  # For Python 3
                            bins=bins)
         b = np.repeat(bins, 2)
         X = np.concatenate([[0], np.repeat(x,2), [0]])
