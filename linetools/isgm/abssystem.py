@@ -371,6 +371,26 @@ class AbsSystem(object):
         # Return
         return outdict
 
+    def write_json(self, outfil=None):
+        """ Generate a JSON file from the system
+
+        Returns
+        -------
+
+        """
+        import io, json
+        # Generate the dict
+        odict = self.to_dict()
+        # Write
+        if outfil is None:
+            outfil = self.name+'.json'
+        with io.open(outfil, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(odict, sort_keys=True, indent=4,
+                               separators=(',', ': ')))
+        # Finish
+        print("Wrote {:s} system to {:s} file".format(self.name, outfil))
+
+
     def __repr__(self):
         txt = '<{:s}: name={:s} type={:s}, {:s} {:s}, z={:g}, NHI={:g}'.format(
                 self.__class__.__name__, self.name, self.abs_type,

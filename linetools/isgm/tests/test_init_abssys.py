@@ -26,6 +26,11 @@ def test_from_json():
     HIsys = LymanAbsSystem.from_json(data_path('HILya_abssys.json'))
     np.testing.assert_allclose(HIsys.zabs, 2.92939)
 
+def test_write_json():
+    # Tests from_dict too
+    HIsys = LymanAbsSystem.from_json(data_path('HILya_abssys.json'))
+    HIsys.write_json()
+
 def test_init():
     # Simple properties
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
