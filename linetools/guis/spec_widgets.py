@@ -646,9 +646,11 @@ U         : Indicate as a upper limit
         self.vmnx = vmnx
         self.norm = norm
 
-        # Abs_System
+        # Abs Lines
         if abs_lines is None:
             self.abs_lines = []
+        else:
+            self.abs_lines = abs_lines
 
         #QtCore.pyqtRemoveInputHook()
         #xdb.set_trace()
@@ -822,10 +824,10 @@ U         : Indicate as a upper limit
         if event.key == '2':
             absline.analy['vlim'][1] = event.xdata*unit
         if event.key == '!':  # Set all lines to this value
-            for iline in self.abs_sys.lines:
+            for iline in self.abs_lines:
                 iline.analy['vlim'][0] = event.xdata*unit
         if event.key == '@':
-            for iline in self.abs_sys.lines:
+            for iline in self.abs_lines:
                 iline.analy['vlim'][1] = event.xdata*unit
         ## Line type
         if event.key == 'A': # Add to lines

@@ -13,10 +13,10 @@ def main(*args, **kwargs):
     """
     import argparse
 
-    parser = argparse.ArgumentParser(description='Parse for XSpec')
+    parser = argparse.ArgumentParser(description='Parse for XAbsSys')
     parser.add_argument("spec_file", type=str, help="Spectral file")
     parser.add_argument("abssys_file", type=str, help="AbsSys file (JSON)")
-    parser.add_argument("-outfil", type=str, help="Output filename")
+    parser.add_argument("-outfile", type=str, help="Output filename")
     parser.add_argument("-llist", type=str, help="Name of LineList")
     #parser.add_argument("-exten", type=int, help="FITS extension")
     parser.add_argument("--un_norm", help="Spectrum is NOT normalized",
@@ -51,7 +51,7 @@ def main(*args, **kwargs):
 
     app = QtGui.QApplication(sys.argv)
 
-    gui = XAbsSysGui(pargs.file, abs_sys, norm=norm, llist=llist,
-                     outfil=pargs.outfil)
+    gui = XAbsSysGui(pargs.spec_file, abs_sys, norm=norm, llist=llist,
+                     outfil=pargs.outfile)
     gui.show()
     app.exec_()
