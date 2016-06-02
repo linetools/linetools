@@ -489,7 +489,7 @@ class ExamineSpecWidget(QtGui.QWidget):
 
             # Continuum?
             if self.spec.co_is_set:
-                self.ax.plot(self.spec.wavelength, self.spec.co, color='purple')
+                self.ax.plot(self.spec.wavelength, self.spec.co, color='pink')
 
             # Model?
             if self.model is not None:
