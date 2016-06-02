@@ -586,3 +586,483 @@ class ExamineSpecWidget(QtGui.QWidget):
                      'E/E: EW (boxcar)',
                      '$/$: stats on spectrum'
                      ]
+
+# ######################
+class VelPlotWidget(QtGui.QWidget):
+    """ Widget for a velocity plot with interaction.
+    Akin to XIDL/x_velplot
+
+        19-Dec-2014 by JXP
+    """
+    def __init__(self, ispec, abs_sys, z=None, parent=None, llist=None, norm=True,
+                 vmnx=[-300., 300.]*u.km/u.s):
+        '''
+        spec : XSpectrum1D
+        abs_sys: AbsSystem
+          Absorption system class
+        Norm : bool, optional
+          Normalized spectrum?
+        '''
+        super(VelPlotWidget, self).__init__(parent)
+
+        # Initialize
+        spec, spec_fil = ltgu.read_spec(ispec)
+
+        self.spec = spec
+        self.spec_fil = spec_fil
+        self.z = z
+        self.vmnx = vmnx
+        self.norm = norm
+
+        # Abs_System
+        self.abs_sys = abs_sys
+        if self.abs_sys is None:
+            self.abs_sys = GenericAbsSystem((0.*u.deg,0.*u.deg), self.z, self.vmnx)
+            self.abs_lines = []
+        else:
+            self.z = self.abs_sys.zabs
+            # Line list
+            if llist is None:
+                self.abs_lines = self.abs_sys.list_of_abslines()
+                if len(self.abs_lines)>0:
+                    lwrest = [iline.wrest for iline in self.abs_lines]
+                else:
+                    lwrest = None
+                if lwrest is not None:
+                    llist = ltgu.set_llist(lwrest) # Not sure this is working..
+
+        #QtCore.pyqtRemoveInputHook()
+        #xdb.set_trace()
+        #QtCore.pyqtRestoreInputHook()
+
+        self.psdict = {} # Dict for spectra plotting
+        self.psdict['x_minmax'] = self.vmnx.value # Too much pain to use units with this
+        self.psdict['y_minmax'] = [-0.1, 1.1]
+        self.psdict['nav'] = ltgu.navigate(0,0,init=True)
+
+        # Status Bar?
+        #if not status is None:
+        #    self.statusBar = status
+
+        # Line List
+        if llist is None:
+            self.llist = ltgu.set_llist('Strong')
+        else:
+            self.llist = llist
+        self.llist['z'] = self.z
+
+        # Indexing for line plotting
+        self.idx_line = 0
+
+        self.init_lines()
+
+        # Create the mpl Figure and FigCanvas objects.
+        #
+        self.dpi = 150
+        self.fig = Figure((8.0, 4.0), dpi=self.dpi)
+        self.canvas = FigureCanvas(self.fig)
+        self.canvas.setParent(self)
+
+        self.canvas.setFocusPolicy( QtCore.Qt.ClickFocus )
+        self.canvas.setFocus()
+        self.canvas.mpl_connect('key_press_event', self.on_key)
+        self.canvas.mpl_connect('button_press_event', self.on_click)
+
+        # Sub_plots
+        self.sub_xy = [3,4]
+
+        self.fig.subplots_adjust(hspace=0.0, wspace=0.1)
+
+        vbox = QtGui.QVBoxLayout()
+        vbox.addWidget(self.canvas)
+
+        self.setLayout(vbox)
+
+        # Draw on init
+        self.on_draw()
+
+    # Load them up for display
+    def init_lines(self):
+        wvmin = np.min(self.spec.wavelength)
+        wvmax = np.max(self.spec.wavelength)
+        #
+        wrest = self.llist[self.llist['List']].wrest
+        wvobs = (1+self.z) * wrest
+        gdlin = np.where( (wvobs > wvmin) & (wvobs < wvmax) )[0]
+        self.llist['show_line'] = gdlin
+
+        # Update/generate lines [will not update]
+        for idx in gdlin:
+            self.generate_line((self.z,wrest[idx]))
+
+    def grab_line(self, wrest):
+        """ Grab a line from the list
+        Parameters
+        ----------
+        wrest
+
+        Returns
+        -------
+        iline : AbsLine object
+        """
+        awrest = [iline.wrest for iline in self.abs_lines]
+        try:
+            idx = awrest.index(wrest)
+        except ValueError:
+            return None
+        else:
+            return self.abs_lines[idx]
+
+    def generate_line(self, inp):
+        ''' Generate a new line, if it doesn't exist
+        Parameters:
+        ----------
+        inp: tuple
+          (z,wrest)
+        '''
+        # Generate?
+        if self.grab_line(inp[1]) is None:
+            #QtCore.pyqtRemoveInputHook()
+            #xdb.set_trace()
+            #QtCore.pyqtRestoreInputHook()
+            newline = AbsLine(inp[1],linelist=self.llist[self.llist['List']])
+            print('VelPlot: Generating line {:g}'.format(inp[1]))
+            newline.analy['vlim'] = self.vmnx/2.
+            newline.attrib['z'] = self.abs_sys.zabs
+            newline.analy['do_analysis'] = 1 # Init to ok
+            # Spec file
+            if self.spec_fil is not None:
+                newline.analy['datafile'] = self.spec_fil
+            # Append
+            self.abs_lines.append(newline)
+
+    def remove_line(self, wrest):
+        """ Remove a line, if it exists
+        Parameters
+        ----------
+        wrest : Quantity
+        """
+        awrest = [iline.wrest for iline in self.abs_lines]
+        try:
+            idx = awrest.index(wrest)
+        except ValueError:
+            return None
+        else:
+            _ = self.abs_lines.pop(idx)
+
+    # Key stroke
+    def on_key(self,event):
+
+        # Init
+        rescale = True
+        fig_clear = False
+        wrest = None
+        flg = 0
+        sv_idx = self.idx_line
+
+        ## Change rows/columns
+        if event.key == 'k':
+            self.sub_xy[0] = max(0, self.sub_xy[0]-1)
+        if event.key == 'K':
+            self.sub_xy[0] = self.sub_xy[0]+1
+        if event.key == 'c':
+            self.sub_xy[1] = max(0, self.sub_xy[1]-1)
+        if event.key == 'C':
+            self.sub_xy[1] = max(0, self.sub_xy[1]+1)
+
+        ## NAVIGATING
+        if event.key in self.psdict['nav']:
+            flg = ltgu.navigate(self.psdict,event)
+        if event.key == '-':
+            self.idx_line = max(0, self.idx_line-self.sub_xy[0]*self.sub_xy[1]) # Min=0
+            if self.idx_line == sv_idx:
+                print('Edge of list')
+        if event.key == '=':
+            self.idx_line = min(len(self.llist['show_line'])-self.sub_xy[0]*self.sub_xy[1],
+                                self.idx_line + self.sub_xy[0]*self.sub_xy[1])
+            #QtCore.pyqtRemoveInputHook()
+            #xdb.set_trace()
+            #QtCore.pyqtRestoreInputHook()
+            if self.idx_line == sv_idx:
+                print('Edge of list')
+
+        ## Reset z
+        if event.key == 'z':
+            newz = ltu.z_from_v(self.z, event.xdata)
+            self.z = newz
+            self.abs_sys.zabs = newz
+            # Drawing
+            self.psdict['x_minmax'] = self.vmnx.value
+
+        # Single line command
+        if event.key in ['1','2','B','U','L','N','V','A', 'x', 'X',
+                         '^', '&']:
+            try:
+                wrest = event.inaxes.get_gid()
+            except AttributeError:
+                return
+            else:
+                absline = self.grab_line(wrest)
+                kwrest = wrest.value
+
+        ## Velocity limits
+        unit = u.km/u.s
+        if event.key == '1':
+            absline.analy['vlim'][0] = event.xdata*unit
+        if event.key == '2':
+            #QtCore.pyqtRemoveInputHook()
+            #xdb.set_trace()
+            #QtCore.pyqtRestoreInputHook()
+            absline.analy['vlim'][1] = event.xdata*unit
+        if event.key == '!':
+            for iline in self.abs_sys.lines:
+                iline.analy['vlim'][0] = event.xdata*unit
+        if event.key == '@':
+            for iline in self.abs_sys.lines:
+                iline.analy['vlim'][1] = event.xdata*unit
+        ## Line type
+        if event.key == 'A': # Add to lines
+            self.generate_line((self.z,wrest))
+        if event.key == 'x': # Remove line
+            if self.remove_line(wrest):
+                print('VelPlot: Removed line {:g}'.format(wrest))
+        if event.key == 'X': # Remove all lines
+            # Double check
+            gui = xguiu.WarningWidg('About to remove all lines. \n  Continue??')
+            gui.exec_()
+            if gui.ans is False:
+                return
+            #
+            self.abs_lines = []  # Flush??
+        # Kinematics
+        if event.key == '^':  # Low-Ion
+            try:
+                fkin = absline.analy['flag_kin']
+            except KeyError:
+                fkin = 0
+            fkin += (-1)**(fkin % 2**1 >= 2**0) * 2**0
+            absline.analy['flag_kin'] = fkin
+        if event.key == '&':  # High-Ion
+            try:
+                fkin = absline.analy['flag_kin']
+            except KeyError:
+                fkin = 0
+            fkin += (-1)**(fkin % 2**2 >= 2**1) * 2**1
+            absline.analy['flag_kin'] = fkin
+        # Toggle blend
+        if event.key == 'B':
+            try:
+                feye = absline.analy['flg_eye']
+            except KeyError:
+                feye = 0
+            feye = (feye + 1) % 2
+            absline.analy['flg_eye']  = feye
+        # Toggle NG
+        if event.key == 'N':
+            try:
+                fanly = absline.analy['do_analysis']
+            except KeyError:
+                fanly = 1
+            if fanly == 0:
+                fanly = 1
+            else:
+                fanly = 0
+            absline.analy['do_analysis']  = fanly
+        if event.key == 'V':  # Normal
+            absline.analy['flg_limit'] = 1
+        if event.key == 'L':  # Lower limit
+            absline.analy['flg_limit'] = 2
+        if event.key == 'U':  # Upper limit
+            absline.analy['flg_limit'] = 3
+
+        # AODM plot
+        if event.key == ':':  #
+            # Grab good lines
+            from xastropy.xguis import spec_guis as xsgui
+            gdl = [iline.wrest for iline in self.abs_sys.lines
+                if iline.analy['do_analysis'] > 0]
+            # Launch AODM
+            if len(gdl) > 0:
+                gui = xsgui.XAODMGui(self.spec, self.z, gdl, vmnx=self.vmnx, norm=self.norm)
+                gui.exec_()
+            else:
+                print('VelPlot.AODM: No good lines to plot')
+
+            #QtCore.pyqtRemoveInputHook()
+            #xdb.set_trace()
+            #QtCore.pyqtRestoreInputHook()
+
+        if not wrest is None: # Single window
+            flg = 3
+        if event.key in ['c','C','k','K','W','!', '@', '=', '-', 'X', 'z','R']: # Redraw all
+            flg = 1
+        if event.key in ['Y']:
+            rescale = False
+        if event.key in ['k','c','C','K', 'R']:
+            fig_clear = True
+
+        if flg==1: # Default is not to redraw
+            self.on_draw(rescale=rescale, fig_clear=fig_clear)
+        elif flg==2: # Layer (no clear)
+            self.on_draw(replot=False, rescale=rescale)
+        elif flg==3: # Layer (no clear)
+            self.on_draw(in_wrest=wrest, rescale=rescale)
+
+    # Click of main mouse button
+    def on_click(self,event):
+        try:
+            print('button={:d}, x={:f}, y={:f}, xdata={:f}, ydata={:f}'.format(
+                event.button, event.x, event.y, event.xdata, event.ydata))
+        except ValueError:
+            return
+        if event.button == 1: # Draw line
+            self.ax.plot( [event.xdata,event.xdata], self.psdict['y_minmax'], ':', color='green')
+            self.on_draw(replot=False)
+
+            # Print values
+            try:
+                self.statusBar().showMessage('x,y = {:f}, {:f}'.format(event.xdata,event.ydata))
+            except AttributeError:
+                return
+
+    def on_draw(self, replot=True, in_wrest=None, rescale=True, fig_clear=False):
+        """ Redraws the figure
+        """
+        #
+        if replot is True:
+            if fig_clear:
+                self.fig.clf()
+            # Loop on windows
+            all_idx = self.llist['show_line']
+            nplt = self.sub_xy[0]*self.sub_xy[1]
+            if len(all_idx) <= nplt:
+                self.idx_line = 0
+            subp = np.arange(nplt) + 1
+            subp_idx = np.hstack(subp.reshape(self.sub_xy[0],self.sub_xy[1]).T)
+            #print('idx_l={:d}, nplt={:d}, lall={:d}'.format(self.idx_line,nplt,len(all_idx)))
+            for jj in range(min(nplt, len(all_idx))):
+                try:
+                    idx = all_idx[jj+self.idx_line]
+                except IndexError:
+                    continue # Likely too few lines
+                #print('jj={:d}, idx={:d}'.format(jj,idx))
+                # Grab line
+                wrest = self.llist[self.llist['List']].wrest[idx]
+                kwrest = wrest.value # For the Dict
+                # Single window?
+                if in_wrest is not None:
+                    if np.abs(wrest-in_wrest) > (1e-3*u.AA):
+                        continue
+
+                # Abs_Sys: Color the lines
+                if self.abs_sys is not None:
+                    absline = self.grab_line(wrest)
+
+                # Generate plot
+                self.ax = self.fig.add_subplot(self.sub_xy[0],self.sub_xy[1], subp_idx[jj])
+                self.ax.clear()
+                #QtCore.pyqtRemoveInputHook()
+                #xdb.set_trace()
+                #QtCore.pyqtRestoreInputHook()
+
+                # Zero line
+                self.ax.plot( [0., 0.], [-1e9, 1e9], ':', color='gray')
+                # Velocity
+                wvobs = (1+self.z) * wrest
+                velo = (self.spec.wavelength/wvobs - 1.)*const.c.to('km/s')
+
+                # Plot
+                self.ax.plot(velo, self.spec.flux, 'k-',drawstyle='steps-mid')
+
+                # GID for referencing
+                self.ax.set_gid(wrest)
+
+                # Labels
+                #if jj >= (self.sub_xy[0]-1)*(self.sub_xy[1]):
+                if (((jj+1) % self.sub_xy[0]) == 0) or ((jj+1) == len(all_idx)):
+                    self.ax.set_xlabel('Relative Velocity (km/s)')
+                else:
+                    self.ax.get_xaxis().set_ticks([])
+                lbl = self.llist[self.llist['List']].name[idx]
+                # Kinematics
+                kinl = ''
+                if absline is not None:
+                    if (absline.analy['flag_kin'] % 2) >= 1:
+                        kinl = kinl + 'L'
+                    if (absline.analy['flag_kin'] % 4) >= 2:
+                        kinl = kinl + 'H'
+                self.ax.text(0.1, 0.05, lbl+kinl, color='blue', transform=self.ax.transAxes,
+                             size='x-small', ha='left')
+
+                # Reset window limits
+                #QtCore.pyqtRemoveInputHook()
+                #xdb.set_trace()
+                #QtCore.pyqtRestoreInputHook()
+                self.ax.set_xlim(self.psdict['x_minmax'])
+
+                # Rescale?
+                if (rescale is True) & (self.norm is False):
+                    gdp = np.where( (velo.value > self.psdict['x_minmax'][0]) &
+                                    (velo.value < self.psdict['x_minmax'][1]))[0]
+                    if len(gdp) > 5:
+                        per = xstats.basic.perc(self.spec.flux[gdp])
+                        self.ax.set_ylim((0., 1.1*per[1]))
+                    else:
+                        self.ax.set_ylim(self.psdict['y_minmax'])
+                else:
+                    self.ax.set_ylim(self.psdict['y_minmax'])
+
+                # Fonts
+                xputils.set_fontsize(self.ax,6.)
+
+
+                clr='black'
+                if absline is not None:
+                    try:
+                        vlim = absline.analy['vlim']
+                    except KeyError:
+                        pass
+                    # Color coding
+                    try:  # .clm style
+                        flag = absline.analy['FLAGS'][0]
+                    except KeyError:
+                        flag = None
+                    else:
+                        if flag <= 1: # Standard detection
+                            clr = 'green'
+                        elif flag in [2,3]:
+                            clr = 'blue'
+                        elif flag in [4,5]:
+                            clr = 'purple'
+                    # ABS ID
+                    try: # NG?
+                        flagA = absline.analy['do_analysis']
+                    except KeyError:
+                        flagA = None
+                    else:
+                        if (flagA>0) & (clr == 'black'):
+                            clr = 'green'
+                    try: # Limit?
+                        flagL = absline.analy['flg_limit']
+                    except KeyError:
+                        flagL = None
+                    else:
+                        if flagL == 2:
+                            clr = 'blue'
+                        if flagL == 3:
+                            clr = 'purple'
+                    try: # Blends?
+                        flagE = absline.analy['flg_eye']
+                    except KeyError:
+                        flagE = None
+                    else:
+                        if flagE == 1:
+                            clr = 'orange'
+                    if flagA == 0:
+                        clr = 'red'
+
+                    pix = np.where( (velo > vlim[0]) & (velo < vlim[1]))[0]
+                    self.ax.plot(velo[pix], self.spec.flux[pix], '-',
+                                 drawstyle='steps-mid', color=clr)
+        # Draw
+        self.canvas.draw()
