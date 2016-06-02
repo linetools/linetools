@@ -91,7 +91,7 @@ class AbsSystem(object):
         return slf
 
     @classmethod
-    def from_components(cls, components, vlim=None):
+    def from_components(cls, components, vlim=None, NHI=None):
         """Instantiate from a list of AbsComponent objects
 
         Parameters
@@ -101,6 +101,10 @@ class AbsSystem(object):
         vlim : list, optional
           Velocity limits for the system
           If not set, the first components sets vlim
+        NHI : float, optional
+          Set the NHI value of the system.  If not set,
+          the method sums the NHI values of all the HI
+          components input (if any)
         """
         # Check
         assert ltiu.chk_components(components)
@@ -110,11 +114,12 @@ class AbsSystem(object):
             vlim = init_comp.vlim
         # Attempt to set NHI
         HI_comps = [comp for comp in components if comp.Zion == (1,1)]
-        NHI = 0.
-        for HI_comp in HI_comps:  # Takes only the first line in each list
-            NHI += HI_comp._abslines[0].attrib['N'].value
-        if NHI > 0.:
-            NHI = np.log10(NHI)
+        if NHI is None:
+            NHI = 0.
+            for HI_comp in HI_comps:  # Takes only the first line in each list
+                NHI += HI_comp._abslines[0].attrib['N'].value
+            if NHI > 0.:
+                NHI = np.log10(NHI)
         #
         slf = cls(init_comp.coord, init_comp.zcomp, vlim, NHI=NHI)
         if slf.chk_component(init_comp):
@@ -126,6 +131,24 @@ class AbsSystem(object):
             for component in components[1:]:
                 slf.add_component(component)
         # Return
+        return slf
+
+    @classmethod
+    def from_json(cls, json_file, **kwargs):
+        """ Load from a JSON file (via from_dict)
+
+        Parameters
+        ----------
+        json_file
+        kwargs
+
+        Returns
+        -------
+        AbsSystem
+
+        """
+        idict = ltu.loadjson(json_file)
+        slf = cls.from_dict(idict, **kwargs)
         return slf
 
     @classmethod
@@ -147,12 +170,8 @@ class AbsSystem(object):
         AbsSystem
 
         """
-        slf = cls(idict['abs_type'],
-                  SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg),
-                  idict['zabs'], idict['vlim']*u.km/u.s,
-                  zem=idict['zem'], NHI=idict['NHI'], sig_NHI=idict['sig_NHI'],
-                  flag_NHI=idict['flag_NHI'], name=idict['Name']
-                  )
+        #slf = cls(idict['abs_type'], SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg), idict['zabs'], idict['vlim']*u.km/u.s, zem=idict['zem'], NHI=idict['NHI'], sig_NHI=idict['sig_NHI'], flag_NHI=idict['flag_NHI'], name=idict['Name'] )
+        slf = cls(SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg), idict['zabs'], idict['vlim']*u.km/u.s, zem=idict['zem'], NHI=idict['NHI'], sig_NHI=idict['sig_NHI'], flag_NHI=idict['flag_NHI'], name=idict['Name'] )
         if not skip_components:
             # Components
             if use_coord:  # Speed up performance
@@ -167,7 +186,7 @@ class AbsSystem(object):
         # Return
         return slf
 
-    def __init__(self, abs_type, radec, zabs, vlim, zem=0.,
+    def __init__(self, radec, zabs, vlim, zem=0., abs_type=None,
                  NHI=0., sig_NHI=np.zeros(2), flag_NHI=0, name=None):
 
         self.zabs = zabs
@@ -186,7 +205,7 @@ class AbsSystem(object):
             self.name = name
 
         # Abs type
-        if abs_type == None:
+        if abs_type is None:
             self.abs_type = 'NONE'
         else:
             self.abs_type = abs_type
@@ -356,6 +375,26 @@ class AbsSystem(object):
         # Return
         return outdict
 
+    def write_json(self, outfil=None):
+        """ Generate a JSON file from the system
+
+        Returns
+        -------
+
+        """
+        import io, json
+        # Generate the dict
+        odict = self.to_dict()
+        # Write
+        if outfil is None:
+            outfil = self.name+'.json'
+        with io.open(outfil, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(odict, sort_keys=True, indent=4,
+                               separators=(',', ': ')))
+        # Finish
+        print("Wrote {:s} system to {:s} file".format(self.name, outfil))
+
+
     def __repr__(self):
         txt = '<{:s}: name={:s} type={:s}, {:s} {:s}, z={:g}, NHI={:g}'.format(
                 self.__class__.__name__, self.name, self.abs_type,
@@ -371,7 +410,7 @@ class GenericAbsSystem(AbsSystem):
     """Class for Generic Absorption Line System
     """
     def __init__(self, radec, zabs, vlim, **kwargs):
-        AbsSystem.__init__(self, 'Generic', radec, zabs, vlim, **kwargs)
+        AbsSystem.__init__(self, radec, zabs, vlim, abs_type='Generic', **kwargs)
         self.name = 'Foo'
 
     def print_abs_type(self):
@@ -382,7 +421,7 @@ class LymanAbsSystem(AbsSystem):
     """Class for HI Lyman Absorption Line System
     """
     def __init__(self, radec, zabs, vlim, **kwargs):
-        AbsSystem.__init__(self, 'HILyman', radec, zabs, vlim, **kwargs)
+        AbsSystem.__init__(self, radec, zabs, vlim, abs_type='HILyman', **kwargs)
 
     def chk_component(self,component):
         """Require components are only of HI

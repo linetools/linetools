@@ -623,7 +623,7 @@ class LineList(object):
             name = output['name'][0]
             return self.__getitem__(name)
         else:  # n_max>1
-            if n_max > 1:
+            if (n_max is not None) and (n_max > 1):
                 output = output[:n_max]
             if len(output) == 1:  # return dictionary
                 name = output['name'][0]
