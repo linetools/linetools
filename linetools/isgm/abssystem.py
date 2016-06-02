@@ -101,6 +101,10 @@ class AbsSystem(object):
         vlim : list, optional
           Velocity limits for the system
           If not set, the first components sets vlim
+        NHI : float, optional
+          Set the NHI value of the system.  If not set,
+          the method sums the NHI values of all the HI
+          components input (if any)
         """
         # Check
         assert ltiu.chk_components(components)
