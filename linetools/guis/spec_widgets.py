@@ -19,7 +19,9 @@ from matplotlib.figure import Figure
 
 from astropy.modeling import models, fitting
 
+from linetools import utils as ltu
 from linetools.guis import utils as ltgu
+from linetools.guis import simple_widgets
 from linetools.guis import line_widgets as ltgl
 from linetools.spectra.xspectrum1d import XSpectrum1D
 from ..spectralline import AbsLine
@@ -594,16 +596,46 @@ class VelPlotWidget(QtGui.QWidget):
 
         19-Dec-2014 by JXP
     """
-    def __init__(self, ispec, abs_sys, z=None, parent=None, llist=None, norm=True,
+    def __init__(self, ispec, z, abs_lines=None, parent=None, llist=None, norm=True,
                  vmnx=[-300., 300.]*u.km/u.s):
         '''
         spec : XSpectrum1D
-        abs_sys: AbsSystem
-          Absorption system class
-        Norm : bool, optional
+        z : float
+        abs_lines: list, optional
+          List of AbsLines
+        llist : LineList, optional
+          Input line list.  Defaults to 'Strong'
+        norm : bool, optional
           Normalized spectrum?
+        vmnx : Quantity array, optional
+          Starting velocity range for the widget
         '''
         super(VelPlotWidget, self).__init__(parent)
+        self.help_message = """
+Click on any white region within the velocity plots
+for the following keystroke commands to work:
+
+i,o       : zoom in/out x limits
+I,O       : zoom in/out x limits (larger re-scale)
+y         : zoom out y limits
+t,b       : set y top/bottom limit
+l,r       : set left/right x limit
+[,]       : pan left/right
+C,c       : add/remove column
+K,k       : add/remove row
+=,-       : move to next/previous page
+1,2       : Modify velocity region of the single line (left, right sides)
+!,@       : Modify velocity region of all lines (left, right)
+A,x       : Add/remove select line from analysis list
+X         : Remove all lines from analysis list
+^,&       : Flag line to be analyzed for low/high-ion kinematics
+B         : Toggle as blend/no-blend  (orange color = blend)
+N         : Toggle as do/do-not include for analysis  (red color = exclude)
+V         : Indicate as a normal value
+L         : Indicate as a lower limit
+U         : Indicate as a upper limit
+?         : Print this
+        """
 
         # Initialize
         spec, spec_fil = ltgu.read_spec(ispec)
@@ -615,21 +647,8 @@ class VelPlotWidget(QtGui.QWidget):
         self.norm = norm
 
         # Abs_System
-        self.abs_sys = abs_sys
-        if self.abs_sys is None:
-            self.abs_sys = GenericAbsSystem((0.*u.deg,0.*u.deg), self.z, self.vmnx)
+        if abs_lines is None:
             self.abs_lines = []
-        else:
-            self.z = self.abs_sys.zabs
-            # Line list
-            if llist is None:
-                self.abs_lines = self.abs_sys.list_of_abslines()
-                if len(self.abs_lines)>0:
-                    lwrest = [iline.wrest for iline in self.abs_lines]
-                else:
-                    lwrest = None
-                if lwrest is not None:
-                    llist = ltgu.set_llist(lwrest) # Not sure this is working..
 
         #QtCore.pyqtRemoveInputHook()
         #xdb.set_trace()
@@ -640,10 +659,6 @@ class VelPlotWidget(QtGui.QWidget):
         self.psdict['y_minmax'] = [-0.1, 1.1]
         self.psdict['nav'] = ltgu.navigate(0,0,init=True)
 
-        # Status Bar?
-        #if not status is None:
-        #    self.statusBar = status
-
         # Line List
         if llist is None:
             self.llist = ltgu.set_llist('Strong')
@@ -653,11 +668,9 @@ class VelPlotWidget(QtGui.QWidget):
 
         # Indexing for line plotting
         self.idx_line = 0
-
         self.init_lines()
 
         # Create the mpl Figure and FigCanvas objects.
-        #
         self.dpi = 150
         self.fig = Figure((8.0, 4.0), dpi=self.dpi)
         self.canvas = FigureCanvas(self.fig)
@@ -668,15 +681,17 @@ class VelPlotWidget(QtGui.QWidget):
         self.canvas.mpl_connect('key_press_event', self.on_key)
         self.canvas.mpl_connect('button_press_event', self.on_click)
 
-        # Sub_plots
+        # Sub_plots (Initial)
         self.sub_xy = [3,4]
-
         self.fig.subplots_adjust(hspace=0.0, wspace=0.1)
 
+        # Layout
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(self.canvas)
-
         self.setLayout(vbox)
+
+        # Print help message
+        print(self.help_message)
 
         # Draw on init
         self.on_draw()
@@ -714,12 +729,12 @@ class VelPlotWidget(QtGui.QWidget):
             return self.abs_lines[idx]
 
     def generate_line(self, inp):
-        ''' Generate a new line, if it doesn't exist
+        """ Add a new line to the list, if it doesn't exist
         Parameters:
         ----------
         inp: tuple
           (z,wrest)
-        '''
+        """
         # Generate?
         if self.grab_line(inp[1]) is None:
             #QtCore.pyqtRemoveInputHook()
@@ -728,8 +743,8 @@ class VelPlotWidget(QtGui.QWidget):
             newline = AbsLine(inp[1],linelist=self.llist[self.llist['List']])
             print('VelPlot: Generating line {:g}'.format(inp[1]))
             newline.analy['vlim'] = self.vmnx/2.
-            newline.attrib['z'] = self.abs_sys.zabs
-            newline.analy['do_analysis'] = 1 # Init to ok
+            newline.attrib['z'] = self.z
+            newline.analy['do_analysis'] = 1  # Init to ok
             # Spec file
             if self.spec_fil is not None:
                 newline.analy['datafile'] = self.spec_fil
@@ -780,9 +795,6 @@ class VelPlotWidget(QtGui.QWidget):
         if event.key == '=':
             self.idx_line = min(len(self.llist['show_line'])-self.sub_xy[0]*self.sub_xy[1],
                                 self.idx_line + self.sub_xy[0]*self.sub_xy[1])
-            #QtCore.pyqtRemoveInputHook()
-            #xdb.set_trace()
-            #QtCore.pyqtRestoreInputHook()
             if self.idx_line == sv_idx:
                 print('Edge of list')
 
@@ -790,7 +802,6 @@ class VelPlotWidget(QtGui.QWidget):
         if event.key == 'z':
             newz = ltu.z_from_v(self.z, event.xdata)
             self.z = newz
-            self.abs_sys.zabs = newz
             # Drawing
             self.psdict['x_minmax'] = self.vmnx.value
 
@@ -803,18 +814,14 @@ class VelPlotWidget(QtGui.QWidget):
                 return
             else:
                 absline = self.grab_line(wrest)
-                kwrest = wrest.value
 
         ## Velocity limits
         unit = u.km/u.s
         if event.key == '1':
             absline.analy['vlim'][0] = event.xdata*unit
         if event.key == '2':
-            #QtCore.pyqtRemoveInputHook()
-            #xdb.set_trace()
-            #QtCore.pyqtRestoreInputHook()
             absline.analy['vlim'][1] = event.xdata*unit
-        if event.key == '!':
+        if event.key == '!':  # Set all lines to this value
             for iline in self.abs_sys.lines:
                 iline.analy['vlim'][0] = event.xdata*unit
         if event.key == '@':
@@ -828,7 +835,7 @@ class VelPlotWidget(QtGui.QWidget):
                 print('VelPlot: Removed line {:g}'.format(wrest))
         if event.key == 'X': # Remove all lines
             # Double check
-            gui = xguiu.WarningWidg('About to remove all lines. \n  Continue??')
+            gui = simple_widgets.WarningWidg('About to remove all lines. \n  Continue??')
             gui.exec_()
             if gui.ans is False:
                 return
@@ -875,6 +882,7 @@ class VelPlotWidget(QtGui.QWidget):
         if event.key == 'U':  # Upper limit
             absline.analy['flg_limit'] = 3
 
+        '''
         # AODM plot
         if event.key == ':':  #
             # Grab good lines
@@ -887,12 +895,9 @@ class VelPlotWidget(QtGui.QWidget):
                 gui.exec_()
             else:
                 print('VelPlot.AODM: No good lines to plot')
+        '''
 
-            #QtCore.pyqtRemoveInputHook()
-            #xdb.set_trace()
-            #QtCore.pyqtRestoreInputHook()
-
-        if not wrest is None: # Single window
+        if wrest is not None:  # Single window
             flg = 3
         if event.key in ['c','C','k','K','W','!', '@', '=', '-', 'X', 'z','R']: # Redraw all
             flg = 1
@@ -901,11 +906,16 @@ class VelPlotWidget(QtGui.QWidget):
         if event.key in ['k','c','C','K', 'R']:
             fig_clear = True
 
-        if flg==1: # Default is not to redraw
+        # Print help message
+        if event.key == '?':
+            print(self.help_message)
+
+
+        if flg == 1: # Default is not to redraw
             self.on_draw(rescale=rescale, fig_clear=fig_clear)
-        elif flg==2: # Layer (no clear)
+        elif flg == 2:  # Layer (no clear)
             self.on_draw(replot=False, rescale=rescale)
-        elif flg==3: # Layer (no clear)
+        elif flg == 3:  # Layer (no clear)
             self.on_draw(in_wrest=wrest, rescale=rescale)
 
     # Click of main mouse button
@@ -939,31 +949,24 @@ class VelPlotWidget(QtGui.QWidget):
                 self.idx_line = 0
             subp = np.arange(nplt) + 1
             subp_idx = np.hstack(subp.reshape(self.sub_xy[0],self.sub_xy[1]).T)
-            #print('idx_l={:d}, nplt={:d}, lall={:d}'.format(self.idx_line,nplt,len(all_idx)))
             for jj in range(min(nplt, len(all_idx))):
                 try:
                     idx = all_idx[jj+self.idx_line]
                 except IndexError:
                     continue # Likely too few lines
-                #print('jj={:d}, idx={:d}'.format(jj,idx))
                 # Grab line
                 wrest = self.llist[self.llist['List']].wrest[idx]
-                kwrest = wrest.value # For the Dict
                 # Single window?
                 if in_wrest is not None:
                     if np.abs(wrest-in_wrest) > (1e-3*u.AA):
                         continue
 
-                # Abs_Sys: Color the lines
-                if self.abs_sys is not None:
-                    absline = self.grab_line(wrest)
+                # AbsLine for this window
+                absline = self.grab_line(wrest)
 
                 # Generate plot
                 self.ax = self.fig.add_subplot(self.sub_xy[0],self.sub_xy[1], subp_idx[jj])
                 self.ax.clear()
-                #QtCore.pyqtRemoveInputHook()
-                #xdb.set_trace()
-                #QtCore.pyqtRestoreInputHook()
 
                 # Zero line
                 self.ax.plot( [0., 0.], [-1e9, 1e9], ':', color='gray')
@@ -978,7 +981,6 @@ class VelPlotWidget(QtGui.QWidget):
                 self.ax.set_gid(wrest)
 
                 # Labels
-                #if jj >= (self.sub_xy[0]-1)*(self.sub_xy[1]):
                 if (((jj+1) % self.sub_xy[0]) == 0) or ((jj+1) == len(all_idx)):
                     self.ax.set_xlabel('Relative Velocity (km/s)')
                 else:
@@ -1005,7 +1007,8 @@ class VelPlotWidget(QtGui.QWidget):
                     gdp = np.where( (velo.value > self.psdict['x_minmax'][0]) &
                                     (velo.value < self.psdict['x_minmax'][1]))[0]
                     if len(gdp) > 5:
-                        per = xstats.basic.perc(self.spec.flux[gdp])
+                        per = np.percentile(self.spec.flux[gdp],
+                                            [50-68/2.0, 50+68/2.0])
                         self.ax.set_ylim((0., 1.1*per[1]))
                     else:
                         self.ax.set_ylim(self.psdict['y_minmax'])
@@ -1013,7 +1016,9 @@ class VelPlotWidget(QtGui.QWidget):
                     self.ax.set_ylim(self.psdict['y_minmax'])
 
                 # Fonts
-                xputils.set_fontsize(self.ax,6.)
+                for item in ([self.ax.title, self.ax.xaxis.label, self.ax.yaxis.label] +
+                         self.ax.get_xticklabels() + self.ax.get_yticklabels()):
+                    item.set_fontsize(6)
 
 
                 clr='black'
