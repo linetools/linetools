@@ -995,7 +995,11 @@ U         : Indicate as a upper limit
                         kinl = kinl + 'L'
                     if (absline.analy['flag_kin'] % 4) >= 2:
                         kinl = kinl + 'H'
-                self.ax.text(0.1, 0.05, lbl+kinl, color='blue', transform=self.ax.transAxes,
+                if absline is not None:
+                    lclr = 'blue'
+                else:
+                    lclr = 'gray'
+                self.ax.text(0.1, 0.05, lbl+kinl, color=lclr, transform=self.ax.transAxes,
                              size='x-small', ha='left')
 
                 # Reset window limits
