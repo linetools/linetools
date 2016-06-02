@@ -319,7 +319,7 @@ class AbsSystem(object):
         """ Measure rest-frame EWs for lines in the AbsSystem
         Parameters
         ----------
-        spec : XSpectru1D, optional
+        spec : XSpectrum1D, optional
         kwargs
 
         Returns
