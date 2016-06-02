@@ -315,6 +315,27 @@ class AbsSystem(object):
         return [iline for component in self._components
                 for iline in component._abslines]
 
+    def measure_restew(self, spec=None, **kwargs):
+        """ Measure rest-frame EWs for lines in the AbsSystem
+        Parameters
+        ----------
+        spec : XSpectru1D, optional
+        kwargs
+
+        Returns
+        -------
+
+        """
+        # Grab Lines
+        abs_lines = self.list_of_abslines()
+        # Loop
+        for iline in abs_lines:
+            # Fill in spec?
+            if spec is not None:
+                iline.analy['spec'] = spec
+            # Measure
+                iline.measure_restew(kwargs)
+
     def to_dict(self):
         """ Write AbsSystem data to a dict that can be written with JSON
         """
