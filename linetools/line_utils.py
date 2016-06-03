@@ -5,11 +5,12 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import pdb
 import numpy as np
 
-from astropy.table import QTable, Column
-from astropy import units as u
+from astropy.table import Table
 from astropy.units import Quantity
 
-def parse_abslines(abslines, key, mk_array=False):
+from .spectralline import AbsLine
+
+def parse_speclines(abslines, key, mk_array=False):
     """ Generate a list or array of items from a list of AbsLines
 
     Parameters
@@ -48,27 +49,31 @@ def parse_abslines(abslines, key, mk_array=False):
         return out_list
 
 
-def transtable_from_abslines(abslines, add_keys=None):
-    """Generate a QTable summarizing the transitions from a list of AbsLines
+def transtable_from_speclines(abslines, add_keys=None):
+    """Generate a Table summarizing the transitions from a list of AbsLines
     Parameters
     ----------
-    abslines : list of AbsLine objects
+    speclines : list of SpectralLine objects
 
     Returns
     -------
-    tbl : QTable
+    tbl : Table
 
     """
-    keys = ['wrest','name','z','flag_EW', 'EW', 'flag_N', 'logN']
+    keys = ['wrest','name','Z', 'ion', 'Ej', 'z', 'EW', 'sig_EW']
+    if isinstance(abslines[0], AbsLine):
+        keys += ['flag_N', 'logN', 'sig_logN']
     if add_keys is not None:
         keys += add_keys
 
     # Get started
-    tbl = QTable()
+    tbl = Table()
 
     # Loop to my loop
     for key in keys:
-        tbl[key] = parse_abslines(abslines, key, mk_array=True)
+        tbl[key] = parse_speclines(abslines, key, mk_array=True)
 
+    # Sort
+    tbl.sort(['Z','ion','Ej','wrest'])
     # Return
     return tbl

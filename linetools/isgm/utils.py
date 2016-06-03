@@ -15,7 +15,7 @@ import warnings
 
 from astropy import constants as const
 from astropy import units as u
-from astropy.table import QTable
+from astropy.table import Table
 
 from linetools.analysis import absline as ltaa
 from linetools.isgm.abscomponent import AbsComponent
@@ -174,7 +174,7 @@ def build_components_from_dict(idict, coord=None, **kwargs):
 
 
 def iontable_from_components(components, ztbl=None, NHI_obj=None):
-    """Generate a QTable from a list of components
+    """Generate a Table from a list of components
 
     Method does *not* perform logic on redshifts or vlim.
     Includes rules for adding components of like ion
@@ -191,7 +191,7 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
 
     Returns
     -------
-    iontbl : QTable
+    iontbl : Table
     """
     from collections import OrderedDict
     # Checks
@@ -201,7 +201,7 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
     if ztbl is None:
         ztbl = np.mean([comp.zcomp for comp in components])
 
-    # Construct the QTable
+    # Construct the Table
     cols = OrderedDict()  # Keeps columns in order
     cols['Z']=int
     cols['ion']=int
@@ -215,7 +215,7 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
     cols['sig_logN']=float
     names = cols.keys()
     dtypes = [cols[key] for key in names]
-    iontbl = QTable(names=names,dtype=dtypes)
+    iontbl = Table(names=names,dtype=dtypes)
     iontbl['vmin'].unit=u.km/u.s
     iontbl['vmax'].unit=u.km/u.s
 

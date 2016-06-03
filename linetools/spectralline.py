@@ -284,7 +284,8 @@ class SpectralLine(object):
             raise ValueError('measure_ew: Not ready for this flag {:d}'.format(flg))
 
         # Fill
-        self.attrib['EW'] = EW 
+        self.attrib['flag_EW'] = 1
+        self.attrib['EW'] = EW
         self.attrib['sig_EW'] = sig_EW
 
     def measure_restew(self, **kwargs):

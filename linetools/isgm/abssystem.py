@@ -22,6 +22,7 @@ from astropy.coordinates import SkyCoord
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.isgm import utils as ltiu
 from linetools import utils as ltu
+from linetools import line_utils as ltlu
 from linetools.spectralline import AbsLine
 from linetools.abund import ions
 
@@ -186,9 +187,10 @@ class AbsSystem(object):
         # Kinematics
         self.kin = {}
 
-        # Abundances
+        # Abundances and Tables
         self._EW = QTable()
         self._ionN = QTable()
+        self._trans = QTable()
         self._ionstate = {}
         self._abund = QTable()
 
@@ -239,6 +241,11 @@ class AbsSystem(object):
         """ Fills the ionN Table from the list of components
         """
         self._ionN = ltiu.iontable_from_components(self._components, **kwargs)
+
+    def fill_trans(self, **kwargs):
+        """ Fills the ionN Table from the list of components
+        """
+        self._trans = ltlu.transtable_from_speclines(self.list_of_abslines())
 
     def get_absline(self, inp):
         """ Returns an AbsLine from the AbsSystem
@@ -334,7 +341,7 @@ class AbsSystem(object):
             if spec is not None:
                 iline.analy['spec'] = spec
             # Measure
-                iline.measure_restew(kwargs)
+            iline.measure_restew(**kwargs)
 
     def to_dict(self):
         """ Write AbsSystem data to a dict that can be written with JSON

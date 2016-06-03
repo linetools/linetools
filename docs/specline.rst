@@ -131,3 +131,26 @@ be easily written to the disk, e.g.::
          indent=4, separators=(',', ': '))))
 
 
+
+Utilities
+=========
+
+There are several utilites related to spectral lines.
+These are located in the line_utils module.
+
+parse_speclines
+---------------
+
+Given a list of SpectralLines and desired property (key),
+this method returns a list or array of the values.::
+
+   from linetools import line_utils
+   array_of_values = line_utils.parse_speclines(list_of_speclines, mk_array=True)
+
+transtable_from_speclines
+-------------------------
+
+Given a list of SpectralLines, this method returns a Table
+of a subset of the properties (e.g. wavelength, EW).::
+
+   trans_tbl = line_utils.transtable_from_speclines(list_of_speclines)
