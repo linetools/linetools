@@ -709,8 +709,9 @@ U         : Indicate as a upper limit
         self.llist['show_line'] = gdlin
 
         # Update/generate lines [will not update]
-        for idx in gdlin:
-            self.generate_line((self.z,wrest[idx]))
+        if len(self.abs_lines) == 0:
+            for idx in gdlin:
+                self.generate_line((self.z,wrest[idx]))
 
     def grab_line(self, wrest):
         """ Grab a line from the list

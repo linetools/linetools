@@ -73,7 +73,7 @@ class XAbsSysGui(QtGui.QDialog):
         self.vplt_widg = ltgs.VelPlotWidget(ispec, self.z, abs_lines=abs_lines, llist=llist,
                                             vmnx=self.vmnx, norm=self.norm)
         self.pltline_widg = ltgl.PlotLinesWidget(init_llist=self.vplt_widg.llist,
-                                                 init_z=self.z)
+                                                 init_z=self.z, edit_z=False)
         #self.pltline_widg.spec_widg = self.vplt_widg
 
         self.slines = ltgl.SelectedLinesWidget(self.vplt_widg.llist[self.vplt_widg.llist['List']],
@@ -82,7 +82,7 @@ class XAbsSysGui(QtGui.QDialog):
 
         # Connections
         self.pltline_widg.llist_widget.currentItemChanged.connect(self.on_llist_change)
-        self.connect(self.pltline_widg.zbox, QtCore.SIGNAL('editingFinished ()'), self.setz)
+        #self.connect(self.pltline_widg.zbox, QtCore.SIGNAL('editingFinished ()'), self.setz)
         self.vplt_widg.canvas.mpl_connect('key_press_event', self.on_key)
 
         # Outfil
@@ -164,20 +164,23 @@ class XAbsSysGui(QtGui.QDialog):
         self.outfil = str(self.out_box.text())
         print('AbsKin: Will write to {:s}'.format(self.outfil))
 
+    '''
     # Set z from pltline_widg
     def setz(self):
         self.vplt_widg.z = self.pltline_widg.llist['z']
         self.z = self.pltline_widg.llist['z']
         self.vplt_widg.on_draw()
+    '''
 
     def set_new_comps(self):
         """ Generate new components and fill into abs_sys
         Ignores velocity limits when building
         """
-        # Add spectrum filename
+        # Add spectrum filename, coord
         abs_lines = self.vplt_widg.abs_lines
         for line in abs_lines:
             line.analy['datafile'] = self.vplt_widg.spec_fil
+            line.attrib['coord'] = self.abs_sys.coord
         # Components
         comps = ltiu.build_components_from_abslines(abs_lines, chk_vel=False)
         self.abs_sys._components = comps
