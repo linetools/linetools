@@ -151,6 +151,8 @@ transtable_from_speclines
 -------------------------
 
 Given a list of SpectralLines, this method returns a Table
-of a subset of the properties (e.g. wavelength, EW).::
+of a subset of the properties (e.g. wavelength, name, EW).::
 
    trans_tbl = line_utils.transtable_from_speclines(list_of_speclines)
+
+

@@ -60,6 +60,8 @@ def test_methods():
     assert len(abslines) == 6
     # Measure EWs
     gensys.measure_restew(spec=spec)
+    # Measure AODM
+    gensys.measure_aodm(spec=spec)
     # trans table
     gensys.fill_trans()
     assert len(gensys._trans) == 6
@@ -68,6 +70,8 @@ def test_methods():
     np.testing.assert_allclose(lyb.wrest.value, 1025.7222)
     lyb = gensys.get_absline(1025.72*u.AA)
     np.testing.assert_allclose(lyb.wrest.value, 1025.7222)
+    # Component columns
+    gensys.update_component_colm()
     # ionN
     gensys.fill_ionN()
     assert len(gensys._ionN) == 2

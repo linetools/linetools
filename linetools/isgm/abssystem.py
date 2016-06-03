@@ -343,6 +343,45 @@ class AbsSystem(object):
             # Measure
             iline.measure_restew(**kwargs)
 
+    def measure_aodm(self, spec=None, **kwargs):
+        """ Measure ADOM columns for the list of lines
+        Note: Components are *not* updated by default
+
+        Parameters
+        ----------
+        spec : XSpectrum1D, optional
+        kwargs
+
+        Returns
+        -------
+
+        """
+        # Grab Lines
+        abs_lines = self.list_of_abslines()
+        # Loop
+        for iline in abs_lines:
+            # Fill in spec?
+            if spec is not None:
+                iline.analy['spec'] = spec
+            # Measure
+            iline.measure_aodm(**kwargs)
+        #
+        print("You may now wish to update the component column densities")
+
+    def update_component_colm(self, **kwargs):
+        """ Synthesize/update column density measurements for components
+
+        Parameters
+        ----------
+        kwargs
+
+        Returns
+        -------
+
+        """
+        for comp in self._components:
+            comp.synthesize_colm(**kwargs)
+
     def to_dict(self):
         """ Write AbsSystem data to a dict that can be written with JSON
         """
