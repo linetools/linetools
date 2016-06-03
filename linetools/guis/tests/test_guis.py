@@ -12,9 +12,10 @@ from astropy import units as u
 
 from PyQt4 import QtGui
 
-from linetools.guis import xspecgui
+from linetools.guis import xspecgui, xabssysgui
 from linetools.guis import utils as ltgu
 from linetools.spectra import io as lsio
+from linetools.isgm.abssystem import GenericAbsSystem
 
 app = QtGui.QApplication(sys.argv)
 
@@ -68,3 +69,9 @@ def test_xspecgui():
     # Init
     spec_fil = data_path('UM184_nF.fits')
     xsgui = xspecgui.XSpecGui(spec_fil, unit_test=True)
+
+def test_xabsgui():
+    # Init
+    spec_fil = data_path('UM184_nF.fits')
+    abs_sys = GenericAbsSystem((0.,0.), 3., [-500,500]*u.km/u.s)
+    xabsgui = xabssysgui.XAbsSysGui(spec_fil, abs_sys)
