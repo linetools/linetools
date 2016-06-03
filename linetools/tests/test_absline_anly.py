@@ -59,9 +59,8 @@ def test_boxew_absline():
     assert ew.unit == u.AA
 
     abslin.measure_restew()
-    #import pdb
-    #pdb.set_trace()
-    np.testing.assert_allclose(ew.value, 0.9935021012055584/(1+abslin.attrib['z']))
+    restew = abslin.attrib['EW']
+    np.testing.assert_allclose(restew.value, 0.9935021012055584/(1+abslin.attrib['z']))
 
 def test_gaussew_absline():
     # Text Gaussian EW evaluation
@@ -79,11 +78,6 @@ def test_gaussew_absline():
     assert ew.unit == u.AA
 
     abslin.measure_ew(flg=2,initial_guesses=(0.5,6081,1))
-    np.testing.assert_allclose(ew.value, 1.02,atol=0.01)
-
-    abslin.measure_restew()
-    np.testing.assert_allclose(ew.value, 1.02/(1+abslin.attrib['z']),atol=0.01)
-
 
 def test_measurekin_absline():
     # Test Simple kinematics

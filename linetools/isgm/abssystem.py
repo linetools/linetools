@@ -26,6 +26,8 @@ from linetools import line_utils as ltlu
 from linetools.spectralline import AbsLine
 from linetools.abund import ions
 
+# Globals to speed things up
+c_mks = const.c.to('km/s')
 
 class AbsSystem(object):
     """
@@ -90,7 +92,7 @@ class AbsSystem(object):
         return slf
 
     @classmethod
-    def from_components(cls, components, vlim=None):
+    def from_components(cls, components, vlim=None, NHI=None):
         """Instantiate from a list of AbsComponent objects
 
         Parameters
@@ -100,6 +102,10 @@ class AbsSystem(object):
         vlim : list, optional
           Velocity limits for the system
           If not set, the first components sets vlim
+        NHI : float, optional
+          Set the NHI value of the system.  If not set,
+          the method sums the NHI values of all the HI
+          components input (if any)
         """
         # Check
         assert ltiu.chk_components(components)
@@ -109,11 +115,12 @@ class AbsSystem(object):
             vlim = init_comp.vlim
         # Attempt to set NHI
         HI_comps = [comp for comp in components if comp.Zion == (1,1)]
-        NHI = 0.
-        for HI_comp in HI_comps:  # Takes only the first line in each list
-            NHI += HI_comp._abslines[0].attrib['N'].value
-        if NHI > 0.:
-            NHI = np.log10(NHI)
+        if NHI is None:
+            NHI = 0.
+            for HI_comp in HI_comps:  # Takes only the first line in each list
+                NHI += HI_comp._abslines[0].attrib['N'].value
+            if NHI > 0.:
+                NHI = np.log10(NHI)
         #
         slf = cls(init_comp.coord, init_comp.zcomp, vlim, NHI=NHI)
         if slf.chk_component(init_comp):
@@ -128,36 +135,59 @@ class AbsSystem(object):
         return slf
 
     @classmethod
-    def from_dict(cls, idict, skip_components=False, **kwargs):
-        """ Instantiate from a dict.  Usually read from the hard-drive
+    def from_json(cls, json_file, **kwargs):
+        """ Load from a JSON file (via from_dict)
 
         Parameters
         ----------
-        idict : dict
-        skip_components : bool, optional
+        json_file
+        kwargs
 
         Returns
         -------
         AbsSystem
 
         """
-        slf = cls(idict['abs_type'],
-                  SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg),
-                  idict['zabs'], idict['vlim']*u.km/u.s,
-                  zem=idict['zem'], NHI=idict['NHI'], sig_NHI=idict['sig_NHI'],
-                  flag_NHI=idict['flag_NHI'], name=idict['Name']
-                  )
+        idict = ltu.loadjson(json_file)
+        slf = cls.from_dict(idict, **kwargs)
+        return slf
+
+    @classmethod
+    def from_dict(cls, idict, skip_components=False, use_coord=False, **kwargs):
+        """ Instantiate from a dict.  Usually read from the hard-drive
+
+        Parameters
+        ----------
+        idict : dict
+        skip_components : bool, optional
+          If True, absorption components (if any exist) are not loaded from the input dict.
+          Use when you are only interested in the global properties of an AbsSystem
+        use_coord : bool, optinal
+          Use coordinates from the AbsSystem to build the components (and lines)
+          Speeds up performance, but you should know things are OK before using this
+
+        Returns
+        -------
+        AbsSystem
+
+        """
+        #slf = cls(idict['abs_type'], SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg), idict['zabs'], idict['vlim']*u.km/u.s, zem=idict['zem'], NHI=idict['NHI'], sig_NHI=idict['sig_NHI'], flag_NHI=idict['flag_NHI'], name=idict['Name'] )
+        slf = cls(SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg), idict['zabs'], idict['vlim']*u.km/u.s, zem=idict['zem'], NHI=idict['NHI'], sig_NHI=idict['sig_NHI'], flag_NHI=idict['flag_NHI'], name=idict['Name'] )
         if not skip_components:
             # Components
-            components = ltiu.build_components_from_dict(idict, **kwargs)
+            if use_coord:  # Speed up performance
+                coord = slf.coord
+            else:
+                coord = None
+            components = ltiu.build_components_from_dict(idict, coord=coord, **kwargs)
             for component in components:
                 # This is to insure the components follow the rules
-                slf.add_component(component)
+                slf.add_component(component, **kwargs)
 
         # Return
         return slf
 
-    def __init__(self, abs_type, radec, zabs, vlim, zem=0.,
+    def __init__(self, radec, zabs, vlim, zem=0., abs_type=None,
                  NHI=0., sig_NHI=np.zeros(2), flag_NHI=0, name=None):
 
         self.zabs = zabs
@@ -176,7 +206,7 @@ class AbsSystem(object):
             self.name = name
 
         # Abs type
-        if abs_type == None:
+        if abs_type is None:
             self.abs_type = 'NONE'
         else:
             self.abs_type = abs_type
@@ -197,7 +227,7 @@ class AbsSystem(object):
         # Refs (list of references)
         self.Refs = []
 
-    def add_component(self, abscomp, toler=0.2*u.arcsec):
+    def add_component(self, abscomp, tol=0.2*u.arcsec, chk_sep=True, **kwargs):
         """Add an AbsComponent object if it satisfies all of the rules.
 
         For velocities, we demand that the new component has a velocity
@@ -208,15 +238,21 @@ class AbsSystem(object):
         Parameters
         ----------
         comp : AbsComponent
-        toler : Angle, optional
+        tol : Angle, optional
           Tolerance on matching coordinates
+          Only used if chk_sep=True
+        chk_sep : bool, optional
+          Perform coordinate check (expensive)
         """
         # Coordinates
-        test = bool(self.coord.separation(abscomp.coord) < toler)
+        if chk_sep:
+            test = bool(self.coord.separation(abscomp.coord) < tol)
+        else:
+            test = True
         # Now redshift/velocity
-        zlim_comp = (1+abscomp.zcomp)*abscomp.vlim/const.c.to('km/s')
-        zlim_sys = (1+self.zabs)*self.vlim/const.c.to('km/s')
-        test = test & (zlim_comp[0]>=zlim_sys[0]) & (zlim_comp[1]<=zlim_sys[1])
+        zlim_comp = (1+abscomp.zcomp)*abscomp.vlim/c_mks
+        zlim_sys = (1+self.zabs)*self.vlim/c_mks
+        test = test & (zlim_comp[0] >= zlim_sys[0]) & (zlim_comp[1] <= zlim_sys[1])
 
         # Additional checks (specific to AbsSystem type)
         test = test & self.chk_component(abscomp)
@@ -406,6 +442,26 @@ class AbsSystem(object):
         # Return
         return outdict
 
+    def write_json(self, outfil=None):
+        """ Generate a JSON file from the system
+
+        Returns
+        -------
+
+        """
+        import io, json
+        # Generate the dict
+        odict = self.to_dict()
+        # Write
+        if outfil is None:
+            outfil = self.name+'.json'
+        with io.open(outfil, 'w', encoding='utf-8') as f:
+            f.write(json.dumps(odict, sort_keys=True, indent=4,
+                               separators=(',', ': ')))
+        # Finish
+        print("Wrote {:s} system to {:s} file".format(self.name, outfil))
+
+
     def __repr__(self):
         txt = '<{:s}: name={:s} type={:s}, {:s} {:s}, z={:g}, NHI={:g}'.format(
                 self.__class__.__name__, self.name, self.abs_type,
@@ -421,7 +477,7 @@ class GenericAbsSystem(AbsSystem):
     """Class for Generic Absorption Line System
     """
     def __init__(self, radec, zabs, vlim, **kwargs):
-        AbsSystem.__init__(self, 'Generic', radec, zabs, vlim, **kwargs)
+        AbsSystem.__init__(self, radec, zabs, vlim, abs_type='Generic', **kwargs)
         self.name = 'Foo'
 
     def print_abs_type(self):
@@ -432,7 +488,7 @@ class LymanAbsSystem(AbsSystem):
     """Class for HI Lyman Absorption Line System
     """
     def __init__(self, radec, zabs, vlim, **kwargs):
-        AbsSystem.__init__(self, 'HILyman', radec, zabs, vlim, **kwargs)
+        AbsSystem.__init__(self, radec, zabs, vlim, abs_type='HILyman', **kwargs)
 
     def chk_component(self,component):
         """Require components are only of HI

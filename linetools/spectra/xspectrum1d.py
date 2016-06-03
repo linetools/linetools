@@ -690,7 +690,7 @@ or QtAgg backends to enable all interactive plotting commands.
         return ((self.wavelength - wv_obs) * const.c / wv_obs).to('km/s')
 
     #  Box car smooth
-    def box_smooth(self, nbox, preserve=False):
+    def box_smooth(self, nbox, preserve=False, **kwargs):
         """ Box car smooth the spectrum
 
         Parameters
@@ -700,6 +700,9 @@ or QtAgg backends to enable all interactive plotting commands.
         preserve: bool (False)
           If True, perform a convolution to ensure the new spectrum
           has the same number of pixels as the original.
+        **kwargs: dict
+          If preserve=True, these keywords are passed on to
+          astropy.convoution.convolve
 
         Returns
         -------
@@ -707,8 +710,8 @@ or QtAgg backends to enable all interactive plotting commands.
         """
         if preserve:
             from astropy.convolution import convolve, Box1DKernel
-            new_fx = convolve(self.flux, Box1DKernel(nbox))
-            new_sig = convolve(self.sig, Box1DKernel(nbox))
+            new_fx = convolve(self.flux, Box1DKernel(nbox), **kwargs)
+            new_sig = convolve(self.sig, Box1DKernel(nbox), **kwargs)
             new_wv = self.wavelength
         else:
             # Truncate arrays as need be

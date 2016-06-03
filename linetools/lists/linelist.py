@@ -29,6 +29,7 @@ from linetools.lists import parse as lilp
 # (e.g. MgII). Currently, priority is given to the first one loaded
 # but that may not be the best approach...
 
+
 class LineList(object):
     """
     This Class is designed to organize and handle information about
@@ -83,7 +84,8 @@ class LineList(object):
             # This sets self._data
             self.set_lines(use_ISM_table=use_ISM_table, verbose=verbose,
                            use_cache=use_cache)
-
+        # Memoize
+        self.memoize = {}  # To speed up multiple calls
 
     def load_data(self, use_ISM_table=True, tol=1e-3 * u.AA, use_cache=True):
         """Grab the data for the lines of interest
@@ -621,7 +623,7 @@ class LineList(object):
             name = output['name'][0]
             return self.__getitem__(name)
         else:  # n_max>1
-            if n_max > 1:
+            if (n_max is not None) and (n_max > 1):
                 output = output[:n_max]
             if len(output) == 1:  # return dictionary
                 name = output['name'][0]
@@ -669,8 +671,8 @@ class LineList(object):
         else:
             return out
 
-    def __getitem__(self, k, tol=1e-3 * u.AA):
-        ''' Passback data as a dict (from the table) for the input line
+    def __getitem__(self, k, tol=1e-3*u.AA):
+        """ Passback data as a dict (from the table) for the input line
 
         Parameters
         ----------
@@ -684,48 +686,55 @@ class LineList(object):
         -------
         dict (from row in the data table if only 1 line is found) or
           QTable (tuple when more than 1 lines are found)
-        '''
-        if isinstance(k, (float, Quantity)):  # Wavelength
-            if isinstance(k, float):  # Assuming Ang
-                inwv = k * u.AA
+        """
+        try:
+            tmp = self.memoize[k].copy()
+        except KeyError:
+            if isinstance(k, (float, Quantity)):  # Wavelength
+                if isinstance(k, float):  # Assuming Ang
+                    inwv = k * u.AA
+                else:
+                    inwv = k
+                mt = np.where(np.abs(inwv - self.wrest) < tol)[0]
+            elif isinstance(k, basestring):  # Name
+                if k == 'unknown':
+                    return self.unknown_line()
+                else:
+                    mt = np.where(self.name == str(k))[0]
+            elif isinstance(k, tuple):  # Zion
+                mt = (self._data['Z'] == k[0]) & (self._data['ion'] == k[1])
             else:
-                inwv = k
-            mt = np.where(np.abs(inwv - self.wrest) < tol)[0]
-        elif isinstance(k, basestring):  # Name
-            if k == 'unknown':
-                return self.unknown_line()
-            else:
-                mt = np.where(str(k) == self.name)[0]
-        elif isinstance(k, tuple):  # Zion
-            mt = (self._data['Z'] == k[0]) & (self._data['ion'] == k[1])
-        else:
-            raise ValueError('Not prepared for this type', k)
+                raise ValueError('Not prepared for this type', k)
 
-        # No Match?
-        if len(mt) == 0:
-            # Take closest??
-            if self.closest and (not isinstance(k, basestring)):
-                mt = [np.argmin(np.abs(inwv - self.wrest))]
-                if self.verbose:
-                    print('WARNING: Using {:.4f} for your input {:.4f}'.format(self.wrest[mt[0]],
-                                                                           inwv))
-            else:
-                if self.verbose:
-                    print('No such line in the list', k)
-                return None
+            # No Match?
+            if len(mt) == 0:
+                # Take closest??
+                if self.closest and (not isinstance(k, basestring)):
+                    mt = [np.argmin(np.abs(inwv - self.wrest))]
+                    if self.verbose:
+                        print('WARNING: Using {:.4f} for your input {:.4f}'.format(self.wrest[mt[0]],
+                                                                               inwv))
+                else:
+                    if self.verbose:
+                        print('No such line in the list', k)
+                    return None
 
-        # Now we have something
-        if len(mt) == 1:
-            # Pass back as dict
-            return dict(zip(self._data.dtype.names, self._data[mt][0]))
-            # return self._data[mt][0]  # Pass back as a Row not a Table
-        elif isinstance(k, tuple):
-            return self._data[mt]
-        else:
-            raise ValueError(
-                '{:s}: Multiple lines in the list'.format(self.__class__))
+            # Now we have something
+            if len(mt) == 1:
+                # Pass back as dict
+                self.memoize[k] = dict(zip(self._data.dtype.names, self._data[mt][0]))
+                # return self._data[mt][0]  # Pass back as a Row not a Table
+            elif isinstance(k, tuple):
+                self.memoize[k] = self._data[mt]
+            else:
+                raise ValueError(
+                    '{:s}: Multiple lines in the list'.format(self.__class__))
+            # Finish
+            tmp = self.memoize[k].copy()
+        return tmp
 
     # Printing
     def __repr__(self):
         return '<LineList: {:s}; {} transitions>'.format(self.list, len(self._data))
+
 

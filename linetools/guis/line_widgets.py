@@ -289,9 +289,6 @@ class SelectedLinesWidget(QtGui.QWidget):
         self.lines_widget.clear()
         # Initialize
         self.init_list()
-        #QtCore.pyqtRemoveInputHook()
-        #xdb.set_trace()
-        #QtCore.pyqtRestoreInputHook()
         # Set selected
         for iselect in self.selected:
             self.lines_widget.item(iselect).setSelected(True)
