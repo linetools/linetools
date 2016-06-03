@@ -312,7 +312,6 @@ class AbsSystem(object):
         else:
             return [abslines[ii] for ii in mt]
 
-
     def get_comp_from_absline(self, aline):
         """ Returns the component that holds the input AbsLine
 
