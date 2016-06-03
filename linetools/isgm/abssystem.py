@@ -171,8 +171,10 @@ class AbsSystem(object):
         AbsSystem
 
         """
-        #slf = cls(idict['abs_type'], SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg), idict['zabs'], idict['vlim']*u.km/u.s, zem=idict['zem'], NHI=idict['NHI'], sig_NHI=idict['sig_NHI'], flag_NHI=idict['flag_NHI'], name=idict['Name'] )
-        slf = cls(SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg), idict['zabs'], idict['vlim']*u.km/u.s, zem=idict['zem'], NHI=idict['NHI'], sig_NHI=idict['sig_NHI'], flag_NHI=idict['flag_NHI'], name=idict['Name'] )
+        slf = cls(SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg),
+                  idict['zabs'], idict['vlim']*u.km/u.s, zem=idict['zem'],
+                  NHI=idict['NHI'], sig_NHI=idict['sig_NHI'],
+                  flag_NHI=idict['flag_NHI'], name=idict['Name'] )
         if not skip_components:
             # Components
             if use_coord:  # Speed up performance
