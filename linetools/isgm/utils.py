@@ -171,18 +171,7 @@ def build_components_from_dict(idict, coord=None, **kwargs):
     return components
 
 
-def transtable_from_components(components, ztbl=None, NHI_obj=None):
-    """Generate a QTable summarizing the transitions from a list of components
-    Parameters
-    ----------
-    components
-    ztbl
-    NHI_obj
 
-    Returns
-    -------
-
-    """
 
 def iontable_from_components(components, ztbl=None, NHI_obj=None):
     """Generate a QTable from a list of components

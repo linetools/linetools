@@ -443,6 +443,7 @@ class AbsLine(SpectralLine):
 
         # Additional fundamental attributes for Absorption Line
         self.attrib.update({'N': 0./u.cm**2, 'sig_N': 0./u.cm**2, 'flag_N': 0, # Column
+                            'logN': 0., 'sig_logN': 0.,
                        'b': 0.*u.km/u.s, 'sig_b': 0.*u.km/u.s  # Doppler
                        } )
 
