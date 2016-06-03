@@ -543,7 +543,23 @@ class AbsLine(SpectralLine):
         # Log
         laa.log_clm(self.attrib)
 
-    # Output
+    def __getitem__(self, k):
+        """  Passback a data bit from the Line
+        """
+        try:
+            return getattr(self,k)
+        except AttributeError:
+            try:
+                return self.attrib[k]
+            except KeyError:
+                try:
+                    return self.analy[k]
+                except KeyError:
+                    try:
+                        return self.data[k]
+                    except KeyError:
+                        return None
+
     def __repr__(self):
         txt = '<{:s}:'.format(self.__class__.__name__)
         # Name
