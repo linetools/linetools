@@ -3,7 +3,6 @@
 
 from __future__ import print_function, absolute_import, division, unicode_literals
 
-    # # # TEST_UNICODE_LITERALS
 
 import os, sys
 import pdb
@@ -63,10 +62,8 @@ def test_rdspec():
     ispec = lsio.readspec(data_path('UM184_nF.fits'))
     spec, spec_fil = ltgu.read_spec(ispec)
 
-"""
 def test_xspecgui():
     # Init
     spec_fil = data_path('UM184_nF.fits')
     app = QtGui.QApplication(sys.argv)
     xsgui = xspecgui.XSpecGui(spec_fil, unit_test=True)
-"""
