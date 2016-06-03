@@ -3,13 +3,16 @@
 
 from __future__ import print_function, absolute_import, division, unicode_literals
 
-# TEST_UNICODE_LITERALS
+    # # # TEST_UNICODE_LITERALS
 
-import os
+import os, sys
 import pdb
 import pytest
 from astropy import units as u
 
+from PyQt4 import QtGui
+
+from linetools.guis import xspecgui
 from linetools.guis import utils as ltgu
 from linetools.spectra import io as lsio
 
@@ -60,3 +63,10 @@ def test_rdspec():
     ispec = lsio.readspec(data_path('UM184_nF.fits'))
     spec, spec_fil = ltgu.read_spec(ispec)
 
+"""
+def test_xspecgui():
+    # Init
+    spec_fil = data_path('UM184_nF.fits')
+    app = QtGui.QApplication(sys.argv)
+    xsgui = xspecgui.XSpecGui(spec_fil, unit_test=True)
+"""

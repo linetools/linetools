@@ -17,7 +17,7 @@ class XSpecGui(QtGui.QMainWindow):
     """ GUI to replace XIDL x_specplot (which simulated a GUI by T. Barlow)
     """
     def __init__(self, ispec, parent=None, zsys=None, norm=None, exten=None,
-                 rsp_kwargs=None):
+                 rsp_kwargs={}, unit_test=False):
         QtGui.QMainWindow.__init__(self, parent)
         """
         ispec = str, Spectrum1D or tuple of arrays
@@ -78,6 +78,8 @@ class XSpecGui(QtGui.QMainWindow):
 
         # Point MainWindow
         self.setCentralWidget(self.main_widget)
+        if unit_test:
+            self.quit()
 
     def create_status_bar(self):
         """ Status bar for the GUI
