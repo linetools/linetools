@@ -47,6 +47,13 @@ EW flag          attrib['flag_EW'] int       Equivalent width flag
 
 .. _specanalysis
 
+You can access these attributes with a getitem call, e.g.::
+
+   specline['EW']
+
+A search is performed through the object attributes (e.g. wrest),
+the attrib dict, the analy dict, and then the data dict.
+
 Analysis
 ========
 
@@ -54,9 +61,9 @@ It is common that one wishes to associate a line with a spectrum
 to perform a range of analyses.
 This is accomplished through::
 
-   spline.analy['spec'] = sp
+   specline.analy['spec'] = spec
 
-where sp is an :ref:`XSpectrum1D` object.
+where spec is an :ref:`XSpectrum1D` object.
 
 Methods
 =======
@@ -72,7 +79,7 @@ to the line's redshift.  The code returns the flux, error array,
 and a *dict* containing the wavelength and velocity arrays.
 ::
 
-   spline.analy['vlim'] = [-300., 300.]*u.km/u.s
+   specline.analy['vlim'] = [-300., 300.]*u.km/u.s
    fx, sig, wv_dict = spline.cut_spec()
 
 ismatch
@@ -127,7 +134,7 @@ be easily written to the disk, e.g.::
 
    adict = specline.to_dict()
    with io.open(outfil, 'w', encoding='utf-8') as f:
-      f.write(unicode(json.dumps(tdict, sort_keys=True,
-         indent=4, separators=(',', ': '))))
+      f.write(json.dumps(tdict, sort_keys=True,
+         indent=4, separators=(',', ': ')))
 
 
