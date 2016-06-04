@@ -10,22 +10,26 @@ from astropy.units import Quantity
 
 from .spectralline import AbsLine
 
-def parse_speclines(abslines, key, mk_array=False):
-    """ Generate a list or array of items from a list of AbsLines
+def parse_speclines(speclines, key, mk_array=False):
+    """ Generate a list or array of items from a list of SpectralLines
+    for a given key
 
     Parameters
     ----------
     abslines : list of AbsLine objects
     key : str
+      Property of interest, e.g. 'wrest', 'EW', 'f'
+    mk_array : bool, optional
+      Return an array (or Quantity array) instead of a list
 
     Returns
     -------
-    items : list
+    items : list or array
 
     """
     out_list = []
     # Ugly loop
-    for iline in abslines:
+    for iline in speclines:
         try:
             out_list.append(getattr(iline,key))
         except AttributeError:
@@ -49,11 +53,13 @@ def parse_speclines(abslines, key, mk_array=False):
         return out_list
 
 
-def transtable_from_speclines(abslines, add_keys=None):
-    """Generate a Table summarizing the transitions from a list of AbsLines
+def transtable_from_speclines(speclines, add_keys=None):
+    """Generate a Table summarizing the transitions from a list of SpectralLines
     Parameters
     ----------
     speclines : list of SpectralLine objects
+    add_keys : list, optional
+      Additional keys to include in Table
 
     Returns
     -------
@@ -61,7 +67,7 @@ def transtable_from_speclines(abslines, add_keys=None):
 
     """
     keys = ['wrest','name','Z', 'ion', 'Ej', 'z', 'EW', 'sig_EW']
-    if isinstance(abslines[0], AbsLine):
+    if isinstance(speclines[0], AbsLine):
         keys += ['flag_N', 'logN', 'sig_logN']
     if add_keys is not None:
         keys += add_keys
@@ -71,7 +77,7 @@ def transtable_from_speclines(abslines, add_keys=None):
 
     # Loop to my loop
     for key in keys:
-        tbl[key] = parse_speclines(abslines, key, mk_array=True)
+        tbl[key] = parse_speclines(speclines, key, mk_array=True)
 
     # Sort
     tbl.sort(['Z','ion','Ej','wrest'])

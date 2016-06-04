@@ -171,7 +171,21 @@ def build_components_from_dict(idict, coord=None, **kwargs):
     return components
 
 
+def xhtbl_from_components(components, ztbl=None, NHI_obj=None):
+    """ Generate a Table of XH values from a list of components
+    Parameters
+    ----------
+    components
+    ztbl
+    NHI_obj
 
+    Returns
+    -------
+
+    """
+    # Get started
+    tbl = Table()
+    #
 
 def iontable_from_components(components, ztbl=None, NHI_obj=None):
     """Generate a Table from a list of components

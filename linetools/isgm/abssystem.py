@@ -404,7 +404,7 @@ class AbsSystem(object):
             # Measure
             iline.measure_aodm(**kwargs)
         #
-        print("You may now wish to update the component column densities")
+        print("You may now wish to update the component column densities with update_component_colm()")
 
     def update_component_colm(self, **kwargs):
         """ Synthesize/update column density measurements for components
