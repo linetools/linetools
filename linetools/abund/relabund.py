@@ -58,24 +58,27 @@ class RelAbund(object):
         # Loop through the input Table
         for row in tbl:
             # Check Ej -- ground-state only
-            if ('Ej' in tblkeys) & (row['Ej'] > 0.):  # Not expecting units
-                continue
+            if 'Ej' in tblkeys:
+                if row['Ej'] > 0.:  # Not expecting units
+                    continue
             # Skip Hydrogen
             if row['Z'] == 1:
                 continue
             # Low-ion?
             elm = slf.elements[row['Z']]
             if row['ion'] == 1:
-                if elm.ionenergy[row['ion']] < 13.6:
+                if elm.ionenergy[row['ion']-1] < 13.6:
                     continue
-            if (elm.ionenergy[row['ion']-2] < 13.6) & (elm.ionenergy[row['ion']-1] > 13.6):
-                # Calculate
-                XH = row['logN'] - NHI[1] + 12 - slf.solar[row['Z']]
-                sigXH = np.sqrt(row['sig_logN']**2 + NHI[2]**2)  # Crude but ok
-                # Fill it up
-                slf._data[row['Z']] = dict(flag=row['flag_N'], XH=XH, sigXH=sigXH,
-                                           sig=row['sig_logN'],  # For relative abundances
-                                           )
+            else:
+                if (elm.ionenergy[row['ion']-2] > 13.6) or (elm.ionenergy[row['ion']-1] < 13.6):
+                    continue
+            # Calculate
+            XH = row['logN'] - NHI[1] + 12 - slf.solar[row['Z']]
+            sigXH = np.sqrt(row['sig_logN']**2 + NHI[2]**2)  # Crude but ok
+            # Fill it up
+            slf._data[row['Z']] = dict(flag=row['flag_N'], XH=XH, sigXH=sigXH,
+                                       sig=row['sig_logN'],  # For relative abundances
+                                       )
         # Return
         return slf
 
@@ -88,28 +91,12 @@ class RelAbund(object):
         """
         # Init
         self.solar_ref = solar_ref
-        self._data = {}
+        self._data = {}  # Standard keys are flag, XH, sigXH, sig
 
         # Load Solar abundances
         self.solar = SolarAbund(ref=self.solar_ref, verbose=verbose)
         # Load ELEMENTS too
         self.elements = ltae.ELEMENTS
-
-    def get_ratio(self, rtio):
-        """ Return abundance ratio
-
-        Parameters
-        ----------
-        rtio : str 
-          Element ratio (e.g. 'Si/Fe')        
-        """
-        # Elements
-        elm1, elm2 = rtio.split('/')
-        # Abundances
-        ab1 = self[elm1]
-        ab2 = self[elm2]
-        # ratio
-        return ab1 - ab2
 
     def table(self, Y=1):
         """ Generate an [X/Y] table from the dict.  Default is [X/H]
@@ -154,6 +141,8 @@ class RelAbund(object):
             tbl[clm] = lists[jj]
         # Sort
         tbl.sort('Z')
+        # Meta
+        tbl['flag'].meta = {1:'Value', 2:'Lower limit', 3:'Upper Limit'}
         # Return
         return tbl
 
