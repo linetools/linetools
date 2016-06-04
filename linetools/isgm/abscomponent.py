@@ -378,7 +378,6 @@ class AbsComponent(object):
                     print('Resetting vlim1 from {}'.format(aline))
                 self.vlim[1] = aline.analy['vlim'][1]
 
-
     def synthesize_colm(self, overwrite=False, redo_aodm=False, **kwargs):
         """Synthesize column density measurements of the component.
         Default is to use the current AbsLine values, but the user can
@@ -428,11 +427,12 @@ class AbsComponent(object):
             elif aline.attrib['flag_N'] == 2:  # Lower limit
                 if self.flag_N in [0, 3]:
                     self.N = aline.attrib['N']
-                    self.sig_N = 99. / u.cm**2
+                    self.sig_N = aline.attrib['sig_N']
                     self.flag_N = 2
                 elif self.flag_N == 2:
-                    self.N = max(self.N, aline.attrib['N'])
-                    self.sig_N = 99. / u.cm**2
+                    if aline.attrib['N'] > self.N:
+                        self.N = aline.attrib['N']
+                        self.sig_N = aline.attrib['sig_N']
                 elif self.flag_N == 1:
                     pass
             elif aline.attrib['flag_N'] == 3:  # Upper limit

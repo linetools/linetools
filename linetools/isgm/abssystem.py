@@ -22,6 +22,7 @@ from astropy.coordinates import SkyCoord
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.isgm import utils as ltiu
 from linetools import utils as ltu
+from linetools import line_utils as ltlu
 from linetools.spectralline import AbsLine
 from linetools.abund import ions
 
@@ -170,8 +171,10 @@ class AbsSystem(object):
         AbsSystem
 
         """
-        #slf = cls(idict['abs_type'], SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg), idict['zabs'], idict['vlim']*u.km/u.s, zem=idict['zem'], NHI=idict['NHI'], sig_NHI=idict['sig_NHI'], flag_NHI=idict['flag_NHI'], name=idict['Name'] )
-        slf = cls(SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg), idict['zabs'], idict['vlim']*u.km/u.s, zem=idict['zem'], NHI=idict['NHI'], sig_NHI=idict['sig_NHI'], flag_NHI=idict['flag_NHI'], name=idict['Name'] )
+        slf = cls(SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg),
+                  idict['zabs'], idict['vlim']*u.km/u.s, zem=idict['zem'],
+                  NHI=idict['NHI'], sig_NHI=idict['sig_NHI'],
+                  flag_NHI=idict['flag_NHI'], name=idict['Name'] )
         if not skip_components:
             # Components
             if use_coord:  # Speed up performance
@@ -216,9 +219,10 @@ class AbsSystem(object):
         # Kinematics
         self.kin = {}
 
-        # Abundances
+        # Abundances and Tables
         self._EW = QTable()
         self._ionN = QTable()
+        self._trans = QTable()
         self._ionstate = {}
         self._abund = QTable()
 
@@ -275,6 +279,11 @@ class AbsSystem(object):
         """ Fills the ionN Table from the list of components
         """
         self._ionN = ltiu.iontable_from_components(self._components, **kwargs)
+
+    def fill_trans(self, **kwargs):
+        """ Fills the ionN Table from the list of components
+        """
+        self._trans = ltlu.transtable_from_speclines(self.list_of_abslines())
 
     def get_absline(self, inp):
         """ Returns an AbsLine from the AbsSystem
@@ -350,6 +359,66 @@ class AbsSystem(object):
         # Return
         return [iline for component in self._components
                 for iline in component._abslines]
+
+    def measure_restew(self, spec=None, **kwargs):
+        """ Measure rest-frame EWs for lines in the AbsSystem
+        Parameters
+        ----------
+        spec : XSpectrum1D, optional
+        kwargs
+
+        Returns
+        -------
+
+        """
+        # Grab Lines
+        abs_lines = self.list_of_abslines()
+        # Loop
+        for iline in abs_lines:
+            # Fill in spec?
+            if spec is not None:
+                iline.analy['spec'] = spec
+            # Measure
+            iline.measure_restew(**kwargs)
+
+    def measure_aodm(self, spec=None, **kwargs):
+        """ Measure ADOM columns for the list of lines
+        Note: Components are *not* updated by default
+
+        Parameters
+        ----------
+        spec : XSpectrum1D, optional
+        kwargs
+
+        Returns
+        -------
+
+        """
+        # Grab Lines
+        abs_lines = self.list_of_abslines()
+        # Loop
+        for iline in abs_lines:
+            # Fill in spec?
+            if spec is not None:
+                iline.analy['spec'] = spec
+            # Measure
+            iline.measure_aodm(**kwargs)
+        #
+        print("You may now wish to update the component column densities with update_component_colm()")
+
+    def update_component_colm(self, **kwargs):
+        """ Synthesize/update column density measurements for components
+
+        Parameters
+        ----------
+        kwargs
+
+        Returns
+        -------
+
+        """
+        for comp in self._components:
+            comp.synthesize_colm(**kwargs)
 
     def to_dict(self):
         """ Write AbsSystem data to a dict that can be written with JSON

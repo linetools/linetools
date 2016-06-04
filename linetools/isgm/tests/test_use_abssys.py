@@ -4,14 +4,16 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 # TEST_UNICODE_LITERALS
 
+import numpy as np
+import os
 import pytest
 from astropy import units as u
 from astropy.coordinates import SkyCoord
-import numpy as np
 
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.isgm.abssystem import AbsSystem, GenericAbsSystem, LymanAbsSystem
 from linetools.spectralline import AbsLine
+from linetools.spectra import io
 
 import pdb
 
@@ -20,8 +22,14 @@ try:
 except NameError:
     unicode = str
 
+def data_path(filename):
+    data_dir = os.path.join(os.path.dirname(__file__), '../../spectra/tests/files')
+    return os.path.join(data_dir, filename)
 
-def test_list_of_abslines():
+def test_methods():
+    # Grab spectrum
+    spec = io.readspec(data_path('UM184_nF.fits'))
+    # Generate GenericAbsSystem
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
     # HI Lya, Lyb
     lya = AbsLine(1215.670*u.AA)
@@ -50,11 +58,20 @@ def test_list_of_abslines():
     abslines = gensys.list_of_abslines()
     # Test
     assert len(abslines) == 6
+    # Measure EWs
+    gensys.measure_restew(spec=spec)
+    # Measure AODM
+    gensys.measure_aodm(spec=spec)
+    # trans table
+    gensys.fill_trans()
+    assert len(gensys._trans) == 6
     # Grab one line
     lyb = gensys.get_absline('HI 1025')
     np.testing.assert_allclose(lyb.wrest.value, 1025.7222)
     lyb = gensys.get_absline(1025.72*u.AA)
     np.testing.assert_allclose(lyb.wrest.value, 1025.7222)
+    # Component columns
+    gensys.update_component_colm()
     # ionN
     gensys.fill_ionN()
     assert len(gensys._ionN) == 2
