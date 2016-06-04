@@ -95,6 +95,7 @@ package_info['package_data'][PACKAGENAME] += data_files
 entry_points = {}
 entry_points['console_scripts'] = [
     'lt_absline = linetools.scripts.lt_absline:main',
+    'lt_xabssys = linetools.scripts.lt_xabssys:main',
     'lt_xspec = linetools.scripts.lt_xspec:main',
     'lt_continuumfit = linetools.scripts.lt_continuumfit:main',
     'lt_plot = linetools.scripts.lt_plot:main',
