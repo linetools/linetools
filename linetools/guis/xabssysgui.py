@@ -61,7 +61,7 @@ class XAbsSysGui(QtGui.QDialog):
         self.vmnx = vmnx
         if outfil is None:
             self.outfil = 'tmp_abskin.json'
-            warnings.warn("Outfil not specified.  Using {:s} as the default".format(outfil))
+            warnings.warn("Outfil not specified.  Using {:s} as the default".format(self.outfil))
         else:
             self.outfil = outfil
         self.norm = norm
