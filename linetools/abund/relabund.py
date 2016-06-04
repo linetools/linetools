@@ -8,6 +8,7 @@ try:
     basestring
 except NameError:
     basestring = str
+import numbers
 
 import numpy as np
 import pdb
@@ -166,7 +167,7 @@ class RelAbund(object):
            * 'sig' -- sigma([X/Y])  rough estimate
         """
         flag_XH = True
-        if isinstance(k, (int, basestring)): # XH
+        if isinstance(k, (numbers.Integral, basestring)): # XH
             Xint = self.elements[k].number
             XHdict = self._data[Xint]
         elif isinstance(k, (tuple,list)):  # XY
