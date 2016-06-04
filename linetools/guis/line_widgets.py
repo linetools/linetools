@@ -16,7 +16,8 @@ from linetools.lists.linelist import LineList
 class PlotLinesWidget(QtGui.QWidget):
     """ Widget to set up spectral lines for plotting
     """
-    def __init__(self, parent=None, status=None, init_llist=None, init_z=None):
+    def __init__(self, parent=None, status=None, init_llist=None, init_z=None,
+                 edit_z=True):
         """
         Parameters
         ----------
@@ -25,6 +26,8 @@ class PlotLinesWidget(QtGui.QWidget):
         init_llist : input LineList dictionary (from another widget)
         init_z : float, optional
           Initial redshift
+        edit_z : bool, optional
+          Allow z to be editable
 
         Returns
         -------
@@ -39,12 +42,15 @@ class PlotLinesWidget(QtGui.QWidget):
             init_z = 0.
 
         # Create a dialog window for redshift
-        z_label = QtGui.QLabel('z=')
-        self.zbox = QtGui.QLineEdit()
-        self.zbox.z_frmt = '{:.7f}'
-        self.zbox.setText(self.zbox.z_frmt.format(init_z))
-        self.zbox.setMinimumWidth(50)
-        self.connect(self.zbox, QtCore.SIGNAL('editingFinished ()'), self.setz)
+        if edit_z:
+            z_label = QtGui.QLabel('z=')
+            self.zbox = QtGui.QLineEdit()
+            self.zbox.z_frmt = '{:.7f}'
+            self.zbox.setText(self.zbox.z_frmt.format(init_z))
+            self.zbox.setMinimumWidth(50)
+            self.connect(self.zbox, QtCore.SIGNAL('editingFinished ()'), self.setz)
+        else:
+            z_label = QtGui.QLabel('z={:.7f}'.format(init_z))
 
         # Create the line list
         self.lists = ['None', 'ISM', 'Strong', 'HI', 'Galaxy', 'H2', 'EUV']
@@ -77,13 +83,14 @@ class PlotLinesWidget(QtGui.QWidget):
                 self.llist_widget.setCurrentRow(idx)
             try:
                 self.zbox.setText(self.zbox.z_frmt.format(init_llist['z']))
-            except KeyError:
+            except (AttributeError, KeyError):
                 pass
 
         # Layout
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(z_label)
-        vbox.addWidget(self.zbox)
+        if edit_z:
+            vbox.addWidget(self.zbox)
         vbox.addWidget(list_label)
         vbox.addWidget(self.llist_widget)
 

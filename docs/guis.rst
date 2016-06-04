@@ -14,6 +14,7 @@ Notebooks
 
    Continuum fitting <Interactive_continuum_fitting_example>
    XSpecGui <xspecgui>
+   XAbsSysGui <xabssysgui>
 
 Overview
 ========
@@ -42,4 +43,11 @@ This enables visual inspection of a spectrum.  Simple analysis
 notebook for details.
 
 
+XAbsSysGui
+==========
 
+This shows a velocity (stack) plot of the absorption lines from
+an input absorption line system.  The user can then modify the
+velocity limits that would be used for subsequent analysis, flag
+bad lines, blends, set limits, etc.  The modified absoprtion system
+is then written to the hard-drive as a JSON file.
