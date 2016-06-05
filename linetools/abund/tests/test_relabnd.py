@@ -63,3 +63,10 @@ def test_from_iontbl():
     assert len(XY._data.keys()) == 3
     with pytest.raises(KeyError):
         XY[6]
+
+def test_table():
+    # Generate
+    XY = make_class()
+    #
+    tbl = XY.table()
+    assert len(tbl) == 5

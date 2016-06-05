@@ -111,16 +111,18 @@ class RelAbund(object):
         -------
 
         """
-        clms = ['flag', '[X/Y]', 'sig([X/Y])']
-        dkeys = ['flag', 'val', 'sig']
-        lists = [[] for x in xrange(len(clms))]
         # Init
         if isinstance(Y,basestring):
             Yint = self.elements[Y].number
-        elif isinstance(Y,int):
+        elif isinstance(Y,numbers.Integral):
             Yint = Y
         else:
             raise IOError("Bad Y input {}".format(Y))
+        Yc = self.elements[Yint].symbol
+        #
+        clms = ['flag', '[X/{:s}]'.format(Yc), 'sig([X/{:s}])'.format(Yc)]
+        dkeys = ['flag', 'val', 'sig']
+        lists = [[] for x in xrange(len(clms))]
         # List it
         Zlist, nlist = [], []
         for key in self._data.keys():
