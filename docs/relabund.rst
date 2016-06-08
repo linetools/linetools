@@ -23,6 +23,13 @@ an AbsSystem.
 Instantation
 ============
 
+Init
+----
+
+One can instantiate via the init and then fill the
+data dict.  This is a bit cumbersome and not
+especially recommended. But here is an example.
+
 To begin, make a new class instance::
 
    XY = RelAbund()
@@ -37,12 +44,33 @@ Then load data into the data dict.  Here is an example::
             32: dict(flag=3, XH=-0.8, sigXH=0.25, sig=0.05),
             }
 
-More frequent usage will be to instantate using an input
+The flag value indicate the type of measurement:
+
+==== =========================================
+Flag Description
+==== =========================================
+1    Standard value (and error)
+2    Lower limit (e.g. saturated line)
+3    Upper limit (e.g. blend or non-detection)
+==== =========================================
+
+Ionic Column Table
+------------------
+
+More frequent usage will be to instantiate using an input
 table of column density measurements, e.g.::
 
    dla.XY = RelAbund.from_ionclm_table((1,dla.NHI, dla.sig_NHI[0]), dla._ionN)
 
 See pyigm DLA abund Notebook for more.
+
+
+By Hand
+-------
+
+For quick and dirty abundance calculations, you may find
+the from_pair method useful::
+
 
 Usage
 =====

@@ -43,6 +43,9 @@ def test_item():
     OFe = XY[8,26]
     assert OFe['flag'] == 2
 
+def test_from_clmpair():
+    CSi = RelAbund.from_clm_pair('C', 13.5, 'Si', 13.2)
+    np.testing.assert_allclose(CSi[6,14]['val'], -0.62)
 
 def test_from_iontbl():
     # Low-ions

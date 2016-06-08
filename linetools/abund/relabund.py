@@ -27,12 +27,55 @@ class RelAbund(object):
     ----------
     """
     @classmethod
+    def from_clm_pair(cls, X, NX, Y, NY, sigNX=0.1, sigNY=0.1,
+                      NH=None, **kwargs):
+        """ Instantiate from a pair of column density measurements
+
+        Parameters
+        ----------
+        X : str or int
+          Element 1 (e.g. 'C' or 6)
+        NX : float
+          log10 column of X
+        Y : str or int
+          Element 2 (e.g. 'C' or 6)
+        NY : float
+          log10 column of Y
+        sigNX : float, optional
+          Error in NX
+        sigNY : float, optional
+          Error in NY
+        NH : list, optional
+          flag_NH, logNH, sig_logNH
+
+        Returns
+        -------
+        RelAbund
+          Also prints value of [X/Y]
+
+        """
+        # Instantiate
+        slf = cls(**kwargs)
+        # NH
+        if NH is None:
+            slf.NH = [1,21.0,0.1]
+            print('Adopting arbitrary log NH={:f} for [X/H] values'.format(slf.NH[1]))
+        else:
+            slf.NH = NH
+        # Add em in
+        slf.add_elmbyclm(1, X, NX, sigNX)
+        slf.add_elmbyclm(1, Y, NY, sigNY)
+        # Print as we go
+        print("Input ratio [{}/{}]={}".format(X,Y,slf[X,Y]))
+        return slf
+
+    @classmethod
     def from_ionclm_table(cls, NHI, tbl, low_ions=True, **kwargs):
         """ Generate class from an input table of ionic column densities
 
         Parameters
         ----------
-        NHI : tuple  (int, float, float)
+        NHI : list  [int, float, float]
           flag_NHI, logNHI, sig_logNHI
         tbl : Table
         low_ions : bool, optional
@@ -56,6 +99,10 @@ class RelAbund(object):
             raise IOError("Not ready for this NHI flag")
         # Start the class
         slf = cls(**kwargs)
+        # Store NH
+        slf.NHI = NHI
+        if low_ions:
+            slf.NH = slf.NHI
         # Loop through the input Table
         for row in tbl:
             # Check Ej -- ground-state only
@@ -92,12 +139,40 @@ class RelAbund(object):
         """
         # Init
         self.solar_ref = solar_ref
-        self._data = {}  # Standard keys are flag, XH, sigXH, sig
+        self._data = {}  # Nested dict.  Top keys are atomic number (6, 14, 26)
+            #  Next dict keys are flag, XH, sigXH, sig
 
         # Load Solar abundances
         self.solar = SolarAbund(ref=self.solar_ref, verbose=verbose)
         # Load ELEMENTS too
         self.elements = ltae.ELEMENTS
+
+    def add_elmbyclm(self, flag, X, NX, sigNX, clobber=False):
+        """ Add an entry with a column density
+        Requires NH to be set previously
+
+        Parameters
+        ----------
+        flag
+        X
+        NX
+        sigNX
+
+        Returns
+        -------
+
+        """
+        if hasattr(self,'NH') is False:
+            raise IOError("This method requires self.NH to be set previously")
+        # Setup
+        Xint = self.elements[X].number
+        if (Xint in self._data.keys()) and (clobber is False):
+            print("Not overwriting elm={:d}.  Use clobber to do so".format(Xint))
+        XH = NX - self.NH[1] + 12 - self.solar[Xint]
+        # Write
+        self._data[Xint] = dict(flag=flag, XH=XH,
+                                sigXH=np.sqrt(self.NH[2]**2 + sigNX**2),
+                                sig=sigNX)
 
     def table(self, Y=1):
         """ Generate an [X/Y] table from the dict.  Default is [X/H]
