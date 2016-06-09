@@ -39,6 +39,7 @@ Core classes
 
    AbsComponent <abscomp>
    AbsSystem <abssys>
+   RelAbund <relabund>
    SolarAbund <solar>
    LineList <linelist>
    SpectralLine <specline>

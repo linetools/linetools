@@ -10,6 +10,7 @@ except NameError:
     basestring = str
 
 import numpy as np
+import numbers
 import imp
 
 from astropy import constants as const
@@ -97,7 +98,7 @@ class SolarAbund(object):
             out_abnd = np.array(out_abnd)
             return out_abnd
 
-        if isinstance(k, int): # Atomic number
+        if isinstance(k, numbers.Integral): # Atomic number
             mt = np.where(self._data['Z'] == k)[0]
             if len(mt) != 1:
                 raise ValueError('Atomic Number not in Table: {:d}'.format(k))

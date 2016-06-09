@@ -230,6 +230,7 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
     names = cols.keys()
     dtypes = [cols[key] for key in names]
     iontbl = Table(names=names,dtype=dtypes)
+    iontbl['Ej'].unit=1./u.cm
     iontbl['vmin'].unit=u.km/u.s
     iontbl['vmax'].unit=u.km/u.s
 
