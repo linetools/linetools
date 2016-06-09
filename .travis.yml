@@ -55,8 +55,8 @@ matrix:
           env: SETUP_CMD='test'
 
         # Try older numpy versions.
-        - python: 2.7
-          env: NUMPY_VERSION=1.9 SETUP_CMD='test'
+        # - python: 2.7
+        # env: NUMPY_VERSION=1.9 SETUP_CMD='test'
 
 before_install:
 
