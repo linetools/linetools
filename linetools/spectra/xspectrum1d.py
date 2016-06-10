@@ -84,6 +84,8 @@ class XSpectrum1D(object):
         sort : bool, optional
           Sort by wavelength?
         """
+        if not isinstance(ituple,tuple):
+            raise IOError("Input tuple only")
         # Parse wavelength
         try:
             wv_unit = ituple[0].unit
@@ -667,7 +669,7 @@ or QtAgg backends to enable all interactive plotting commands.
             new_co = None
 
         newspec = XSpectrum1D.from_tuple((new_wv, new_fx*funit,
-                                          new_sig*funit, new_co),
+                                          new_sig, new_co),
                                          meta=self.meta.copy())
         # Return
         return newspec

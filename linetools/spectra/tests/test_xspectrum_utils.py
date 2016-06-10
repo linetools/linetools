@@ -86,6 +86,10 @@ def test_rebin(spec):
     # Test
     np.testing.assert_allclose(newspec.flux[1000].value, 0.9999280967617779)
     assert newspec.flux.unit == funit
+    # Without sig
+    spec_nosig = XSpectrum1D.from_tuple((spec.wavelength, spec.flux))
+    newspec = spec.rebin(new_wv)
+    assert newspec.sig_is_set is False
 
 
 def test_relvel(spec):
