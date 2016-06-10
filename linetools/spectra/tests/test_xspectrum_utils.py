@@ -77,13 +77,19 @@ def test_print_repr(spec):
 
 
 def test_rebin(spec):
+    # Add units
+    funit = u.erg/u.s/u.cm**2
+    spec.units['flux'] = funit
     # Rebin
     new_wv = np.arange(3000., 9000., 5) * u.AA
     newspec = spec.rebin(new_wv, do_sig=True)
     # Test
-
-    np.testing.assert_allclose(newspec.flux[1000], 0.9999280967617779)
-    assert newspec.flux.unit == u.dimensionless_unscaled
+    np.testing.assert_allclose(newspec.flux[1000].value, 0.9999280967617779)
+    assert newspec.flux.unit == funit
+    # Without sig
+    spec_nosig = XSpectrum1D.from_tuple((spec.wavelength, spec.flux))
+    newspec = spec.rebin(new_wv)
+    assert newspec.sig_is_set is False
 
 
 def test_relvel(spec):

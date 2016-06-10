@@ -84,6 +84,8 @@ class XSpectrum1D(object):
         sort : bool, optional
           Sort by wavelength?
         """
+        if not isinstance(ituple,tuple):
+            raise IOError("Input tuple only")
         # Parse wavelength
         try:
             wv_unit = ituple[0].unit
@@ -585,6 +587,9 @@ or QtAgg backends to enable all interactive plotting commands.
         XSpectrum1D of the rebinned spectrum
         """
         from scipy.interpolate import interp1d
+        # Save flux info to avoid unit issues
+        funit = self.flux.unit
+        flux = self.flux.value
 
         # Endpoints of original pixels
         npix = len(self.wavelength)
@@ -597,12 +602,12 @@ or QtAgg backends to enable all interactive plotting commands.
 
         # Error
         if do_sig:
-            var = self.sig**2
+            var = self.sig.value**2
         else:
-            var = np.ones_like(self.flux)
+            var = np.ones_like(flux)
 
         # Cumulative Sum
-        cumsum = np.cumsum(self.flux * dwv)
+        cumsum = np.cumsum(flux * dwv)
         cumvar = np.cumsum(var * dwv)
 
         # Interpolate (loses the units)
@@ -663,7 +668,8 @@ or QtAgg backends to enable all interactive plotting commands.
         else:
             new_co = None
 
-        newspec = XSpectrum1D.from_tuple((new_wv, new_fx, new_sig, new_co),
+        newspec = XSpectrum1D.from_tuple((new_wv, new_fx*funit,
+                                          new_sig, new_co),
                                          meta=self.meta.copy())
         # Return
         return newspec
