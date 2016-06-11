@@ -17,24 +17,32 @@ try:
 except NameError:
     ustr = str
 
-def main(args=None):
+def parser(options=None):
     import argparse
     # Parse
     parser = argparse.ArgumentParser(
         description='Print spectral line data of a line or lines.')
-    parser.add_argument("inp1", nargs='?', default=None, help="Ion, transition name, or Rest wavelength (e.g. HI, HI1215 or 1215)")
+    parser.add_argument("inp", nargs='?', default=None, help="Ion, transition name, or Rest wavelength (e.g. HI, HI1215 or 1215)")
     parser.add_argument("-all", default=False, action='store_true', help="Print all lines")
     parser.add_argument("-llist", default='ISM', action='store_true', help="Name of LineList:  ISM, HI, H2, CO, etc.")
     parser.add_argument("-toler", default=1., action='store_true', help="Matching tolerance (in Ang) on input wavelength")
     #parser.add_argument("wave", type=str, default=None, help="Rest wavelength in Angstroms")
 
-    pargs = parser.parse_args()
-    if pargs.inp1 is None and pargs.all is False:
+    if options is None:
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(options)
+    return args
+
+def main(args=None):
+    pargs = parser(options=args)
+    if pargs.inp is None and pargs.all is False:
         print("No option selected.  Use -h for Help")
         return
     # Setup
     from astropy import units as u
     from linetools.lists.linelist import LineList
+    from linetools.abund import ions as ltai
     import numpy as np
     cols = ['name', 'wrest', 'f', 'A']
     # LineList
@@ -44,10 +52,27 @@ def main(args=None):
         llist._data[cols].pprint(99999)
         return
     # Grab line(s)
-    if ustr(pargs.inp1[0]).isdecimal():
-        wrest = float(pargs.inp1)*u.AA
+    if ustr(pargs.inp[0]).isdecimal():  # Input rest wavelength
+        wrest = float(pargs.inp)*u.AA
         mtch = np.abs(wrest-llist.wrest) < pargs.toler*u.AA
         llist._data[cols][mtch].pprint(99999)
+    else:  # Either ion or transition
+        istrans = False
+        for jj,char in enumerate(pargs.inp):
+            if char.isdigit():
+                istrans = True
+                i0 = jj
+                break
+        if istrans:
+            trans = pargs.inp[0:i0]+' '+pargs.inp[i0:]
+            tdict = llist[trans]
+            for key,value in tdict.items():
+                if key in cols:
+                    print('{:s}: {}'.format(key,value))
+        else:  # Ion
+            Zion = ltai.name_ion(pargs.inp)
+            mtion = (llist.Z == Zion[0]) & (llist.ion == Zion[1])
+            llist._data[cols][mtion].pprint(99999)
 
 
 if __name__ == '__main__':
