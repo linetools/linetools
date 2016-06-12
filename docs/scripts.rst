@@ -67,6 +67,18 @@ Try::
 
 for the full set of options.
 
+lt_line
+-------
+
+Print the atomic data for an input ion, transition or for an
+entire linelist.::
+
+    lt_line -h
+    lt_line HI
+    lt_line HI1215
+    lt_line 1215
+    lt_line -all
+
 lt_continuumfit
 ---------------
 
