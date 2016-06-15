@@ -16,7 +16,7 @@ def main(*args, **kwargs):
     parser = argparse.ArgumentParser(description='Parse for XSpec')
     parser.add_argument("file", type=str, help="Spectral file")
     parser.add_argument("--zsys", type=float, help="System Redshift")
-    parser.add_argument("--norm", help="Show spectrum continuum normalized (if one exists)",
+    parser.add_argument("--norm", help="Show spectrum continuum normalized (if continuum is provided)",
                         action="store_true")
     parser.add_argument("--exten", type=int, help="FITS extension")
     parser.add_argument("--wave_tag", type=str, help="Tag for wave in Table")
