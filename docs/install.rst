@@ -91,6 +91,13 @@ The tests take a couple of minutes to finish. If you notice any
 failures, we'd love you to report them on the `linetools issue tracker
 <http://github.com/linetools/linetools/issues>`_.
 
+Before Launching GUIs
+=====================
+
+If you are a Mac user, we **highly** recommend that you set your
+matplotlib backend from MacOSX to TkAgg (or another option, see
+`backends <http://matplotlib.org/faq/usage_faq.html#what-is-a-backend>`__).
+
 
 Building Documentation
 ======================
