@@ -143,7 +143,7 @@ class XSpectrum1D(object):
         sig : ndarray, optional
         units : dict, optional
           Dict containing the units of wavelength, flux
-          Required keys are 'wave' and 'flux'
+          Required keys are 'wave' and 'flux li
         select : int, optional
           Selected Spectrum
         mask_edges : bool, optional
@@ -311,7 +311,7 @@ class XSpectrum1D(object):
         if not self.co_is_set:
             warnings.warn("This spectrum does not contain an input continuum array")
             return np.nan
-        return self.data[self.select]['co'].compressed() * self.units['flux']
+        return self.data['co'][self.select].compressed() * self.units['flux']
 
     @co.setter
     def co(self, value):
@@ -856,7 +856,7 @@ or QtAgg backends to enable all interactive plotting commands.
         # Write
         table.write(outfil, format=format)
 
-    def write_to_fits(self, outfil, select=False, clobber=True):
+    def write_to_fits(self, outfil, select=False, clobber=True, fill_val=0.):
         """ Write to a multi-extension FITS file.
 
         Writes 2D images for multiple spectra data arrays,
@@ -876,39 +876,42 @@ or QtAgg backends to enable all interactive plotting commands.
         add_wave : bool (False)
           Force writing of wavelengths as array, instead of using FITS
           header keywords to specify a wcs.
+        fill_val : float, optional
+          Fill value
         """
         if self.nspec == 1:
             select = True
 
         # Flux
         if select:
-            prihdu = fits.PrimaryHDU(self.data[self.select]['flux'])
+            prihdu = fits.PrimaryHDU(self.data['flux'][self.select].filled(fill_val))
+            #prihdu = fits.PrimaryHDU(self.data[self.select]['flux'])
         else:
-            prihdu = fits.PrimaryHDU(self.data['flux'])
+            prihdu = fits.PrimaryHDU(self.data['flux'].filled(fill_val))
         hdu = fits.HDUList([prihdu])
         prihdu.name = 'FLUX'
 
         # Wavelength
         if select:
-            wvhdu = fits.ImageHDU(self.data[self.select]['wave'])
+            wvhdu = fits.ImageHDU(self.data['wave'][self.select].filled(fill_val))
         else:
-            wvhdu = fits.ImageHDU(self.data['wave'])
+            wvhdu = fits.ImageHDU(self.data['wave'].filled(fill_val))
         wvhdu.name = 'WAVELENGTH'
         hdu.append(wvhdu)
 
         if self.sig_is_set:
             if select:
-                sighdu = fits.ImageHDU(self.data[self.select]['sig'])
+                sighdu = fits.ImageHDU(self.data['sig'][self.select].filled(fill_val))
             else:
-                sighdu = fits.ImageHDU(self.data['sig'])
+                sighdu = fits.ImageHDU(self.data['sig'].filled(fill_val))
             sighdu.name = 'ERROR'
             hdu.append(sighdu)
 
         if self.co_is_set:
             if select:
-                cohdu = fits.ImageHDU(self.data[self.select]['co'])
+                cohdu = fits.ImageHDU(self.data['co'][self.select].filled(fill_val))
             else:
-                cohdu = fits.ImageHDU(self.data['co'])
+                cohdu = fits.ImageHDU(self.data['co'].filled(fill_val))
             cohdu.name = 'CONTINUUM'
             hdu.append(cohdu)
 
