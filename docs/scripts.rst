@@ -75,6 +75,7 @@ entire linelist.::
 
     lt_line -h
     lt_line HI
+    lt_line HI -z 3.0
     lt_line HI1215
     lt_line 1215
     lt_line -all
