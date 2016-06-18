@@ -20,7 +20,7 @@ class XSpecGui(QtGui.QMainWindow):
                  rsp_kwargs={}, unit_test=False):
         QtGui.QMainWindow.__init__(self, parent)
         """
-        ispec = str, Spectrum1D or tuple of arrays
+        ispec = str, XSpectrum1D or tuple of arrays
           Input spectrum or spectrum filename.  If tuple then (wave,
           fx), (wave, fx, sig) or (wave, fx, sig, co)
         parent : Widget parent, optional

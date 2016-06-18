@@ -510,12 +510,23 @@ class XSpectrum1D(object):
           Recommended to use if displaying inline in a Notebook
         plot_two : XSpectrum1D
           Plot another spectrum
+        xspec : bool
+          Launch XSpecGUI instead
 
         Other keyword arguments are passed to the matplotlib plot
         command.
         """
-        #import matplotlib
-        #matplotlib.use('Agg')
+        # Launch XSpectrum1D??
+        if 'xspec' in kwargs:
+            import sys
+            from PyQt4 import QtGui
+            from linetools.guis.xspecgui import XSpecGui
+            app = QtGui.QApplication(sys.argv)
+            gui = XSpecGui(self)
+            gui.show()
+            app.exec_()
+            return
+
         import matplotlib.pyplot as plt
         from ..analysis.interactive_plot import PlotWrapNav
         plt.rcParams['axes.formatter.useoffset'] = False  # avoid scientific notation in axes tick labels
