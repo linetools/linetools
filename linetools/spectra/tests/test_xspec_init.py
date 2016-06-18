@@ -21,6 +21,16 @@ def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
 
+def test_mask_edge():
+    wave = 3000. + np.arange(1000)
+    flux = np.ones_like(wave)
+    sig = 0.1*np.ones_like(wave)
+    sig[900:] = 0.
+    wave[900:] = 0.
+    #
+    spec = XSpectrum1D.from_tuple((wave,flux,sig), mask_edges=True)
+    assert len(spec.wavelength) == 900
+
 # From arrays
 def test_from_tuple():
     tmp = ascii.read(data_path('UM184.dat.gz'), names=['wave', 'flux', 'sig'])
@@ -58,6 +68,7 @@ def test_from_spec1d():
     spec = Spectrum1D.from_array(np.array([1,2,3]), np.array([1,1,1]))
     xspec = XSpectrum1D.from_spec1d(spec)
 """
+
 
 # From file
 def test_from_file():
