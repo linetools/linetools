@@ -18,7 +18,7 @@ We strongly recommend that you use `Anaconda
 <https://www.continuum.io/downloads>`_ to install them. With Anaconda
 you can check for the presence and versions of the dependencies with::
 
-  conda list "^python$|numpy|astropy$|scipy$|matplotlib|specutils|PyQT"
+  conda list "^python$|numpy|astropy$|scipy$|matplotlib|PyQT"
 
 If you're missing any, install them with (for example)::
 
@@ -27,11 +27,6 @@ If you're missing any, install them with (for example)::
 If their versions are too old, update them with (for example)::
 
   conda update astropy
-
-Specutils can't be installed with conda; use `pip
-<https://pip.pypa.io/en/latest/>`_ instead::
-  
-  pip install --no-deps specutils
 
 If you aren't using Anaconda then all of the dependencies can also be
 installed with pip.
