@@ -506,6 +506,10 @@ class XSpectrum1D(object):
           from a script and wish to delay showing the plot.
         xlim : tuple of two floats
           The initial x plotting limits (xmin, xmax)
+        inline : bool
+          Recommended to use if displaying inline in a Notebook
+        plot_two : XSpectrum1D
+          Plot another spectrum
 
         Other keyword arguments are passed to the matplotlib plot
         command.
@@ -516,11 +520,17 @@ class XSpectrum1D(object):
         from ..analysis.interactive_plot import PlotWrapNav
         plt.rcParams['axes.formatter.useoffset'] = False  # avoid scientific notation in axes tick labels
 
+        # Keywords
         nocolor = (False if 'color' in kwargs else True)
         xlim = kwargs.pop('xlim', None)
+        inline = kwargs.pop('inline', False)
+        xspec2 = kwargs.pop('plot_two', None)
 
+        if inline:
+            fig = plt.figure(figsize=(12,8))
+        else:
+            fig = plt.gcf()
         ax = plt.gca()
-        fig = plt.gcf()
 
         artists = {}
         ax.axhline(0, color='k', lw=0.5)
@@ -543,6 +553,10 @@ class XSpectrum1D(object):
             if nocolor:
                 kwargs.update(color='r')
             ax.plot(self.wavelength, self.co, **kwargs)
+
+        # Second spectrum
+        if xspec2 is not None:
+            ax.plot(xspec2.wavelength, xspec2.flux, color='blue')
 
         ax.set_ylim(*get_flux_plotrange(self.flux))
 
