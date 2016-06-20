@@ -134,7 +134,7 @@ class XSpectrum1D(object):
         return spec
 
     def __init__(self, wave, flux, sig=None, co=None, units=None, select=0,
-                 meta=None, verbose=False):
+                 meta=None, verbose=False, mask_edges=False):
         """
         Parameters
         ----------
@@ -178,10 +178,22 @@ class XSpectrum1D(object):
         self.data['wave'] = np.reshape(wave, (self.nspec, self.npix))
         self.data['flux'] = np.reshape(flux, (self.nspec, self.npix))
 
+        # Init Mask
+        self.mask = []
+        for kk in range(self.nspec):
+            self.mask.append(np.array([True]*self.npix))
+
         if sig is not None:
             if wave.shape[0] != sig.shape[0]:
                 raise IOError("Shape of wave and sig vectors must be identical")
             self.data['sig'] = np.reshape(sig, (self.nspec, self.npix))
+            if mask_edges:
+                for kk in range(self.nspec):
+                    sigval = np.where(self.data['sig'][kk] > 0.)[0]
+                    for key in self.data.dtype.names:
+                        self.data[key][kk][0:sigval[0]] = np.nan
+                        self.data[key][kk][sigval[-1]+1:] = np.nan
+                    self.mask[kk] = ~np.isnan(self.data['sig'][kk])
         else:
             self.data['sig'] = np.nan
         if co is not None:
@@ -231,7 +243,7 @@ class XSpectrum1D(object):
     def wavelength(self):
         """ Return the wavelength array with units
         """
-        return self.data[self.select]['wave'] * self.units['wave']
+        return self.data['wave'][self.select][self.mask[self.select]] * self.units['wave']
 
     @wavelength.setter
     def wavelength(self, value):
@@ -243,7 +255,7 @@ class XSpectrum1D(object):
     def flux(self):
         """ Return the flux with units
         """
-        flux =  self.data[self.select]['flux'] * self.units['flux']
+        flux = self.data['flux'][self.select][self.mask[self.select]] * self.units['flux']
         if self.normed and self.co_is_set:
             flux /= self.data[self.select]['co']
         return flux
@@ -271,7 +283,7 @@ class XSpectrum1D(object):
             warnings.warn("This spectrum does not contain an input error array")
             return np.nan
         #
-        sig = self.data[self.select]['sig'] * self.units['flux']
+        sig = self.data['sig'][self.select][self.mask[self.select]] * self.units['flux']
         if self.normed and self.co_is_set:
             sig /= self.data[self.select]['co']
         return sig
@@ -299,7 +311,7 @@ class XSpectrum1D(object):
         if not self.co_is_set:
             warnings.warn("This spectrum does not contain an input continuum array")
             return np.nan
-        return self.data[self.select]['co'] * self.units['flux']
+        return self.data['co'][self.select][self.mask[self.select]] * self.units['flux']
 
     @co.setter
     def co(self, value):

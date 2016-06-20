@@ -4,7 +4,6 @@ from __future__ import print_function, absolute_import, \
 import numpy as np
 import os
 import pytest
-import pdb
 
 import astropy.io.ascii as ascii
 from astropy import units as u
@@ -20,6 +19,16 @@ from linetools.spectra.xspectrum1d import XSpectrum1D
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
+
+def test_mask_edge():
+    wave = 3000. + np.arange(1000)
+    flux = np.ones_like(wave)
+    sig = 0.1*np.ones_like(wave)
+    sig[900:] = 0.
+    wave[900:] = 0.
+    #
+    spec = XSpectrum1D.from_tuple((wave,flux,sig), mask_edges=True)
+    assert len(spec.wavelength) == 900
 
 # From arrays
 def test_from_tuple():
