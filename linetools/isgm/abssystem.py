@@ -171,10 +171,11 @@ class AbsSystem(object):
         AbsSystem
 
         """
+        if 'NHI' in idict.keys():
+            ckwargs = dict(NHI=idict['NHI'], sig_NHI=idict['sig_NHI'], flag_NHI=idict['flag_NHI'])
         slf = cls(SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg),
                   idict['zabs'], idict['vlim']*u.km/u.s, zem=idict['zem'],
-                  NHI=idict['NHI'], sig_NHI=idict['sig_NHI'],
-                  flag_NHI=idict['flag_NHI'], name=idict['Name'] )
+                  name=idict['Name'], **ckwargs)
         if not skip_components:
             # Components
             if use_coord:  # Speed up performance

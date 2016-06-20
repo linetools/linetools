@@ -13,9 +13,9 @@ def main(*args, **kwargs):
     """
     import argparse
 
-    parser = argparse.ArgumentParser(description='Fit a continuum to a spectrum')
-    parser.add_argument("file", type=str, help="Spectral file")
-    parser.add_argument("outfil", type=str, help="Output file [can be the same]")
+    parser = argparse.ArgumentParser(description='GUI to fit a continuum to a spectrum')
+    parser.add_argument("file", type=str, help="Input spectral file (FITS, ASCII, etc.)")
+    parser.add_argument("outfil", type=str, help="Output, normalized spectrum filename; FITS [can be the same]")
     parser.add_argument("--redshift", type=float, help="Redshift of the Source")
     parser.add_argument("--wchunk", type=float, help="Width of a 'chunk' (Ang)")
     #parser.add_argument("-exten", type=int, help="FITS extension")

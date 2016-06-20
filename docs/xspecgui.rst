@@ -52,24 +52,30 @@ Then it is as simple as:
 
     > lt_xspec filename 
 
-Here are the current command-line options:
-
-::
+Here are the current command-line options::
 
     > lt_xspec -h
-    usage: spec_guis.py [-h] [-zsys ZSYS] [--un_norm] flag file
+    usage: lt_xspec [-h] [--zsys ZSYS] [--norm] [--exten EXTEN]
+                    [--wave_tag WAVE_TAG] [--flux_tag FLUX_TAG]
+                    [--sig_tag SIG_TAG] [--var_tag VAR_TAG] [--ivar_tag IVAR_TAG]
+                    file
 
     Parse for XSpec
 
     positional arguments:
-      flag        GUI flag (ignored)
-      file        Spectral file
+      file                 Spectral file
 
     optional arguments:
-      -h, --help  show this help message and exit
-      -zsys ZSYS  System Redshift
-      --norm      Show spectrum normalized
-      -exten EXTEN  FITS extension
+      -h, --help           show this help message and exit
+      --zsys ZSYS          System Redshift
+      --norm               Show spectrum continuum normalized (if continuum is
+                           provided)
+      --exten EXTEN        FITS extension
+      --wave_tag WAVE_TAG  Tag for wave in Table
+      --flux_tag FLUX_TAG  Tag for flux in Table
+      --sig_tag SIG_TAG    Tag for sig in Table
+      --var_tag VAR_TAG    Tag for var in Table
+      --ivar_tag IVAR_TAG  Tag for ivar in Table
 
 From within ipython or equivalent
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
