@@ -28,7 +28,7 @@ def test_mask_edge():
     sig[900:] = 0.
     wave[900:] = 0.
     #
-    spec = XSpectrum1D.from_tuple((wave,flux,sig), mask_edges=True)
+    spec = XSpectrum1D.from_tuple((wave,flux,sig), masking='edges')
     assert len(spec.wavelength) == 900
 
 # From arrays
