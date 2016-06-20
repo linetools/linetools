@@ -4,14 +4,10 @@ from __future__ import print_function, absolute_import, \
 import numpy as np
 import os
 import pytest
-import pdb
 
 import astropy.io.ascii as ascii
 from astropy import units as u
-from astropy.io import fits
 import astropy.table
-
-from specutils.spectrum1d import Spectrum1D
 
 from linetools.spectra import io
 from linetools.spectra.xspectrum1d import XSpectrum1D
@@ -26,10 +22,13 @@ def test_mask_edge():
     flux = np.ones_like(wave)
     sig = 0.1*np.ones_like(wave)
     sig[900:] = 0.
-    wave[900:] = 0.
+    sig[800:825] = 0.
+    wave[900:] = 0.  # WARNING, the data are sorted first!
     #
     spec = XSpectrum1D.from_tuple((wave,flux,sig), masking='edges')
     assert len(spec.wavelength) == 900
+    spec2 = XSpectrum1D.from_tuple((wave,flux,sig), masking='all')
+    assert len(spec2.wavelength) == 875
 
 # From arrays
 def test_from_tuple():

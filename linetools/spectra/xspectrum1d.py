@@ -123,7 +123,7 @@ class XSpectrum1D(object):
             srt = np.argsort(iwave)
             iwave = iwave[srt]
             iflux = iflux[srt]
-            for ii in range(1, len(ltuple)):
+            for ii in range(2, len(ltuple)):
                 if ltuple[ii] is not None:
                     ltuple[ii] = ituple[ii][srt]
 
@@ -194,13 +194,14 @@ class XSpectrum1D(object):
             self.data['sig'] = np.reshape(sig, (self.nspec, self.npix))
             if masking != 'None':
                 for kk in range(self.nspec):
-                    sigval = np.where(self.data['sig'][kk] > 0.)[0]
+                    gdsigval = np.where(self.data['sig'][kk].data > 0.)[0]
+                    badsigval = self.data['sig'][kk].data <= 0.
                     for key in self.data.dtype.names:
                         if masking == 'edges':
-                            self.data[key][kk][0:sigval[0]].mask = True
-                            self.data[key][kk][sigval[-1]+1:].mask = True
+                            self.data[key][kk][0:gdsigval[0]].mask = True
+                            self.data[key][kk][gdsigval[-1]+1:].mask = True
                         elif masking == 'all':
-                            self.data[key][kk][sigval].mask = True
+                            self.data[key][kk].mask = badsigval
         else:
             self.data['sig'] = np.nan
         if co is not None:
