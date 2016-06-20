@@ -102,8 +102,7 @@ class SpectralLine(object):
             # TODO: remove this try/except eventually
             try:
                 sline = AbsLine(idict['name'], **kwargs)
-            except KeyError: #  This is to be compatible JSON files already written with old notation
-                pdb.set_trace()
+            except KeyError: #  This is to be compatible JSON files already written with old notation (e.g. DLA H100)
                 sline = AbsLine(idict['trans'], **kwargs)
         else:
             raise ValueError("Not prepared for type {:s}.".format(idict['ltype']))
