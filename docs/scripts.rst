@@ -4,8 +4,8 @@ linetool Scripts
 
 There are a number of scripts, many of which are GUIs,
 provided with linetools.  As regards the GUIs we warn
-that Mac users will need to set their matplotlib to
-something other than MaxOSX. See
+again that Mac users will need to set their matplotlib to
+something other than MacOSX. See
 `backends <http://matplotlib.org/faq/usage_faq.html#what-is-a-backend>`__.
 
 lt_xspec
