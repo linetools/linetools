@@ -134,7 +134,7 @@ class XSpectrum1D(object):
         return spec
 
     def __init__(self, wave, flux, sig=None, co=None, units=None, select=0,
-                 meta=None, verbose=False, mask_edges=False):
+                 meta=None, verbose=False, masking='None'):
         """
         Parameters
         ----------
@@ -143,11 +143,15 @@ class XSpectrum1D(object):
         sig : ndarray, optional
         units : dict, optional
           Dict containing the units of wavelength, flux
-          Required keys are 'wave' and 'flux li
+          Required keys are 'wave' and 'flux'
         select : int, optional
           Selected Spectrum
-        mask_edges : bool, optional
-          Mask the edges of each spectrum where sig <= 0.
+        masking: str, optional
+          Approach to masking the data using the 'sig' array
+          'None'
+          'edges' -- Masks all data values with sig <=0 on the 'edge' of each spectrum
+             e.g.   sig = [0.,0.,0.,0.2,0.,0.2,0.2,0.,0.] would have the first 3 and last 2 masked
+          'all' -- Masks all data values with sig <=0
         """
         # Error checking
         if not isinstance(wave, np.ndarray):
@@ -156,6 +160,10 @@ class XSpectrum1D(object):
             raise IOError("Input y-vector must be an ndarray")
         if wave.shape[0] != flux.shape[0]:
             raise IOError("Shape of x and y vectors must be identical")
+        if masking not in ['None', 'edges', 'all']:
+            raise IOError("Invalid masking type")
+        if (masking != 'None') and (sig is None):
+            raise IOError("Must input sig array to use masking")
 
         # Handle many spectra
         if len(wave.shape) == 1:
@@ -184,12 +192,15 @@ class XSpectrum1D(object):
             if wave.shape[0] != sig.shape[0]:
                 raise IOError("Shape of wave and sig vectors must be identical")
             self.data['sig'] = np.reshape(sig, (self.nspec, self.npix))
-            if mask_edges:
+            if masking != 'None':
                 for kk in range(self.nspec):
                     sigval = np.where(self.data['sig'][kk] > 0.)[0]
                     for key in self.data.dtype.names:
-                        self.data[key][kk][0:sigval[0]].mask = True
-                        self.data[key][kk][sigval[-1]+1:].mask = True
+                        if masking == 'edges':
+                            self.data[key][kk][0:sigval[0]].mask = True
+                            self.data[key][kk][sigval[-1]+1:].mask = True
+                        elif masking == 'all':
+                            self.data[key][kk][sigval].mask = True
         else:
             self.data['sig'] = np.nan
         if co is not None:
@@ -902,7 +913,7 @@ or QtAgg backends to enable all interactive plotting commands.
           Force writing of wavelengths as array, instead of using FITS
           header keywords to specify a wcs.
         fill_val : float, optional
-          Fill value
+          Fill value for masked pixels
         """
         if self.nspec == 1:
             select = True
