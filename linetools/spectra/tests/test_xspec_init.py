@@ -4,7 +4,6 @@ from __future__ import print_function, absolute_import, \
 import numpy as np
 import os
 import pytest
-import pdb
 
 import astropy.io.ascii as ascii
 from astropy import units as u
