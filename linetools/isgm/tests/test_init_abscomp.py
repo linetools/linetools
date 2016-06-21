@@ -12,9 +12,6 @@ import pytest
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.spectralline import AbsLine
 
-import pdb
-#pdb.set_trace()
-# Set of Input lines
 
 def test_init():
     # Simple properties
@@ -24,6 +21,7 @@ def test_init():
     np.testing.assert_allclose(abscomp.zcomp,1.0)
     print(abscomp)
 
+
 def test_init_failures():
     with pytest.raises(IOError):
         AbsComponent.from_abslines('blah')
@@ -31,6 +29,7 @@ def test_init_failures():
         AbsComponent.from_abslines(['blah'])
     with pytest.raises(IOError):
         AbsComponent.from_component('blah')
+
 
 def test_init_single_absline():
     # Single AbsLine
@@ -42,6 +41,24 @@ def test_init_single_absline():
     assert abscomp.Zion[0] == 1
     np.testing.assert_allclose(abscomp.zcomp,2.92939)
     print(abscomp)
+
+
+def test_copy():
+    # Single AbsLine
+    lya = AbsLine(1215.670*u.AA)
+    lya.analy['vlim'] = [-300.,300.]*u.km/u.s
+    lya.attrib['z'] = 2.92939
+    abscomp = AbsComponent.from_abslines([lya])
+    # Copy
+    abscomp2 = abscomp.copy()
+    # Checks
+    attrs = vars(abscomp).keys()
+    attrs2 = vars(abscomp2).keys()
+    for attr in attrs:
+        assert attr in attrs2
+    np.testing.assert_allclose(abscomp._abslines[0].attrib['z'],
+                               abscomp2._abslines[0].attrib['z'])
+
 
 def test_init_multi_absline():
     # AbsLine(s)

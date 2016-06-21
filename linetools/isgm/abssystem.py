@@ -230,11 +230,14 @@ class AbsSystem(object):
         # Refs (list of references)
         self.Refs = []
 
-    def add_component(self, abscomp, tol=0.2*u.arcsec, chk_sep=True, **kwargs):
+    def add_component(self, abscomp, tol=0.2*u.arcsec,
+                      chk_sep=True, chk_z=True, overlap_only=False,
+                      vtoler=1., debug=False, **kwargs):
         """Add an AbsComponent object if it satisfies all of the rules.
 
         For velocities, we demand that the new component has a velocity
         range that is fully encompassed by the AbsSystem.
+        We allow a small tolerance for round-off error
 
         Should check for duplicates..
 
@@ -246,25 +249,50 @@ class AbsSystem(object):
           Only used if chk_sep=True
         chk_sep : bool, optional
           Perform coordinate check (expensive)
+        chk_z : bool, optional
+          Perform standard velocity range test
+        overlap_only : bool, optional
+          Only require that the components overlap in redshift
+        vtoler : float, optional
+          Tolerance for velocity in km/s
+
+        Returns
+        -------
+        test : bool
+          True if successful
         """
         # Coordinates
         if chk_sep:
-            test = bool(self.coord.separation(abscomp.coord) < tol)
+            testcoord = bool(self.coord.separation(abscomp.coord) < tol)
         else:
-            test = True
+            testcoord = True
         # Now redshift/velocity
-        zlim_comp = (1+abscomp.zcomp)*abscomp.vlim/c_mks
-        zlim_sys = (1+self.zabs)*self.vlim/c_mks
-        test = test & (zlim_comp[0] >= zlim_sys[0]) & (zlim_comp[1] <= zlim_sys[1])
+        if chk_z:
+            dz_toler = (1+self.zabs)*vtoler/3e5  # Avoid Quantity for speed
+            zlim_comp = abscomp.zcomp + (1+abscomp.zcomp)*(abscomp.vlim/c_mks).decompose()
+            zlim_sys = self.zabs + (1+self.zabs)*(self.vlim/c_mks).decompose()
+            if overlap_only:
+                testz = True
+                if debug:
+                    pdb.set_trace()
+                if np.all(zlim_comp > np.max(zlim_sys+dz_toler)) or np.all(
+                                zlim_comp < np.min(zlim_sys-dz_toler)):
+                    testz = False
+            else:
+                testz = (zlim_comp[0] >= (zlim_sys[0]-dz_toler)) & (
+                    zlim_comp[1] <= (zlim_sys[1]+dz_toler))
 
         # Additional checks (specific to AbsSystem type)
-        test = test & self.chk_component(abscomp)
+        testcomp = self.chk_component(abscomp)
+        test = testcoord & testcomp & testz
 
         # Append?
         if test:
             self._components.append(abscomp)
         else:
-            warnings.warn('Input AbsComponent with does not match AbsSystem rules. Not appending')
+            warnings.warn('Input AbsComponent with Zion={} does not match AbsSystem rules. Not appending'.format(abscomp.Zion))
+        #
+        return test
 
     def chk_component(self, component):
         """Additional checks on the component
@@ -420,6 +448,16 @@ class AbsSystem(object):
         """
         for comp in self._components:
             comp.synthesize_colm(**kwargs)
+
+    def stack_plot(self, **kwargs):
+        """Show a stack plot of the system, if spec are loaded
+        Assumes the data are normalized.
+
+        Parameters
+        ----------
+        """
+        from linetools.analysis import plots as ltap
+        ltap.stack_plot(self.list_of_abslines(), vlim=self.vlim, **kwargs)
 
     def to_dict(self):
         """ Write AbsSystem data to a dict that can be written with JSON

@@ -21,6 +21,8 @@ def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
 
+
+
 def test_from_json():
     # Tests from_dict too
     HIsys = LymanAbsSystem.from_json(data_path('HILya_abssys.json'))
@@ -102,3 +104,31 @@ def test_multi_components():
     assert len(LLSsys._components) == 2
 
 
+def test_add_component():
+    radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
+    # HI Lya, Lyb
+    lya = AbsLine(1215.670*u.AA)
+    lya.analy['vlim'] = [-300.,300.]*u.km/u.s
+    lya.attrib['z'] = 2.92939
+    lya.attrib['N'] = 1e17 /  u.cm**2
+    lyb = AbsLine(1025.7222*u.AA)
+    lyb.analy['vlim'] = [-300.,300.]*u.km/u.s
+    lyb.attrib['z'] = lya.attrib['z']
+    abscomp = AbsComponent.from_abslines([lya,lyb])
+    abscomp.coord = radec
+    # Instantiate
+    abssys = GenericAbsSystem.from_components([abscomp])
+    # New component
+    oi = AbsLine('OI 1302')
+    oi.analy['vlim'] = [-300.,300.]*u.km/u.s
+    oi.attrib['z'] = lya.attrib['z']
+    abscomp2 = AbsComponent.from_abslines([oi])
+    abscomp2.coord = radec
+    # Standard
+    assert abssys.add_component(abscomp2)
+    # Fail
+    abssys = GenericAbsSystem.from_components([abscomp])
+    abscomp2.vlim = [-400.,300.]*u.km/u.s
+    assert not abssys.add_component(abscomp2)
+    # Overlap
+    assert abssys.add_component(abscomp2, overlap_only=True)
