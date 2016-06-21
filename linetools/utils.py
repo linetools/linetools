@@ -12,6 +12,11 @@ from astropy import constants as const
 from astropy import units as u
 from astropy.units import Quantity, Unit
 
+try:
+    basestring
+except NameError:  # For Python 3
+    basestring = str
+
 def between(a, vmin, vmax):
     """ Return a boolean array True where vmin <= a < vmax.
 
