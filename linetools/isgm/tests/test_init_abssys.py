@@ -13,6 +13,7 @@ from astropy.coordinates import SkyCoord
 
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.isgm.abssystem import GenericAbsSystem, LymanAbsSystem, AbsSystem
+from linetools.isgm import utils as ltiu
 from linetools.spectralline import AbsLine
 
 import pdb
@@ -22,16 +23,47 @@ def data_path(filename):
     return os.path.join(data_dir, filename)
 
 
+def lyman_comp(radec):
+    # HI Lya, Lyb
+    lya = AbsLine(1215.670*u.AA)
+    lya.analy['vlim'] = [-300.,300.]*u.km/u.s
+    lya.attrib['z'] = 2.92939
+    lya.attrib['N'] = 1e17 /  u.cm**2
+    lyb = AbsLine(1025.7222*u.AA)
+    lyb.analy['vlim'] = [-300.,300.]*u.km/u.s
+    lyb.attrib['z'] = lya.attrib['z']
+    abscomp = AbsComponent.from_abslines([lya,lyb])
+    abscomp.coord = radec
+    return abscomp
+
+def si2_comp(radec):
+    # SiII
+    SiIItrans = ['SiII 1260', 'SiII 1304', 'SiII 1526', 'SiII 1808']
+    abslines = []
+    for trans in SiIItrans:
+        iline = AbsLine(trans)
+        iline.attrib['z'] = 2.92939
+        iline.analy['vlim'] = [-250.,80.]*u.km/u.s
+        abslines.append(iline)
+    #
+    SiII_comp = AbsComponent.from_abslines(abslines)
+    SiII_comp.coord = radec
+    #
+    return SiII_comp
+
+
 
 def test_from_json():
     # Tests from_dict too
     HIsys = LymanAbsSystem.from_json(data_path('HILya_abssys.json'))
     np.testing.assert_allclose(HIsys.zabs, 2.92939)
 
+
 def test_write_json():
     # Tests from_dict too
     HIsys = LymanAbsSystem.from_json(data_path('HILya_abssys.json'))
     HIsys.write_json()
+
 
 def test_init():
     # Simple properties
@@ -76,27 +108,10 @@ def test_one_component():
 
 def test_multi_components():
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
-    # HI Lya, Lyb
-    lya = AbsLine(1215.670*u.AA)
-    lya.analy['vlim'] = [-300.,300.]*u.km/u.s
-    lya.attrib['z'] = 2.92939
-    lya.attrib['N'] = 1e17 /  u.cm**2
-    lyb = AbsLine(1025.7222*u.AA)
-    lyb.analy['vlim'] = [-300.,300.]*u.km/u.s
-    lyb.attrib['z'] = lya.attrib['z']
-    abscomp = AbsComponent.from_abslines([lya,lyb])
-    abscomp.coord = radec
+    # HI
+    abscomp = lyman_comp(radec)
     # SiII
-    SiIItrans = ['SiII 1260', 'SiII 1304', 'SiII 1526', 'SiII 1808']
-    abslines = []
-    for trans in SiIItrans:
-        iline = AbsLine(trans)
-        iline.attrib['z'] = 2.92939
-        iline.analy['vlim'] = [-250.,80.]*u.km/u.s
-        abslines.append(iline)
-    #
-    SiII_comp = AbsComponent.from_abslines(abslines)
-    SiII_comp.coord = radec
+    SiII_comp = si2_comp(radec)
     # Instantiate
     LLSsys = GenericAbsSystem.from_components([abscomp,SiII_comp])
     # Test
@@ -132,3 +147,21 @@ def test_add_component():
     assert not abssys.add_component(abscomp2)
     # Overlap
     assert abssys.add_component(abscomp2, overlap_only=True)
+
+
+def test_build_systems_from_comp():
+    # Build AbsSystems from components
+    radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
+    # HI
+    abscomp = lyman_comp(radec)
+    # SiII
+    SiII_comp = si2_comp(radec)
+    #
+    radec2 = SkyCoord(ra=223.1143*u.deg, dec=-12.4321*u.deg)
+    abscomp2 = lyman_comp(radec2)
+    #
+    abs_systems = ltiu.build_systems_from_components([abscomp,SiII_comp,abscomp2])
+    assert len(abs_systems) == 2
+
+
+

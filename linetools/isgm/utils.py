@@ -171,6 +171,43 @@ def build_components_from_dict(idict, coord=None, **kwargs):
     return components
 
 
+def build_systems_from_components(comps, **kwargs):
+    """ Build a list of AbsSystems from a list of AbsComponents
+    Current default implementation allows for overlapping components, i.e.
+      only_overalp=True in add_component
+
+    Parameters
+    ----------
+    comps : list
+
+    Returns
+    -------
+    abs_systems : list
+
+    """
+    from linetools.isgm.abssystem import GenericAbsSystem
+    if 'overlap_only' not in kwargs.keys():
+        kwargs['overlap_only'] = True
+    # Add
+    abs_systems = []
+    cpy_comps = [comp.copy() for comp in comps]
+    # Loop until all components assigned
+    while len(cpy_comps) > 0:
+        # Use the first one
+        comp = cpy_comps.pop(0)
+        abssys = GenericAbsSystem.from_components([comp])
+        abs_systems.append(abssys)
+        # Try the rest
+        comps_left = []
+        for icomp in cpy_comps:
+            if abssys.add_component(icomp, **kwargs):
+                pass
+            else:
+                comps_left.append(icomp)
+        cpy_comps = comps_left
+    # Return
+    return abs_systems
+
 def xhtbl_from_components(components, ztbl=None, NHI_obj=None):
     """ Generate a Table of XH values from a list of components
     Parameters
