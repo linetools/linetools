@@ -37,21 +37,21 @@ def test_from_tuple():
                sig=np.array(tmp['sig']))
     spec = XSpectrum1D.from_tuple((idl['wave'],idl['flux'], idl['sig']))
     #
-    np.testing.assert_allclose(spec.wavelength.value, idl['wave'])
-    np.testing.assert_allclose(spec.sig, idl['sig'], atol=2e-3, rtol=0)
+    np.testing.assert_allclose(spec.data['wave'][spec.select], idl['wave'])
+    np.testing.assert_allclose(spec.data['sig'][spec.select], idl['sig'], atol=2e-3, rtol=0)
 
     assert spec.wavelength.unit == u.Unit('AA')
     #
     spec = XSpectrum1D.from_tuple((idl['wave'],idl['flux']))
-    np.testing.assert_allclose(spec.wavelength.value, idl['wave'])
+    np.testing.assert_allclose(spec.data['wave'][spec.select], idl['wave'])
     # continuum
     co = np.ones_like(idl['flux'])
     spec = XSpectrum1D.from_tuple((idl['wave'],idl['flux'],idl['sig'], co))
-    np.testing.assert_allclose(spec.wavelength.value, idl['wave'])
+    np.testing.assert_allclose(spec.data['wave'][spec.select], idl['wave'])
 
     co = None
     spec = XSpectrum1D.from_tuple((idl['wave'],idl['flux'],idl['sig'], co))
-    np.testing.assert_allclose(spec.wavelength.value, idl['wave'])
+    np.testing.assert_allclose(spec.data['wave'][spec.select], idl['wave'])
 
 def test_from_tuple_Column():
     wv = astropy.table.Column(np.arange(10.), name='wave', unit=None)
@@ -74,8 +74,8 @@ def test_from_file():
     spec = XSpectrum1D.from_file(data_path('UM184_nF.fits'))
     idl = ascii.read(data_path('UM184.dat.gz'), names=['wave', 'flux', 'sig'])
 
-    np.testing.assert_allclose(spec.wavelength.value, idl['wave'])
-    np.testing.assert_allclose(spec.sig, idl['sig'], atol=2e-3, rtol=0)
+    np.testing.assert_allclose(spec.data['wave'][spec.select].data, idl['wave'])
+    np.testing.assert_allclose(spec.data['sig'][spec.select].data, idl['sig'], atol=2e-3, rtol=0)
 
     assert spec.wavelength.unit == u.Unit('AA')
 
@@ -85,6 +85,7 @@ def test_attrib():
     # 
     np.testing.assert_allclose(spec.wvmin.value, 3056.6673905210096)
     np.testing.assert_allclose(spec.wvmax.value, 9205.255609841855)
+    assert spec.npix == 15024
 
 
 def test_const_sig():

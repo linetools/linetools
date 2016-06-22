@@ -41,6 +41,15 @@ class XSpectrum1D(object):
         is included with this object but not part of any other attribute
         of this particular object.  e.g., creation date, unique identifier,
         simulation parameters, exposure time, telescope name, etc.
+
+    Attributes
+    ----------
+    wvmin : Quantity
+      min wavelength (with sig>0.) in selected spectrum
+      This may differ from np.min(self.wavelength) if you have not masked the edges
+    wvmax : Quantity
+      max wavelength (with sig>0.) in selected spectrum
+      This may differ from np.min(self.wavelength) if you have not masked the edges
     """
 
     @classmethod
@@ -71,6 +80,51 @@ class XSpectrum1D(object):
         return slf
 
     @classmethod
+    def from_list(cls, xspecs, **kwargs):
+        """ Generate from a list of XSpectrum1D
+        By default, the excess pixels are masked
+        If sig or co is set in one, it should be set in all...
+        Units must be identical throughout too
+
+        Also note that masked pixels will be lost!
+
+        Parameters
+        ----------
+        xspecs : list
+
+        """
+        nspec = len(xspecs)
+        # Find max npix
+        max_npix = 0
+        unit0 = xspecs[0].units
+        for xspec in xspecs:
+            max_npix = max(max_npix, xspec.npix)
+            # Check units
+            for key in unit0.keys():
+                assert unit0[key] == xspec.units[key]
+        # Generate dummy arrays
+        wave = np.zeros([nspec, max_npix], dtype='float64')
+        flux = np.zeros([nspec, max_npix], dtype='float32')
+        if xspec.sig_is_set:
+            sig = np.zeros_like(flux)
+        else:
+            sig = None
+        if xspec.co_is_set:
+            co = np.zeros_like(flux)
+        else:
+            co = None
+        # Fill
+        for jj,xspec in enumerate(xspecs):
+            wave[jj,0:xspec.npix] = xspec.wavelength.value
+            flux[jj,0:xspec.npix] = xspec.flux.value
+            if xspec.sig_is_set:
+                sig[jj,0:xspec.npix] = xspec.sig.value
+            if xspec.co_is_set:
+                co[jj,0:xspec.npix] = xspec.co.value
+        # Finish
+        return cls(wave,flux,sig=sig,co=co, units=unit0, masking='edges')
+
+    @classmethod
     def from_tuple(cls, ituple, sort=True, **kwargs):
         """Make an XSpectrum1D from a tuple of numpy arrays or Quantity arrays
 
@@ -84,8 +138,11 @@ class XSpectrum1D(object):
         sort : bool, optional
           Sort by wavelength?
         """
+        # Checks
         if not isinstance(ituple,tuple):
             raise IOError("Input tuple only")
+        if len(ituple[0].shape) != 1:
+            raise IOError("Not ready for multi-dimension.  Sorting will fail..")
         # Parse wavelength
         try:
             wv_unit = ituple[0].unit
@@ -134,7 +191,7 @@ class XSpectrum1D(object):
         return spec
 
     def __init__(self, wave, flux, sig=None, co=None, units=None, select=0,
-                 meta=None, verbose=False, masking='None'):
+                 meta=None, verbose=False, masking='edges'):
         """
         Parameters
         ----------
@@ -162,36 +219,44 @@ class XSpectrum1D(object):
             raise IOError("Shape of x and y vectors must be identical")
         if masking not in ['None', 'edges', 'all']:
             raise IOError("Invalid masking type")
-        if (masking != 'None') and (sig is None):
-            raise IOError("Must input sig array to use masking")
+        #if (masking != 'None') and (sig is None):
+        #    warnings.warn("Must input sig array to use masking")
 
         # Handle many spectra
         if len(wave.shape) == 1:
             self.nspec = 1
-            self.npix = wave.shape[0]
+            self.totpix = wave.shape[0]
         else:
             self.nspec = wave.shape[0]
-            self.npix = wave.shape[1]
+            self.totpix = wave.shape[1]
         self.select = select
 
         if verbose:
             print("We have {:d} spectra with {:d} pixels each.".format(
-                self.nspec, self.npix))
+                self.nspec, self.totpix))
 
         # Data array
         self.data = np.ma.empty((self.nspec,), #self.npix),
-                               dtype=[(str('wave'), 'float64', (self.npix)),
-                                      (str('flux'), 'float32', (self.npix)),
-                                      (str('sig'),  'float32', (self.npix)),
-                                      (str('co'),   'float32', (self.npix)),
+                               dtype=[(str('wave'), 'float64', (self.totpix)),
+                                      (str('flux'), 'float32', (self.totpix)),
+                                      (str('sig'),  'float32', (self.totpix)),
+                                      (str('co'),   'float32', (self.totpix)),
                                      ])
-        self.data['wave'] = np.reshape(wave, (self.nspec, self.npix))
-        self.data['flux'] = np.reshape(flux, (self.nspec, self.npix))
+        self.data['wave'] = np.reshape(wave, (self.nspec, self.totpix))
+        self.data['flux'] = np.reshape(flux, (self.nspec, self.totpix))
 
+        if co is not None:
+            if wave.shape[0] != co.shape[0]:
+                raise IOError("Shape of wave and co vectors must be identical")
+            self.data['co'] = np.reshape(co, (self.nspec, self.totpix))
+        else:
+            self.data['co'] = np.nan
+
+        # Need to set sig last for masking
         if sig is not None:
             if wave.shape[0] != sig.shape[0]:
                 raise IOError("Shape of wave and sig vectors must be identical")
-            self.data['sig'] = np.reshape(sig, (self.nspec, self.npix))
+            self.data['sig'] = np.reshape(sig, (self.nspec, self.totpix))
             if masking != 'None':
                 for kk in range(self.nspec):
                     gdsigval = np.where(self.data['sig'][kk].data > 0.)[0]
@@ -204,12 +269,7 @@ class XSpectrum1D(object):
                             self.data[key][kk].mask = badsigval
         else:
             self.data['sig'] = np.nan
-        if co is not None:
-            if wave.shape[0] != co.shape[0]:
-                raise IOError("Shape of wave and co vectors must be identical")
-            self.data['co'] = np.reshape(co, (self.nspec, self.npix))
-        else:
-            self.data['co'] = np.nan
+
 
         # Units
         if units is not None:
@@ -235,28 +295,36 @@ class XSpectrum1D(object):
         # Filename
         self.filename = 'none'
 
-    def copy(self):
+    def copy(self, select=None):
         """ Copy the spectrum
+
+        Parameters
+        ----------
+        select : int, optional
+          Allow the user to specify a different spectrum on the copy
         """
+        # Select
+        if select is None:
+            select = self.select
         # Key components
         data = self.data.copy()
         units = self.units.copy()
         meta = self.meta.copy()
         #
         new = XSpectrum1D(data['wave'], data['flux'], data['sig'], data['co'],
-                          units=units, meta=meta, select=self.select)
+                          units=units, meta=meta, select=select)
         return new
 
     @property
     def wavelength(self):
         """ Return the wavelength array with units
         """
-        #return self.data[self.select]['wave'] * self.units['wave']
         return self.data['wave'][self.select].compressed() * self.units['wave']
 
     @wavelength.setter
     def wavelength(self, value):
-        self.data['wave'][self.select] = value
+        gdp = ~self.data['wave'][self.select].mask
+        self.data['wave'][self.select][gdp] = value
         if hasattr(value, 'unit'):
             self.units['wave'] = value.unit
 
@@ -267,12 +335,13 @@ class XSpectrum1D(object):
         #flux =  self.data[self.select]['flux'] * self.units['flux']
         flux =  self.data['flux'][self.select].compressed() * self.units['flux']
         if self.normed and self.co_is_set:
-            flux /= self.data['co'][self.select]
+            flux /= self.data['co'][self.select].compressed()
         return flux
 
     @flux.setter
     def flux(self, value):
-        self.data['flux'][self.select] = value
+        gdp = ~self.data['flux'][self.select].mask
+        self.data['flux'][self.select][gdp] = value
         if hasattr(value, 'unit'):
             self.units['flux'] = value.unit
 
@@ -280,8 +349,7 @@ class XSpectrum1D(object):
     def sig_is_set(self):
         """ Returns whether the error array is set
         """
-        #if np.isnan(self.data[self.select]['sig'][0]):
-        if np.isnan(self.data['sig'][self.select][0]):
+        if np.isnan(self.data['sig'][self.select].compressed()[0]):
             return False
         else:
             return True
@@ -297,21 +365,22 @@ class XSpectrum1D(object):
         #sig = self.data[self.select]['sig'] * self.units['flux']
         sig = self.data['sig'][self.select].compressed() * self.units['flux']
         if self.normed and self.co_is_set:
-            sig /= self.data['co'][self.select]
+            sig /= self.data['co'][self.select].compressed()
         return sig
 
     @sig.setter
     def sig(self, value):
         """ Assumes units are the same as the flux
         """
-        self.data['sig'][self.select] = value
+        gdp = ~self.data['sig'][self.select].mask
+        self.data['sig'][self.select][gdp] = value
 
 
     @property
     def co_is_set(self):
         """ Returns whether a continuum is defined
         """
-        if np.isnan(self.data['co'][self.select][0]):
+        if np.isnan(self.data['co'][self.select].compressed()[0]):
             return False
         else:
             return True
@@ -329,7 +398,17 @@ class XSpectrum1D(object):
     def co(self, value):
         """ Assumes units are the same as the flux
         """
-        self.data['co'][self.select] = value
+        gdp = ~self.data['co'][self.select].mask
+        self.data['co'][self.select][gdp] = value
+
+    @property
+    def npix(self):
+        """ Number of *unmasked* pixels """
+        try:
+            return self._npix
+        except AttributeError:
+            self.set_diagnostics()
+            return self._npix
 
 
     @property
@@ -365,6 +444,7 @@ class XSpectrum1D(object):
             gdpx = np.array([True] * self.wavelength.value.size)
             #gdpx = np.array([True] * self.data['flux'].size)
         # Fill in attributes
+        self._npix = len(self.data['flux'][self.select].compressed())
         self._wvmin = np.min(self.wavelength[gdpx])
         self._wvmax = np.max(self.wavelength[gdpx])
 
@@ -403,8 +483,10 @@ class XSpectrum1D(object):
             sig = self.sig.value
         # Copy
         newspec = self.copy()
-        newspec.data['flux'][self.select] = self.flux.value + (rand * sig)
-        newspec.data['sig'][self.select] = np.ones_like(self.flux) * sig
+        # Deal with mask
+        gdp = ~self.data['flux'][self.select].mask
+        newspec.data['flux'][self.select][gdp] = self.flux.value + (rand * sig)
+        newspec.data['sig'][self.select][gdp] = np.ones_like(self.flux) * sig
         #
         return newspec
 
@@ -440,7 +522,7 @@ class XSpectrum1D(object):
             else:
                 raise ValueError('normalize: Continuum needs to be same length as flux array')
         else:
-            self.data['co'] = co
+            self.co = co
         self.normed = True
 
     def unnormalize(self):
@@ -572,7 +654,7 @@ class XSpectrum1D(object):
             ax.plot(self.wavelength, self.sig, **kwargs)
 
         # Continuum
-        if (not np.isnan(self.data['co'][self.select][0])) and (not self.normed):
+        if self.co_is_set and self.normed:
             if nocolor:
                 kwargs.update(color='r')
             ax.plot(self.wavelength, self.co, **kwargs)
@@ -822,56 +904,41 @@ or QtAgg backends to enable all interactive plotting commands.
         return XSpectrum1D.from_tuple(
             (self.wavelength, new_fx, new_sig), meta=self.meta.copy())
 
-    # Splice two spectra together
-    def splice(self, spec2, wvmx=None, scale=1.):
-        """ Combine two overlapping spectra.
+    def stitch(self, idx=None, scale=1.):
+        """ Combine two or more spectra within the .data array
+        Simple logic is used to order them by wavelength if the
+          order is not specified
 
         Parameters
         ----------
-        spec2 : Spectrum1D
-          The overlapping spectrum. It should cover wavelengths
-          *longer* than the original spectrum.
-        wvmx : Quantity, optional
-          Wavelength to begin splicing *after*
+        idx : list or ndarray
+          indices of spectra to stitch and the order to
+          if None, all of the spectra in the .data array will be combined
+            with simple logic using the wavelengths
         scale : float, optional
           Scale factor for flux and error array.
-          Mainly for convenience of plotting
 
         Returns
         -------
-        spec3 : XSpectrum1D
-          A copy of the spliced spectrum.
+        spec : XSpectrum1D
+          The stitched spectrum.
         """
-        # Begin splicing after the end of the internal spectrum
-        if wvmx is None:
-            wvmx = np.max(self.wavelength)
-        #
-        gdp = np.where(spec2.wavelength > wvmx)[0]
-        # Concatenate
-        new_wv = np.concatenate((self.wavelength.value,
-                                 spec2.wavelength.value[gdp]))
-        uwave = u.Quantity(new_wv, unit=self.units['wave'])
-        new_fx = np.concatenate((self.flux.value,
-                                 spec2.flux.value[gdp] * scale))
-        # Error
-        if self.sig_is_set:
-            new_sig = np.concatenate((self.sig, spec2.sig[gdp] * scale))
-        else:
-            new_sig = None
-
-        # Continuum
-        if self.co_is_set:
-            new_co = np.concatenate((self.co, spec2.co[gdp] * scale))
-        else:
-            new_co = None
-
-        # Generate
-        spec3 = XSpectrum1D.from_tuple(
-            (uwave, u.Quantity(new_fx), new_sig, new_co), meta=self.meta.copy())
+        from linetools.spectra import utils as ltsu
+        if idx is None:
+            wvmx = []
+            for ii in range(self.nspec):
+                wvmx.append(np.max(self.data['wave'][ii]))
+            # Sort
+            idx = np.argsort(np.array(wvmx))
+        # Splice the first two
+        spec = ltsu.splice_two(self.copy(select=idx[0]),
+                               self.copy(select=idx[1]))
+        # Loop using the rest
+        for kk in range(2,len(idx)):
+            spec = ltsu.splice_two(spec.copy(), self.copy(select=idx[kk]))
         # Return
-        return spec3
+        return spec
 
-    # Write to fits
     def write_to_ascii(self, outfil, format='ascii.ecsv'):
         """ Write to a text file.
 
@@ -990,7 +1057,6 @@ or QtAgg backends to enable all interactive plotting commands.
 
         hdu.writeto(outfil, clobber=clobber)
         print('Wrote spectrum to {:s}'.format(outfil))
-
 
     def write_to_binary_fits_table(self, outfil, clobber=True):
         """ Write to a binary FITS table.
@@ -1302,7 +1368,9 @@ or QtAgg backends to enable all interactive plotting commands.
             txt = txt + 'file={:s},'.format(self.filename)
         except:
             pass
-
+        # nspec, select
+        txt = txt + ' nspec={:d},'.format(self.nspec)
+        txt = txt + ' select={:d},'.format(self.select)
         # wrest
         txt = txt + ' wvmin={:g}, wvmax={:g}'.format(
             self.wvmin, self.wvmax)
