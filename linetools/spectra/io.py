@@ -143,7 +143,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
                 wave = 10.**wave
 
             wave = give_wv_units(wave)
-            xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, None))
+            xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, None), **kwargs)
 
     elif head0['NAXIS'] == 2:
         if (hdulist[0].name == 'FLUX') and (hdulist[2].name == 'WAVELENGTH'):  # DESI
@@ -414,7 +414,7 @@ def parse_UVES_popler(hdulist):
 
 def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
                             sig_tag=None, co_tag=None, var_tag=None,
-                            ivar_tag=None):
+                            ivar_tag=None, **kwargs):
     """ Read a spectrum from a FITS binary table
 
     Parameters
@@ -492,7 +492,7 @@ def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
         co_tags = [co_tag]
     co, co_tag = get_table_column(co_tags, hdulist, idx=exten)
     # Finish
-    xspec1d = XSpectrum1D.from_tuple((give_wv_units(wave), fx, sig, co))
+    xspec1d = XSpectrum1D.from_tuple((give_wv_units(wave), fx, sig, co), **kwargs)
 
     if 'METADATA' in hdulist[0].header:
         xspec1d.meta.update(json.loads(hdulist[0].header['METADATA']))

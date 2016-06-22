@@ -205,7 +205,7 @@ class XSpectrum1D(object):
           Selected Spectrum
         masking: str, optional
           Approach to masking the data using the 'sig' array
-          'None'
+          'none'
           'edges' -- Masks all data values with sig <=0 on the 'edge' of each spectrum
              e.g.   sig = [0.,0.,0.,0.2,0.,0.2,0.2,0.,0.] would have the first 3 and last 2 masked
           'all' -- Masks all data values with sig <=0
@@ -217,7 +217,7 @@ class XSpectrum1D(object):
             raise IOError("Input y-vector must be an ndarray")
         if wave.shape[0] != flux.shape[0]:
             raise IOError("Shape of x and y vectors must be identical")
-        if masking not in ['None', 'edges', 'all']:
+        if masking not in ['none', 'edges', 'all']:
             raise IOError("Invalid masking type")
         #if (masking != 'None') and (sig is None):
         #    warnings.warn("Must input sig array to use masking")
