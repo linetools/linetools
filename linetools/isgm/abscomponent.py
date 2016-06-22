@@ -136,7 +136,7 @@ class AbsComponent(object):
         # Return
         return slf
 
-    def __init__(self, radec, Zion, z, vlim, Ej=0./u.cm, A=None,
+    def __init__(self, radec, Zion, zcomp, vlim, Ej=0./u.cm, A=None,
                  Ntup=None, comment='', name=None, stars=None):
         """  Initiator
 
@@ -147,7 +147,7 @@ class AbsComponent(object):
         Zion : tuple 
             Atomic number, ion -- (int,int)
             e.g. (8,1) for OI
-        z : float
+        zcomp : float
             Absorption component redshift
         vlim : Quantity array
             Velocity limits of the component w/r to `z`
@@ -175,7 +175,7 @@ class AbsComponent(object):
         elif isinstance(radec, SkyCoord):
             self.coord = radec
         self.Zion = Zion
-        self.zcomp = z
+        self.zcomp = zcomp
         self.vlim = vlim
 
         # Optional
@@ -206,7 +206,8 @@ class AbsComponent(object):
         # Other
         self._abslines = []
 
-    def add_absline(self, absline, tol=0.1*u.arcsec, chk_vel=True, chk_sep=True, **kwargs):
+    def add_absline(self, absline, tol=0.1*u.arcsec, chk_vel=True,
+                    chk_sep=True, vtoler=1., **kwargs):
         """Add an AbsLine object to the component if it satisfies
         all of the rules.
 
@@ -220,8 +221,12 @@ class AbsComponent(object):
           Tolerance on matching coordinates.  Only used if chk_sep=True
         chk_vel : bool, optional
           Perform velocity test (can often be skipped)
+          Insist the bounds of the AbsLine are within 1km/s of the Component
+             (allows for round-off error)
         chk_sep : bool, optional
           Perform coordinate check (expensive)
+        vtoler : float
+          Tolerance for velocity in km/s
         """
         # Perform easy checks
         if chk_sep:
@@ -233,10 +238,11 @@ class AbsComponent(object):
         testE = bool(self.Ej == absline.data['Ej'])
         # Now redshift/velocity
         if chk_vel:
+            dz_toler = (1+self.zcomp)*vtoler/3e5  # Avoid Quantity for speed
             zlim_line = (1+absline.attrib['z'])*absline.analy['vlim']/const.c.to('km/s')
             zlim_comp = (1+self.zcomp)*self.vlim/const.c.to('km/s')
-            testv = (zlim_line[0] >= zlim_comp[0]) & (
-                zlim_line[1] <= zlim_comp[1])
+            testv = (zlim_line[0] >= (zlim_comp[0]-dz_toler)) & (
+                zlim_line[1] <= (zlim_comp[1]+dz_toler))
         else:
             testv = True
         # Combine
@@ -248,8 +254,12 @@ class AbsComponent(object):
         if test:
             self._abslines.append(absline)
         else:
-            warnings.warn('Input absline with wrest={:g} does not match component rules. Not appending'.format(absline.wrest))
-            pdb.set_trace()
+            warnings.warn("Failed add_absline test")
+            print('Input absline with wrest={:g} does not match component rules. Not appending'.format(absline.wrest))
+            if not testv:
+                print("Absline velocities lie beyond component\n Set chk_vel=False to skip this test.")
+            if not testc:
+                print("Absline coordinates do not match.  Best to set them")
 
     def build_table(self):
         """Generate an astropy QTable out of the component.
@@ -605,6 +615,26 @@ class AbsComponent(object):
         cdict = ltu.jsonify(cdict)
         # Return
         return cdict
+
+    def copy(self):
+        """ Generate a copy of itself
+        Returns
+        -------
+        abscomp : AbsComponent
+
+        """
+        # Instantiate with required attributes
+        abscomp = AbsComponent(self.coord, self.Zion, self.zcomp, self.vlim)
+        # Add in the rest
+        attrs = vars(self).keys()
+        for attr in attrs:
+            if attr == '_abslines':
+                for iline in self._abslines:
+                    abscomp._abslines.append(iline.copy())
+            else:
+                setattr(abscomp, attr, getattr(self, attr))
+        # Return
+        return abscomp
 
     def __getitem__(self, attrib):
         """Passback attribute, if it exists

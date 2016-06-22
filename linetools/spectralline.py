@@ -386,7 +386,16 @@ class SpectralLine(object):
         # Return
         return adict
 
-    # Output
+    def copy(self):
+        """ Generate a copy
+
+        Returns
+        -------
+        newline : SpectralLine
+          copy of the object
+        """
+        return copy.deepcopy(self)  # Cheat for now
+
     def __repr__(self):
         txt = '<{:s}:'.format(self.__class__.__name__)
         try:
@@ -397,8 +406,7 @@ class SpectralLine(object):
         txt = txt + '>'
         return (txt)
 
-# ###########################################
-# Class for Generic Absorption Line System
+
 class AbsLine(SpectralLine):
     """Class representing a spectral absorption line.
 
@@ -468,7 +476,6 @@ class AbsLine(SpectralLine):
         # Additional fundamental attributes for Absorption Line
         self.attrib.update(abs_attrib.copy())
 
-    # Voigt
     def generate_voigt(self, wave=None, **kwargs):
         """ Generate a Voigt profile model for the absorption line in
         a given spectrum.
@@ -501,7 +508,6 @@ class AbsLine(SpectralLine):
         spec = lav.voigt_from_abslines(wave, self, **kwargs)
         return spec
 
-    # AODM
     def measure_aodm(self, nsig=3., normalize=True):
         """ AODM calculation
 
@@ -544,7 +550,6 @@ class AbsLine(SpectralLine):
         # Log
         laa.log_clm(self.attrib)
 
-    # Output
     def __repr__(self):
         txt = '<{:s}:'.format(self.__class__.__name__)
         # Name
