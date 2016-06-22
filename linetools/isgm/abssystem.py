@@ -268,7 +268,7 @@ class AbsSystem(object):
             testcoord = True
         # Now redshift/velocity
         if chk_z:
-            dz_toler = (1+self.zabs)*vtoler/3e5  # Avoid Quantity for speed
+            dz_toler = (1+self.zabs)*vtoler/c_mks.value  # Avoid Quantity for speed
             zlim_comp = abscomp.zcomp + (1+abscomp.zcomp)*(abscomp.vlim/c_mks).decompose()
             zlim_sys = self.zabs + (1+self.zabs)*(self.vlim/c_mks).decompose()
             if overlap_only:
