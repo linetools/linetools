@@ -604,6 +604,8 @@ class XSpectrum1D(object):
           Recommended to use if displaying inline in a Notebook
         plot_two : XSpectrum1D
           Plot another spectrum
+        scale_two : float
+          Scale the 2nd spectrum
         xspec : bool
           Launch XSpecGUI instead
 
@@ -630,6 +632,7 @@ class XSpectrum1D(object):
         xlim = kwargs.pop('xlim', None)
         inline = kwargs.pop('inline', False)
         xspec2 = kwargs.pop('plot_two', None)
+        scale_two = kwargs.pop('scale_two', 1.)
 
         if inline:
             fig = plt.figure(figsize=(12,8))
@@ -645,7 +648,7 @@ class XSpectrum1D(object):
         if nocolor:
             kwargs.update(color='0.5')
         artists['fl'] = ax.plot(self.wavelength, self.flux,
-                                drawstyle='steps-mid', **kwargs)[0]
+                                drawstyle='steps-mid', label='1', **kwargs)[0]
 
         # Error
         if nocolor:
@@ -661,7 +664,10 @@ class XSpectrum1D(object):
 
         # Second spectrum
         if xspec2 is not None:
-            ax.plot(xspec2.wavelength, xspec2.flux, color='blue')
+            ax.plot(xspec2.wavelength, xspec2.flux*scale_two, color='blue',
+                    label='2')
+            legend = ax.legend(loc='upper left', borderpad=0.3,
+                            handletextpad=0.3, fontsize='large')
 
         ax.set_ylim(*get_flux_plotrange(self.flux))
 
