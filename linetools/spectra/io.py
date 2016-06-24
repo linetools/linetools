@@ -36,7 +36,8 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
       Input file. If str:
         * FITS file are detected by searching for '.fit' in their filename.
         * ASCII must either have a proper Table format or be 3 (WAVE,
-          FLUX, ERROR) or 4 (WAVE, FLUX, ERROR, CONTINUUM) columns.
+          FLUX, ERROR) or 4 (WAVE, FLUX, ERROR, CONTINUUM) columns. If
+          the file has more than 4 columns with no header it will raise an error.
     efil : string, optional
       A filename for Error array, if it's in a separate file to the
       flux. The code will attempt to find this file on its own.
@@ -88,7 +89,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
                 for i, name in enumerate(tbl.colnames):
                     tbl[name].name = names[i]
                 warnings.warn('No header found in ASCII file {}, assuming columns to be: {}'.format(specfil, names[:len(tbl.colnames)]))
-            import pdb; pdb.set_trace()
+            # import pdb; pdb.set_trace()
             hdulist = [fits.PrimaryHDU(), tbl]
     else:
         raise IOError('readspec: Bad spectra input.')
