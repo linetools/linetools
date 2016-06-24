@@ -918,7 +918,7 @@ or QtAgg backends to enable all interactive plotting commands.
         Parameters
         ----------
         idx : list or ndarray
-          indices of spectra to stitch and the order to
+          indices of spectra to stitch and the order to do so
           if None, all of the spectra in the .data array will be combined
             with simple logic using the wavelengths
         scale : float, optional
