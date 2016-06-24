@@ -8,9 +8,8 @@ import json
 import warnings
 
 
-import astropy as apy
 from astropy import units as u
-from astropy.units import Quantity
+from astropy.units import Quantity, UnitBase
 from astropy import constants as const
 from astropy.io import fits
 #from astropy.nddata import StdDevUncertainty
@@ -19,6 +18,7 @@ from astropy.table import QTable, Column, Table
 import linetools.utils as liu
 
 from .plotting import get_flux_plotrange
+from .utils import meta_to_disk
 
 from ..analysis.interactive_plot import InteractiveCoFit
 from ..analysis.continuum import prepare_knots
@@ -74,19 +74,19 @@ class XSpectrum1D(object):
         Avoids error array for now
         """
         slf = cls.from_tuple((spec1d.dispersion, spec1d.flux))
-        #slf = cls(flux=spec1d.flux, wcs=spec1d.wcs, unit=spec1d.unit,
-        #          uncertainty=spec1d.uncertainty, mask=spec1d.mask,
-        #          meta=spec1d.meta.copy())
         return slf
 
     @classmethod
     def from_list(cls, xspecs, **kwargs):
-        """ Generate from a list of XSpectrum1D
-        By default, the excess pixels are masked
-        If sig or co is set in one, it should be set in all...
-        Units must be identical throughout too
+        """ Generate a single XSpectrum1D instance containing an array of
+        spectra from a list of individual XSpectrum1D spectra.
+        Each spectrum is padded with extra pixels so that the
+        wavelength ranges of all spectra are covered.
+        Padded pixels are masked.
 
-        Also note that masked pixels will be lost!
+        Also note that masked pixels in the original data are ignored!
+
+        Uses meta to store headers
 
         Parameters
         ----------
@@ -114,6 +114,7 @@ class XSpectrum1D(object):
         else:
             co = None
         # Fill
+        meta = dict(headers=[])
         for jj,xspec in enumerate(xspecs):
             wave[jj,0:xspec.npix] = xspec.wavelength.value
             flux[jj,0:xspec.npix] = xspec.flux.value
@@ -121,8 +122,11 @@ class XSpectrum1D(object):
                 sig[jj,0:xspec.npix] = xspec.sig.value
             if xspec.co_is_set:
                 co[jj,0:xspec.npix] = xspec.co.value
+            # Meta
+            meta['headers'].append(xspec.header)
         # Finish
-        return cls(wave,flux,sig=sig,co=co, units=unit0, masking='edges')
+        return cls(wave,flux,sig=sig,co=co, units=unit0, masking='edges',
+                   meta=meta)
 
     @classmethod
     def from_tuple(cls, ituple, sort=True, **kwargs):
@@ -201,6 +205,9 @@ class XSpectrum1D(object):
         units : dict, optional
           Dict containing the units of wavelength, flux
           Required keys are 'wave' and 'flux'
+        meta : dict, optional
+          Meta data.
+          meta['headers'] is a list of input headers (or None's)
         select : int, optional
           Selected Spectrum
         masking: str, optional
@@ -275,9 +282,10 @@ class XSpectrum1D(object):
         if units is not None:
             if not isinstance(units, dict):
                 raise IOError("Units must be dict like")
-            for key in units.keys():
+            for key,item in units.items():
                 if key not in ['wave', 'flux']:
                     raise IOError("Units must have key: {:s}".format(key))
+                assert isinstance(item,UnitBase)
             self.units = units
         else:
             warnings.warn("Assuming wavelength unit is Angstroms")
@@ -288,7 +296,7 @@ class XSpectrum1D(object):
 
         # Meta
         if meta is None:
-            self.meta = {}
+            self.meta = dict(headers=[None]*self.nspec)
         else:
             self.meta = meta
 
@@ -314,6 +322,12 @@ class XSpectrum1D(object):
         new = XSpectrum1D(data['wave'], data['flux'], data['sig'], data['co'],
                           units=units, meta=meta, select=select)
         return new
+
+    @property
+    def header(self):
+        """ Return the header (may be None)
+        """
+        return self.meta['headers'][self.select]
 
     @property
     def wavelength(self):
@@ -945,7 +959,37 @@ or QtAgg backends to enable all interactive plotting commands.
         # Return
         return spec
 
-    def write_to_ascii(self, outfil, format='ascii.ecsv'):
+    def write(self, outfil, FITS_TABLE=False, **kwargs):
+        """  Wrapper for writing
+        Parses the extension to choose the file format
+
+        Parameters
+        ----------
+        outfil : str
+          Allowed extensions are
+          .fit, .fits -- FITS file; set FITS_TABLE=True to format as a binary FITS Table
+          .hdf5 -- HDF5 file
+          .ascii -- ASCII
+        kwargs
+
+        Returns
+        -------
+
+        """
+        ext = outfil[outfil.rfind('.')+1:]
+        if ext in ['fit','fits']:
+            if FITS_TABLE:
+                self.write_to_binary_fits_table(outfil, **kwargs)
+            else:
+                self.write_to_fits(outfil, **kwargs)
+        elif ext in ['hdf5']:
+            self.write_to_hdf5(outfil, **kwargs)
+        elif ext in ['ascii']:
+            self.write_to_ascii(outfil, **kwargs)
+        else:
+            raise IOError("Bad file extension: {:s}".format(ext))
+
+    def write_to_ascii(self, outfil, format='ascii.ecsv', **kwargs):
         """ Write to a text file.
 
         Parameters
@@ -1025,33 +1069,33 @@ or QtAgg backends to enable all interactive plotting commands.
             cohdu.name = 'CONTINUUM'
             hdu.append(cohdu)
 
-        # Deal with header
-        if hasattr(self, 'head'):
+        # Use the header of the selected spectrum
+        if self.header is not None:
             hdukeys = list(prihdu.header.keys())
             # Append ones to avoid
             hdukeys = hdukeys + ['BUNIT', 'COMMENT', '', 'NAXIS1', 'NAXIS2', 'HISTORY']
-            for key in self.head.keys():
+            for key in self.header.keys():
                 # Use new ones
                 if key in hdukeys:
                     continue
                 # Update unused ones
                 try:
-                    prihdu.header[key] = self.head[key]
+                    prihdu.header[key] = self.header[key]
                 except ValueError:
                     raise ValueError('l.spectra.utils: Bad header key card')
             # History
-            if 'HISTORY' in self.head.keys():
+            if 'HISTORY' in self.header.keys():
                 # Strip \n
-                tmp = str(self.head['HISTORY']).replace('\n', ' ')
+                tmp = str(self.header['HISTORY']).replace('\n', ' ')
                 try:
                     prihdu.header.add_history(str(tmp))
                 except ValueError:
                     import pdb
                     pdb.set_trace()
 
+        #
         if self.meta is not None and len(self.meta) > 0:
-            d = liu.jsonify(self.meta)
-            prihdu.header['METADATA'] = json.dumps(d)
+            prihdu.header['METADATA'] = meta_to_disk(self.meta)
 
         # Units, etc.
         prihdu.header['NSPEC'] = self.nspec
@@ -1063,6 +1107,45 @@ or QtAgg backends to enable all interactive plotting commands.
 
         hdu.writeto(outfil, clobber=clobber)
         print('Wrote spectrum to {:s}'.format(outfil))
+
+    def write_to_hdf5(self, outfil, clobber=True, fill_val=0.):
+        """ Write the full data array to an hdf5 file.
+
+        Parameters
+        ----------
+        outfil : str
+          Name of the hdf5
+        clobber : bool (True)
+          Clobber existing file?
+        fill_val : float, optional
+          Fill value for masked pixels
+        """
+        # Check for h5py
+        try:
+            import h5py
+        except ImportError:
+            raise ImportError("You must install h5py to use this method")
+        import os
+        # Check for file
+        if clobber is False:
+            if os.path.exists(outfil):
+                raise IOError("File exists.  Will only over-write if you set clobber=True")
+        # Begin the file
+        hdf5 = h5py.File(outfil, 'w')
+        # Meta
+        if self.meta is not None and len(self.meta) > 0:
+            hdf5['meta'] = meta_to_disk(self.meta)
+        # Units
+        units = self.units.copy()
+        d = liu.jsonify(units)
+        hdf5['units'] = json.dumps(d)
+        # Data with compression
+        hdf5.create_dataset('data', data=self.data.filled(fill_val),
+                                       chunks=True, compression='gzip')
+        # Finish
+        hdf5.close()
+        print('Wrote spectrum to {:s}'.format(outfil))
+
 
     def write_to_binary_fits_table(self, outfil, clobber=True):
         """ Write to a binary FITS table.
@@ -1098,13 +1181,13 @@ or QtAgg backends to enable all interactive plotting commands.
             # Append ones to avoid
             hdukeys = hdukeys + ['BUNIT', 'COMMENT', '', 'NAXIS1',
                                  'NAXIS2', 'HISTORY', 'NAXIS', 'END']
-            for key in self.head.keys():
+            for key in self.header.keys():
                 # Use new ones
                 if key in hdukeys:
                     continue
                 # Update unused ones
                 try:
-                    prihdu.header[key] = self.head[key]
+                    prihdu.header[key] = self.header[key]
                 except ValueError:
                     raise ValueError('l.spectra.utils: Bad header key card')
             # History
@@ -1119,8 +1202,7 @@ or QtAgg backends to enable all interactive plotting commands.
 
         # META
         if self.meta is not None and len(self.meta) > 0:
-            d = liu.jsonify(self.meta)
-            prihdu.header['METADATA'] = json.dumps(d)
+            prihdu.header['METADATA'] = meta_to_disk(self.meta)
 
         # Units
         units = self.units.copy()
