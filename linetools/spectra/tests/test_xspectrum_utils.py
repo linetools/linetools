@@ -26,6 +26,15 @@ def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
 
+def test_hdf5(specm):
+    # Write. Should be replaced with tempfile.TemporaryFile
+    specm.write_to_hdf5(data_path('tmp.hdf5'))
+    #
+    specread = io.readspec(data_path('tmp.hdf5'))
+    # check a round trip works
+    np.testing.assert_allclose(specm.wavelength, specread.wavelength)
+
+
 def test_rebin(spec):
     # Rebin
     new_wv = np.arange(3000., 9000., 5) * u.AA
@@ -119,9 +128,9 @@ def test_write_ascii(spec):
     # Write. Should be replaced with tempfile.TemporaryFile
     spec.write_to_ascii(data_path('tmp.ascii'))
     #
-    spec2 = io.readspec(data_path('tmp.ascii'))
+    specb = io.readspec(data_path('tmp.ascii'))
     # check a round trip works
-    np.testing.assert_allclose(spec.wavelength, spec2.wavelength)
+    np.testing.assert_allclose(spec.wavelength, specb.wavelength)
 
 
 def test_write_fits(spec, spec2):
@@ -163,8 +172,10 @@ def test_copy(spec):
     assert spec.wavelength[0] == spec2.wavelength[0]
     assert spec.flux[-1] == spec2.flux[-1]
 
+
 def test_plot(spec):
     spec.plot(show=False)
+
 
 def test_continuum_utils(spec):
     # define continuum in a non-interactive way...

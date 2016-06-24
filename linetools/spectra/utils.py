@@ -4,11 +4,35 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 # Import libraries
 import numpy as np
+import json
 import pdb
 
 from astropy import units as u
 
-from .xspectrum1d import XSpectrum1D
+from linetools import utils as liu
+
+def meta_to_disk(in_meta):
+    """ Polish up the meta dict for I/O
+
+    Parameters
+    ----------
+    in_meta : dict
+
+    Returns
+    -------
+    meta_out : str
+
+    """
+    meta = in_meta.copy()
+    # Headers
+    for kk,header in enumerate(in_meta['headers']):
+        if header is None:
+            meta['headers'][kk] = str('none')
+        else:
+            meta['headers'][kk] = header.tostring()
+    # Clean up the dict
+    d = liu.jsonify(meta)
+    return json.dumps(d)
 
 def splice_two(spec1, spec2, wvmx=None, scale=1., chk_units=True):
     """ Combine two overlapping spectra.
@@ -32,10 +56,14 @@ def splice_two(spec1, spec2, wvmx=None, scale=1., chk_units=True):
     spec3 : XSpectrum1D
       A copy of the spliced spectrum.
     """
+    from .xspectrum1d import XSpectrum1D
+
     # Checks
     if chk_units:
         for key,item in spec1.units.items():
             assert item == spec2.units[key]
+    if spec2.wvmax < spec1.wvmax:
+        raise IOError("The second input spectrum does not cover longer wavelengths.")
     # Begin splicing after the end of the internal spectrum
     if wvmx is None:
         wvmx = spec1.wvmax

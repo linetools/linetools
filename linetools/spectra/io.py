@@ -23,7 +23,6 @@ from astropy.io.fits.hdu.table import BinTableHDU
 
 from .xspectrum1d import XSpectrum1D
 
-#from xastropy.xutils import xdebug as xdb
 
 def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
              format='ascii', exten=None, debug=False, select=0, **kwargs):
@@ -77,6 +76,8 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
             if chk == 0:
                 raise IOError('File does not exist {}'.format(specfil))
             hdulist = fits.open(os.path.expanduser(datfil))
+        elif '.hdf5' in specfil:  # HDF5
+            return parse_hdf5(specfil)
         else: #ASCII
             tbl = Table.read(specfil,format=format)
             # No header?
@@ -191,7 +192,10 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
                 xspec1d.data['co'] = fits.getdata(co_filename)
 
     # Add in the header
-    xspec1d.head = head0
+    #xspec1d.head = head0
+    xspec1d.meta['headers'][0] = head0
+    if xspec1d.nspec > 1:
+        warnings.warn("Read in only 1 header (into meta['headers'][0]")
 
     # Return
     return xspec1d
@@ -244,7 +248,7 @@ def get_table_column(tags, hdulist, idx=None):
 #### ###############################
 #  Set wavelength array using Header cards
 def setwave(hdr):
-    ''' Generate wavelength array from a header
+    """ Generate wavelength array from a header
 
     Parameters
     ----------
@@ -254,7 +258,7 @@ def setwave(hdr):
     -------
     wave : ndarray
       No units yet
-    '''
+    """
 
     # Parse the header
     npix = hdr['NAXIS1']
@@ -537,6 +541,57 @@ def parse_linetools_spectrum_format(hdulist):
         xspec1d.meta.update(json.loads(hdulist[0].header['METADATA']))
 
     return xspec1d
+
+def parse_hdf5(inp, **kwargs):
+    """ Read a spectrum from HDF5 written in XSpectrum1D format
+    Expects:  meta, data, units
+
+    Parameters
+    ----------
+    inp : str or hdf5
+
+    Returns
+    -------
+
+    """
+    import json
+    import h5py
+    # Open
+    if isinstance(inp, basestring):
+        hdf5 = h5py.File(inp, 'r')
+    else:
+        hdf5 = inp
+    # Data
+    data = hdf5['data'].value
+    # Meta
+    if 'meta' in hdf5.keys():
+        meta = json.loads(hdf5['meta'].value)
+        # Headers
+        for jj,heads in enumerate(meta['headers']):
+            meta['headers'][jj] = fits.Header.fromstring(meta['headers'][jj])
+    else:
+        meta = None
+    # Units
+    units = json.loads(hdf5['units'].value)
+    for key,item in units.items():
+        if item == 'dimensionless_unit':
+            units[key] = u.dimensionless_unscaled
+        else:
+            units[key] = getattr(u, item)
+    # Other arrays
+    try:
+        sig = data['sig']
+    except (NameError, IndexError):
+        sig = None
+    try:
+        co = data['co']
+    except (NameError, IndexError):
+        co = None
+    # Finish
+    hdf5.close()
+    return XSpectrum1D(data['wave'], data['flux'], sig=sig, co=co,
+                          meta=meta, units=units, **kwargs)
+
 
 def parse_DESI_brick(hdulist, select=0):
     """ Read a spectrum from a DESI brick format HDU list
