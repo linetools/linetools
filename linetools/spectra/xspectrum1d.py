@@ -8,7 +8,6 @@ import json
 import warnings
 
 
-import astropy as apy
 from astropy import units as u
 from astropy.units import Quantity, UnitBase
 from astropy import constants as const
