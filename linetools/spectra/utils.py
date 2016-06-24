@@ -29,7 +29,12 @@ def meta_to_disk(in_meta):
         if header is None:
             meta['headers'][kk] = str('none')
         else:
-            meta['headers'][kk] = header.tostring()
+            try:
+                meta['headers'][kk] = header.tostring()
+            except AttributeError:
+                if not isinstance(header, basestring):
+                    raise ValueError("Bad format in header")
+                meta['headers'][kk] = header
     # Clean up the dict
     d = liu.jsonify(meta)
     return json.dumps(d)

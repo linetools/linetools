@@ -26,6 +26,16 @@ def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
 
+
+def test_write(spec,specm):
+    # FITS
+    spec.write(data_path('tmp.fits'))
+    spec.write(data_path('tmp.fits'), FITS_TABLE=True)
+    # ASCII
+    spec.write(data_path('tmp.ascii'))
+    # HDF5
+    specm.write(data_path('tmp.hdf5'))
+
 def test_hdf5(specm):
     # Write. Should be replaced with tempfile.TemporaryFile
     specm.write_to_hdf5(data_path('tmp.hdf5'))

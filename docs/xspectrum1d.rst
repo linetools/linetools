@@ -68,10 +68,14 @@ a series of example calls to generate the class::
     sp = xspec1.copy()                              # From an XSpectrum1D object
     sp = XSpectrum1D.from_list(xspec1, xspec2)      # From a list of XSpectrum1D objects
 
-To write a spectrum to a file, use either `sp.write_to_fits` or
-`sp.write_to_ascii`. FITS files are preferable because they are
+There are a number of methods to write a file, e.g.
+`sp.write_to_fits`. FITS files are preferable because they are
 generally faster to read and write, require less space, and
 are generally easier for other software to read.
+Another option is an hdf5 file which better preserves the
+data format of XSpectrum1D.  Here are some examples::
+
+
 
 Plotting
 --------

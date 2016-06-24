@@ -959,7 +959,37 @@ or QtAgg backends to enable all interactive plotting commands.
         # Return
         return spec
 
-    def write_to_ascii(self, outfil, format='ascii.ecsv'):
+    def write(self, outfil, FITS_TABLE=False, **kwargs):
+        """  Wrapper for writing
+        Parses the extension to choose the file format
+
+        Parameters
+        ----------
+        outfil : str
+          Allowed extensions are
+          .fit, .fits -- FITS file; set FITS_TABLE=True to format as a binary FITS Table
+          .hdf5 -- HDF5 file
+          .ascii -- ASCII
+        kwargs
+
+        Returns
+        -------
+
+        """
+        ext = outfil[outfil.rfind('.')+1:]
+        if ext in ['fit','fits']:
+            if FITS_TABLE:
+                self.write_to_binary_fits_table(outfil, **kwargs)
+            else:
+                self.write_to_fits(outfil, **kwargs)
+        elif ext in ['hdf5']:
+            self.write_to_hdf5(outfil, **kwargs)
+        elif ext in ['ascii']:
+            self.write_to_ascii(outfil, **kwargs)
+        else:
+            raise IOError("Bad file extension: {:s}".format(ext))
+
+    def write_to_ascii(self, outfil, format='ascii.ecsv', **kwargs):
         """ Write to a text file.
 
         Parameters
