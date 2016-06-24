@@ -58,23 +58,34 @@ Reading and Writing
 -------------------
 
 Read spectra from a file using ``XSpectrum1D.from_file``, which uses the same
-syntax as `~linetools.spectra.io.readspec`. The easiest way to create
-a new spectrum from a set of data arrays for a single
-spectrum is to use ``sp.from_tuple`` as shown above.  Here are
-a series of example calls to generate the class::
+syntax as `~linetools.spectra.io.readspec`.  See
+below for a complete listing of permitted file formats.
 
-    sp = XSpectrum1D.from_file('PH957_f.fits')      # From a FITS file
-    sp = XSpectrum1D.from_file('q0002m422.txt.gz')  # From an ASCII table
-    sp = xspec1.copy()                              # From an XSpectrum1D object
-    sp = XSpectrum1D.from_list(xspec1, xspec2)      # From a list of XSpectrum1D objects
+The easiest way to create
+a new spectrum from a set of data arrays for a single
+spectrum is to use ``sp.from_tuple`` as shown above.
+Here are a series of example calls to generate the class::
+
+    >>> sp = XSpectrum1D.from_file('PH957_f.fits')      # From a FITS file
+    >>> sp = XSpectrum1D.from_file('q0002m422.txt.gz')  # From an ASCII table
+    >>> sp = xspec1.copy()                              # From an XSpectrum1D object
+    >>> sp = XSpectrum1D.from_list(xspec1, xspec2)      # From a list of XSpectrum1D objects
+    >>> sp = XSpectrum1D.from_tuple((wa, fl, sig), verbose=False)
 
 There are a number of methods to write a file, e.g.
 `sp.write_to_fits`. FITS files are preferable because they are
 generally faster to read and write, require less space, and
 are generally easier for other software to read.
-Another option is an hdf5 file which better preserves the
+Another option is an HDF5 file which better preserves the
 data format of XSpectrum1D.  Here are some examples::
 
+    >>> sp.write_to_fits('QSO.fits')            # Standard FITS file
+    >>> sp.write('QSO.fits')                    # Same
+    >>> sp.write('QSO.fits', FITS_TABLE=True)   # Binary FITS table
+    >>> sp.write_to_hdf5('QSO.hdf5')            # HDF5 file
+    >>> sp.write('QSO.hdf5')                    # Same
+    >>> sp.write_to_ascii('QSO.ascii')          # ASCII (heaven forbid)
+    >>> sp.write('QSO.ascii')                   # Same
 
 
 Plotting
