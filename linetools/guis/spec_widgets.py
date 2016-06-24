@@ -41,7 +41,7 @@ class ExamineSpecWidget(QtGui.QWidget):
         """
         Parameters
         ----------
-        ispec : Spectrum1D, tuple of arrays or filename
+        ispec : XSpectrum1D, tuple of arrays or filename
         exten : int, optional
           extension for the spectrum in multi-extension FITS file
         parent : Widget parent, optional
@@ -67,6 +67,12 @@ class ExamineSpecWidget(QtGui.QWidget):
                                         rsp_kwargs=rsp_kwargs)
         self.orig_spec = spec  # For smoothing
         self.spec = self.orig_spec
+
+        # determine the filename (if any)
+        if isinstance(ispec, (str, basestring)):
+            filename = ispec
+        else:
+            filename = None
 
         self.vlines = []
         if vlines is not None:
@@ -122,6 +128,8 @@ class ExamineSpecWidget(QtGui.QWidget):
         self.ax = self.fig.add_subplot(1, 1, 1)
         self.show_restframe = False
         self.fig.subplots_adjust(hspace=0.1, wspace=0.1)
+        if filename is not None:
+            self.fig.suptitle(filename)
 
         vbox = QtGui.QVBoxLayout()
         vbox.addWidget(self.canvas)

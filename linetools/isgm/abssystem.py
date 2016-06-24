@@ -27,7 +27,7 @@ from linetools.spectralline import AbsLine
 from linetools.abund import ions
 
 # Globals to speed things up
-c_mks = const.c.to('km/s')
+c_mks = const.c.to('km/s').value
 
 class AbsSystem(object):
     """
@@ -268,14 +268,17 @@ class AbsSystem(object):
             testcoord = True
         # Now redshift/velocity
         if chk_z:
-            dz_toler = (1+self.zabs)*vtoler/c_mks.value  # Avoid Quantity for speed
-            zlim_comp = abscomp.zcomp + (1+abscomp.zcomp)*(abscomp.vlim/c_mks).decompose()
-            zlim_sys = self.zabs + (1+self.zabs)*(self.vlim/c_mks).decompose()
+            # Will avoid Quantity for speed
+            comp_vlim_mks = abscomp.vlim.to('km/s').value
+            sys_vlim_mks = self.vlim.to('km/s').value
+            dz_toler = (1 + self.zabs) * vtoler / c_mks
+            zlim_comp = abscomp.zcomp + (1 + abscomp.zcomp) * (comp_vlim_mks / c_mks)
+            zlim_sys = self.zabs + (1 + self.zabs) * (sys_vlim_mks / c_mks)
             if overlap_only:
                 testz = True
                 if debug:
                     pdb.set_trace()
-                if np.all(zlim_comp > np.max(zlim_sys+dz_toler)) or np.all(
+                if np.all(zlim_comp > np.max(zlim_sys + dz_toler)) or np.all(
                                 zlim_comp < np.min(zlim_sys-dz_toler)):
                     testz = False
             else:
