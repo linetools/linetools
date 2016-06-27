@@ -673,14 +673,8 @@ def parse_two_file_format(specfil, hdulist, efil=None):
         cdelt1, dc_flag = get_cdelt_dcflag(head0)
 
     # Read
-    if dc_flag == 0:
-        # Read FITS file
-        pdb.set_trace()
-        #spec1d = spec_read_fits.read_fits_spectrum1d(
-        #    os.path.expanduser(specfil), dispersion_unit='AA')
-        #spec1d.uncertainty = uncertainty
-        xspec1d = XSpectrum1D.from_spec1d(spec1d)
-    elif dc_flag == 1:  # Generate wavelengths and use array approach
+    if dc_flag in [0,1]:
+        # Data
         fx = hdulist[0].data
         # Generate wave
         wave = setwave(head0)
