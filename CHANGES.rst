@@ -3,7 +3,7 @@
 
 Updates
 .......
-
+- ASCII tables with no header are required to be 4 columns or less for `io.readspec` to work
 - Modify XSpectrum1D to use masked numpy arrays
 - Enable hdf5 I/O  [requires h5py]
 - Added .header property to XSpectrum1D (reads from .meta)
