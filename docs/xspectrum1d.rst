@@ -12,14 +12,15 @@ Overview
 `~linetools.spectra.xspectrum1d.XSpectrum1D` describes a 1-d spectrum,
 which usually consists of a wavelength, flux and flux uncertainty
 array.  For absorption-line analysis, it also often contains a
-continuum array.  The data are held in a numpy array which
-can contain multiple spectra.
+continuum array.  The data are held in a masked numpy array which
+may contain multiple spectra.  By default pixels on the edges of the
+spectrum with an input error array having values <=0 are masked.
 
 Attributes
 ==========
 
-Its main attributes are the `wavelength`, `flux` and
-`sig`. Let's create a spectrum using the
+The main attributes of XSpectrum1D are `wavelength`, `flux` and
+`sig`. Let's begin by creating a spectrum using the
 `~linetools.spectra.xspectrum1d.XSpectrum1D.from_tuple` method::
 
     >>> from linetools.spectra.xspectrum1d import XSpectrum1D
@@ -37,12 +38,13 @@ Its main attributes are the `wavelength`, `flux` and
 
 Note that all three arrays have units. If you don't
 specify a unit when you create an new XSpectrum1D instance, Angstroms
-are assumed. In this case the flux is unitless but still a
-Quantity array. The 1-sigma
-uncertainty is assumed to have the same units as the flux.
-All of these are specified in the sp.units dict.
+are assumed for wavelength and dimensionless_unscaled
+for flux. The 1-sigma uncertainty is always assumed to have the
+same units as the flux. All of these are specified in the sp.units dict.
 
-If one loads multiple 1D spectra (e.g. a brick of data from DESI),
+If one loads multiple 1D spectra (e.g. a brick of data from DESI
+or a set of spectrum from
+`igmspec <https://github.com/pyigm/igmspec>`_),
 the selected spectrum is given by the spec.select index.
 
 All of the values are stored in the masked spec.data numpy array
@@ -55,15 +57,36 @@ Methods
 Reading and Writing
 -------------------
 
-Read spectra from a file using ``sp.from_file``, which uses the same
-syntax as `~linetools.spectra.io.readspec`. The easiest way to create
-a new spectrum from data arrays is to use ``sp.from_tuple`` as shown
-above.
+Read spectra from a file using ``XSpectrum1D.from_file``, which uses the same
+syntax as `~linetools.spectra.io.readspec`.  See
+below for a complete listing of permitted file formats.
 
-To write a spectrum to a file, use either `sp.write_to_fits` or
-`sp.write_to_ascii`. FITS files are preferable because they are
+The easiest way to create
+a new spectrum from a set of data arrays for a single
+spectrum is to use ``sp.from_tuple`` as shown above.
+Here are a series of example calls to generate the class::
+
+    >>> sp = XSpectrum1D.from_file('PH957_f.fits')      # From a FITS file
+    >>> sp = XSpectrum1D.from_file('q0002m422.txt.gz')  # From an ASCII table
+    >>> sp = xspec1.copy()                              # From an XSpectrum1D object
+    >>> sp = XSpectrum1D.from_list(xspec1, xspec2)      # From a list of XSpectrum1D objects
+    >>> sp = XSpectrum1D.from_tuple((wa, fl, sig), verbose=False)
+
+There are a number of methods to write a file, e.g.
+`sp.write_to_fits`. FITS files are preferable because they are
 generally faster to read and write, require less space, and
 are generally easier for other software to read.
+Another option is an HDF5 file which better preserves the
+data format of XSpectrum1D.  Here are some examples::
+
+    >>> sp.write_to_fits('QSO.fits')            # Standard FITS file
+    >>> sp.write('QSO.fits')                    # Same
+    >>> sp.write('QSO.fits', FITS_TABLE=True)   # Binary FITS table
+    >>> sp.write_to_hdf5('QSO.hdf5')            # HDF5 file
+    >>> sp.write('QSO.hdf5')                    # Same
+    >>> sp.write_to_ascii('QSO.ascii')          # ASCII (heaven forbid)
+    >>> sp.write('QSO.ascii')                   # Same
+
 
 Plotting
 --------
