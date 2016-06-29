@@ -74,3 +74,25 @@ def test_read_table():
               names=['dumb_wave', 'dumb_flux', 'dumb_var'])
     spec = io.readspec(t, wave_tag='dumb_wave', flux_tag='dumb_flux',
                        var_tag='dumb_var')
+
+def test_errors():
+    # no such file
+    try:
+        io.readspec('filename_that_should_not_exist.txt')
+    except IOError:
+        pass
+
+    # bad format for ascii with more than 4 columns
+    try:
+        io.readspec('files/ascii_5columns.txt')
+    except IOError:
+        pass
+
+    # bad spectra input
+    try:
+        io.readspec(5) #input as an int
+    except IOError:
+        pass
+
+
+
