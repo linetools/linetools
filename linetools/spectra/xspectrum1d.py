@@ -1227,15 +1227,15 @@ or QtAgg backends to enable all interactive plotting commands.
 
         Parameters
         ----------
-        spec : XSpectrum1D
-        wlim : (float, float), optional
-          Start and end wavelengths for fitting the continuum. Default is
-          None, which fits the entire spectrum.
+
         knots: list of (x, y) pairs, optional
           A list of spline knots to use for the continuum.
         edges: list of floats, optional
           A list of edges defining wavelength chunks. Spline knots
           will be placed at the centre of these chunks.
+        wlim : (float, float), optional
+          Start and end wavelengths for fitting the continuum. Default is
+          None, which fits the entire spectrum.
         dw : float, optional
           The approximate distance between spline knots in
           Angstroms.
@@ -1252,12 +1252,14 @@ or QtAgg backends to enable all interactive plotting commands.
         import matplotlib.pyplot as plt
         if plt.get_backend() == 'MacOSX':
             warnings.warn("""\
-Looks like you're using the MacOSX matplotlib backend. Switch to the TkAgg
-or QtAgg backends to enable all interactive plotting commands.
-""")
+            Looks like you're using the MacOSX matplotlib backend. Switch to the TkAgg
+            or QtAgg backends to enable all interactive plotting commands.
+            """)
             return
 
         wa = self.wavelength.value
+        flux = self.flux.value
+        sig = self.sig.value
 
         anchor = False
         if wlim is None:
@@ -1279,12 +1281,12 @@ or QtAgg backends to enable all interactive plotting commands.
 
         if knots is None:
             knots, indices, masked = prepare_knots(
-                wa, self.flux.value, self.sig.value, edges)
+                wa, flux, sig, edges)
         else:
             knots = [list(k) for k in knots]
 
         if not len(knots) > 0:
-            raise RuntimeError('Problem generating continuum spline knots')
+            raise RuntimeError('Problem generating continuum spline knots.')
 
         # set the initial continuum for the fitter
         if self.co_is_set:
@@ -1301,7 +1303,7 @@ or QtAgg backends to enable all interactive plotting commands.
         import matplotlib.pyplot as plt
         fig = plt.figure(figsize=(11, 7))
         fig.subplots_adjust(left=0.05, right=0.95, bottom=0.1, top=0.95)
-        wrapper = InteractiveCoFit(wa, self.flux.value, self.sig.value,
+        wrapper = InteractiveCoFit(wa, flux, sig,
                                    contpoints, co=co_init, fig=fig, anchor=anchor)
 
         # wait until the interactive fitting has finished
@@ -1309,7 +1311,9 @@ or QtAgg backends to enable all interactive plotting commands.
             plt.waitforbuttonpress()
 
         print('Updating continuum')
-        self.data['co'] = wrapper.continuum
+        # import pdb; pdb.set_trace()
+        gdp = ~self.data['wave'][self.select].mask
+        self.data['co'][self.select][gdp] = wrapper.continuum
         #self.co = wrapper.continuum
         if 'contpoints' not in self.meta:
             self.meta['contpoints'] = []
