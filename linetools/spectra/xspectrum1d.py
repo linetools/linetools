@@ -282,9 +282,10 @@ class XSpectrum1D(object):
         if units is not None:
             if not isinstance(units, dict):
                 raise IOError("Units must be dict like")
+            valid_keys = ['wave', 'flux']
             for key,item in units.items():
-                if key not in ['wave', 'flux']:
-                    raise IOError("Units must have key: {:s}".format(key))
+                if key not in valid_keys:
+                    raise IOError("Wrong key in units dictionary, it should be either: {:s}".format(valid_keys))
                 assert isinstance(item,UnitBase)
             self.units = units
         else:
