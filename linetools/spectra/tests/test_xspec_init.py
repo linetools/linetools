@@ -86,3 +86,57 @@ def test_masking():
     assert len(spec.wavelength) == 900
     spec2 = XSpectrum1D.from_tuple((wave,flux,sig), masking='all')
     assert len(spec2.wavelength) == 875
+
+def test_errors():
+
+    # from_tuple
+    try:
+        spec = XSpectrum1D.from_tuple('this_is_not_a_tuple')
+    except IOError:
+        pass
+    try:
+        n_tuple = np.array([np.ones(5), np.ones(5)]), np.ones(5)
+        spec = XSpectrum1D.from_tuple(n_tuple)
+    except IOError:
+        pass
+
+    # wrong instances
+    flux = [1,2,3]
+    wave = [1,2,3]
+    try:
+        spec = XSpectrum1D(wave, flux)
+    except IOError:
+        pass
+
+    #wrong shapes
+    flux = np.ones(5)
+    wave = np.array([1,2,3])
+    try:
+        spec = XSpectrum1D(wave, flux)
+    except IOError:
+        pass
+    try:
+        spec = XSpectrum1D(wave, np.ones(len(wave)), sig=np.ones(2))
+    except IOError:
+        pass
+    try:
+        spec = XSpectrum1D(wave, np.ones(len(wave)), co=np.ones(2), verbose = True) # test verbose here too
+    except IOError:
+        pass
+
+    # wrong masking
+    try:
+        spec = XSpectrum1D(wave, np.ones(len(wave)), masking = 'wrong_masking')
+    except IOError:
+        pass
+
+    #wrong units input
+    try:
+        spec = XSpectrum1D(wave, np.ones(len(wave)), units = 'not_a_dict')
+    except IOError:
+        pass
+    try:
+        spec = XSpectrum1D(wave, np.ones(len(wave)), units =dict(wrong_key=2))
+    except IOError:
+        pass
+
