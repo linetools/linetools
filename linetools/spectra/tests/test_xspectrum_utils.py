@@ -178,9 +178,16 @@ def test_readwrite_metadata(spec):
 
 
 def test_copy(spec):
+    # From existing
     spec2 = spec.copy()
     assert spec.wavelength[0] == spec2.wavelength[0]
     assert spec.flux[-1] == spec2.flux[-1]
+    #
+    wave = np.arange(3000., 6500)
+    npix = len(wave)
+    spect = XSpectrum1D.from_tuple((wave*u.AA,np.ones(npix)))
+    specf = spect.copy()
+    assert specf.sig_is_set is False
 
 
 def test_plot(spec):
