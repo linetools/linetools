@@ -86,6 +86,8 @@ def test_masking():
     assert len(spec.wavelength) == 900
     spec2 = XSpectrum1D.from_tuple((wave,flux,sig), masking='all')
     assert len(spec2.wavelength) == 875
+    spec3 = XSpectrum1D.from_tuple((wave,flux,sig), masking='none')
+    assert len(spec3.wavelength) == len(wave)
 
 def test_errors():
 
