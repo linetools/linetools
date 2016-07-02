@@ -270,7 +270,10 @@ class XSpectrum1D(object):
                     badsigval = self.data['sig'][kk].data <= 0.
                     for key in self.data.dtype.names:
                         if masking == 'edges':
-                            self.data[key][kk][0:gdsigval[0]].mask = True
+                            try:
+                                self.data[key][kk][0:gdsigval[0]].mask = True
+                            except IndexError:
+                                pdb.set_trace()
                             self.data[key][kk][gdsigval[-1]+1:].mask = True
                         elif masking == 'all':
                             self.data[key][kk].mask = badsigval
@@ -319,7 +322,16 @@ class XSpectrum1D(object):
         units = self.units.copy()
         meta = self.meta.copy()
         #
-        new = XSpectrum1D(data['wave'], data['flux'], data['sig'], data['co'],
+        if self.sig_is_set:
+            sig = data['sig']
+        else:
+            sig = None
+        #
+        if self.co_is_set:
+            co = data['co']
+        else:
+            co = None
+        new = XSpectrum1D(data['wave'], data['flux'], sig=sig, co=co,
                           units=units, meta=meta, select=select)
         return new
 
