@@ -3,13 +3,15 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 # TEST_UNICODE_LITERALS
 
-import pdb
+import pytest
 from linetools.scripts.lt_absline import plot_absline
 from linetools.scripts import lt_line
 
 
 def test_lt_absline():
     plot_absline(1550, 15, 5, show=False)
+    plot_absline('CIV 1548', 15, 5, show=False)
+
 
 def test_lt_line():
     # Run through the motions

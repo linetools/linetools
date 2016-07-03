@@ -53,12 +53,14 @@ lt_absline
 ----------
 
 This plots a single absorption line, given a transition rest
-wavelength (Angstroms), log10 column density, and Doppler parameter
+wavelength (Angstroms) or name (e.g. CIV1548),
+log10 column density, and Doppler parameter
 (km/s).
 
 For example::
 
 	lt_absline 1215.6701 14.0 30
+	lt_absline HI1215 14.0 30
 
 plots a Hydrogen Ly-a line with column density of 10\ :sup:`14` cm\
 :sup:`-2` and b=30 km/s. A plot will appear and the line info and EW
