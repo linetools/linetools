@@ -103,13 +103,17 @@ def navigate(psdict, event, init=False, wave=None, flux=None):
 
 def set_doublet(iself, event):
     """ Set z and plot doublet
+    Returns
+    -------
+    obs_wave
+    name
     """
     wv_dict = {'C': (1548.195, 1550.770, 'CIV'),
                'M': (2796.352, 2803.531, 'MgII'),
                '4': (1393.755, 1402.770, 'SiIV'),
                'X': (1031.9261, 1037.6167, 'OVI'),
                '8': (770.409, 780.324, 'NeVIII'),
-               'B': (1025.4433, 1215.6701, 'Lyba')}
+               'B': (1025.4433, 1215.6701, 'HI Ly')}
     wrest = wv_dict[event.key]
 
     # Set z
@@ -120,7 +124,7 @@ def set_doublet(iself, event):
     except AttributeError:
         print('z = {:g} for {:s}'.format(iself.zabs, wrest[2]))
 
-    return np.array(wrest[0:2])*(1.+iself.zabs)
+    return np.array(wrest[0:2])*(1.+iself.zabs), wv_dict[event.key][2]
 
 
 def set_llist(llist, in_dict=None, sort=True):
