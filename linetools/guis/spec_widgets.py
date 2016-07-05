@@ -359,10 +359,6 @@ class ExamineSpecWidget(QtGui.QWidget):
                     pass
                 print(mssg)
 
-                #QtCore.pyqtRemoveInputHook()
-                #xdb.set_trace()
-                #QtCore.pyqtRestoreInputHook()
-
 
         ## Velocity plot
         if event.key == 'v':
