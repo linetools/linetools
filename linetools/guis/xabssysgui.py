@@ -14,7 +14,6 @@ import warnings
 from astropy import units as u
 from linetools.isgm import utils as ltiu
 from linetools.guis import line_widgets as ltgl
-from linetools.guis import spec_widgets as ltgs
 
 '''
 =======
@@ -47,11 +46,12 @@ class XAbsSysGui(QtGui.QDialog):
                  vmnx=[-300., 300.]*u.km/u.s, outfil=None):
         """
         spec : Filename or Spectrum1D
-        Norm : Bool (False)
-          Normalized spectrum?
         abs_sys : AbsSystem
           Absorption system class
+        Norm : bool, optional
+          Normalized spectrum?
         """
+        from linetools.guis import spec_widgets as ltgs
         super(XAbsSysGui, self).__init__(parent)
 
         # Initialize

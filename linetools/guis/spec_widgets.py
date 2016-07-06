@@ -19,6 +19,7 @@ from matplotlib.figure import Figure
 
 from astropy.modeling import models, fitting
 
+from linetools.isgm.abssystem import GenericAbsSystem
 from linetools import utils as ltu
 from linetools.guis import utils as ltgu
 from linetools.guis import simple_widgets
@@ -26,6 +27,7 @@ from linetools.guis import line_widgets as ltgl
 from linetools.spectra.xspectrum1d import XSpectrum1D
 from ..spectralline import AbsLine
 from ..analysis import voigt as ltv
+from .xabssysgui import XAbsSysGui
 
 
 class ExamineSpecWidget(QtGui.QWidget):
@@ -183,11 +185,15 @@ class ExamineSpecWidget(QtGui.QWidget):
 
         # DOUBLETS
         if event.key in ['C', 'M', 'X', '4', '8', 'B']:
-            wave = ltgu.set_doublet(self, event)
-            #print('wave = {:g},{:g}'.format(wave[0], wave[1]))
-            self.ax.plot([wave[0], wave[0]], self.psdict['y_minmax'], '--', color='red')
-            self.ax.plot([wave[1], wave[1]], self.psdict['y_minmax'], '--', color='red')
-            flg = 2 # Layer
+            wave, name = ltgu.set_doublet(self, event)
+            # Lines
+            self.ax.plot([wave[0]]*2, self.psdict['y_minmax'], '--', color='red')
+            self.ax.plot([wave[1]]*2, self.psdict['y_minmax'], '--', color='red')
+            # Name
+            for wv in wave:
+                self.ax.text(wv, self.psdict['y_minmax'][0]+0.8*(
+                    self.psdict['y_minmax'][1]-self.psdict['y_minmax'][0]), name, color='red')
+            flg = 2  # Layer
 
         ## SMOOTH
         if event.key == 'S':
@@ -353,72 +359,19 @@ class ExamineSpecWidget(QtGui.QWidget):
                     pass
                 print(mssg)
 
-                #QtCore.pyqtRemoveInputHook()
-                #xdb.set_trace()
-                #QtCore.pyqtRestoreInputHook()
 
-
-        """
         ## Velocity plot
         if event.key == 'v':
             z=self.llist['z']
-            # Check for a match in existing list and use it if so
-            if len(self.abs_sys) > 0:
-                zabs = np.array([abs_sys.zabs for abs_sys in self.abs_sys])
-                mt = np.where( np.abs(zabs-z) < 1e-4)[0]
-            else:
-                mt = []
-            if len(mt) == 1:
-                ini_abs_sys = self.abs_sys[mt[0]]
-                outfil = ini_abs_sys.absid_file
-                self.vplt_flg = 0 # Old one
-                print('Using existing ID file {:s}'.format(outfil))
-            else:
-                ini_abs_sys = None
-                outfil = None
-                if self.llist['List'] == 'None':
-                    print('Need to set a line list first!!')
-                    self.vplt_flg = -1 # Nothing to do here
-                    return
-                self.vplt_flg = 1 # New one
-
-            # Outfil
-            if outfil is None:
-                i0 = self.spec.filename.rfind('/')
-                i1 = self.spec.filename.rfind('.')
-                if i0 < 0:
-                    path = './ID_LINES/'
-                else:
-                    path = self.spec.filename[0:i0]+'/ID_LINES/'
-                outfil = path + self.spec.filename[i0+1:i1]+'_z'+'{:.4f}'.format(z)+'_id.fits'
-                d = os.path.dirname(outfil)
-                if not os.path.exists(d):
-                    os.mkdir(d)
-                self.outfil = outfil
-                #QtCore.pyqtRemoveInputHook()
-                #xdb.set_trace()
-                #QtCore.pyqtRestoreInputHook()
-
             # Launch
             #QtCore.pyqtRemoveInputHook()
             #xdb.set_trace()
             #QtCore.pyqtRestoreInputHook()
-            gui = xsgui.XVelPltGui(self.spec, z=z, outfil=outfil, llist=self.llist,
-                                   abs_sys=ini_abs_sys, norm=self.norm,
-                                   sel_wv=self.xval*self.spec.wcs.unit)
+            abs_sys = GenericAbsSystem((0.,0.), z, (-300,300)*u.km/u.s)
+            gui = XAbsSysGui(self.spec, abs_sys, norm=self.norm, llist=self.llist)
             gui.exec_()
-            if gui.flg_quit == 0: # Quit without saving (i.e. discarded)
-                self.vplt_flg = 0
-            else:
-                # Push to Abs_Sys
-                if len(mt) == 1:
-                    self.abs_sys[mt[0]] = gui.abs_sys
-                else:
-                    self.abs_sys.append(gui.abs_sys)
-                    print('Adding new abs system')
             # Redraw
             flg=1
-        """
 
         # Dummy keys
         if event.key in ['shift', 'control', 'shift+super', 'super+shift']:
