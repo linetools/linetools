@@ -294,6 +294,12 @@ class AbsSystem(object):
             self._components.append(abscomp)
         else:
             warnings.warn('Input AbsComponent with Zion={} does not match AbsSystem rules. Not appending'.format(abscomp.Zion))
+            if not testcoord:
+                warnings.warn('Failed coordinate match')
+            if not testcomp:
+                warnings.warn('Failed component check')
+            if not testz:
+                warnings.warn('Failed velocity overlap')
         #
         return test
 
