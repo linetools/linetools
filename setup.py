@@ -100,6 +100,7 @@ entry_points['console_scripts'] = [
     'lt_xspec = linetools.scripts.lt_xspec:main',
     'lt_continuumfit = linetools.scripts.lt_continuumfit:main',
     'lt_plot = linetools.scripts.lt_plot:main',
+    'lt_viewhdf = linetools.scripts.lt_viewhdf:main',
 #    'astropy-package-template-example = packagename.example_mod:main',
 ]
 
