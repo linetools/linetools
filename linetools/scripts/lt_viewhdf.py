@@ -19,13 +19,19 @@ def show(obj, level, full=False):
     -------
     """
     tlevel = level + 1
-    pad = '  '*level
+    pad = ' ' + '  '*level
     for key in obj.keys():
         if isinstance(obj[key], h5py._hl.group.Group):
-            print('{:s}Group: {:s}'.format(pad, key))
+            grps = '{:s}Group: {:s}'.format(pad, key)
+            print('{:s}'.format(pad)+'-'*(len(grps)-len(pad)))
+            print(grps)
+            print('{:s}'.format(pad)+'-'*(len(grps)-len(pad)))
             show(obj[key], tlevel, full=full)
         elif isinstance(obj[key], h5py._hl.dataset.Dataset):
-            print('{:s}{:s}:  {:s}'.format(pad, key, str(obj[key])))
+            ss = '{:s}{:s}:  {:s}'.format(pad, key, str(obj[key]))
+            print('{:s}'.format(pad)+'='*(len(ss)-len(pad)))
+            print(ss)
+            print('{:s}'.format(pad)+'='*(len(ss)-len(pad)))
             if full:
                 nms = obj[key].dtype.descr
                 for nm in nms:
