@@ -19,7 +19,7 @@ def show(obj, level, full=False):
     -------
     """
     tlevel = level + 1
-    pad = ' ' + '  '*level
+    pad = '  '*level
     for key in obj.keys():
         if isinstance(obj[key], h5py._hl.group.Group):
             grps = '{:s}Group: {:s}'.format(pad, key)
@@ -35,7 +35,7 @@ def show(obj, level, full=False):
             if full:
                 nms = obj[key].dtype.descr
                 for nm in nms:
-                    print('{:s}    {:s}'.format(pad, nm))
+                    print('{:s}    {:s}'.format(pad, str(nm)))
             else:
                 nms = obj[key].dtype.names
                 print('{:s}    {}'.format(pad, nms))
