@@ -4,6 +4,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 # TEST_UNICODE_LITERALS
 
 import numpy as np
+import os
 import pytest
 from linetools.scripts.lt_absline import plot_absline
 from linetools.scripts import lt_line, lt_viewhdf
@@ -32,3 +33,5 @@ def test_viewhdf():
     spec.write_to_hdf5('tmp.hdf5')
     # Tickle
     lt_viewhdf.main(['tmp.hdf5','-f'])
+    # Cleanup
+    os.remove('tmp.hdf5')

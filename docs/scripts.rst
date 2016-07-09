@@ -113,3 +113,26 @@ Here is the current usage message::
       -h, --help           show this help message and exit
       --redshift REDSHIFT  Redshift of the Source
       --wchunk WCHUNK      Width of a 'chunk' (Ang)
+
+lt_viewhdf
+----------
+
+As named, this is a script for viewing the contents
+of an HDF5 file.  Rather simple::
+
+   lt_viewhdf input_file
+
+
+Here is the current usage message::
+
+    usage: lt_viewhdf [-h] [-f] file
+
+    View contents of an HDF5 file
+
+    positional arguments:
+      file        Filename
+
+    optional arguments:
+      -h, --help  show this help message and exit
+      -f, --full  Full output?
+
