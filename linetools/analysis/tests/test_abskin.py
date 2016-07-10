@@ -3,12 +3,10 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import numpy as np
 import pytest
 import os
-import pdb
 from astropy import units as u
 
-from linetools.spectra import io
-
-from linetools.analysis.abskin import generate_stau, pw97_kin
+from linetools.spectra.xspectrum1d import XSpectrum1D
+from linetools.analysis.abskin import generate_stau, pw97_kin, AbsKin
 
 
 def data_path(filename):
@@ -28,12 +26,12 @@ def dummy_spec():
     wrest = 1215.670*u.AA
     velo = (wave-wrest)/wrest * 3e5*u.km/u.s
     # Return
-    return velo, fx, sig
+    return wave, velo, fx, sig
 
 
 def test_stau():
     # Generate stau
-    velo, fx, sig = dummy_spec()
+    _, velo, fx, sig = dummy_spec()
     stau = generate_stau(velo, fx, sig)
     np.testing.assert_allclose(stau[1000], 0.27800134641010432)
     # Different binning now
@@ -43,10 +41,21 @@ def test_stau():
 
 def test_pw97():
     # Generate stau
-    velo, fx, sig = dummy_spec()
+    _, velo, fx, sig = dummy_spec()
     stau = generate_stau(velo, fx, sig)
     # pw97
     kin_data = pw97_kin(velo, stau)
     np.testing.assert_allclose(kin_data['Dv'].value, 20.)
     np.testing.assert_allclose(kin_data['fedg'], 0.37035142148289424)
+
+def test_abskin():
+    # Grab spectrum
+    wave, velo, fx, sig = dummy_spec()
+    spec = XSpectrum1D.from_tuple((wave,fx,sig))
+    wrest = 1215.670*u.AA
+    # Init
+    abskin = AbsKin(wrest, 0., (-400,400.)*u.km/u.s)
+    abskin.fill_kin(spec)
+    # Tests
+    np.testing.assert_allclose(abskin.data['Dv'].value, 20.)
 

@@ -156,7 +156,7 @@ class AbsKin(object):
 
         # voff -- Velocity centroid of profile relative to zsys
         self.data['delta_v'] = np.sum(
-            spec.velo[self.pix] * self.stau ) / np.sum( self.stau )
+            self.velo[self.pix] * self.stau ) / np.sum( self.stau )
 
         # ###
         # X "Covering" test
@@ -175,7 +175,7 @@ class AbsKin(object):
         # ###
         # Peak -- Peak optical depth velocity
         imx = np.argmax(self.stau)
-        self.data['v_peak'] = spec.velo[self.pix[imx]]
+        self.data['v_peak'] = self.velo[self.pix[imx]]
 
         # ###
         # Zero peak -- Ratio of peak optical depth to that within 15 km/s of zero
@@ -185,7 +185,7 @@ class AbsKin(object):
             #; Assuming zero value
             self.data['zero_pk'] = 0.
         else:
-            zpix = np.where( np.abs(spec.velo[self.pix]) < dv_zeropk)[0]
+            zpix = np.where( np.abs(self.velo[self.pix]) < dv_zeropk)[0]
             if len(zpix) == 0:
                 raise ValueError('cgm_kin: Problem here..')
             mx_ztau = np.max(self.stau[zpix])
@@ -193,7 +193,7 @@ class AbsKin(object):
 
         # ###
         # Forbes "Covering"
-        dv = np.abs(spec.velo[self.pix[1]]-spec.velo[self.pix[0]])
+        dv = np.abs(self.velo[self.pix[1]]-self.velo[self.pix[0]])
         forbes_fcover = dv * np.sum( self.stau ) / tau_zero
         self.data['JF_fcover'] = forbes_fcover
 
