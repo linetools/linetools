@@ -294,6 +294,12 @@ class AbsSystem(object):
             self._components.append(abscomp)
         else:
             warnings.warn('Input AbsComponent with Zion={} does not match AbsSystem rules. Not appending'.format(abscomp.Zion))
+            if not testcoord:
+                warnings.warn('Failed coordinate match')
+            if not testcomp:
+                warnings.warn('Failed component check')
+            if not testz:
+                warnings.warn('Failed velocity overlap')
         #
         return test
 
@@ -452,15 +458,21 @@ class AbsSystem(object):
         for comp in self._components:
             comp.synthesize_colm(**kwargs)
 
-    def stack_plot(self, **kwargs):
+    def stack_plot(self, pvlim=None, **kwargs):
         """Show a stack plot of the system, if spec are loaded
         Assumes the data are normalized.
 
         Parameters
         ----------
+        pvlim : Quantities, optional
+          Over-ride system vlim for plotting
         """
         from linetools.analysis import plots as ltap
-        ltap.stack_plot(self.list_of_abslines(), vlim=self.vlim, **kwargs)
+        if pvlim is not None:
+            vlim = pvlim
+        else:
+            vlim = self.vlim
+        ltap.stack_plot(self.list_of_abslines(), vlim=vlim, **kwargs)
 
     def to_dict(self):
         """ Write AbsSystem data to a dict that can be written with JSON
