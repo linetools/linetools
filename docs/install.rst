@@ -19,7 +19,7 @@ We strongly recommend that you use `Anaconda
 <https://www.continuum.io/downloads>`_ to install them. With Anaconda
 you can check for the presence and versions of the dependencies with::
 
-  conda list "^python$|numpy|astropy$|scipy$|matplotlib|PyQT|h5py"
+  conda list "^python|numpy|astropy|scipy|matplotlib|PyQT|h5py"
 
 If you're missing any, install them with (for example)::
 
