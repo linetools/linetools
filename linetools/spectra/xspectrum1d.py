@@ -1313,10 +1313,7 @@ class XSpectrum1D(object):
             plt.waitforbuttonpress()
 
         print('Updating continuum.')
-        # TODO: avoid this reasignation of the self.data['co'] if possible.
-        gdp = ~self.data['wave'][self.select].mask
-        self.data['co'][self.select][gdp] = wrapper.continuum
-        #self.co = wrapper.continuum
+        self.co = wrapper.continuum  # this should work with the assignment, even is self.co_is_set is False
         if 'contpoints' not in self.meta:
             self.meta['contpoints'] = []
         self.meta['contpoints'].extend(
