@@ -337,7 +337,7 @@ class LineList(object):
                             pass  # these corresponds to elements with no abundance given by solar()
                                   # and remain masked
 
-                import pdb; pdb.set_trace()
+                # import pdb; pdb.set_trace()
                 self._data['strength'] = np.log10(intrinsic_strength) + abund  # abundances are already in log
                 return
 
