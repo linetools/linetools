@@ -87,6 +87,9 @@ class LineList(object):
         # Memoize
         self.memoize = {}  # To speed up multiple calls
 
+        # set strength using default values for now
+        self.set_strength()
+
     def load_data(self, use_ISM_table=True, tol=1e-3 * u.AA, use_cache=True):
         """Grab the data for the lines of interest
         """
@@ -279,6 +282,64 @@ class LineList(object):
         #
         self._data = tmp_tab
         CACHE['data'][key] = self._data
+
+    def set_strength(self, mode='simple', abundance='solar'):
+        """Set `strength` column for each transition in the Linelist table.
+        This strength should be proportional to the intensity of a given
+        transition line.
+
+        Parameters
+        ----------
+        mode : str, optional
+            Mode to define strength:
+                `intrinsic` -> strength = wrest * fosc
+                `simple` -> strength = wrest * fosc * abundance [no ionization correction]
+                `ion_corrected` -> strength = wrest * fosc * abundance [with ionization correction; not implemented yet]
+            Default is `simple`.
+        abundance : str, optional
+            Type of abundance used when needed. Default is Solar.
+        """
+
+        # Checks
+        available_modes = ['intrinsic', 'simple', 'ion_corrected']
+        available_abundances = ['solar']
+        if mode not in available_modes:
+            raise ValueError('set_strength: `mode` has to be either: {}'.format(available_modes))
+        if mode == 'ion_corrected':
+            raise ValueError('set_strength: `ion_corrected` mode not yet implemented.')
+        if abundance not in available_abundances:
+            raise ValueError('set_strength: `abundance` has to be either: {}'.format(available_abundances))
+
+        # get strength as masked column (self._data['f'] is masked)
+        intrinsic_strength = self._data['f'] * (self._data['wrest'].value)
+        intrinsic_strength.name = 'strength'
+
+        if mode == 'intrinsic':
+            self._data['strength'] = intrinsic_strength
+            return
+        else:
+            # get abundance column
+            if abundance == 'solar':  # the only implemented case for now...
+                from linetools.abund.solar import SolarAbund
+                solar = SolarAbund()
+                abund = np.ma.masked_array(np.zeros(len(self._data)), mask=True)  # all masked as default
+                for ii in range(len(self._data)):
+                    ion_name = self._data['name'][ii]
+                    ion_Z = self._data['Z'][ii]
+                    if ion_name.startswith('DI'):
+                        abund[ii] = 12. - 4.8  # Approximate for Deuterium
+                        abund.mask[ii] = False  # unmask
+                    else:
+                        try:
+                            abund[ii] = solar[ion_Z]
+                            abund.mask[ii] = False  # unmask
+                        except ValueError:
+                            pass  # these corresponds to elements with no abundance given by solar()
+                                  # and remain masked
+
+                import pdb; pdb.set_trace()
+                self._data['strength'] = np.log10(intrinsic_strength) + abund  # abundances are already in log
+                return
 
     def subset_lines(self, subset, sort=False, reset_data=False, verbose=False):
         """ Select a user-specific subset of the lines from the LineList
