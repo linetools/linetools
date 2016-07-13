@@ -219,13 +219,13 @@ class XSpectrum1D(object):
         """
         # Error checking
         if not isinstance(wave, np.ndarray):
-            raise IOError("Input x-vector must be an ndarray")
+            raise IOError("Input `wave` vector must be an numpy.ndarray.")
         if not isinstance(flux, np.ndarray):
-            raise IOError("Input y-vector must be an ndarray")
+            raise IOError("Input `flux` vector must be an numpy.ndarray.")
         if wave.shape[0] != flux.shape[0]:
-            raise IOError("Shape of x and y vectors must be identical")
+            raise IOError("Shape of `flux` and `wave` vectors must be identical.")
         if masking not in ['none', 'edges', 'all']:
-            raise IOError("Invalid masking type")
+            raise IOError("Invalid masking type.")
         #if (masking != 'None') and (sig is None):
         #    warnings.warn("Must input sig array to use masking")
 
@@ -242,7 +242,7 @@ class XSpectrum1D(object):
             print("We have {:d} spectra with {:d} pixels each.".format(
                 self.nspec, self.totpix))
 
-        # Data array
+        # Data arrays are always MaskedArray
         self.data = np.ma.empty((self.nspec,), #self.npix),
                                dtype=[(str('wave'), 'float64', (self.totpix)),
                                       (str('flux'), 'float32', (self.totpix)),
@@ -254,7 +254,7 @@ class XSpectrum1D(object):
 
         if co is not None:
             if wave.shape[0] != co.shape[0]:
-                raise IOError("Shape of wave and co vectors must be identical")
+                raise IOError("Shape of `wave` and `co` vectors must be identical.")
             self.data['co'] = np.reshape(co, (self.nspec, self.totpix))
         else:
             self.data['co'] = np.nan
@@ -262,9 +262,9 @@ class XSpectrum1D(object):
         # Need to set sig last for masking
         if sig is not None:
             if wave.shape[0] != sig.shape[0]:
-                raise IOError("Shape of wave and sig vectors must be identical")
+                raise IOError("Shape of `wave` and `sig` vectors must be identical.")
             self.data['sig'] = np.reshape(sig, (self.nspec, self.totpix))
-            if masking != 'None':
+            if masking != 'none':
                 for kk in range(self.nspec):
                     gdsigval = np.where(self.data['sig'][kk].data > 0.)[0]
                     badsigval = self.data['sig'][kk].data <= 0.
@@ -284,14 +284,15 @@ class XSpectrum1D(object):
         # Units
         if units is not None:
             if not isinstance(units, dict):
-                raise IOError("Units must be dict like")
+                raise IOError("`units` must be a dictionary.")
+            valid_keys = ['wave', 'flux']
             for key,item in units.items():
-                if key not in ['wave', 'flux']:
-                    raise IOError("Units must have key: {:s}".format(key))
-                assert isinstance(item,UnitBase)
+                if key not in valid_keys:
+                    raise IOError("{:s} is a wrong key in the `units` dictionary. Valid keys are: {}".format(key, valid_keys))
+                assert isinstance(item, UnitBase)
             self.units = units
         else:
-            warnings.warn("Assuming wavelength unit is Angstroms")
+            warnings.warn("No unit given to wavelength, assuming Angstroms.")
             self.units = dict(wave=u.AA, flux=u.dimensionless_unscaled)
 
         # Apply continuum?
@@ -710,9 +711,9 @@ class XSpectrum1D(object):
 
         if plt.get_backend() == 'MacOSX':
             warnings.warn("""\
-Looks like you're using the MacOSX matplotlib backend. Switch to the TkAgg
-or QtAgg backends to enable all interactive plotting commands.
-""")
+            Looks like you're using the MacOSX matplotlib backend. Switch to the TkAgg
+            or QtAgg backends to enable all interactive plotting commands.
+            """)
         else:
             # Enable xspecplot-style navigation (i/o for zooming, etc).
             # Need to save this as an attribute so it doesn't get
@@ -1225,7 +1226,6 @@ or QtAgg backends to enable all interactive plotting commands.
         hdulist.writeto(outfil, clobber=clobber)
         print('Wrote spectrum to {:s}'.format(outfil))
 
-
     def fit_continuum(self, knots=None, edges=None, wlim=None, dw=10.,
                       kind=None, **kwargs):
         """ Interactively fit a continuum.
@@ -1239,18 +1239,20 @@ or QtAgg backends to enable all interactive plotting commands.
 
         Parameters
         ----------
-        spec : XSpectrum1D
-        wlim : (float, float), optional
-          Start and end wavelengths for fitting the continuum. Default is
-          None, which fits the entire spectrum.
+
         knots: list of (x, y) pairs, optional
           A list of spline knots to use for the continuum.
         edges: list of floats, optional
           A list of edges defining wavelength chunks. Spline knots
-          will be placed at the centre of these chunks.
+          will be placed at the centre of these chunks. Default
+          is None, which means it will place equally spaced chunks of
+          width `dw` (see below).
+        wlim : (float, float), optional
+          Start and end wavelengths for fitting the continuum. Default is
+          None, which fits the entire spectrum.
         dw : float, optional
           The approximate distance between spline knots in
-          Angstroms.
+          Angstroms. Default is 10.
         kind : {'QSO', None}, optional
           If not None, generate spline knots using
           linetools.analysis.continuum.find_continuum.
@@ -1264,12 +1266,14 @@ or QtAgg backends to enable all interactive plotting commands.
         import matplotlib.pyplot as plt
         if plt.get_backend() == 'MacOSX':
             warnings.warn("""\
-Looks like you're using the MacOSX matplotlib backend. Switch to the TkAgg
-or QtAgg backends to enable all interactive plotting commands.
-""")
+            Looks like you're using the MacOSX matplotlib backend. Switch to the TkAgg
+            or QtAgg backends to enable all interactive plotting commands.
+            """)
             return
 
         wa = self.wavelength.value
+        flux = self.flux.value
+        sig = self.sig.value
 
         anchor = False
         if wlim is None:
@@ -1291,12 +1295,12 @@ or QtAgg backends to enable all interactive plotting commands.
 
         if knots is None:
             knots, indices, masked = prepare_knots(
-                wa, self.flux.value, self.sig.value, edges)
+                wa, flux, sig, edges)
         else:
             knots = [list(k) for k in knots]
 
         if not len(knots) > 0:
-            raise RuntimeError('Problem generating continuum spline knots')
+            raise RuntimeError('Problem generating continuum spline knots.')
 
         # set the initial continuum for the fitter
         if self.co_is_set:
@@ -1313,16 +1317,15 @@ or QtAgg backends to enable all interactive plotting commands.
         import matplotlib.pyplot as plt
         fig = plt.figure(figsize=(11, 7))
         fig.subplots_adjust(left=0.05, right=0.95, bottom=0.1, top=0.95)
-        wrapper = InteractiveCoFit(wa, self.flux.value, self.sig.value,
+        wrapper = InteractiveCoFit(wa, flux, sig,
                                    contpoints, co=co_init, fig=fig, anchor=anchor)
 
         # wait until the interactive fitting has finished
         while not wrapper.finished:
             plt.waitforbuttonpress()
 
-        print('Updating continuum')
-        self.data['co'] = wrapper.continuum
-        #self.co = wrapper.continuum
+        print('Updating continuum.')
+        self.co = wrapper.continuum  # this should work with the assignment, even is self.co_is_set is False
         if 'contpoints' not in self.meta:
             self.meta['contpoints'] = []
         self.meta['contpoints'].extend(
