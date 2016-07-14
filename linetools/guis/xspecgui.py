@@ -17,7 +17,7 @@ class XSpecGui(QtGui.QMainWindow):
     """ GUI to replace XIDL x_specplot (which simulated a GUI by T. Barlow)
     """
     def __init__(self, ispec, parent=None, zsys=None, norm=None, exten=None,
-                 rsp_kwargs={}, unit_test=False):
+                 rsp_kwargs={}, unit_test=False, **kwargs):
         QtGui.QMainWindow.__init__(self, parent)
         """
         ispec = str, XSpectrum1D or tuple of arrays
@@ -56,7 +56,7 @@ class XSpecGui(QtGui.QMainWindow):
         self.spec_widg = ltgsp.ExamineSpecWidget(ispec,status=self.statusBar,
                                                 llist=self.pltline_widg.llist,
                                                 zsys=zsys, norm=norm, exten=exten,
-                                                 rsp_kwargs=rsp_kwargs)
+                                                 rsp_kwargs=rsp_kwargs, **kwargs)
         self.pltline_widg.spec_widg = self.spec_widg
 
         self.spec_widg.canvas.mpl_connect('button_press_event', self.on_click)
