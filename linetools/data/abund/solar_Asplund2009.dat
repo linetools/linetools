@@ -53,6 +53,7 @@ Y   2.17 39
 Zn  4.63 30
 Zr  2.53 40
 D   7.00 99
+# from here down copied by hand by NT from Table 1 of Asplund 2009 (meteoric)
 In  0.76 49
 Sr  2.88 38
 Nb  1.41 41
@@ -70,3 +71,16 @@ Dy  1.13 66
 Ho  0.47 67
 Er  0.92 68
 Tm  0.12 69
+Yb  0.92 70
+Lu  0.09 71
+Hf  0.71 72
+Ta -0.12 73
+W   0.65 74
+Re  0.26 75
+Os  1.35 76
+Ir  1.32 77
+Pt  1.62 78
+Hg  1.17 80
+Bi  0.65 83
+Th  0.06 90
+U  -0.54 92
