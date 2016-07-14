@@ -70,6 +70,7 @@ class ExamineSpecWidget(QtGui.QWidget):
         spec, spec_fil = ltgu.read_spec(ispec, exten=exten, norm=norm,
                                         rsp_kwargs=rsp_kwargs)
         if air:
+            spec.meta['airvac'] = 'air'
             spec.airtovac()
         self.orig_spec = spec  # For smoothing
         self.spec = self.orig_spec

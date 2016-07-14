@@ -303,6 +303,8 @@ class XSpectrum1D(object):
             self.meta = dict(headers=[None]*self.nspec)
         else:
             self.meta = meta
+        if 'airvac' not in self.meta.keys():
+            self.meta['airvac'] = 'vac'
 
         # Filename
         self.filename = 'none'
@@ -524,6 +526,9 @@ class XSpectrum1D(object):
         -------
         Resultant wavelength array is in AA no matter the input units
         """
+        if self.meta['airvac'] == 'vac':
+            warnings.warn("Already in vacuum.  Not applying any correction")
+            return
         # Convert to AA
         wavelength = self.wavelength.to(u.AA).value
 
@@ -538,6 +543,7 @@ class XSpectrum1D(object):
         new_wave = wavelength*u.AA
         # Finish
         self.wavelength = new_wave
+        self.meta['airvac'] = 'vac'
 
     def vactoair(self):
         """Convert to air-based wavelengths from vacuum
@@ -546,6 +552,10 @@ class XSpectrum1D(object):
         ----------
         Resultant wavelength array is in AA no matter the input units
         """
+        # Check
+        if self.meta['airvac'] == 'air':
+            warnings.warn("Already in air.  Not applying any correction")
+            return
         # Convert to AA
         wavelength = self.wavelength.to(u.AA).value
 
@@ -560,6 +570,7 @@ class XSpectrum1D(object):
         new_wave = wavelength*u.AA
         # Finish
         self.wavelength = new_wave
+        self.meta['airvac'] = 'air'
 
     def constant_sig(self, sigv=0.):
         """Set the uncertainty array to a constant value.

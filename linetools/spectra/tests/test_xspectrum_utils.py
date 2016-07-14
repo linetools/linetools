@@ -30,12 +30,15 @@ def test_airtovac_andback(spec):
     npix = 1000
     spec = XSpectrum1D.from_tuple((np.linspace(5000.,6000,npix), np.ones(npix)))
     # Airtovac
+    spec.meta['airvac'] = 'air'
     spec.airtovac()
     # Test
     np.testing.assert_allclose(spec.wavelength[0].value, 5001.394869990007, rtol=1e-5)
+    assert spec.meta['airvac'] == 'vac'
     # Vactoair
     spec.vactoair()
     np.testing.assert_allclose(spec.wavelength[0].value, 5000., rtol=1e-5)
+    assert spec.meta['airvac'] == 'air'
 
 
 def test_write(spec,specm):
