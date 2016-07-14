@@ -283,6 +283,21 @@ class LineList(object):
         self._data = tmp_tab
         CACHE['data'][key] = self._data
 
+    def _set_extra_data_columns(self):
+        """Sets new convenient columns in the self._data Qtable."""
+        self.set_intrinsic_strength()
+
+
+    def _set_intrinsic_strength(self):
+        """Set `intrinsic_strength` column for each transition
+        in the Linelist table. This is defined simply as wrest*fosc.
+        """
+        # get strength as masked column (self._data['f'] is masked)
+        intrinsic_strength = self._data['f'] * (self._data['wrest'].value)
+        intrinsic_strength.name = 'strength'
+        self._data['intrinsic_strength'] = intrinsic_strength
+
+
     def set_strength(self, mode='simple', abundance='solar'):
         """Set `strength` column for each transition in the Linelist table.
         This strength should be proportional to the intensity of a given
@@ -315,7 +330,7 @@ class LineList(object):
         intrinsic_strength.name = 'strength'
 
         if mode == 'intrinsic':
-            self._data['strength'] = intrinsic_strength
+            self._data['strength'] = self._data['intrinsic_strength']
             return
         else:
             # get abundance column
