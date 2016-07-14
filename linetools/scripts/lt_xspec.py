@@ -15,7 +15,7 @@ def main(*args, **kwargs):
 
     parser = argparse.ArgumentParser(description='Parse for XSpec')
     parser.add_argument("file", type=str, help="Spectral file")
-    parser.add_argument("--zsys", type=float, help="System Redshift")
+    parser.add_argument("-z", "--zsys", type=float, help="System Redshift")
     parser.add_argument("--norm", help="Show spectrum continuum normalized (if continuum is provided)",
                         action="store_true")
     parser.add_argument("--air", default=False, help="Convert input spectrum wavelengths from air to vacuum", action="store_true")
