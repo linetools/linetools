@@ -39,7 +39,7 @@ class ExamineSpecWidget(QtGui.QWidget):
     def __init__(self, ispec, parent=None, status=None, llist=None,
                  abs_sys=None, norm=True, second_file=None, zsys=None,
                  key_events=True, vlines=None, plotzero=False, exten=None,
-                 xlim=None, ylim=None, rsp_kwargs=None):
+                 xlim=None, ylim=None, rsp_kwargs=None, air=False):
         """
         Parameters
         ----------
@@ -61,12 +61,17 @@ class ExamineSpecWidget(QtGui.QWidget):
           Initial x plotting limits
         ylim : tuple of two floats
           Initial y plotting limits
+        air : bool, optional
+          Spectrum is wavelength calibrated `in air`
         """
         super(ExamineSpecWidget, self).__init__(parent)
 
         # Spectrum
         spec, spec_fil = ltgu.read_spec(ispec, exten=exten, norm=norm,
                                         rsp_kwargs=rsp_kwargs)
+        if air:
+            spec.meta['airvac'] = 'air'
+            spec.airtovac()
         self.orig_spec = spec  # For smoothing
         self.spec = self.orig_spec
 

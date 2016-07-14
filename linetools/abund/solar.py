@@ -28,7 +28,7 @@ class SolarAbund(object):
     ----------
     ref: str, optional
        'Asplund2009' :: Asplund et al. 2009, ARA&A, 47, 481 meteoritic
-       table (several photometric)
+       table (several photospheric though)
     """
     # Init
     def __init__(self, ref='Asplund2009', verbose=False):

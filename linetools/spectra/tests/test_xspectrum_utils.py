@@ -26,6 +26,20 @@ def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
 
+def test_airtovac_andback(spec):
+    npix = 1000
+    spec = XSpectrum1D.from_tuple((np.linspace(5000.,6000,npix), np.ones(npix)))
+    # Airtovac
+    spec.meta['airvac'] = 'air'
+    spec.airtovac()
+    # Test
+    np.testing.assert_allclose(spec.wavelength[0].value, 5001.394869990007, rtol=1e-5)
+    assert spec.meta['airvac'] == 'vac'
+    # Vactoair
+    spec.vactoair()
+    np.testing.assert_allclose(spec.wavelength[0].value, 5000., rtol=1e-5)
+    assert spec.meta['airvac'] == 'air'
+
 
 def test_write(spec,specm):
     # FITS
@@ -35,6 +49,7 @@ def test_write(spec,specm):
     spec.write(data_path('tmp.ascii'))
     # HDF5
     specm.write(data_path('tmp.hdf5'))
+
 
 def test_hdf5(specm):
     # Write. Should be replaced with tempfile.TemporaryFile
@@ -62,6 +77,7 @@ def test_rebin(spec):
     """
     imn = np.argmin(np.abs(newspec.wavelength-8055*u.AA))
     np.testing.assert_allclose(newspec.sig[imn].value, 0.0169634, rtol=1e-5)
+
 
 def test_addnoise(spec):
     #
@@ -252,3 +268,6 @@ def test_wvmnx():
                                    np.ones(npix)*0.1))
     assert spec.wvmin.value == 5000.
     assert spec.wvmax.value == 6000.
+
+
+
