@@ -303,6 +303,8 @@ class XSpectrum1D(object):
             self.meta = dict(headers=[None]*self.nspec)
         else:
             self.meta = meta
+        if 'airvac' not in self.meta.keys():
+            self.meta['airvac'] = 'vac'
 
         # Filename
         self.filename = 'none'
@@ -516,6 +518,59 @@ class XSpectrum1D(object):
         newspec.data['sig'][self.select][gdp] = np.ones_like(self.flux) * sig
         #
         return newspec
+
+    def airtovac(self):
+        """ Converts current wavelength array from an assumed air to vacuum wavelength scale
+
+        Returns
+        -------
+        Resultant wavelength array is in AA no matter the input units
+        """
+        if self.meta['airvac'] == 'vac':
+            warnings.warn("Already in vacuum.  Not applying any correction")
+            return
+        # Convert to AA
+        wavelength = self.wavelength.to(u.AA).value
+
+        # Standard conversion format
+        sigma_sq = (1.e4/wavelength)**2. #wavenumber squared
+        factor = 1 + (5.792105e-2/(238.0185-sigma_sq)) + (1.67918e-3/(57.362-sigma_sq))
+        factor = factor*(wavelength>=2000.) + 1.*(wavelength<2000.) #only modify above 2000A
+
+        # Convert
+        wavelength = wavelength*factor
+        # Units
+        new_wave = wavelength*u.AA
+        # Finish
+        self.wavelength = new_wave
+        self.meta['airvac'] = 'vac'
+
+    def vactoair(self):
+        """Convert to air-based wavelengths from vacuum
+
+        Returns:
+        ----------
+        Resultant wavelength array is in AA no matter the input units
+        """
+        # Check
+        if self.meta['airvac'] == 'air':
+            warnings.warn("Already in air.  Not applying any correction")
+            return
+        # Convert to AA
+        wavelength = self.wavelength.to(u.AA).value
+
+        # Standard conversion format
+        sigma_sq = (1.e4/wavelength)**2. #wavenumber squared
+        factor = 1 + (5.792105e-2/(238.0185-sigma_sq)) + (1.67918e-3/(57.362-sigma_sq))
+        factor = factor*(wavelength>=2000.) + 1.*(wavelength<2000.) #only modify above 2000A
+
+        # Convert
+        wavelength = wavelength/factor
+        # Units
+        new_wave = wavelength*u.AA
+        # Finish
+        self.wavelength = new_wave
+        self.meta['airvac'] = 'air'
 
     def constant_sig(self, sigv=0.):
         """Set the uncertainty array to a constant value.
