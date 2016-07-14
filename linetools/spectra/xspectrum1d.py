@@ -539,6 +539,27 @@ class XSpectrum1D(object):
         # Finish
         self.wavelength = new_wave
 
+    def vactoair(self):
+        """Convert to air-based wavelengths from vacuum
+
+        Returns:
+        ----------
+        Resultant wavelength array is in AA no matter the input units
+        """
+        # Convert to AA
+        wavelength = self.wavelength.to(u.AA).value
+
+        # Standard conversion format
+        sigma_sq = (1.e4/wavelength)**2. #wavenumber squared
+        factor = 1 + (5.792105e-2/(238.0185-sigma_sq)) + (1.67918e-3/(57.362-sigma_sq))
+        factor = factor*(wavelength>=2000.) + 1.*(wavelength<2000.) #only modify above 2000A
+
+        # Convert
+        wavelength = wavelength/factor
+        # Units
+        new_wave = wavelength*u.AA
+        # Finish
+        self.wavelength = new_wave
 
     def constant_sig(self, sigv=0.):
         """Set the uncertainty array to a constant value.
