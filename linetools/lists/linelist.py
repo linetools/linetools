@@ -12,7 +12,7 @@ import numpy as np
 
 from astropy import units as u
 from astropy.units.quantity import Quantity
-from astropy.table import QTable, Table, vstack, Column
+from astropy.table import QTable, Table, vstack, Column, MaskedColumn
 
 import imp
 
@@ -87,8 +87,8 @@ class LineList(object):
         # Memoize
         self.memoize = {}  # To speed up multiple calls
 
-        # set strength using default values for now
-        self.set_strength()
+        # set strength (using default values for now)
+        self._set_extra_columns_to_datatable()
 
     def load_data(self, use_ISM_table=True, tol=1e-3 * u.AA, use_cache=True):
         """Grab the data for the lines of interest
@@ -283,19 +283,62 @@ class LineList(object):
         self._data = tmp_tab
         CACHE['data'][key] = self._data
 
-    def _set_extra_data_columns(self):
-        """Sets new convenient columns in the self._data Qtable."""
-        self.set_intrinsic_strength()
+    def _set_extra_columns_to_datatable(self, abundance_type='solar', ion_correction='none'):
+        """Sets new convenient columns to the self._data QTable.
+        These include:
+            - `qm_strength` : wrest * fosc  # in np.log10(AA)
+            - `abundance` : [`none`, `solar`]
+            - `ion_correction` : [`none`]
+            - `rel_strength` : np.log10(qm_strength) + abundance + ion_correction
 
-
-    def _set_intrinsic_strength(self):
-        """Set `intrinsic_strength` column for each transition
-        in the Linelist table. This is defined simply as wrest*fosc.
         """
-        # get strength as masked column (self._data['f'] is masked)
-        intrinsic_strength = self._data['f'] * (self._data['wrest'].value)
-        intrinsic_strength.name = 'strength'
-        self._data['intrinsic_strength'] = intrinsic_strength
+
+        # Set QM strength as MaskedColumn (self._data['f'] is MaskedColumn)
+        qm_strength = self._data['f'] * (self._data['wrest'].to('AA').value)
+        qm_strength.name = 'qm_strength'
+        self._data['qm_strength'] = np.log10(qm_strength)
+        # mask out potential nans
+        cond = np.isnan(self._data['qm_strength'])
+        self._data['qm_strength'].mask = np.where(cond, True, self._data['qm_strength'].mask)
+
+        # Set Abundance
+        available_abundance_types = ['none', 'solar']
+        if abundance_type not in available_abundance_types:
+            raise ValueError('_set_extra_columns_to_datatable: `abundance type` '
+                             'has to be either: {}'.format(available_abundance_types))
+        if abundance_type == 'none':
+            self._data['abundance'] = np.ones(len(self._data))
+        elif abundance_type == 'solar':
+            from linetools.abund.solar import SolarAbund
+            solar = SolarAbund()
+            abund = np.ma.masked_array(np.zeros(len(self._data)), mask=True)  # all masked as default
+                                                                              # in case an element is not
+                                                                              # in SolarAbund()
+            for ii in range(len(self._data)):
+                ion_name = self._data['name'][ii]
+                ion_Z = self._data['Z'][ii]
+                if ion_name.startswith('DI'): # Deuterium
+                    abund[ii] = solar['D']
+                    abund.mask[ii] = False  # unmask
+                else:
+                    try:
+                        abund[ii] = solar[ion_Z]
+                        abund.mask[ii] = False  # unmask
+                    except ValueError:
+                        pass  # these corresponds to elements with no abundance given by solar()
+                              # and remain masked
+            self._data['abundance'] = abund
+
+        # Set ionization correction
+        available_ion_corrections = ['none']
+        if ion_correction not in available_ion_corrections:
+            raise ValueError('_set_extra_columns_to_datatable: `ion_correction` '
+                             'has to be either: {}'.format(available_ion_corrections))
+        if ion_correction == 'none':
+            self._data['ion_correction'] = np.zeros(len(self._data))  # is in log10 scale, so 0 means no-correction
+
+        # Set relative strength in log10 scale
+        self._data['rel_strength'] = self._data['qm_strength'] + self._data['abundance'] + self._data['ion_correction']
 
 
     def set_strength(self, mode='simple', abundance='solar'):

@@ -90,3 +90,21 @@ def test_mk_sets():
     llmk.mk_hi(outfil='tmp.lst', stop=False)
     lt_path = imp.find_module('linetools')[1]
     llmk.add_galaxy_lines('tmp.lst', infil=lt_path+'/lists/sets/llist_v0.1.ascii', stop=False)
+
+def test_set_extra_columns_to_datatable():
+    ism = LineList('ISM')
+    # bad calls
+    try:
+        ism._set_extra_columns_to_datatable(abundance_type='incorrect_one')
+    except ValueError:
+        pass
+    try:
+        ism._set_extra_columns_to_datatable(ion_correction='incorrect_one')
+    except ValueError:
+        pass
+    # test expected strongest value
+    ism._set_extra_columns_to_datatable(ion_correction='none', abundance_type='solar')
+    np.testing.assert_allclose(ism['HI 1215']['rel_strength'], 14.704326420257642)
+    tab = ism._data
+
+    np.testing.assert_allclose(np.max(tab['rel_strength']), 14.704326420257642)
