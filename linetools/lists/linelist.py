@@ -13,6 +13,7 @@ import numpy as np
 from astropy import units as u
 from astropy.units.quantity import Quantity
 from astropy.table import QTable, Table, vstack, Column, MaskedColumn
+import warnings
 
 import imp
 
@@ -58,11 +59,14 @@ class LineList(object):
     use_ISM_table : bool [default True]
         Developer use only. Read from a stored fits table with all ISM
         transitions, rather than from the original source files.
+
+    sort_key : list of str
+        Name(s) of the key(s) to sort the LineList by. Default is [`wrest`].
     """
 
     # Init
     def __init__(self, llst_key, verbose=False, closest=False, set_lines=True,
-                 use_ISM_table=True, use_cache=True):
+                 use_ISM_table=True, use_cache=True, sort_by=['wrest']):
 
         # Error catching
         if not isinstance(llst_key, basestring):
@@ -89,6 +93,10 @@ class LineList(object):
 
         # set strength (using default values for now)
         self._set_extra_columns_to_datatable()
+
+        # sort the LineList
+        self.sort(sort_by)
+        self.sort_by = sort_by
 
     def load_data(self, use_ISM_table=True, tol=1e-3 * u.AA, use_cache=True):
         """Grab the data for the lines of interest
@@ -194,7 +202,6 @@ class LineList(object):
         use_ISM_table : bool, optional
           For speed, use a saved ISM table instead of reading from original source files.
         """
-        import warnings
 
         global CACHE
         key = self.list
@@ -286,20 +293,31 @@ class LineList(object):
     def _set_extra_columns_to_datatable(self, abundance_type='solar', ion_correction='none'):
         """Sets new convenient columns to the self._data QTable.
         These include:
-            - `qm_strength` : wrest * fosc  # in np.log10(AA)
-            - `abundance` : [`none`, `solar`]
+            - `ion_name` : HI, CIII, CIV, etc
+            - `log(w*f)` : np.log10(wrest * fosc)  # in np.log10(AA)
+            - `abundance` : given by [`none`, `solar`]
             - `ion_correction` : [`none`]
-            - `rel_strength` : np.log10(qm_strength) + abundance + ion_correction
+            - `rel_strength` : log(w*f) + abundance + ion_correction
+
+        This function is only implemented for the following lists: HI, ISM, EUV, Strong
 
         """
+        good_linelists = ['HI', 'ISM', 'EUV', 'Strong']
+        if self.list not in good_linelists:
+            warnings.warn('Not implemented: will not set relative strength for LineList: {}.'.format(self.list))
+            return
+
+        # Set ion_name column
+        ion_name = [name.split(' ')[0] for name in self._data['name']]
+        self._data['ion_name'] = ion_name
 
         # Set QM strength as MaskedColumn (self._data['f'] is MaskedColumn)
         qm_strength = self._data['f'] * (self._data['wrest'].to('AA').value)
         qm_strength.name = 'qm_strength'
-        self._data['qm_strength'] = np.log10(qm_strength)
+        self._data['log(w*f)'] = np.log10(qm_strength)
         # mask out potential nans
-        cond = np.isnan(self._data['qm_strength'])
-        self._data['qm_strength'].mask = np.where(cond, True, self._data['qm_strength'].mask)
+        cond = np.isnan(self._data['log(w*f)'])
+        self._data['log(w*f)'].mask = np.where(cond, True, self._data['log(w*f)'].mask)
 
         # Set Abundance
         available_abundance_types = ['none', 'solar']
@@ -311,10 +329,10 @@ class LineList(object):
         elif abundance_type == 'solar':
             from linetools.abund.solar import SolarAbund
             solar = SolarAbund()
-            abund = np.ma.masked_array(np.zeros(len(self._data)), mask=True)  # all masked as default
-                                                                              # in case an element is not
-                                                                              # in SolarAbund()
-            for ii in range(len(self._data)):
+            # abund will be masked array as default (all masked out) in
+            # case an element is not in SolarAbund()
+            abund = np.ma.masked_array(np.zeros(len(self._data)), mask=True)
+            for ii in range(len(abund)):
                 ion_name = self._data['name'][ii]
                 ion_Z = self._data['Z'][ii]
                 if ion_name.startswith('DI'): # Deuterium
@@ -325,8 +343,8 @@ class LineList(object):
                         abund[ii] = solar[ion_Z]
                         abund.mask[ii] = False  # unmask
                     except ValueError:
-                        pass  # these corresponds to elements with no abundance given by solar()
-                              # and remain masked
+                        pass  # these correspond to elements with no abundance given by solar()
+                              # and so they remain masked
             self._data['abundance'] = abund
 
         # Set ionization correction
@@ -338,68 +356,36 @@ class LineList(object):
             self._data['ion_correction'] = np.zeros(len(self._data))  # is in log10 scale, so 0 means no-correction
 
         # Set relative strength in log10 scale
-        self._data['rel_strength'] = self._data['qm_strength'] + self._data['abundance'] + self._data['ion_correction']
+        self._data['rel_strength'] = self._data['log(w*f)'] + self._data['abundance'] + self._data['ion_correction']
 
-
-    def set_strength(self, mode='simple', abundance='solar'):
-        """Set `strength` column for each transition in the Linelist table.
-        This strength should be proportional to the intensity of a given
-        transition line.
+    def sort(self, keys, reverse=False):
+        """Sort the LineList according to a given key or keys.
 
         Parameters
         ----------
-        mode : str, optional
-            Mode to define strength:
-                `intrinsic` -> strength = wrest * fosc
-                `simple` -> strength = wrest * fosc * abundance [no ionization correction]
-                `ion_corrected` -> strength = wrest * fosc * abundance [with ionization correction; not implemented yet]
-            Default is `simple`.
-        abundance : str, optional
-            Type of abundance used when needed. Default is Solar.
+        key : str or list of str
+            The main key(s) to sort the LineList by
+            (e.g. 'wrest' or ['Z', 'log(w*f)']).
+        reverse : bool, optional
+            If True, the sorting is reversed
+
+        Note: this is a wrapper to astropy.table.table.sort()
         """
+        # define the sorting key(s) as list
+        if isinstance(keys, (str, basestring)):
+            keys = [keys]
 
-        # Checks
-        available_modes = ['intrinsic', 'simple', 'ion_corrected']
-        available_abundances = ['solar']
-        if mode not in available_modes:
-            raise ValueError('set_strength: `mode` has to be either: {}'.format(available_modes))
-        if mode == 'ion_corrected':
-            raise ValueError('set_strength: `ion_corrected` mode not yet implemented.')
-        if abundance not in available_abundances:
-            raise ValueError('set_strength: `abundance` has to be either: {}'.format(available_abundances))
+        # sort
+        self._data.sort(keys)
 
-        # get strength as masked column (self._data['f'] is masked)
-        intrinsic_strength = self._data['f'] * (self._data['wrest'].value)
-        intrinsic_strength.name = 'strength'
+        # reverse?
+        if reverse:
+            self._data.reverse()
 
-        if mode == 'intrinsic':
-            self._data['strength'] = self._data['intrinsic_strength']
-            return
-        else:
-            # get abundance column
-            if abundance == 'solar':  # the only implemented case for now...
-                from linetools.abund.solar import SolarAbund
-                solar = SolarAbund()
-                abund = np.ma.masked_array(np.zeros(len(self._data)), mask=True)  # all masked as default
-                for ii in range(len(self._data)):
-                    ion_name = self._data['name'][ii]
-                    ion_Z = self._data['Z'][ii]
-                    if ion_name.startswith('DI'):
-                        abund[ii] = 12. - 4.8  # Approximate for Deuterium
-                        abund.mask[ii] = False  # unmask
-                    else:
-                        try:
-                            abund[ii] = solar[ion_Z]
-                            abund.mask[ii] = False  # unmask
-                        except ValueError:
-                            pass  # these corresponds to elements with no abundance given by solar()
-                                  # and remain masked
+        # update sort_by
+        self.sort_by = keys
 
-                # import pdb; pdb.set_trace()
-                self._data['strength'] = np.log10(intrinsic_strength) + abund  # abundances are already in log
-                return
-
-    def subset_lines(self, subset, sort=False, reset_data=False, verbose=False):
+    def subset_lines(self, subset, reset_data=False, verbose=False, sort_by=['wrest']):
         """ Select a user-specific subset of the lines from the LineList
 
         Parameters
@@ -413,8 +399,8 @@ class LineList(object):
             initialization(i.e. the default list). This is useful for
             changing subsets of lines without the need to initialize a
             different LineList() object. Default is False.
-        sort : bool, optional
-            Sort this subset? Default is False.
+        sort_by : list of str, optional
+            Key to sort the LineList by
 
         Returns
         -------
@@ -461,15 +447,12 @@ class LineList(object):
                             'subset_lines: Did not find {:s} in data Tables'.format(gdlin))
         else:
             raise ValueError('Not ready for this `subset` type yet.')
-        # Sort
-        tmp = self._data[indices]
-        if sort:
-            tmp.sort('wrest')
 
         # Return LineList object
         new = LineList(self.list, closest=self.closest, set_lines=False,
-                       verbose=self.verbose)
+                       verbose=self.verbose, sort_by=sort_by)
         new._data = tmp
+        new.sort(sort_by)
         return new
 
     def unknown_line(self):
@@ -854,6 +837,10 @@ class LineList(object):
 
     # Printing
     def __repr__(self):
-        return '<LineList: {:s}; {} transitions>'.format(self.list, len(self._data))
+        if len(self.sort_by) == 1:
+            sort_by = self.sort_by[0]
+        else:
+            sort_by = self.sort_by
+        return '<LineList: {:s}; {} transitions sorted by {:s}>'.format(self.list, len(self._data), sort_by)
 
 
