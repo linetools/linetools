@@ -467,7 +467,7 @@ class LineList(object):
         return ldict
 
     def all_transitions(self, line):
-        """ Get all the transitions corresponding to a line.
+        """ Get all the transitions corresponding to a ion species.
 
         For a given single line transition, this function returns
         all transitions from the LineList containing that line.
@@ -487,6 +487,11 @@ class LineList(object):
             dict if only 1 transition found, otherwise QTable.
 
         """
+        good_linelists = ['HI', 'ISM', 'EUV', 'Strong']
+        if self.list not in good_linelists:
+            warnings.warn('Not implemented for LineList: {}.'.format(self.list))
+            return
+
         if isinstance(line, basestring):  # Name
             line = line.split(' ')[0]  # keep only the first part of input name
         elif isinstance(line, Quantity):  # Rest wavelength (with units)
@@ -533,7 +538,7 @@ class LineList(object):
 
         For a given single line transition, this function returns
         the n_max strongest transitions of the ion species found in
-        the linelist, within the wavelength range wlims.
+        the LineList, within the wavelength range wlims.
 
         Parameters
         ----------
@@ -556,6 +561,10 @@ class LineList(object):
         found), or QTable (if > 1 transitions are found)
 
         """
+        good_linelists = ['HI', 'ISM', 'EUV', 'Strong']
+        if self.list not in good_linelists:
+            warnings.warn('Not implemented for LineList: {}.'.format(self.list))
+            return
 
         # Check correct format
         if isinstance(wvlims, tuple):  # tuple
@@ -596,9 +605,8 @@ class LineList(object):
         else:
             # remove transitions out of range
             data = data[cond]
-            # sort by strength defined as wrest * fosc
-            strength = data['wrest'] * data['f']
-            sorted_inds = np.argsort(strength)
+            # sort by relative strength
+            sorted_inds = np.argsort(data['rel_strength'])
             # reverse sorted indices, so strongest get first
             sorted_inds = sorted_inds[::-1]
             # sort using sorted_inds
@@ -612,24 +620,21 @@ class LineList(object):
             else:
                 return data
 
-    def available_transitions(self, wvlims, n_max=None, n_max_tuple=None, min_strength=1.):
+    def available_transitions(self, wvlims, n_max_tuple=None, min_strength=0.):
         """ Find the strongest transitions in a wavelength interval.
 
         For a given wavelength range, wvlims = (wv_min, wv_max), this
         function retrieves the n_max_tuple strongest transitions per
         each ion species in the LineList available at such a
         wavelength range and having strength larger than min_strength.
-        Strength is defined as log10(wrest * fosc * abundance). The output
-        is sorted by strength of the strongest available transition
-        per ion species.
+        Strength is defined as log10(wrest * fosc * abundance * ion_correction).
+        The output is sorted by strength of the strongest available transition
+        of the ion species.
 
         Parameters
         ----------
         wvlims : tuple of Quantity
             Wavelength range, e.g. wvlims = (1100 * u.AA, 3200 * u.AA)
-        n_max : int, optional
-            Maximum number of transitions retrieved when given,
-            otherwise recover all of them
         n_max_tuple : int, optional
             Maximum number of transitions in a given ion species to
             retrieve. e.g., if Lyman series are all available, it will
@@ -644,94 +649,78 @@ class LineList(object):
         dict (if only 1 transition found) or QTable (if > 1
         transitions are found) or None (if no transition is found)
         """
+        good_linelists = ['HI', 'ISM', 'EUV', 'Strong']
+        if self.list not in good_linelists:
+            warnings.warn('Not implemented for LineList: {}.'.format(self.list))
+            return
+
         # Init
         from linetools.abund.solar import SolarAbund
         from linetools.abund import ions as laions
         solar = SolarAbund()
 
-        if all((isinstance(n, int) or (n is None)) for n in [n_max, n_max_tuple]):
-            if (n_max is not None) and (n_max < 1):
-                return None
-        else:
+        if not all((isinstance(n, int) or (n is None)) for n in [n_max_tuple]):
             raise SyntaxError(
-                'Both n_max and n_max_tuple must be integers when given!')
+                'n_max_tuple must be integer when given!')
         if isinstance(min_strength, (float,int)):
             pass
         else:
             raise SyntaxError('min_strength must be a float value')
 
         # Identify unique ion_names (e.g. HI, CIV, CIII)
-        # unique_ion_names = list(set([name.split(' ')[0] for name in self._data['name']]))
-        # unique_ion_names = np.array(unique_ion_names)
-        unique_ion_names = np.unique(
-            [name.split(' ')[0] for name in self._data['name']])
+        unique_ion_names = np.unique(self._data['ion_name'])
 
-        # obtain the strongest transition of a given unique ion species
-        ion_name = []
+        # obtain the strongest available transition of a given unique ion species
+        transition_name = []
         strength = []
-        for ion in unique_ion_names:  # This loop is necessary to have a non trivial but convinient order in the final output
-            # Abundance
-            Zion = laions.name_ion(ion)
-            if ion == 'DI':
-                abundance = 12. - 4.8  # Approximate for Deuterium
-            else:
-                abundance = solar[Zion[0]]
-
-            aux = self.strongest_transitions(
-                ion, wvlims, n_max=1)  # only the strongest
+        for ion in unique_ion_names:  # This loop is necessary to have a non trivial but convenient order in the final output
+            aux = self.strongest_transitions(ion, wvlims, n_max=1)  # only the strongest available
             if aux is not None:
-                if isinstance(aux, dict):  # this should always be True given n_max=1
-                    name = aux['name']
-                else:
-                    name = aux['name'][0]
-                ion_name += [name]
-                strength += [np.log10(aux['wrest'].value *
-                                      aux['f']) + abundance]
-        if len(ion_name) == 0:
+                assert isinstance(aux, dict)  # this should always be True given n_max=1
+                transition_name += [aux['name']]
+                strength += [aux['rel_strength']]
+        if len(transition_name) == 0:
             # no matches
             return None
 
-        # create Table
+        # create auxiliary Table
         unique = Table()
-        unique.add_column(Column(data=ion_name, name='name'))
-        unique.add_column(Column(data=strength, name='strength'))
+        unique['name'] = transition_name
+        unique['rel_strength'] = strength
 
         # get rid of those below the min_strength threshold
-        cond = unique['strength'] >= min_strength
+        cond = unique['rel_strength'] >= min_strength
         unique = unique[cond]
         if len(unique) < 1:
             return None
 
         # sort by strength
-        unique.sort(['strength'])
-        unique.reverse()  # Table unique is now sorted by strength, with only
+        unique.sort(['rel_strength'])
+        unique.reverse()
+        # Table unique is now sorted by strength, with only
         # 1 entry per ion species
 
-        # Create output data adding up to n_max_tuple per ion species
+        # Create output data table adding up to n_max_tuple per ion species
+        output = Table()
         for i, row in enumerate(unique):
             name = row['name']
             aux = self.strongest_transitions(name, wvlims, n_max=n_max_tuple)
+
             # need to deal with dict vs QTable format now
             if isinstance(aux, dict):
                 aux = self.from_dict_to_qtable(aux)
-            if i == 0:
-                # convert to Table because QTable does not like vstack
-                output = Table(aux)
-            else:
-                # vstack is only supported for Table()
-                output = vstack([output, Table(aux)])
+
+            # convert to Table because QTable does not like vstack
+            output = vstack([output, Table(aux)])
+
+        # Deal with output formatting now
         # if len==1 return dict
         if len(output) == 1:
             name = output['name'][0]
+            # import pdb; pdb.set_trace()
             return self.__getitem__(name)
-        else:  # n_max>1
-            if (n_max is not None) and (n_max > 1):
-                output = output[:n_max]
-            if len(output) == 1:  # return dictionary
-                name = output['name'][0]
-                return self.__getitem__(name)
-            else:
-                return QTable(output)
+        else:
+            return QTable(output)
 
     def from_dict_to_qtable(self, a):
         """Converts dictionary `a` to its QTable version.

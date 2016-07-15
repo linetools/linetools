@@ -93,31 +93,28 @@ def test_available_transitions():
     wvlims = (900,1800)*u.AA
     z = 0.1
 
-    transitions = ism.available_transitions(wvlims/(1+z),n_max=3,n_max_tuple=5)
-    assert len(transitions) == 3, error_msg 
+    transitions = ism.available_transitions(wvlims/(1+z),n_max_tuple=5)
     assert transitions[2]['name'] == 'HI 972' , error_msg
     assert isinstance(transitions,QTable), error_msg
 
-    transitions = ism.available_transitions(wvlims/(1+z),n_max=10,n_max_tuple=2)
-    assert len(transitions) == 10, error_msg 
-    assert transitions[2]['name'] == 'CIII 977' , error_msg #Only Lya and Lyb as the first two
+    transitions = ism.available_transitions(wvlims/(1+z),n_max_tuple=2)
+    assert transitions[2]['name'] == 'CIII 977' , error_msg
 
     wvlims = (1200,1800)*u.AA
     z = 0.5
-    transitions = ism.available_transitions(wvlims/(1+z),n_max=15,n_max_tuple=2)
-    assert len(transitions) == 15, error_msg 
+    transitions = ism.available_transitions(wvlims/(1+z), n_max_tuple=2)
     assert transitions[0]['name'] == 'HI 1025', error_msg 
     assert 'OVI 1031' in transitions['name'], error_msg 
     assert 'CIII 977' in transitions['name'], error_msg
 
     wvlims = (1000,3000)*u.AA
     z = 1.5
-    transitions = ism.available_transitions(wvlims/(1+z),n_max=100,n_max_tuple=2)
+    transitions = ism.available_transitions(wvlims/(1+z),n_max_tuple=2)
     assert 'NeVIII 770' in transitions['name'], error_msg
     assert 'MgX 609' in transitions['name'], error_msg
     assert 'HI 1215' not in transitions['name'], error_msg
 
     wvlims = (1215.6,1217)*u.AA
     z = 0
-    transitions = ism.available_transitions(wvlims/(1+z),n_max=100,n_max_tuple=2)
+    transitions = ism.available_transitions(wvlims/(1+z),n_max_tuple=2)
     assert isinstance(transitions,dict), error_msg
