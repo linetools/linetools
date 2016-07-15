@@ -396,7 +396,7 @@ class LineList(object):
             [1215.67 * u.AA, 1548.195 * u.AA])
         reset_data : bool, optional
             Reset self._data QTable based on the original list at the
-            initialization(i.e. the default list). This is useful for
+            initialization (i.e. the default list). This is useful for
             changing subsets of lines without the need to initialize a
             different LineList() object. Default is False.
         sort_by : list of str, optional
@@ -448,6 +448,8 @@ class LineList(object):
         else:
             raise ValueError('Not ready for this `subset` type yet.')
 
+        tmp = self._data[indices]
+        # import pdb; pdb.set_trace()
         # Return LineList object
         new = LineList(self.list, closest=self.closest, set_lines=False,
                        verbose=self.verbose, sort_by=sort_by)
@@ -526,7 +528,7 @@ class LineList(object):
                     tbl = tbl[cond]
                 if len(tbl) > 1:
                     return tbl
-                else:  # this whould be always len(tbl)==1 because Z is not None
+                else:  # this should be always len(tbl)==1 because Z is not None
                     name = tbl['name'][0]
                     return self.__getitem__(name)
             else:
@@ -752,6 +754,7 @@ class LineList(object):
             # This is needed to avoid an infinite loop which happens
             # when trying to assign self._fulldata to the cache
             # dictionary.
+            # import pdb; pdb.set_trace()
             out = object.__getattr__(k)
         except AttributeError:
             colm = self._data[k]
