@@ -15,9 +15,10 @@ def main(*args, **kwargs):
 
     parser = argparse.ArgumentParser(description='Parse for XSpec')
     parser.add_argument("file", type=str, help="Spectral file")
-    parser.add_argument("--zsys", type=float, help="System Redshift")
+    parser.add_argument("-z", "--zsys", type=float, help="System Redshift")
     parser.add_argument("--norm", help="Show spectrum continuum normalized (if continuum is provided)",
                         action="store_true")
+    parser.add_argument("--air", default=False, help="Convert input spectrum wavelengths from air to vacuum", action="store_true")
     parser.add_argument("--exten", type=int, help="FITS extension")
     parser.add_argument("--wave_tag", type=str, help="Tag for wave in Table")
     parser.add_argument("--flux_tag", type=str, help="Tag for flux in Table")
@@ -59,6 +60,6 @@ def main(*args, **kwargs):
     app = QtGui.QApplication(sys.argv)
 
     gui = XSpecGui(pargs.file, zsys=zsys, norm=norm, exten=exten,
-                   rsp_kwargs=rsp_kwargs)
+                   rsp_kwargs=rsp_kwargs, air=pargs.air)
     gui.show()
     app.exec_()
