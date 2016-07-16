@@ -92,7 +92,7 @@ class LineList(object):
         self.memoize = {}  # To speed up multiple calls
 
         # set strength (using default values for now)
-        self._set_extra_columns_to_datatable()
+        # self._set_extra_columns_to_datatable()
 
         # sort the LineList
         self.sort(sort_by)
@@ -333,8 +333,8 @@ class LineList(object):
             # case an element is not in SolarAbund()
             abund = np.ma.masked_array(np.zeros(len(self._data)), mask=True)
             for ii in range(len(abund)):
-                ion_name = self._data['name'][ii]
-                ion_Z = self._data['Z'][ii]
+                ion_name = self._data[ii]['ion_name']
+                ion_Z = self._data[ii]['Z']
                 if ion_name.startswith('DI'): # Deuterium
                     abund[ii] = solar['D']
                     abund.mask[ii] = False  # unmask
@@ -452,9 +452,9 @@ class LineList(object):
         # import pdb; pdb.set_trace()
         # Return LineList object
         new = LineList(self.list, closest=self.closest, set_lines=False,
-                       verbose=self.verbose, sort_by=sort_by)
+                       verbose=self.verbose)
         new._data = tmp
-        new.sort(sort_by)
+        # new.sort(sort_by)
         return new
 
     def unknown_line(self):
@@ -494,13 +494,13 @@ class LineList(object):
             warnings.warn('Not implemented for LineList: {}.'.format(self.list))
             return
 
-        if isinstance(line, basestring):  # Name
+        if isinstance(line, (str, basestring)):  # Name
             line = line.split(' ')[0]  # keep only the first part of input name
         elif isinstance(line, Quantity):  # Rest wavelength (with units)
             data = self.__getitem__(line)
             return self.all_transitions(data['name'])
         else:
-            raise ValueError('Not prepared for this type')
+            raise ValueError('Not prepared for this type.')
 
         if line == 'unknown':
             return self.unknown_line()
@@ -529,11 +529,10 @@ class LineList(object):
                 if len(tbl) > 1:
                     return tbl
                 else:  # this should be always len(tbl)==1 because Z is not None
-                    name = tbl['name'][0]
-                    return self.__getitem__(name)
+                    return self.from_qtable_to_dict(tbl)
             else:
                 raise ValueError(
-                    'Line {} not found in the linelist'.format(line))
+                    'Line {} not found in the LineList: {}'.format(line, self.list))
 
     def strongest_transitions(self, line, wvlims, n_max=3, verbose=False):
         """ Find the strongest transition for an ion
@@ -602,8 +601,7 @@ class LineList(object):
         elif isinstance(data, dict):  # Only 1 case from a dict format
             return data
         elif np.sum(cond) == 1:  # only 1 case from a QTable format
-            name = data[cond]['name'][0]
-            return self.__getitem__(name)
+            return self.from_qtable_to_dict(data[cond])
         else:
             # remove transitions out of range
             data = data[cond]
@@ -617,8 +615,7 @@ class LineList(object):
             if n_max is not None:
                 data = data[:n_max]
             if len(data) == 1:  # Only 1 case from a QTable format; return a dictionary
-                name = data['name'][0]
-                return self.__getitem__(name)
+                return self.from_qtable_to_dict(data)
             else:
                 return data
 
@@ -655,6 +652,9 @@ class LineList(object):
         if self.list not in good_linelists:
             warnings.warn('Not implemented for LineList: {}.'.format(self.list))
             return
+
+        # set extra columns (using default values for now)
+        self._set_extra_columns_to_datatable()
 
         # Init
         from linetools.abund.solar import SolarAbund
@@ -718,9 +718,10 @@ class LineList(object):
         # Deal with output formatting now
         # if len==1 return dict
         if len(output) == 1:
-            name = output['name'][0]
+            # name = output['name'][0]
             # import pdb; pdb.set_trace()
-            return self.__getitem__(name)
+            # return self.__getitem__(name)
+            return self.from_qtable_to_dict(output)
         else:
             return QTable(output)
 
@@ -731,7 +732,7 @@ class LineList(object):
         if isinstance(a, dict):
             pass
         else:
-            raise SyntaxError('Input has to be a dictionary')
+            raise ValueError('Input has to be a dictionary.')
 
         keys = self._data.keys()
 
@@ -741,6 +742,20 @@ class LineList(object):
         for key in keys:
             tab[0][key] = a[key]
         return tab
+
+    def from_qtable_to_dict(self, tab):
+        """Converts QTable `tab` to its dictionary version.
+        An error is raised it len(tab) > 1. """
+
+        if not isinstance(tab, (QTable, Table)):
+            raise ValueError('Input has to be QTable or Table.')
+        elif len(tab) != 1:
+            raise ValueError('Input has to be of len(tab) == 1.')
+
+        a_dict = dict()
+        for key in tab.keys():
+            a_dict[key] = tab[0][key]
+        return a_dict
 
     #####
     def __getattr__(self, k):
