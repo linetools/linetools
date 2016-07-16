@@ -60,13 +60,11 @@ class LineList(object):
         Developer use only. Read from a stored fits table with all ISM
         transitions, rather than from the original source files.
 
-    sort_key : list of str
-        Name(s) of the key(s) to sort the LineList by. Default is [`wrest`].
     """
 
     # Init
     def __init__(self, llst_key, verbose=False, closest=False, set_lines=True,
-                 use_ISM_table=True, use_cache=True, sort_by=['wrest']):
+                 use_ISM_table=True, use_cache=True):
 
         # Error catching
         if not isinstance(llst_key, basestring):
@@ -94,9 +92,6 @@ class LineList(object):
         # set strength (using default values for now)
         # self._set_extra_columns_to_datatable()
 
-        # sort the LineList
-        self.sort(sort_by)
-        self.sort_by = sort_by
 
     def load_data(self, use_ISM_table=True, tol=1e-3 * u.AA, use_cache=True):
         """Grab the data for the lines of interest
@@ -282,9 +277,8 @@ class LineList(object):
         # Collate (should grab unique ones!)
         all_idx = np.unique(np.array(indices))
 
-        # Parse and sort (consider masking instead)
+        # Parse (consider masking instead)
         tmp_tab = self._fulltable[all_idx]
-        tmp_tab.sort('wrest')
 
         #
         self._data = tmp_tab
@@ -304,8 +298,7 @@ class LineList(object):
         """
         good_linelists = ['HI', 'ISM', 'EUV', 'Strong']
         if self.list not in good_linelists:
-            warnings.warn('Not implemented: will not set relative strength for LineList: {}.'.format(self.list))
-            return
+            raise ValueError('Not implemented: will not set relative strength for LineList: {}.'.format(self.list))
 
         # Set ion_name column
         ion_name = [name.split(' ')[0] for name in self._data['name']]
@@ -325,7 +318,7 @@ class LineList(object):
             raise ValueError('_set_extra_columns_to_datatable: `abundance type` '
                              'has to be either: {}'.format(available_abundance_types))
         if abundance_type == 'none':
-            self._data['abundance'] = np.ones(len(self._data))
+            self._data['abundance'] = np.zeros(len(self._data))
         elif abundance_type == 'solar':
             from linetools.abund.solar import SolarAbund
             solar = SolarAbund()
@@ -358,8 +351,9 @@ class LineList(object):
         # Set relative strength in log10 scale
         self._data['rel_strength'] = self._data['log(w*f)'] + self._data['abundance'] + self._data['ion_correction']
 
-    def sort(self, keys, reverse=False):
-        """Sort the LineList according to a given key or keys.
+    def sort_datatable_by(self, keys, reverse=False):
+        """Sort the LineList._data Table according to a given
+        key or keys.
 
         Parameters
         ----------
@@ -382,10 +376,7 @@ class LineList(object):
         if reverse:
             self._data.reverse()
 
-        # update sort_by
-        self.sort_by = keys
-
-    def subset_lines(self, subset, reset_data=False, verbose=False, sort_by=['wrest']):
+    def subset_lines(self, subset, reset_data=False, verbose=False):
         """ Select a user-specific subset of the lines from the LineList
 
         Parameters
@@ -399,8 +390,6 @@ class LineList(object):
             initialization (i.e. the default list). This is useful for
             changing subsets of lines without the need to initialize a
             different LineList() object. Default is False.
-        sort_by : list of str, optional
-            Key to sort the LineList by
 
         Returns
         -------
@@ -448,13 +437,13 @@ class LineList(object):
         else:
             raise ValueError('Not ready for this `subset` type yet.')
 
+        # Sort
         tmp = self._data[indices]
-        # import pdb; pdb.set_trace()
+
         # Return LineList object
         new = LineList(self.list, closest=self.closest, set_lines=False,
-                       verbose=self.verbose)
+                       verbose=self.verbose, use_cache=True, use_ISM_table=True)
         new._data = tmp
-        # new.sort(sort_by)
         return new
 
     def unknown_line(self):
@@ -653,13 +642,10 @@ class LineList(object):
             warnings.warn('Not implemented for LineList: {}.'.format(self.list))
             return
 
-        # set extra columns (using default values for now)
-        self._set_extra_columns_to_datatable()
-
         # Init
-        from linetools.abund.solar import SolarAbund
-        from linetools.abund import ions as laions
-        solar = SolarAbund()
+        # from linetools.abund.solar import SolarAbund
+        # from linetools.abund import ions as laions
+        # solar = SolarAbund()
 
         if not all((isinstance(n, int) or (n is None)) for n in [n_max_tuple]):
             raise SyntaxError(
@@ -677,6 +663,7 @@ class LineList(object):
         strength = []
         for ion in unique_ion_names:  # This loop is necessary to have a non trivial but convenient order in the final output
             aux = self.strongest_transitions(ion, wvlims, n_max=1)  # only the strongest available
+
             if aux is not None:
                 assert isinstance(aux, dict)  # this should always be True given n_max=1
                 transition_name += [aux['name']]
@@ -844,10 +831,6 @@ class LineList(object):
 
     # Printing
     def __repr__(self):
-        if len(self.sort_by) == 1:
-            sort_by = self.sort_by[0]
-        else:
-            sort_by = self.sort_by
-        return '<LineList: {:s}; {} transitions sorted by {:s}>'.format(self.list, len(self._data), sort_by)
+        return '<LineList: {:s}; {} transitions.>'.format(self.list, len(self._data))
 
 
