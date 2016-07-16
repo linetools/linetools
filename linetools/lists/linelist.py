@@ -88,15 +88,30 @@ class LineList(object):
             # This sets self._data
             self.set_lines(use_ISM_table=use_ISM_table, verbose=verbose,
                            use_cache=use_cache)
+        else:
+            self._data = None
+
         # Memoize
         self.memoize = {}  # To speed up multiple calls
 
-        # set strength (using default values for now)
-        self._set_extra_columns_to_datatable()
-
-        # sort the LineList
-        self.sort(sort_by)
+        if self._data is not None:
+            # set strength (using default values for now)
+            self.set_extra_columns_to_datatable()
+            # sort the LineList
+            self.sortdata(sort_by)
         self.sort_by = sort_by
+
+    @property
+    def name(self):
+        """ Return the transition names
+        """
+        return np.array(self._data['name'])
+
+    @property
+    def wrest(self):
+        """ Return the rest wavelengths
+        """
+        return self._data['wrest']
 
     def load_data(self, use_ISM_table=True, tol=1e-3 * u.AA, use_cache=True):
         """Grab the data for the lines of interest
@@ -284,13 +299,13 @@ class LineList(object):
 
         # Parse and sort (consider masking instead)
         tmp_tab = self._fulltable[all_idx]
-        tmp_tab.sort('wrest')
+        tmp_tab.sortdata('wrest')
 
         #
         self._data = tmp_tab
         CACHE['data'][key] = self._data
 
-    def _set_extra_columns_to_datatable(self, abundance_type='solar', ion_correction='none'):
+    def set_extra_columns_to_datatable(self, abundance_type='solar', ion_correction='none'):
         """Sets new convenient columns to the self._data QTable.
         These include:
             - `ion_name` : HI, CIII, CIV, etc
@@ -308,7 +323,7 @@ class LineList(object):
             return
 
         # Set ion_name column
-        ion_name = [name.split(' ')[0] for name in self._data['name']]
+        ion_name = [name.split(' ')[0] for name in self.name]
         self._data['ion_name'] = ion_name
 
         # Set QM strength as MaskedColumn (self._data['f'] is MaskedColumn)
@@ -358,7 +373,7 @@ class LineList(object):
         # Set relative strength in log10 scale
         self._data['rel_strength'] = self._data['log(w*f)'] + self._data['abundance'] + self._data['ion_correction']
 
-    def sort(self, keys, reverse=False):
+    def sortdata(self, keys, reverse=False):
         """Sort the LineList according to a given key or keys.
 
         Parameters
@@ -449,12 +464,11 @@ class LineList(object):
             raise ValueError('Not ready for this `subset` type yet.')
 
         tmp = self._data[indices]
-        # import pdb; pdb.set_trace()
         # Return LineList object
-        new = LineList(self.list, closest=self.closest, set_lines=False,
-                       verbose=self.verbose, sort_by=sort_by)
+        #import pdb; pdb.set_trace()
+        new = LineList(self.list, closest=self.closest, set_lines=False, verbose=self.verbose, sort_by=sort_by)
         new._data = tmp
-        new.sort(sort_by)
+        new.sortdata(sort_by)
         return new
 
     def unknown_line(self):
@@ -743,11 +757,14 @@ class LineList(object):
         return tab
 
     #####
+    '''
     def __getattr__(self, k):
         """ Passback an array or Column of the data
 
         k must be a Column name in the data Table
         """
+        if k == '_data':
+            return self._data
         # Deal with QTable
         try:
             # First try to access __getitem__ in the parent class.
@@ -764,6 +781,7 @@ class LineList(object):
                 return np.array(self._data[k])
         else:
             return out
+    '''
 
     def __getitem__(self, k, tol=1e-3*u.AA):
         """ Passback data as a dict (from the table) for the input line
