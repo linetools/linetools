@@ -82,7 +82,7 @@ def pw97_kin(velo, stau, per=0.05, debug=False):
 
         Returns
         -------
-        kin_data : dict
+        data : dict
         """
         kin_data = {}
         # Dv (usually dv90)
@@ -107,3 +107,71 @@ def pw97_kin(velo, stau, per=0.05, debug=False):
 
         # Return
         return kin_data
+
+
+def cgm_kin(velo, stau, per=0.05, debug=False, cov_thresh=0.5,
+            dv_zeropk=15.*u.km/u.s, do_orig_kin=False, get_stau=False):#, **kwargs):
+    """ Some new tests, invented in the context of CGM studies.
+    Some are thanks to John Forbes.
+
+    Parameters
+    ----------
+    spec
+    per
+    debug
+    cov_thresh : float, optional
+      Parameter for the X_fcover test
+    dv_zeropk
+    do_orig_kin
+    get_stau
+    kwargs
+
+    Returns
+    -------
+
+    """
+    kdata = {}
+
+    # voff -- Velocity centroid of profile relative to zsys
+    kdata['delta_v'] = np.sum(velo*stau) / np.sum(stau)
+
+    # X "Covering" test
+    tottau = np.sum(stau)
+    cumtau = np.cumsum(stau) / tottau
+    lft = (np.where(cumtau > per)[0])[0]
+    rgt = (np.where(cumtau > (1.-per))[0])[0] - 1
+
+    inpix = range(lft,rgt+1)
+    tau_covering = np.mean(stau[inpix])
+    i_cover = np.where(stau[inpix] > cov_thresh*tau_covering)[0]
+
+    kdata['X_fcover'] = float(len(i_cover)) / float(len(inpix))
+
+    # Peak -- Peak optical depth velocity
+    imx = np.argmax(stau)
+    kdata['v_peak'] = velo[imx]
+
+    # ###
+    # Zero peak -- Ratio of peak optical depth to that within 15 km/s of zero
+    tau_zero = stau[imx]
+    """
+    if (self.vmnx[0] > 0.) | (self.vmnx[1] < 0.):
+        #; Not covered
+        #; Assuming zero value
+        self.data['zero_pk'] = 0.
+    else:
+    """
+    zpix = np.where( np.abs(velo) < dv_zeropk)[0]
+    if len(zpix) == 0:
+        raise ValueError('cgm_kin: Problem here..')
+    mx_ztau = np.max(stau[zpix])
+    kdata['zero_pk'] = np.max([0., np.min([mx_ztau/tau_zero,1.])])
+
+    # ###
+    # Forbes "Covering"
+    dv = np.abs(velo[1]-velo[0])
+    forbes_fcover = dv * np.sum(stau) / tau_zero
+    kdata['JF_fcover'] = forbes_fcover
+
+    # Return
+    return kdata
