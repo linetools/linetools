@@ -95,15 +95,15 @@ def test_set_extra_columns_to_datatable():
     ism = LineList('ISM')
     # bad calls
     try:
-        ism._set_extra_columns_to_datatable(abundance_type='incorrect_one')
+        ism.set_extra_columns_to_datatable(abundance_type='incorrect_one')
     except ValueError:
         pass
     try:
-        ism._set_extra_columns_to_datatable(ion_correction='incorrect_one')
+        ism.set_extra_columns_to_datatable(ion_correction='incorrect_one')
     except ValueError:
         pass
     # test expected strongest value
-    ism._set_extra_columns_to_datatable(ion_correction='none', abundance_type='solar')
+    ism.set_extra_columns_to_datatable(ion_correction='none', abundance_type='solar')
     np.testing.assert_allclose(ism['HI 1215']['rel_strength'], 14.704326420257642)
     tab = ism._data
 

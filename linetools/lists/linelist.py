@@ -60,11 +60,14 @@ class LineList(object):
         Developer use only. Read from a stored fits table with all ISM
         transitions, rather than from the original source files.
 
+    sort_by : list of str, optional
+        Keys to sort the underlying data table by. Defauls is ['wrest'].
+
     """
 
     # Init
     def __init__(self, llst_key, verbose=False, closest=False, set_lines=True,
-                 use_ISM_table=True, use_cache=True):
+                 use_ISM_table=True, use_cache=True, sort_by=['wrest']):
 
         # Error catching
         if not isinstance(llst_key, basestring):
@@ -335,7 +338,7 @@ class LineList(object):
         # Set Abundance
         available_abundance_types = ['none', 'solar']
         if abundance_type not in available_abundance_types:
-            raise ValueError('_set_extra_columns_to_datatable: `abundance type` '
+            raise ValueError('set_extra_columns_to_datatable: `abundance type` '
                              'has to be either: {}'.format(available_abundance_types))
         if abundance_type == 'none':
             self._data['abundance'] = np.zeros(len(self._data))
@@ -363,7 +366,7 @@ class LineList(object):
         # Set ionization correction
         available_ion_corrections = ['none']
         if ion_correction not in available_ion_corrections:
-            raise ValueError('_set_extra_columns_to_datatable: `ion_correction` '
+            raise ValueError('set_extra_columns_to_datatable: `ion_correction` '
                              'has to be either: {}'.format(available_ion_corrections))
         if ion_correction == 'none':
             self._data['ion_correction'] = np.zeros(len(self._data))  # is in log10 scale, so 0 means no-correction
@@ -394,8 +397,9 @@ class LineList(object):
         # reverse?
         if reverse:
             self._data.reverse()
+        self.sort_by = keys
 
-    def subset_lines(self, subset, reset_data=False, verbose=False):
+    def subset_lines(self, subset, reset_data=False, verbose=False, sort_by=['wrest']):
         """ Select a user-specific subset of the lines from the LineList
 
         Parameters
@@ -409,6 +413,8 @@ class LineList(object):
             initialization (i.e. the default list). This is useful for
             changing subsets of lines without the need to initialize a
             different LineList() object. Default is False.
+        sort_by : list of str
+            Key(s) to sort the lines by.
 
         Returns
         -------
@@ -457,7 +463,7 @@ class LineList(object):
             raise ValueError('Not ready for this `subset` type yet.')
 
         # Sort
-
+        tmp = self._data[indices]
         # Return LineList object
         #import pdb; pdb.set_trace()
         new = LineList(self.list, closest=self.closest, set_lines=False, verbose=self.verbose)
@@ -855,6 +861,6 @@ class LineList(object):
 
     # Printing
     def __repr__(self):
-        return '<LineList: {:s}; {} transitions.>'.format(self.list, len(self._data))
+        return '<LineList: {:s}; {} transitions sorted by {}.>'.format(self.list, len(self._data), self.sort_by)
 
 
