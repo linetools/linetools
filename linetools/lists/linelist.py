@@ -861,6 +861,10 @@ class LineList(object):
 
     # Printing
     def __repr__(self):
-        return '<LineList: {:s}; {} transitions sorted by {}.>'.format(self.list, len(self._data), self.sort_by)
+        if len(self._data) > 1:
+            s = '<LineList: {:s}; {} transitions sorted by {}.>'.format(self.list, len(self._data), self.sort_by)
+        else:
+            s = '<LineList: {:s}; {} transition.>'.format(self.list, len(self._data))
+        return s
 
 
