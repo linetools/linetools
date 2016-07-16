@@ -301,7 +301,7 @@ class LineList(object):
 
         # Parse and sort (consider masking instead)
         tmp_tab = self._fulltable[all_idx]
-        tmp_tab.sortdata('wrest')
+        tmp_tab.sort('wrest')
 
         #
         self._data = tmp_tab
@@ -321,7 +321,8 @@ class LineList(object):
         """
         good_linelists = ['HI', 'ISM', 'EUV', 'Strong']
         if self.list not in good_linelists:
-            raise ValueError('Not implemented: will not set relative strength for LineList: {}.'.format(self.list))
+            warnings.warn('Not implemented: will not set relative strength for LineList: {}.'.format(self.list))
+            return
 
         # Set ion_name column
         ion_name = [name.split(' ')[0] for name in self.name]
@@ -414,7 +415,8 @@ class LineList(object):
             changing subsets of lines without the need to initialize a
             different LineList() object. Default is False.
         sort_by : list of str
-            Key(s) to sort the lines by.
+            Key(s) to sort the lines by. If sort_by == 'as_given', it will
+            preserve the sorting as given by `subset`.
 
         Returns
         -------
@@ -468,7 +470,10 @@ class LineList(object):
         #import pdb; pdb.set_trace()
         new = LineList(self.list, closest=self.closest, set_lines=False, verbose=self.verbose)
         new._data = tmp
-        new.sortdata(sort_by)
+        if sort_by == ['as_given'] or sort_by == 'as_given':
+            pass
+        else:
+            new.sortdata(sort_by)
 
         return new
 
