@@ -1,3 +1,4 @@
+# Tests for AbsLine kinematics
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
@@ -5,8 +6,7 @@ import pytest
 import os
 from astropy import units as u
 
-from linetools.spectra.xspectrum1d import XSpectrum1D
-from linetools.analysis.abskin import generate_stau, pw97_kin, AbsKin
+from linetools.analysis.abskin import generate_stau, pw97_kin, cgm_kin
 
 
 def data_path(filename):
@@ -48,9 +48,17 @@ def test_pw97():
     np.testing.assert_allclose(kin_data['Dv'].value, 20.)
     np.testing.assert_allclose(kin_data['fedg'], 0.37035142148289424)
 
-def test_abskin():
+def test_cgmkin():
     # Grab spectrum
     wave, velo, fx, sig = dummy_spec()
+    # stau
+    stau = generate_stau(velo, fx, sig)
+    # CGM
+    kin_data = cgm_kin(velo, stau)
+    for tst in [u'zero_pk', u'delta_v', u'X_fcover', u'JF_fcover', u'v_peak']:
+        assert tst in kin_data.keys()
+    np.testing.assert_allclose(kin_data['delta_v'].value, -164.9989, rtol=1e-5)
+    """
     spec = XSpectrum1D.from_tuple((wave,fx,sig))
     wrest = 1215.670*u.AA
     # Init
@@ -58,4 +66,4 @@ def test_abskin():
     abskin.fill_kin(spec)
     # Tests
     np.testing.assert_allclose(abskin.data['Dv'].value, 20.)
-
+    """
