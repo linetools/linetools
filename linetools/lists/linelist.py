@@ -117,13 +117,13 @@ class LineList(object):
 
     @property
     def Z(self):
-        """ Return the Z of the transition
+        """ Return the Z of the transitions
         """
         return self._data['Z']
 
     @property
     def ion(self):
-        """ Return the ionization state of the transition
+        """ Return the ionization state of the transitions
         """
         return self._data['ion']
 
