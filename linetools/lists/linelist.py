@@ -61,9 +61,7 @@ class LineList(object):
         transitions, rather than from the original source files.
 
     sort_by : str or list of str, optional
-        Keys to sort the underlying data table by.
-        Turning this on all adds the extra columns to the datatable
-
+        Keys to sort the underlying data table by. Default is 'wrest'
     """
 
     # Init
