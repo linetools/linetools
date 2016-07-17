@@ -252,10 +252,12 @@ class ExamineSpecWidget(QtGui.QWidget):
                 self.adict['wv_1'] = event.xdata # wavelength
                 self.adict['C_1'] = event.ydata # local continuum
                 self.adict['flg'] = 1 # Plot dot
+                print("Dot at x={:g}, y={:g}".format(event.xdata, event.ydata))
             else:
                 self.adict['wv_2'] = event.xdata # wavelength
                 self.adict['C_2'] = event.ydata # local continuum
                 self.adict['flg'] = 2 # Ready to plot + print
+                print("Dot at x={:g}, y={:g}".format(event.xdata, event.ydata))
 
                 # Sort em + make arrays
                 iwv = np.array(sorted([self.adict['wv_1'],
