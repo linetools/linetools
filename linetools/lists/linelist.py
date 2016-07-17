@@ -60,14 +60,14 @@ class LineList(object):
         Developer use only. Read from a stored fits table with all ISM
         transitions, rather than from the original source files.
 
-    sort_by : list of str, optional
-        Keys to sort the underlying data table by. Defauls is ['wrest'].
+    sort_by : str or list of str, optional
+        Keys to sort the underlying data table by. Defauls is 'wrest'.
 
     """
 
     # Init
     def __init__(self, llst_key, verbose=False, closest=False, set_lines=True,
-                 use_ISM_table=True, use_cache=True, sort_by=['wrest']):
+                 use_ISM_table=True, use_cache=True, sort_by='wrest'):
 
         # Error catching
         if not isinstance(llst_key, basestring):
@@ -308,19 +308,35 @@ class LineList(object):
         CACHE['data'][key] = self._data
 
     def set_extra_columns_to_datatable(self, abundance_type='solar', ion_correction='none'):
-        """Sets new convenient columns to the self._data QTable.
-        These include:
+        """Sets new convenient columns to the self._data QTable. These will be useful
+        for sorting the underlying data table in convenient ways, e.g. by expected
+        relative strength.
+        These new column include:
             - `ion_name` : HI, CIII, CIV, etc
             - `log(w*f)` : np.log10(wrest * fosc)  # in np.log10(AA)
-            - `abundance` : given by [`none`, `solar`]
+            - `abundance` : either [`none`, `solar`]
             - `ion_correction` : [`none`]
             - `rel_strength` : log(w*f) + abundance + ion_correction
 
-        This function is only implemented for the following lists: HI, ISM, EUV, Strong
+        Parameters
+        ----------
+        abundance_type : str, optional
+            Abundance type. Options are:
+                'solar' : Use Solar Abundance (in log10) as given
+                          by Asplund 2009. (Default)
+                'none' : No abundance given, so this column will
+                         be filled with zeros.
+        ion_correction: str, optional
+            Ionization correction. Options are:
+                'none' : No correction applied, so this column will
+                         be filled with zeros. (Default)
+
+        Note: This function is only implemented for the following
+        lists: HI, ISM, EUV, Strong.
 
         """
-        good_linelists = ['HI', 'ISM', 'EUV', 'Strong']
-        if self.list not in good_linelists:
+
+        if self.list not in ['HI', 'ISM', 'EUV', 'Strong']:
             warnings.warn('Not implemented: will not set relative strength for LineList: {}.'.format(self.list))
             return
 
@@ -337,10 +353,9 @@ class LineList(object):
         self._data['log(w*f)'].mask = np.where(cond, True, self._data['log(w*f)'].mask)
 
         # Set Abundance
-        available_abundance_types = ['none', 'solar']
-        if abundance_type not in available_abundance_types:
+        if abundance_type not in ['none', 'solar']:
             raise ValueError('set_extra_columns_to_datatable: `abundance type` '
-                             'has to be either: {}'.format(available_abundance_types))
+                             'has to be either: `none` or `solar`')
         if abundance_type == 'none':
             self._data['abundance'] = np.zeros(len(self._data))
         elif abundance_type == 'solar':
@@ -365,10 +380,9 @@ class LineList(object):
             self._data['abundance'] = abund
 
         # Set ionization correction
-        available_ion_corrections = ['none']
-        if ion_correction not in available_ion_corrections:
+        if ion_correction not in ['none']:
             raise ValueError('set_extra_columns_to_datatable: `ion_correction` '
-                             'has to be either: {}'.format(available_ion_corrections))
+                             'has to be `none`.')
         if ion_correction == 'none':
             self._data['ion_correction'] = np.zeros(len(self._data))  # is in log10 scale, so 0 means no-correction
 
@@ -380,11 +394,12 @@ class LineList(object):
 
         Parameters
         ----------
-        key : str or list of str
+        keys : str or list of str
             The main key(s) to sort the LineList by
             (e.g. 'wrest' or ['Z', 'log(w*f)']).
         reverse : bool, optional
             If True, the sorting is reversed
+            Default is False.
 
         Note: this is a wrapper to astropy.table.table.sort()
         """
@@ -467,7 +482,6 @@ class LineList(object):
         # Sort
         tmp = self._data[indices]
         # Return LineList object
-        #import pdb; pdb.set_trace()
         new = LineList(self.list, closest=self.closest, set_lines=False, verbose=self.verbose)
         new._data = tmp
         if sort_by == ['as_given'] or sort_by == 'as_given':
@@ -489,10 +503,10 @@ class LineList(object):
         return ldict
 
     def all_transitions(self, line):
-        """ Get all the transitions corresponding to a ion species.
-
-        For a given single line transition, this function returns
-        all transitions from the LineList containing that line.
+        """ Get all the transitions corresponding to an ion species
+        as given by `line`. In other words, for a given single
+        line transition, this function returns all transitions from
+        the LineList containing that line.
 
         Parameters
         ----------
@@ -509,8 +523,8 @@ class LineList(object):
             dict if only 1 transition found, otherwise QTable.
 
         """
-        good_linelists = ['HI', 'ISM', 'EUV', 'Strong']
-        if self.list not in good_linelists:
+
+        if self.list not in ['HI', 'ISM', 'EUV', 'Strong']:
             warnings.warn('Not implemented for LineList: {}.'.format(self.list))
             return
 
@@ -668,15 +682,10 @@ class LineList(object):
         dict (if only 1 transition found) or QTable (if > 1
         transitions are found) or None (if no transition is found)
         """
-        good_linelists = ['HI', 'ISM', 'EUV', 'Strong']
-        if self.list not in good_linelists:
+
+        if self.list not in ['HI', 'ISM', 'EUV', 'Strong']:
             warnings.warn('Not implemented for LineList: {}.'.format(self.list))
             return
-
-        # Init
-        # from linetools.abund.solar import SolarAbund
-        # from linetools.abund import ions as laions
-        # solar = SolarAbund()
 
         if not all((isinstance(n, int) or (n is None)) for n in [n_max_tuple]):
             raise SyntaxError(
@@ -736,15 +745,25 @@ class LineList(object):
         # Deal with output formatting now
         # if len==1 return dict
         if len(output) == 1:
-            # name = output['name'][0]
-            # import pdb; pdb.set_trace()
-            # return self.__getitem__(name)
             return self.from_qtable_to_dict(output)
         else:
             return QTable(output)
 
     def from_dict_to_qtable(self, a):
         """Converts dictionary `a` to its QTable version.
+
+        Parameters
+        ----------
+        a : dict
+            The input dictionary to be converted to a
+            QTable. The resulting QTable will have the
+            same keys as self._data
+
+        Returns
+        -------
+        A QTable of 1 Row, with filled with the data from
+        the input dictionary.
+
         """
 
         if isinstance(a, dict):
@@ -763,7 +782,20 @@ class LineList(object):
 
     def from_qtable_to_dict(self, tab):
         """Converts QTable `tab` to its dictionary version.
-        An error is raised it len(tab) > 1. """
+        An error is raised it len(tab) > 1.
+
+        Parameters
+        ----------
+        tab : QTable or Table
+            The table to be converted to a dictionary.
+            It has to be of length == 1!
+
+        Returns
+        -------
+        A dictionary with the same keys and values of the
+        input table.
+
+        """
 
         if not isinstance(tab, (QTable, Table)):
             raise ValueError('Input has to be QTable or Table.')
@@ -774,33 +806,6 @@ class LineList(object):
         for key in tab.keys():
             a_dict[key] = tab[0][key]
         return a_dict
-
-    #####
-    '''
-    def __getattr__(self, k):
-        """ Passback an array or Column of the data
-
-        k must be a Column name in the data Table
-        """
-        if k == '_data':
-            return self._data
-        # Deal with QTable
-        try:
-            # First try to access __getitem__ in the parent class.
-            # This is needed to avoid an infinite loop which happens
-            # when trying to assign self._fulldata to the cache
-            # dictionary.
-            # import pdb; pdb.set_trace()
-            out = object.__getattr__(k)
-        except AttributeError:
-            colm = self._data[k]
-            if isinstance(colm[0], Quantity):
-                return self._data[k]
-            else:
-                return np.array(self._data[k])
-        else:
-            return out
-    '''
 
     def __getitem__(self, k, tol=1e-3*u.AA):
         """ Passback data as a dict (from the table) for the input line
