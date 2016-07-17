@@ -86,7 +86,6 @@ def main(args=None):
                     print('{:s}: {}'.format(key,value))
         else:  # Ion
             Zion = ltai.name_ion(pargs.inp)
-            import pdb;pdb.set_trace()
             mtion = (llist.Z == Zion[0]) & (llist.ion == Zion[1])
             llist._data[cols][mtion].pprint(99999)
 

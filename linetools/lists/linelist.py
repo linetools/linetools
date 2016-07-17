@@ -102,7 +102,6 @@ class LineList(object):
             self.sortdata(sort_by)
         self.sort_by = sort_by
 
-
     @property
     def name(self):
         """ Return the transition names
