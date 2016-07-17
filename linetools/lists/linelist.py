@@ -115,6 +115,18 @@ class LineList(object):
         """
         return self._data['wrest']
 
+    @property
+    def Z(self):
+        """ Return the Z of the transition
+        """
+        return self._data['Z']
+
+    @property
+    def ion(self):
+        """ Return the ionization state of the transition
+        """
+        return self._data['ion']
+
     def load_data(self, use_ISM_table=True, tol=1e-3 * u.AA, use_cache=True):
         """Grab the data for the lines of interest
         """
