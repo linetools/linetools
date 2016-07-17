@@ -127,13 +127,15 @@ def set_doublet(iself, event):
     return np.array(wrest[0:2])*(1.+iself.zabs), wv_dict[event.key][2]
 
 
-def set_llist(llist, in_dict=None, sort=True):
+def set_llist(llist, in_dict=None, sort_by='wrest'):
     """ Method to set a line list dict for the Widgets
 
     Parameters
     ----------
-    sort : bool, optional
-      Sort lines by rest wavelength
+    sort_by : str or list of str, optional
+        Key(s)to sort the lines by. Default is 'wrest'.
+        If sort_by='as_given', it preserves the order
+        as given by llist.
     """
     from linetools.lists.linelist import LineList
     from astropy.units.quantity import Quantity
@@ -154,14 +156,12 @@ def set_llist(llist, in_dict=None, sort=True):
                 if llist == 'OVI':
                     gdlines = u.AA*[629.730, 702.332, 770.409, 780.324, 787.711, 832.927, 972.5367, 977.0201,
                         1025.7222, 1031.9261, 1037.6167, 1206.5, 1215.6700, 1260.4221]
-                    llist_cls = LineList('Strong')
-                    llist_cls = llist_cls.subset_lines(gdlines)
+                    llist_cls = LineList('Strong', sort_by=sort_by)
+                    llist_cls = llist_cls.subset_lines(gdlines, sort_by='as_given')
 
                     in_dict[llist] = llist_cls
                 else:
-                    llist_cls = LineList(llist)
-                    # Sort
-                    llist_cls._data.sort('wrest')
+                    llist_cls = LineList(llist, sort_by=sort_by)
                     # Load
                     in_dict[llist] = llist_cls
     elif isinstance(llist, (Quantity, list)): # Set from a list of wrest
@@ -169,10 +169,8 @@ def set_llist(llist, in_dict=None, sort=True):
         in_dict['Lists'].append('input.lst')
         in_dict['Plot'] = True
         # Fill
-        if sort:
-            llist.sort()
-        llist_cls = LineList('ISM')
-        llist_cls = llist_cls.subset_lines(llist)
+        llist_cls = LineList('ISM', sort_by=sort_by)
+        llist_cls = llist_cls.subset_lines(llist, sort_by=sort_by)
         in_dict['input.lst'] = llist_cls
     else:
         raise IOError('Not ready for this type of input')
