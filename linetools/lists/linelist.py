@@ -782,7 +782,7 @@ class LineList(object):
 
     def from_qtable_to_dict(self, tab):
         """Converts QTable `tab` to its dictionary version.
-        An error is raised it len(tab) > 1.
+        An error is raised if len(tab) > 1.
 
         Parameters
         ----------
