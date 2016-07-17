@@ -119,3 +119,14 @@ def test_available_transitions():
     z = 0
     transitions = ism.available_transitions(wvlims/(1+z),n_max_tuple=2)
     assert isinstance(transitions,dict), error_msg
+
+def test_sortdata():
+    error_msg = 'Something is wrong in sortdata()'
+    ism = LineList('ISM', sort_by='name')
+    assert ism.name[0] == 'AlII 1670', error_msg
+    ism.sortdata('name', reverse=True)
+    assert ism.name[0] == 'ZrIII 1798', error_msg
+    ism.sortdata(['abundance', 'rel_strength'], reverse=True)
+    assert ism.name[0] == 'HI 1215', error_msg
+    ism.sortdata(['rel_strength'])
+    assert ism.name[0] == 'CI** 1123b', error_msg

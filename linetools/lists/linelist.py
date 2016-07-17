@@ -418,6 +418,10 @@ class LineList(object):
         if isinstance(keys, (str, basestring)):
             keys = [keys]
 
+        # if key is 'as_given', leave it as is
+        if keys[0] == 'as_given':
+            return
+
         # sort
         self._data.sort(keys)
 
