@@ -127,13 +127,15 @@ def set_doublet(iself, event):
     return np.array(wrest[0:2])*(1.+iself.zabs), wv_dict[event.key][2]
 
 
-def set_llist(llist, in_dict=None, sort_by=['wrest']):
+def set_llist(llist, in_dict=None, sort_by='wrest'):
     """ Method to set a line list dict for the Widgets
 
     Parameters
     ----------
-    sort_by : list of str, optional
-        Key(s)to sort the lines by. Default is ['wrest'].
+    sort_by : str or list of str, optional
+        Key(s)to sort the lines by. Default is 'wrest'.
+        If sort_by='as_given', it preserves the order
+        as given by llist.
     """
     from linetools.lists.linelist import LineList
     from astropy.units.quantity import Quantity
@@ -168,7 +170,7 @@ def set_llist(llist, in_dict=None, sort_by=['wrest']):
         in_dict['Plot'] = True
         # Fill
         llist_cls = LineList('ISM', sort_by=sort_by)
-        llist_cls = llist_cls.subset_lines(llist, sort_by='as_given')
+        llist_cls = llist_cls.subset_lines(llist, sort_by=sort_by)
         in_dict['input.lst'] = llist_cls
     else:
         raise IOError('Not ready for this type of input')
