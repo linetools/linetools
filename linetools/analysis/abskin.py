@@ -56,7 +56,10 @@ def generate_stau(velo, flux, sig, kbin=22.*u.km/u.s, debug=False):
 
     # Smooth
     nbin = (np.round(kbin/dv)).value
-    kernel = Box1DKernel(nbin, mode='center')
+    try:
+        kernel = Box1DKernel(nbin, mode='center')
+    except:
+        pdb.set_trace()
     stau = convolve(tau, kernel, boundary='fill', fill_value=0.)
     if debug is True:
         try:
@@ -154,18 +157,12 @@ def cgm_kin(velo, stau, per=0.05, debug=False, cov_thresh=0.5,
     # ###
     # Zero peak -- Ratio of peak optical depth to that within 15 km/s of zero
     tau_zero = stau[imx]
-    """
-    if (self.vmnx[0] > 0.) | (self.vmnx[1] < 0.):
-        #; Not covered
-        #; Assuming zero value
-        self.data['zero_pk'] = 0.
-    else:
-    """
     zpix = np.where( np.abs(velo) < dv_zeropk)[0]
     if len(zpix) == 0:
-        raise ValueError('cgm_kin: Problem here..')
-    mx_ztau = np.max(stau[zpix])
-    kdata['zero_pk'] = np.max([0., np.min([mx_ztau/tau_zero,1.])])
+        kdata['zero_pk'] = 0.
+    else:
+        mx_ztau = np.max(stau[zpix])
+        kdata['zero_pk'] = np.max([0., np.min([mx_ztau/tau_zero,1.])])
 
     # ###
     # Forbes "Covering"

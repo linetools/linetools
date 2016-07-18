@@ -61,8 +61,7 @@ class LineList(object):
         transitions, rather than from the original source files.
 
     sort_by : str or list of str, optional
-        Keys to sort the underlying data table by. Defauls is 'wrest'.
-
+        Keys to sort the underlying data table by. Default is 'wrest'
     """
 
     # Init
@@ -95,12 +94,14 @@ class LineList(object):
         # Memoize
         self.memoize = {}  # To speed up multiple calls
 
+        # Sort
+        self.sort_by = sort_by
+        #if (self._data is not None) and (sort_by is not None):
         if self._data is not None:
             # set strength (using default values for now)
             self.set_extra_columns_to_datatable()
             # sort the LineList
             self.sortdata(sort_by)
-        self.sort_by = sort_by
 
     @property
     def name(self):
@@ -318,7 +319,8 @@ class LineList(object):
         self._data = tmp_tab
         CACHE['data'][key] = self._data
 
-    def set_extra_columns_to_datatable(self, abundance_type='solar', ion_correction='none'):
+    def set_extra_columns_to_datatable(self, abundance_type='solar', ion_correction='none',
+                                       redo=False):
         """Sets new convenient columns to the self._data QTable. These will be useful
         for sorting the underlying data table in convenient ways, e.g. by expected
         relative strength.
@@ -341,11 +343,16 @@ class LineList(object):
             Ionization correction. Options are:
                 'none' : No correction applied, so this column will
                          be filled with zeros. (Default)
+         redo : bool, optional
+            Remake the extra columns
 
         Note: This function is only implemented for the following
         lists: HI, ISM, EUV, Strong.
 
         """
+        # Avoid redo (especially for caching)
+        if ('ion_name' in self._data.keys()) and (not redo):
+            return
 
         if self.list not in ['HI', 'ISM', 'EUV', 'Strong']:
             warnings.warn('Not implemented: will not set relative strength for LineList: {}.'.format(self.list))
