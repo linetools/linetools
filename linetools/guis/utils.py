@@ -239,5 +239,14 @@ def read_spec(ispec, exten=None, norm=True, **kwargs):
         if spec.co_is_set:
             spec.normed=True
 
+    # Demand AA for wavelength unit (unless over-ridden)
+    if spec.wavelength.unit != u.AA:
+        wvAA = spec.wavelength.to('AA')
+        spec.wavelength = wvAA
+    #from PyQt4 import QtCore
+    #QtCore.pyqtRemoveInputHook()
+    #pdb.set_trace()
+    #QtCore.pyqtRestoreInputHook()
+
     # Return
     return spec, spec_fil
