@@ -62,11 +62,17 @@ class LineList(object):
 
     sort_by : str or list of str, optional
         Keys to sort the underlying data table by. Default is 'wrest'
+
+    redo_extra_columns : bool, optional
+        Whether to recalculate extra columns for log(w*f), abundance, and ion_correction.
+        Setting this to True is useful if a different abundance, or ionizatation_correction
+        is used. Default is False.
+
     """
 
     # Init
     def __init__(self, llst_key, verbose=False, closest=False, set_lines=True,
-                 use_ISM_table=True, use_cache=True, sort_by='wrest'):
+                 use_ISM_table=True, use_cache=True, sort_by='wrest', redo_extra_columns=False):
 
         # Error catching
         if not isinstance(llst_key, basestring):
@@ -98,8 +104,8 @@ class LineList(object):
         self.sort_by = sort_by
         #if (self._data is not None) and (sort_by is not None):
         if self._data is not None:
-            # set strength (using default values for now)
-            self.set_extra_columns_to_datatable()
+            # redo extra columns?
+            self.set_extra_columns_to_datatable(redo=redo_extra_columns)
             # sort the LineList
             self.sortdata(sort_by)
 
