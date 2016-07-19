@@ -251,6 +251,44 @@ def get_table_column(tags, hdulist, idx=None):
     else:
         return dat, 'NONE'
 
+
+def get_wave_unit(tag, hdulist, idx=None):
+    """ Attempt to pull wavelength unit from the Table
+    Parameters
+    ----------
+    tag : str
+     Tag used for wavelengths
+    hdulist : fits header data unit list
+    idx : int, optional
+     Index of list for Table input
+
+    Returns
+    -------
+    unit : astropy Unit
+      Defaults to None
+    """
+    from astropy.units import Unit
+    if idx is None:
+        idx = 1
+    # Use Table
+    if isinstance(hdulist[idx],BinTableHDU):
+        tab = Table(hdulist[idx].data)
+        header = hdulist[idx].header
+    else:
+        # NEED HEADER INFO
+        return None
+    # Try table header (following VLT/X-Shooter here)
+    keys = header.keys()
+    values = header.values()
+    hidx = values.index(tag)
+    if keys[hidx][0:5] == 'TTYPE':
+        tunit = header[keys[hidx].replace('TYPE','UNIT')]
+        unit = Unit(tunit)
+        return unit
+    else:
+        return None
+
+
 #### ###############################
 #  Set wavelength array using Header cards
 def setwave(hdr):
@@ -358,6 +396,7 @@ def chk_for_gz(filenm):
         chk=False
         return None, chk
 
+
 def give_wv_units(wave):
     """ Give a wavelength array units of Angstroms, if unitless.
 
@@ -457,7 +496,7 @@ def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
         return
     # Error
     if sig_tag is None:
-        sig_tags = ['ERROR','ERR','SIGMA_FLUX','ENORM', 'FLAM_SIG', 'SIGMA_UP',
+        sig_tags = ['ERROR','ERR','SIGMA_FLUX','ERR_FLUX', 'ENORM', 'FLAM_SIG', 'SIGMA_UP',
                     'ERRSTIS', 'FLUXERR', 'SIGMA', 'sigma', 'sigma_flux',
                     'er', 'err', 'error', 'sig', 'fluxerror']
     else:
@@ -492,6 +531,10 @@ def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
     wave, wave_tag = get_table_column(wave_tags, hdulist, idx=exten)
     if wave_tag in ['LOGLAM','loglam']:
         wave = 10.**wave
+    # Try for unit
+    wv_unit = get_wave_unit(wave_tag, hdulist, idx=exten)
+    if wv_unit is not None:
+        wave = wave * wv_unit
     if wave is None:
         print('Binary FITS Table but no wavelength tag. Searched for these tags:\n',
               wave_tags)
