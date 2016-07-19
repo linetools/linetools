@@ -41,6 +41,9 @@ def test_setwave():
     wave = io.setwave(hd)
     np.testing.assert_allclose(wave[0], 3040.33648468)
 
+def test_getwave():  # X-Shooter
+    spec = io.readspec(data_path('XShooter_XQ100.fits.gz'))
+    assert spec.wavelength.unit == u.nm
 
 # ASCII format
 def test_read_ascii():
