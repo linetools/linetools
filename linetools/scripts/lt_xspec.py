@@ -39,6 +39,7 @@ def main(*args, **kwargs):
         norm = False
 
     # Extension
+    pdb.set_trace()
     exten = (pargs.exten if hasattr(pargs, 'exten') else 0)
 
     # Second spectral file?
