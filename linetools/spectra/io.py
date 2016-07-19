@@ -282,9 +282,13 @@ def get_wave_unit(tag, hdulist, idx=None):
     values = header.values()
     hidx = values.index(tag)
     if keys[hidx][0:5] == 'TTYPE':
-        tunit = header[keys[hidx].replace('TYPE','UNIT')]
-        unit = Unit(tunit)
-        return unit
+        try:
+            tunit = header[keys[hidx].replace('TYPE','UNIT')]
+        except KeyError:
+           return None
+        else:
+            unit = Unit(tunit)
+            return unit
     else:
         return None
 
