@@ -478,8 +478,8 @@ def overlapping_components(comp1, comp2, tol=0.2*u.arcsec):
         else:  # use the vlim from component otherwise
             dzlim = give_dz(comp1.vlim, comp1.zcomp)
         wrest_aux = absline.wrest.to('AA').value  # in AA
-        wrest_obs_aux = wrest_aux + (1 + comp1.zcomp + dzlim)
-        wobs_chunks_1 += [tuple(wrest_obs_aux)]
+        wobs_aux = wrest_aux * (1 + comp1.zcomp + dzlim)
+        wobs_chunks_1 += [tuple(wobs_aux)]
 
     for absline in comp2._abslines:
         cond = absline.analy['vlim'] != init_analy['vlim']  # default value
@@ -488,8 +488,8 @@ def overlapping_components(comp1, comp2, tol=0.2*u.arcsec):
         else:  # use the vlim from component otherwise
             dzlim = give_dz(comp2.vlim, comp2.zcomp)
         wrest_aux = absline.wrest.to('AA').value  # in AA
-        wrest_obs_aux = wrest_aux + (1 + comp2.zcomp + dzlim)
-        wobs_chunks_2 += [tuple(wrest_obs_aux)]
+        wobs_aux = wrest_aux * (1 + comp2.zcomp + dzlim)
+        wobs_chunks_2 += [tuple(wobs_aux)]
 
     # now we have two lists of wobs chunks:
     # so lets do the checking until at least 1
