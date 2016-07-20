@@ -379,7 +379,7 @@ def overlapping_chunks(chunk1, chunk2):
     ----------
     chunk1 : tuple, list, 1-d np.array, Quantity
         A given chunk, assumed to represent a contiguous region
-        So it only its minimum and maximum values matter
+        So only its minimum and maximum values matter
         Still, chunk must be sorted.
     chunk1 : tuple, list, 1-d np.array
         Ditto.
@@ -420,7 +420,7 @@ def overlapping_chunks(chunk1, chunk2):
         raise ValueError('chunks must be sorted!')
 
     # figure out the lowest of the chunks
-    # and sort them such that chunk1 it by definition
+    # and sort them such that chunk1 is by definition
     # the one with the lowest limit
     if np.min(chunk1) <= np.min(chunk2):
         pass
