@@ -29,6 +29,9 @@ from linetools import utils as ltu
 #from xastropy.stats import basic as xsb
 #from xastropy.xutils import xdebug as xdb
 
+# Global import for speed
+c_kms = const.c.to('km/s').value
+
 # Class for Components
 class AbsComponent(object):
     """
@@ -238,11 +241,11 @@ class AbsComponent(object):
         testE = bool(self.Ej == absline.data['Ej'])
         # Now redshift/velocity
         if chk_vel:
-            dz_toler = (1+self.zcomp)*vtoler/3e5  # Avoid Quantity for speed
-            zlim_line = (1+absline.attrib['z'])*absline.analy['vlim']/const.c.to('km/s')
-            zlim_comp = (1+self.zcomp)*self.vlim/const.c.to('km/s')
-            testv = (zlim_line[0] >= (zlim_comp[0]-dz_toler)) & (
-                zlim_line[1] <= (zlim_comp[1]+dz_toler))
+            dz_toler = (1 + self.zcomp) * np.fabs(vtoler) / c_kms  # Avoid Quantity for speed
+            zlim_line = (1 + absline.attrib['z']) * absline.analy['vlim'].to('km/s').value / c_kms
+            zlim_comp = (1+self.zcomp) * self.vlim.to('km/s').value / c_kms
+            testv = (zlim_line[0] >= (zlim_comp[0] - dz_toler)) & (
+                zlim_line[1] <= (zlim_comp[1] + dz_toler))
         else:
             testv = True
         # Combine
@@ -635,6 +638,8 @@ class AbsComponent(object):
                 setattr(abscomp, attr, getattr(self, attr))
         # Return
         return abscomp
+
+
 
     def __getitem__(self, attrib):
         """Passback attribute, if it exists

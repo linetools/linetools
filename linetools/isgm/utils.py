@@ -16,12 +16,14 @@ import warnings
 from astropy import constants as const
 from astropy import units as u
 from astropy.table import Table
+from astropy.units import Quantity
 
 from linetools.analysis import absline as ltaa
 from linetools.isgm.abscomponent import AbsComponent
+from linetools.utils import give_dz
+from linetools.spectralline import init_analy
 
-
-def chk_components(components, chk_match=False, chk_A_none=False, toler=0.2*u.arcsec):
+def chk_components(components, chk_match=False, chk_A_none=False, tol=0.2*u.arcsec):
     """ Performs checks on a list of components
 
     Parameters
@@ -32,16 +34,16 @@ def chk_components(components, chk_match=False, chk_A_none=False, toler=0.2*u.ar
       if True, require that the components match in RA/DEC, Zion, Ej, A but not velocity
     chk_A_none : bool, optional
       if True, require that A *not* be set
-    toler : Angle, optional
-      Tolerance on matching coordinates
+    tol : Quantity, optional
+      Tolerance on matching SkyCoordinates. Default is 0.2*u.arcsec
     """
     tests = True
     # List
-    if not isinstance(components,list):
+    if not isinstance(components, list):
         tests = False
         raise IOError('Need a list of AbsComponent objects')
     # Object
-    if not all(isinstance(x,AbsComponent) for x in components):
+    if not all(isinstance(x, AbsComponent) for x in components):
         tests = False
         raise IOError('List needs to contain only AbsComponent objects')
     # A None
@@ -55,7 +57,7 @@ def chk_components(components, chk_match=False, chk_A_none=False, toler=0.2*u.ar
         comp0 = components[0]
         for comp in components[1:]:
             # RA/DEC
-            match = match & bool(comp0.coord.separation(comp.coord) < toler)
+            match = match & bool(comp0.coord.separation(comp.coord) < tol)
             # Zion
             match = match & (comp0.Zion == comp.Zion)
             # Ej
@@ -208,6 +210,7 @@ def build_systems_from_components(comps, **kwargs):
     # Return
     return abs_systems
 
+
 def xhtbl_from_components(components, ztbl=None, NHI_obj=None):
     """ Generate a Table of XH values from a list of components
     Parameters
@@ -223,6 +226,7 @@ def xhtbl_from_components(components, ztbl=None, NHI_obj=None):
     # Get started
     tbl = Table()
     #
+
 
 def iontable_from_components(components, ztbl=None, NHI_obj=None):
     """Generate a Table from a list of components
@@ -362,3 +366,138 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
 
     # Return
     return synth_comp
+
+
+def overlapping_chunks(chunk1, chunk2):
+    """True if there is overlap between chunks
+    `chunk1` and `chunk2`. Otherwise False. Chunks are
+    assumed to represent continuous coverage, so the only
+    information that matters are the minimum and maximum
+    values of a given chunk.
+
+    Parameters
+    ----------
+    chunk1 : tuple, list, 1-d np.array, Quantity
+        A given chunk, assumed to represent a contiguous region
+        So it only its minimum and maximum values matter
+        Still, chunk must be sorted.
+    chunk1 : tuple, list, 1-d np.array
+        Ditto.
+
+    Returns
+    -------
+    Boolean, True if there is overlap, False otherwise.
+
+    """
+    # Check units in case chunks are Quantity
+    if isinstance(chunk1, Quantity):
+        unit1 = chunk1.unit
+        chunk1 = np.array(chunk1.value)
+        if not isinstance(chunk2, Quantity):
+            raise ValueError('chunk2 must be Quantity because chunk1 is!')
+        try:
+            chunk2 = chunk2.to(unit1)
+            chunk2 = np.array(chunk2.value)  # has the same units as chunk1
+        except u.core.UnitConversionError:
+            raise ValueError('If chunks are given as Quantity they must have convertible units!')
+    else:
+        chunk1 = np.array(chunk1)  # not a quantity
+
+    # this may be redundant but cleaner code
+    if isinstance(chunk2, Quantity):
+        unit2 = chunk2.unit
+        chunk2 = np.array(chunk2.value)
+        if not isinstance(chunk1, Quantity):
+            raise ValueError('chunk1 must be Quantity because chunk2 is!')
+    else:
+        chunk2 = np.array(chunk2)  # not a quantity
+    # here we have chunks as values (i.e no units)
+
+    # make sure the chunks are sorted
+    cond1 = np.sort(chunk1) != chunk1
+    cond2 = np.sort(chunk2) != chunk2
+    if (np.sum(cond1) > 0) or (np.sum(cond2) > 0):
+        raise ValueError('chunks must be sorted!')
+
+    # figure out the lowest of the chunks
+    # and sort them such that chunk1 it by definition
+    # the one with the lowest limit
+    if np.min(chunk1) <= np.min(chunk2):
+        pass
+    else: # invert them if necessary
+        aux = chunk1
+        chunk1 = chunk2
+        chunk2 = aux
+
+    # now the chunk1 is the one with the lowest value
+    # then, the only way they do not overlap is:
+    if np.min(chunk2) > np.max(chunk1):
+        return False
+    else:  # overlap exists
+        return True
+
+def overlapping_components(comp1, comp2, tol=0.2*u.arcsec):
+    """Whether two components overlap in wavelength
+    space and (ra,dec) sky position. This is useful to identify
+    components that may need to be fit together.
+
+    Parameters
+    ----------
+    comp1 : AbsComponent
+        A given AbsComponent object
+    comp2 : AbsComponent
+        A given AbsComponent object
+    tol : Quantity, optional
+        Tolerance for checking whether the two components are
+        in the same sky region. Default is 0.2*u.arcsec
+
+    Returns
+    -------
+    Boolean : True if there is overlapping wavelength range
+    and radec coordinates, otherwise False.
+    """
+
+    if not isinstance(comp1, AbsComponent):
+        raise ValueError('comp1 must be AbsComponent object.')
+    if not isinstance(comp2, AbsComponent):
+        raise ValueError('comp1 must be AbsComponent object.')
+
+    # Check whether they are in the same sky region
+    if comp1.coord.separation(comp2.coord) > tol:
+        return False
+
+    # Define wavelength chunks, appending them from each absline
+    # These will correpond to (wvmin, wvmax) tuples for each absline
+    # in the respective component
+    wobs_chunks_1 = []
+    wobs_chunks_2 = []
+    for absline in comp1._abslines:
+        cond = absline.analy['vlim'] != init_analy['vlim']  # default value?
+        if np.sum(cond) > 0:  # i.e. absline vlim not equal than the default
+            dzlim = give_dz(absline.analy['vlim'], comp1.zcomp)
+        else:  # use the vlim from component otherwise
+            dzlim = give_dz(comp1.vlim, comp1.zcomp)
+        wrest_aux = absline.wrest.to('AA').value  # in AA
+        wrest_obs_aux = wrest_aux + (1 + comp1.zcomp + dzlim)
+        wobs_chunks_1 += [tuple(wrest_obs_aux)]
+
+    for absline in comp2._abslines:
+        cond = absline.analy['vlim'] != init_analy['vlim']  # default value
+        if np.sum(cond) > 0:  # i.e. absline vlim not equal than the default
+            dzlim = give_dz(absline.analy['vlim'], comp2.zcomp)
+        else:  # use the vlim from component otherwise
+            dzlim = give_dz(comp2.vlim, comp2.zcomp)
+        wrest_aux = absline.wrest.to('AA').value  # in AA
+        wrest_obs_aux = wrest_aux + (1 + comp2.zcomp + dzlim)
+        wobs_chunks_2 += [tuple(wrest_obs_aux)]
+
+    # now we have two lists of wobs chunks:
+    # so lets do the checking until at least 1
+    # overlap is found
+    for ii in range(len(wobs_chunks_1)):
+        for jj in range(len(wobs_chunks_2)):
+            overlap = overlapping_chunks(
+                wobs_chunks_1[ii], wobs_chunks_2[jj])
+            if overlap is True:
+                return True
+    return False

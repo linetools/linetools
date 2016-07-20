@@ -187,7 +187,7 @@ def test_repr_vpfit():
     abscomp.comment = 'Something'
     s = abscomp.repr_vpfit()
     assert s == 'HI 2.92939 0.00000 10.00 0.00 0.00 0.00! Something\n'
-    s = abscomp.repr_vpfit(tie_strs=('a', 'b', 'CD'),fix_strs=('', 'f', ''))
+    s = abscomp.repr_vpfit(tie_strs=('a', 'b', 'CD'), fix_strs=('', 'f', ''))
     assert s == 'HI 2.92939a 0.00000 10.00F 0.00 0.00cd 0.00! Something\n'
 
     abscomp, SiIIlines = mk_comp('SiII')
@@ -207,5 +207,16 @@ def test_repr_alis():
     abscomp.comment = 'Something'
     s = abscomp.repr_alis()
     assert s == 'voigt   ion=28Si_II 0.00 redshift=2.92939 0.0 1.0E+04# Something\n'
-    s = abscomp.repr_alis(tie_strs=('a', 'b', 'CD',''),fix_strs=('', 'f', '', ''))
+    s = abscomp.repr_alis(tie_strs=('a', 'b', 'CD',''), fix_strs=('', 'f', '', ''))
     assert s == 'voigt   ion=28Si_II 0.00a redshift=2.92939F 0.0cd 1.0E+04# Something\n'
+
+
+def test_overlapping_components():
+    abscomp, HIlines = mk_comp('HI')
+    SiIIcomp1,_ = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s)
+    SiIIcomp2,_ = mk_comp('SiII',vlim=[-300.,0.]*u.km/u.s)
+    assert ltiu.overlapping_components(abscomp, abscomp)  # should overlap
+    f = ltiu.overlapping_components(abscomp, SiIIcomp1)  # should not overlap
+    assert ~f
+    f = ltiu.overlapping_components(SiIIcomp2, SiIIcomp1) # should not overlap
+    assert ~f

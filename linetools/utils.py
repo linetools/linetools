@@ -8,7 +8,7 @@ import warnings
 import pdb
 
 import numpy as np
-from astropy import constants as const
+from astropy.constants import c
 from astropy import units as u
 from astropy.units import Quantity, Unit
 
@@ -41,7 +41,6 @@ def between(a, vmin, vmax):
     c = a < vmax
     c &= a >= vmin
     return c
-
 
 def convert_quantity_in_dict(idict):
     """ Return a dict where Quantities (usually from a JSON file)
@@ -243,7 +242,7 @@ def v_from_z(z1, z2):
     -----
     """
     R = (1+z1) / (1+z2)
-    v = const.c * (R**2 - 1)/(1+R**2)
+    v = c * (R**2 - 1)/(1+R**2)
 
     return v.to('km/s')
 
@@ -255,8 +254,8 @@ def z_from_v(z, v):
     ----------
     z : float or array
        Redshift
-    v : float or array
-       Velocities
+    v : Quantity or float or array or array of Quantity
+       Velocities. If not Quantity it assumes km/s units.
 
     Returns
     -------
@@ -272,7 +271,7 @@ def z_from_v(z, v):
         v = v * u.Unit('km/s')
 
     # b
-    bval = (v/const.c.to('km/s'))
+    bval = (v/c.to('km/s'))
 
     # R
     R = np.sqrt((1-bval)/(1+bval))
@@ -280,3 +279,78 @@ def z_from_v(z, v):
     znew = (1+z)/R - 1
 
     return znew.value
+
+# Slightly different functions for passing from dv to dz, and viceversa (that NT prefers).
+# May need to agree on one kind of conversion in the future
+def give_dv(z, zmean, rel=True):
+    """Gives velocity difference between z and zmean.
+
+    Parameters
+    ---------
+    z : float or np.array
+        Redshifts to calculate dv on
+    zmean : float or np.array
+        Rest-frame redshift to perform the calculation.
+        If shape of zmean is equal than shape of z,
+        each dv is calculated at each zmean, otherwise zmean
+        is expected to be float
+    rel : bool, optional
+        Whether to apply relativistic correction for
+        a locally flat space-time. Default is True.
+
+    Returns
+    -------
+    dv : Quantity or Quantity array
+        Rest frame velocity difference between z and zmean, at
+        zmean. It has same shape as z.
+        """
+    z = np.array(z)
+    zmean = np.array(zmean)
+
+    if rel:
+        dv = ((1 + z)**2 - (1 + zmean)**2) / ((1 + z)**2 + (1 + zmean)**2)
+    else:
+        dv = (z - zmean) / (1. + zmean)
+
+    return dv * c.to('km/s')
+
+def give_dz(dv, zmean, rel=True):
+    """Gives redshift difference for a given
+    velocity difference(s) at zmean.
+
+    Parameters
+    ---------
+    dv : Quantity or Quantity array
+        Rest-frame velocity at zmean to calculate
+        the corresponding redshift difference, dz
+    zmean : float or np.array
+        Rest-frame redshift to perform the calculation.
+        If shape of zmean is equal than shape of dv,
+        each dv is calculated at each zmean, otherwise zmean
+        is expected to be float
+    rel : bool, optional
+        Whether to apply relativistic correction for
+        a locally flat space-time. Default is True.
+
+    Returns
+    dz : np.array
+        Redshift difference between dv and zmean. Same shape as
+        dv.
+        """
+    if not isinstance(dv, u.quantity.Quantity):
+        raise ValueError('dv must be Quantity or Quantity array!')
+    try:
+        dv = dv.to('km/s') # dv in km/s
+        dv = np.array(dv.value)
+    except UnitConversionError:
+        raise ValueError('dv must have velocity units!')
+
+    zmean = np.array(zmean)
+
+    if rel:
+        beta = dv / c.to('km/s').value
+        aux = np.sqrt((1.+ beta)/(1.- beta))
+        dz = (1. + zmean) * (aux - 1.)
+    else:
+        dz = dv * (1. + zmean) / c.to('km/s').value
+    return dz
