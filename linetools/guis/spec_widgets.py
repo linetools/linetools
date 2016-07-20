@@ -452,7 +452,7 @@ class ExamineSpecWidget(QtGui.QWidget):
                 self.ax.plot(self.spec.wavelength, self.spec.sig, 'r:')
             except ValueError:
                 pass
-            self.ax.set_xlabel('Wavelength')
+            self.ax.set_xlabel('Wavelength (Ang)')
             self.ax.set_ylabel('Flux')
 
             # Rest-frame axis

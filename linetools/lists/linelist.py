@@ -12,7 +12,8 @@ import numpy as np
 
 from astropy import units as u
 from astropy.units.quantity import Quantity
-from astropy.table import QTable, Table, vstack, Column
+from astropy.table import QTable, Table, vstack, Column, MaskedColumn
+import warnings
 
 import imp
 
@@ -58,11 +59,20 @@ class LineList(object):
     use_ISM_table : bool [default True]
         Developer use only. Read from a stored fits table with all ISM
         transitions, rather than from the original source files.
+
+    sort_by : str or list of str, optional
+        Keys to sort the underlying data table by. Default is 'wrest'
+
+    redo_extra_columns : bool, optional
+        Whether to recalculate extra columns for log(w*f), abundance, and ion_correction.
+        Setting this to True is useful if a different abundance, or ionizatation_correction
+        is used. Default is False.
+
     """
 
     # Init
     def __init__(self, llst_key, verbose=False, closest=False, set_lines=True,
-                 use_ISM_table=True, use_cache=True):
+                 use_ISM_table=True, use_cache=True, sort_by='wrest', redo_extra_columns=False):
 
         # Error catching
         if not isinstance(llst_key, basestring):
@@ -84,8 +94,44 @@ class LineList(object):
             # This sets self._data
             self.set_lines(use_ISM_table=use_ISM_table, verbose=verbose,
                            use_cache=use_cache)
+        else:
+            self._data = None
+
         # Memoize
         self.memoize = {}  # To speed up multiple calls
+
+        # Sort
+        self.sort_by = sort_by
+        #if (self._data is not None) and (sort_by is not None):
+        if self._data is not None:
+            # redo extra columns?
+            self.set_extra_columns_to_datatable(redo=redo_extra_columns)
+            # sort the LineList
+            self.sortdata(sort_by)
+
+    @property
+    def name(self):
+        """ Return the transition names
+        """
+        return np.array(self._data['name'])
+
+    @property
+    def wrest(self):
+        """ Return the rest wavelengths
+        """
+        return self._data['wrest']
+
+    @property
+    def Z(self):
+        """ Return the Z of the transitions
+        """
+        return self._data['Z']
+
+    @property
+    def ion(self):
+        """ Return the ionization state of the transitions
+        """
+        return self._data['ion']
 
     def load_data(self, use_ISM_table=True, tol=1e-3 * u.AA, use_cache=True):
         """Grab the data for the lines of interest
@@ -191,7 +237,6 @@ class LineList(object):
         use_ISM_table : bool, optional
           For speed, use a saved ISM table instead of reading from original source files.
         """
-        import warnings
 
         global CACHE
         key = self.list
@@ -280,7 +325,125 @@ class LineList(object):
         self._data = tmp_tab
         CACHE['data'][key] = self._data
 
-    def subset_lines(self, subset, sort=False, reset_data=False, verbose=False):
+    def set_extra_columns_to_datatable(self, abundance_type='solar', ion_correction='none',
+                                       redo=False):
+        """Sets new convenient columns to the self._data QTable. These will be useful
+        for sorting the underlying data table in convenient ways, e.g. by expected
+        relative strength.
+        These new column include:
+            - `ion_name` : HI, CIII, CIV, etc
+            - `log(w*f)` : np.log10(wrest * fosc)  # in np.log10(AA)
+            - `abundance` : either [`none`, `solar`]
+            - `ion_correction` : [`none`]
+            - `rel_strength` : log(w*f) + abundance + ion_correction
+
+        Parameters
+        ----------
+        abundance_type : str, optional
+            Abundance type. Options are:
+                'solar' : Use Solar Abundance (in log10) as given
+                          by Asplund 2009. (Default)
+                'none' : No abundance given, so this column will
+                         be filled with zeros.
+        ion_correction: str, optional
+            Ionization correction. Options are:
+                'none' : No correction applied, so this column will
+                         be filled with zeros. (Default)
+         redo : bool, optional
+            Remake the extra columns
+
+        Note: This function is only implemented for the following
+        lists: HI, ISM, EUV, Strong.
+
+        """
+        # Avoid redo (especially for caching)
+        if ('ion_name' in self._data.keys()) and (not redo):
+            return
+
+        if self.list not in ['HI', 'ISM', 'EUV', 'Strong']:
+            warnings.warn('Not implemented: will not set relative strength for LineList: {}.'.format(self.list))
+            return
+
+        # Set ion_name column
+        ion_name = [name.split(' ')[0] for name in self.name]
+        self._data['ion_name'] = ion_name
+
+        # Set QM strength as MaskedColumn (self._data['f'] is MaskedColumn)
+        qm_strength = self._data['f'] * (self._data['wrest'].to('AA').value)
+        qm_strength.name = 'qm_strength'
+        self._data['log(w*f)'] = np.log10(qm_strength)
+        # mask out potential nans
+        cond = np.isnan(self._data['log(w*f)'])
+        self._data['log(w*f)'].mask = np.where(cond, True, self._data['log(w*f)'].mask)
+
+        # Set Abundance
+        if abundance_type not in ['none', 'solar']:
+            raise ValueError('set_extra_columns_to_datatable: `abundance type` '
+                             'has to be either: `none` or `solar`')
+        if abundance_type == 'none':
+            self._data['abundance'] = np.zeros(len(self._data))
+        elif abundance_type == 'solar':
+            from linetools.abund.solar import SolarAbund
+            solar = SolarAbund()
+            # abund will be masked array as default (all masked out) in
+            # case an element is not in SolarAbund()
+            abund = np.ma.masked_array(np.zeros(len(self._data)), mask=True)
+            for ii in range(len(abund)):
+                ion_name = self._data[ii]['ion_name']
+                ion_Z = self._data[ii]['Z']
+                if ion_name.startswith('DI'): # Deuterium
+                    abund[ii] = solar['D']
+                    abund.mask[ii] = False  # unmask
+                else:
+                    try:
+                        abund[ii] = solar[ion_Z]
+                        abund.mask[ii] = False  # unmask
+                    except ValueError:
+                        pass  # these correspond to elements with no abundance given by solar()
+                              # and so they remain masked
+            self._data['abundance'] = abund
+
+        # Set ionization correction
+        if ion_correction not in ['none']:
+            raise ValueError('set_extra_columns_to_datatable: `ion_correction` '
+                             'has to be `none`.')
+        if ion_correction == 'none':
+            self._data['ion_correction'] = np.zeros(len(self._data))  # is in log10 scale, so 0 means no-correction
+
+        # Set relative strength in log10 scale
+        self._data['rel_strength'] = self._data['log(w*f)'] + self._data['abundance'] + self._data['ion_correction']
+
+    def sortdata(self, keys, reverse=False):
+        """Sort the LineList according to a given key or keys.
+
+        Parameters
+        ----------
+        keys : str or list of str
+            The main key(s) to sort the LineList by
+            (e.g. 'wrest' or ['Z', 'log(w*f)']).
+        reverse : bool, optional
+            If True, the sorting is reversed
+            Default is False.
+
+        Note: this is a wrapper to astropy.table.table.sort()
+        """
+        # define the sorting key(s) as list
+        if isinstance(keys, (str, basestring)):
+            keys = [keys]
+
+        # if key is 'as_given', leave it as is
+        if keys[0] == 'as_given':
+            return
+
+        # sort
+        self._data.sort(keys)
+
+        # reverse?
+        if reverse:
+            self._data.reverse()
+        self.sort_by = keys
+
+    def subset_lines(self, subset, reset_data=False, verbose=False, sort_by=['wrest']):
         """ Select a user-specific subset of the lines from the LineList
 
         Parameters
@@ -291,11 +454,12 @@ class LineList(object):
             [1215.67 * u.AA, 1548.195 * u.AA])
         reset_data : bool, optional
             Reset self._data QTable based on the original list at the
-            initialization(i.e. the default list). This is useful for
+            initialization (i.e. the default list). This is useful for
             changing subsets of lines without the need to initialize a
             different LineList() object. Default is False.
-        sort : bool, optional
-            Sort this subset? Default is False.
+        sort_by : list of str
+            Key(s) to sort the lines by. If sort_by == 'as_given', it will
+            preserve the sorting as given by `subset`.
 
         Returns
         -------
@@ -342,15 +506,17 @@ class LineList(object):
                             'subset_lines: Did not find {:s} in data Tables'.format(gdlin))
         else:
             raise ValueError('Not ready for this `subset` type yet.')
+
         # Sort
         tmp = self._data[indices]
-        if sort:
-            tmp.sort('wrest')
-
         # Return LineList object
-        new = LineList(self.list, closest=self.closest, set_lines=False,
-                       verbose=self.verbose)
+        new = LineList(self.list, closest=self.closest, set_lines=False, verbose=self.verbose)
         new._data = tmp
+        if sort_by == ['as_given'] or sort_by == 'as_given':
+            pass
+        else:
+            new.sortdata(sort_by)
+
         return new
 
     def unknown_line(self):
@@ -365,10 +531,10 @@ class LineList(object):
         return ldict
 
     def all_transitions(self, line):
-        """ Get all the transitions corresponding to a line.
-
-        For a given single line transition, this function returns
-        all transitions from the LineList containing that line.
+        """ Get all the transitions corresponding to an ion species
+        as given by `line`. In other words, for a given single
+        line transition, this function returns all transitions from
+        the LineList containing that line.
 
         Parameters
         ----------
@@ -385,13 +551,18 @@ class LineList(object):
             dict if only 1 transition found, otherwise QTable.
 
         """
-        if isinstance(line, basestring):  # Name
+
+        if self.list not in ['HI', 'ISM', 'EUV', 'Strong']:
+            warnings.warn('Not implemented for LineList: {}.'.format(self.list))
+            return
+
+        if isinstance(line, (str, basestring)):  # Name
             line = line.split(' ')[0]  # keep only the first part of input name
         elif isinstance(line, Quantity):  # Rest wavelength (with units)
             data = self.__getitem__(line)
             return self.all_transitions(data['name'])
         else:
-            raise ValueError('Not prepared for this type')
+            raise ValueError('Not prepared for this type.')
 
         if line == 'unknown':
             return self.unknown_line()
@@ -419,19 +590,18 @@ class LineList(object):
                     tbl = tbl[cond]
                 if len(tbl) > 1:
                     return tbl
-                else:  # this whould be always len(tbl)==1 because Z is not None
-                    name = tbl['name'][0]
-                    return self.__getitem__(name)
+                else:  # this should be always len(tbl)==1 because Z is not None
+                    return self.from_qtable_to_dict(tbl)
             else:
                 raise ValueError(
-                    'Line {} not found in the linelist'.format(line))
+                    'Line {} not found in the LineList: {}'.format(line, self.list))
 
     def strongest_transitions(self, line, wvlims, n_max=3, verbose=False):
         """ Find the strongest transition for an ion
 
         For a given single line transition, this function returns
         the n_max strongest transitions of the ion species found in
-        the linelist, within the wavelength range wlims.
+        the LineList, within the wavelength range wlims.
 
         Parameters
         ----------
@@ -454,6 +624,10 @@ class LineList(object):
         found), or QTable (if > 1 transitions are found)
 
         """
+        good_linelists = ['HI', 'ISM', 'EUV', 'Strong']
+        if self.list not in good_linelists:
+            warnings.warn('Not implemented for LineList: {}.'.format(self.list))
+            return
 
         # Check correct format
         if isinstance(wvlims, tuple):  # tuple
@@ -489,14 +663,12 @@ class LineList(object):
         elif isinstance(data, dict):  # Only 1 case from a dict format
             return data
         elif np.sum(cond) == 1:  # only 1 case from a QTable format
-            name = data[cond]['name'][0]
-            return self.__getitem__(name)
+            return self.from_qtable_to_dict(data[cond])
         else:
             # remove transitions out of range
             data = data[cond]
-            # sort by strength defined as wrest * fosc
-            strength = data['wrest'] * data['f']
-            sorted_inds = np.argsort(strength)
+            # sort by relative strength
+            sorted_inds = np.argsort(data['rel_strength'])
             # reverse sorted indices, so strongest get first
             sorted_inds = sorted_inds[::-1]
             # sort using sorted_inds
@@ -505,29 +677,25 @@ class LineList(object):
             if n_max is not None:
                 data = data[:n_max]
             if len(data) == 1:  # Only 1 case from a QTable format; return a dictionary
-                name = data['name'][0]
-                return self.__getitem__(name)
+                return self.from_qtable_to_dict(data)
             else:
                 return data
 
-    def available_transitions(self, wvlims, n_max=None, n_max_tuple=None, min_strength=1.):
+    def available_transitions(self, wvlims, n_max_tuple=None, min_strength=0.):
         """ Find the strongest transitions in a wavelength interval.
 
         For a given wavelength range, wvlims = (wv_min, wv_max), this
         function retrieves the n_max_tuple strongest transitions per
         each ion species in the LineList available at such a
         wavelength range and having strength larger than min_strength.
-        Strength is defined as log10(wrest * fosc * abundance). The output
-        is sorted by strength of the strongest available transition
-        per ion species.
+        Strength is defined as log10(wrest * fosc * abundance * ion_correction).
+        The output is sorted by strength of the strongest available transition
+        of the ion species.
 
         Parameters
         ----------
         wvlims : tuple of Quantity
             Wavelength range, e.g. wvlims = (1100 * u.AA, 3200 * u.AA)
-        n_max : int, optional
-            Maximum number of transitions retrieved when given,
-            otherwise recover all of them
         n_max_tuple : int, optional
             Maximum number of transitions in a given ion species to
             retrieve. e.g., if Lyman series are all available, it will
@@ -542,103 +710,94 @@ class LineList(object):
         dict (if only 1 transition found) or QTable (if > 1
         transitions are found) or None (if no transition is found)
         """
-        # Init
-        from linetools.abund.solar import SolarAbund
-        from linetools.abund import ions as laions
-        solar = SolarAbund()
 
-        if all((isinstance(n, int) or (n is None)) for n in [n_max, n_max_tuple]):
-            if (n_max is not None) and (n_max < 1):
-                return None
-        else:
+        if self.list not in ['HI', 'ISM', 'EUV', 'Strong']:
+            warnings.warn('Not implemented for LineList: {}.'.format(self.list))
+            return
+
+        if not all((isinstance(n, int) or (n is None)) for n in [n_max_tuple]):
             raise SyntaxError(
-                'Both n_max and n_max_tuple must be integers when given!')
+                'n_max_tuple must be integer when given!')
         if isinstance(min_strength, (float,int)):
             pass
         else:
             raise SyntaxError('min_strength must be a float value')
 
         # Identify unique ion_names (e.g. HI, CIV, CIII)
-        # unique_ion_names = list(set([name.split(' ')[0] for name in self._data['name']]))
-        # unique_ion_names = np.array(unique_ion_names)
-        unique_ion_names = np.unique(
-            [name.split(' ')[0] for name in self._data['name']])
+        unique_ion_names = np.unique(self._data['ion_name'])
 
-        # obtain the strongest transition of a given unique ion species
-        ion_name = []
+        # obtain the strongest available transition of a given unique ion species
+        transition_name = []
         strength = []
-        for ion in unique_ion_names:  # This loop is necessary to have a non trivial but convinient order in the final output
-            # Abundance
-            Zion = laions.name_ion(ion)
-            if ion == 'DI':
-                abundance = 12. - 4.8  # Approximate for Deuterium
-            else:
-                abundance = solar[Zion[0]]
+        for ion in unique_ion_names:  # This loop is necessary to have a non trivial but convenient order in the final output
+            aux = self.strongest_transitions(ion, wvlims, n_max=1)  # only the strongest available
 
-            aux = self.strongest_transitions(
-                ion, wvlims, n_max=1)  # only the strongest
             if aux is not None:
-                if isinstance(aux, dict):  # this should always be True given n_max=1
-                    name = aux['name']
-                else:
-                    name = aux['name'][0]
-                ion_name += [name]
-                strength += [np.log10(aux['wrest'].value *
-                                      aux['f']) + abundance]
-        if len(ion_name) == 0:
+                assert isinstance(aux, dict)  # this should always be True given n_max=1
+                transition_name += [aux['name']]
+                strength += [aux['rel_strength']]
+        if len(transition_name) == 0:
             # no matches
             return None
 
-        # create Table
+        # create auxiliary Table
         unique = Table()
-        unique.add_column(Column(data=ion_name, name='name'))
-        unique.add_column(Column(data=strength, name='strength'))
+        unique['name'] = transition_name
+        unique['rel_strength'] = strength
 
         # get rid of those below the min_strength threshold
-        cond = unique['strength'] >= min_strength
+        cond = unique['rel_strength'] >= min_strength
         unique = unique[cond]
         if len(unique) < 1:
             return None
 
         # sort by strength
-        unique.sort(['strength'])
-        unique.reverse()  # Table unique is now sorted by strength, with only
+        unique.sort(['rel_strength'])
+        unique.reverse()
+        # Table unique is now sorted by strength, with only
         # 1 entry per ion species
 
-        # Create output data adding up to n_max_tuple per ion species
+        # Create output data table adding up to n_max_tuple per ion species
+        output = Table()
         for i, row in enumerate(unique):
             name = row['name']
             aux = self.strongest_transitions(name, wvlims, n_max=n_max_tuple)
+
             # need to deal with dict vs QTable format now
             if isinstance(aux, dict):
                 aux = self.from_dict_to_qtable(aux)
-            if i == 0:
-                # convert to Table because QTable does not like vstack
-                output = Table(aux)
-            else:
-                # vstack is only supported for Table()
-                output = vstack([output, Table(aux)])
+
+            # convert to Table because QTable does not like vstack
+            output = vstack([output, Table(aux)])
+
+        # Deal with output formatting now
         # if len==1 return dict
         if len(output) == 1:
-            name = output['name'][0]
-            return self.__getitem__(name)
-        else:  # n_max>1
-            if (n_max is not None) and (n_max > 1):
-                output = output[:n_max]
-            if len(output) == 1:  # return dictionary
-                name = output['name'][0]
-                return self.__getitem__(name)
-            else:
-                return QTable(output)
+            return self.from_qtable_to_dict(output)
+        else:
+            return QTable(output)
 
     def from_dict_to_qtable(self, a):
         """Converts dictionary `a` to its QTable version.
+
+        Parameters
+        ----------
+        a : dict
+            The input dictionary to be converted to a
+            QTable. The resulting QTable will have the
+            same keys as self._data
+
+        Returns
+        -------
+        A QTable of 1 Row, with filled with the data from
+        the input dictionary.
+
         """
 
         if isinstance(a, dict):
             pass
         else:
-            raise SyntaxError('Input has to be a dictionary')
+            raise ValueError('Input has to be a dictionary.')
 
         keys = self._data.keys()
 
@@ -649,27 +808,32 @@ class LineList(object):
             tab[0][key] = a[key]
         return tab
 
-    #####
-    def __getattr__(self, k):
-        """ Passback an array or Column of the data
+    def from_qtable_to_dict(self, tab):
+        """Converts QTable `tab` to its dictionary version.
+        An error is raised if len(tab) > 1.
 
-        k must be a Column name in the data Table
+        Parameters
+        ----------
+        tab : QTable or Table
+            The table to be converted to a dictionary.
+            It has to be of length == 1!
+
+        Returns
+        -------
+        A dictionary with the same keys and values of the
+        input table.
+
         """
-        # Deal with QTable
-        try:
-            # First try to access __getitem__ in the parent class.
-            # This is needed to avoid an infinite loop which happens
-            # when trying to assign self._fulldata to the cache
-            # dictionary.
-            out = object.__getattr__(k)
-        except AttributeError:
-            colm = self._data[k]
-            if isinstance(colm[0], Quantity):
-                return self._data[k]
-            else:
-                return np.array(self._data[k])
-        else:
-            return out
+
+        if not isinstance(tab, (QTable, Table)):
+            raise ValueError('Input has to be QTable or Table.')
+        elif len(tab) != 1:
+            raise ValueError('Input has to be of len(tab) == 1.')
+
+        a_dict = dict()
+        for key in tab.keys():
+            a_dict[key] = tab[0][key]
+        return a_dict
 
     def __getitem__(self, k, tol=1e-3*u.AA):
         """ Passback data as a dict (from the table) for the input line
@@ -735,6 +899,10 @@ class LineList(object):
 
     # Printing
     def __repr__(self):
-        return '<LineList: {:s}; {} transitions>'.format(self.list, len(self._data))
+        if len(self._data) > 1:
+            s = '<LineList: {:s}; {} transitions sorted by {}.>'.format(self.list, len(self._data), self.sort_by)
+        else:
+            s = '<LineList: {:s}; {} transition.>'.format(self.list, len(self._data))
+        return s
 
 

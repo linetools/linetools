@@ -20,7 +20,8 @@ Launch a QT Gui to examine an input spectrum.
 
 For example::
 
-   lt_xspec filename
+   lt_xspec filename.fits
+   lt_xspec filename.fits#1#   -- Specifies extension 1 for a multi-extension FITS file of binary tables
 
 You can explore the data, perform simple analysis (e.g. EW
 measurements) and more. See the Notebook for more.

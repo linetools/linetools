@@ -176,6 +176,12 @@ class AbsSystem(object):
         slf = cls(SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg),
                   idict['zabs'], idict['vlim']*u.km/u.s, zem=idict['zem'],
                   name=idict['Name'], **ckwargs)
+        # Other
+        if 'kin' in idict.keys():
+            slf.kin = ltu.convert_quantity_in_dict(idict['kin'])
+        if 'Refs' in idict.keys():
+            slf.Refs = idict['Refs']
+        # Components
         if not skip_components:
             # Components
             if use_coord:  # Speed up performance

@@ -340,7 +340,7 @@ Let us now imagine that we are interested in a particular redshift, say
 ``z=0.67``. Then, we can do::
 
     z = 0.67
-    transitions = ism.available_transitions(wvlims/(1+z),n_max=None,n_max_tuple=None, min_strength=0.)
+    transitions = ism.available_transitions(wvlims/(1+z), n_max_tuple=None, min_strength=0.)
     print(len(transitions))
     33
 
@@ -352,28 +352,16 @@ composition given by Asplund2009. As optional keyword parameters one can
 specify a minimum strength as `min_strength`, so transitions below this
 value are omitted, e.g.::
 
-    transitions = ism.available_transitions(wvlims/(1+z),n_max=None,n_max_tuple=None, min_strength=10.5)
+    transitions = ism.available_transitions(wvlims/(1+z), n_max_tuple=None, min_strength=10.5)
     print(len(transitions))
     3
 
 Which correspond to `MgI 2852`, `MgII 2796` and `MgII 2803`. Note than this
-method does not correct for ionization state. Similarly, once can also set a
-maximum number of transitions to be retrieved satisfying the criteria using
-the optional keyword `n_max`, e.g.::
-
-    transitions = ism.available_transitions(wvlims/(1+z), n_max=4, n_max_tuple=None, min_strength=0.)
-    print(transitions['name'])
-       name
-    ---------
-    MgI 2852
-    MgII 2796
-    MgII 2803
-    FeII 2382
-
-Finally, one can also specify the maximum number of transitions per ion species
+method does not correct for ionization state. Similarly, one can also specify
+the maximum number of transitions per ion species
 tuple using the optional keyword parameter `n_max_tuple`, e.g.::
 
-    transitions = ism.available_transitions(wvlims/(1+z), n_max=6, n_max_tuple=1, min_strength=0.)
+    transitions = ism.available_transitions(wvlims/(1+z), n_max_tuple=1, min_strength=0.)
     print(transitions['name'])
         name
     -----------
@@ -383,6 +371,7 @@ tuple using the optional keyword parameter `n_max_tuple`, e.g.::
     FeII* 2396b
     MnII 2576
     VII  2683
+    ...
 
 Which for the case of `MgII` only retrieves ``'MgII 2796'``. Again, following the convention within
 `LineList`, if only 1 transition is retrieved, the output of `available_transitions()`
