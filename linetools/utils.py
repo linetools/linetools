@@ -283,7 +283,8 @@ def z_from_v(z, v):
 # Slightly different functions for passing from dv to dz, and viceversa (that NT prefers).
 # May need to agree on one kind of conversion in the future
 def give_dv(z, zmean, rel=True):
-    """Gives velocity difference between z and zmean.
+    """Gives velocity difference between z and zmean,
+    at zmean.
 
     Parameters
     ---------
@@ -324,7 +325,7 @@ def give_dz(dv, zmean, rel=True):
         Rest-frame velocity at zmean to calculate
         the corresponding redshift difference, dz
     zmean : float or np.array
-        Rest-frame redshift to perform the calculation.
+        Redshift to perform the calculation.
         If shape of zmean is equal than shape of dv,
         each dv is calculated at each zmean, otherwise zmean
         is expected to be float
@@ -334,8 +335,8 @@ def give_dz(dv, zmean, rel=True):
 
     Returns
     dz : np.array
-        Redshift difference between dv and zmean. Same shape as
-        dv.
+        Redshift difference between dv and zmean, at zmean.
+        Same shape as dv.
         """
     if not isinstance(dv, u.quantity.Quantity):
         raise ValueError('dv must be Quantity or Quantity array!')

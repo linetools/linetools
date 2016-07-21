@@ -229,8 +229,11 @@ class AbsComponent(object):
         chk_sep : bool, optional
           Perform coordinate check (expensive)
         vtoler : float
-          Tolerance for velocity in km/s
+          Tolerance for velocity in km/s (must be positive)
         """
+        if vtoler < 0:
+            raise ValueError('vtoler must be positive!')
+
         # Perform easy checks
         if chk_sep:
             testc = bool(self.coord.separation(absline.attrib['coord']) < tol)
@@ -241,7 +244,7 @@ class AbsComponent(object):
         testE = bool(self.Ej == absline.data['Ej'])
         # Now redshift/velocity
         if chk_vel:
-            dz_toler = (1 + self.zcomp) * np.fabs(vtoler) / c_kms  # Avoid Quantity for speed
+            dz_toler = (1 + self.zcomp) * vtoler / c_kms  # Avoid Quantity for speed
             zlim_line = (1 + absline.attrib['z']) * absline.analy['vlim'].to('km/s').value / c_kms
             zlim_comp = (1+self.zcomp) * self.vlim.to('km/s').value / c_kms
             testv = (zlim_line[0] >= (zlim_comp[0] - dz_toler)) & (
@@ -252,7 +255,7 @@ class AbsComponent(object):
         test = testc & testZ & testi & testE & testv
         # Isotope
         if self.A is not None:
-            raise ValueError('Not ready for this yet')
+            raise ValueError('Not ready for this yet.')
         # Append?
         if test:
             self._abslines.append(absline)

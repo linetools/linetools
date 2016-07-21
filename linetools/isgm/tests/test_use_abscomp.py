@@ -27,7 +27,7 @@ lt_path = imp.find_module('linetools')[1]
 # Set of Input lines
 
 def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
-            add_trans=False):
+            add_trans=False, zcomp=2.92939):
     # Read a spectrum Spec
     if add_spec:
         xspec = lsio.readspec(lt_path+'/spectra/tests/files/UM184_nF.fits')
@@ -43,7 +43,7 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
     abslines = []
     for trans in all_trans:
         iline = AbsLine(trans)
-        iline.attrib['z'] = 2.92939
+        iline.attrib['z'] = zcomp
         if use_rand:
             rnd = np.random.rand()
         else:
@@ -213,7 +213,7 @@ def test_repr_alis():
 
 def test_overlapping_components():
     abscomp, HIlines = mk_comp('HI')
-    SiIIcomp1,_ = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s)
+    SiIIcomp1,_ = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s, zcomp)
     SiIIcomp2,_ = mk_comp('SiII',vlim=[-300.,0.]*u.km/u.s)
     assert ltiu.overlapping_components(abscomp, abscomp)  # should overlap
     f = ltiu.overlapping_components(abscomp, SiIIcomp1)  # should not overlap

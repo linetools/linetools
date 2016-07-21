@@ -35,7 +35,7 @@ def chk_components(components, chk_match=False, chk_A_none=False, tol=0.2*u.arcs
     chk_A_none : bool, optional
       if True, require that A *not* be set
     tol : Quantity, optional
-      Tolerance on matching SkyCoordinates. Default is 0.2*u.arcsec
+      Tolerance on matching SkyCoord. Default is 0.2*u.arcsec
     """
     tests = True
     # List
@@ -373,15 +373,15 @@ def overlapping_chunks(chunk1, chunk2):
     `chunk1` and `chunk2`. Otherwise False. Chunks are
     assumed to represent continuous coverage, so the only
     information that matters are the minimum and maximum
-    values of a given chunk.
+    values of a given chunk. Chunks must be sorted though.
 
     Parameters
     ----------
-    chunk1 : tuple, list, 1-d np.array, Quantity
+    chunk1 : tuple, list, 1-d np.array, Quantity, Quantity array
         A given chunk, assumed to represent a contiguous region
-        So only its minimum and maximum values matter
-        Still, chunk must be sorted.
-    chunk1 : tuple, list, 1-d np.array
+        so only its minimum and maximum values matter. Still,
+        chunk must be sorted.
+    chunk2 : tuple, list, 1-d np.array
         Ditto.
 
     Returns
