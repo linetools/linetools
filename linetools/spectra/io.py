@@ -78,7 +78,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
                 raise IOError('File does not exist {}'.format(specfil))
             hdulist = fits.open(os.path.expanduser(datfil))
         elif '.hdf5' in specfil:  # HDF5
-            return parse_hdf5(specfil)
+            return parse_hdf5(specfil, **kwargs)
         else: #ASCII
             tbl = Table.read(specfil,format=format)
             # No header?
@@ -595,7 +595,8 @@ def parse_linetools_spectrum_format(hdulist):
 
     return xspec1d
 
-def parse_hdf5(inp, path='/', **kwargs):
+
+def parse_hdf5(inp, **kwargs):
     """ Read a spectrum from HDF5 written in XSpectrum1D format
     Expects:  meta, data, units
 
@@ -609,6 +610,8 @@ def parse_hdf5(inp, path='/', **kwargs):
     """
     import json
     import h5py
+    # Path
+    path = kwargs.pop('path', '/')
     # Open
     if isinstance(inp, basestring):
         hdf5 = h5py.File(inp, 'r')

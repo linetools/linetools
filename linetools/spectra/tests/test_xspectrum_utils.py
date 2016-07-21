@@ -60,10 +60,13 @@ def test_hdf5(specm):
     # check a round trip works
     np.testing.assert_allclose(specm.wavelength, specread.wavelength)
     # Add to existing file
-    tmp2 = h5py.File('tmp2.hdf5', 'w')
+    tmp2 = h5py.File(data_path('tmp2.hdf5'), 'w')
     foo = tmp2.create_group('boxcar')
     specm.add_to_hdf5(tmp2, path='/boxcar/')
     tmp2.close()
+    # check a round trip works
+    spec3 = io.readspec(data_path('tmp2.hdf5'), path='/boxcar/')
+    np.testing.assert_allclose(specm.wavelength, spec3.wavelength)
 
 
 def test_rebin(spec):
