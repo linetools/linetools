@@ -291,23 +291,39 @@ class ExamineSpecWidget(QtGui.QWidget):
                     Aguess = np.max(self.spec.flux[pix]-lconti[pix])
                     Cguess = np.mean(self.spec.wavelength[pix])
                     sguess = 0.1*np.abs(self.adict['wv_1']-self.adict['wv_2'])
-                    #QtCore.pyqtRemoveInputHook()
-                    #pdb.set_trace()
-                    #QtCore.pyqtRestoreInputHook()
+                    # Fit
                     g_init = models.Gaussian1D(amplitude=Aguess, mean=Cguess, stddev=sguess)
                     fitter = fitting.LevMarLSQFitter()
                     parm = fitter(g_init, self.spec.wavelength[pix].value,
                                   sign*(self.spec.flux[pix]-lconti[pix]))
+                    # Error
+                    var = [fitter.fit_info['param_cov'][ii,ii] for ii in range(3)]
+                    sig = np.sqrt(var)  # amplitude, mean, stddev
+                    sig_dict = {g_init.param_names[0]:sig[0],
+                                g_init.param_names[1]:sig[1],
+                                g_init.param_names[2]:sig[2], }
+                    # Plot
                     g_final = models.Gaussian1D(amplitude=parm.amplitude.value,
                                                 mean=parm.mean.value, stddev=parm.stddev.value)
-                    # Plot
                     model_Gauss = g_final(self.spec.wavelength.value)
                     self.model = XSpectrum1D.from_tuple((self.spec.wavelength, lconti + sign*model_Gauss))
+                    # Flux
+                    flux = parm.stddev.value*parm.amplitude.value*np.sqrt(2*np.pi)
+                    #flux = parm.stddev.value*(parm.amplitude.value-np.median(lconti[pix]))*np.sqrt(2*np.pi)
+                    sig_flux1 = np.sqrt( (sig_dict['stddev']*parm.amplitude.value*np.sqrt(2*np.pi))**2 + (parm.stddev.value*sig_dict['amplitude']*np.sqrt(2*np.pi))**2)
+                    if self.spec.sig_is_set:
+                        sig_flux2 = np.sqrt(np.sum(self.spec.sig[pix].value**2))
+                    else:
+                        sig_flux2 = 9e9
+                    #QtCore.pyqtRemoveInputHook()
+                    #pdb.set_trace()
+                    #QtCore.pyqtRestoreInputHook()
                     # Message
                     mssg = 'Gaussian Fit: '
                     mssg = mssg+' ::  Mean={:g}, Amplitude={:g}, sigma={:g}, flux={:g}'.format(
-                            parm.mean.value, parm.amplitude.value, parm.stddev.value,
-                            parm.stddev.value*(parm.amplitude.value-np.median(lconti[pix]))*np.sqrt(2*np.pi))
+                            parm.mean.value, parm.amplitude.value, parm.stddev.value, flux)
+                    mssg = mssg+' ::  sig(Mean)={:g}, sig(Amplitude)={:g}, sig(sigma)={:g}, sig(flux)={:g}'.format(
+                            sig_dict['mean'], sig_dict['amplitude'], sig_dict['stddev'], min(sig_flux1,sig_flux2))
                 else:
                     # Find the spectral line (or request it!)
                     rng_wrest = iwv / (self.llist['z']+1)
