@@ -52,12 +52,18 @@ def test_write(spec,specm):
 
 
 def test_hdf5(specm):
+    import h5py
     # Write. Should be replaced with tempfile.TemporaryFile
     specm.write_to_hdf5(data_path('tmp.hdf5'))
     #
     specread = io.readspec(data_path('tmp.hdf5'))
     # check a round trip works
     np.testing.assert_allclose(specm.wavelength, specread.wavelength)
+    # Add to existing file
+    tmp2 = h5py.File('tmp2.hdf5', 'w')
+    foo = tmp2.create_group('boxcar')
+    specm.add_to_hdf5(tmp2, path='/boxcar/')
+    tmp2.close()
 
 
 def test_rebin(spec):

@@ -1176,7 +1176,30 @@ class XSpectrum1D(object):
         hdu.writeto(outfil, clobber=clobber)
         print('Wrote spectrum to {:s}'.format(outfil))
 
-    def write_to_hdf5(self, outfil, clobber=True, fill_val=0.):
+    def add_to_hdf5(self, hdf5, path='/', fill_val=0.):
+        """ Write the full data array to an already open hdf5 file
+
+        Parameters
+        ----------
+        hdf5 : h5py.File
+          If input, outfil is ignored
+        path : str, optional
+          Path to the location for writing (useful for using Groups)
+        fill_val : float, optional
+          Fill value for masked pixels
+        """
+        # Meta
+        if self.meta is not None and len(self.meta) > 0:
+            hdf5[path]['meta'] = meta_to_disk(self.meta)
+        # Units
+        units = self.units.copy()
+        d = liu.jsonify(units)
+        hdf5[path]['units'] = json.dumps(d)
+        # Data with compression
+        hdf5.create_dataset(path+'data', data=self.data.filled(fill_val),
+                                       chunks=True, compression='gzip')
+
+    def write_to_hdf5(self, outfil, hdf5=None, clobber=True, fill_val=0.):
         """ Write the full data array to an hdf5 file.
 
         Parameters
@@ -1187,6 +1210,8 @@ class XSpectrum1D(object):
           Clobber existing file?
         fill_val : float, optional
           Fill value for masked pixels
+        hdf5 : h5py.File, optional
+          If input, outfil is ignored
         """
         # Check for h5py
         try:
@@ -1199,7 +1224,11 @@ class XSpectrum1D(object):
             if os.path.exists(outfil):
                 raise IOError("File exists.  Will only over-write if you set clobber=True")
         # Begin the file
-        hdf5 = h5py.File(outfil, 'w')
+        if hdf5 is None:
+            hdf5 = h5py.File(outfil, 'w')
+            close = True
+        else:
+            close = False
         # Meta
         if self.meta is not None and len(self.meta) > 0:
             hdf5['meta'] = meta_to_disk(self.meta)
@@ -1211,8 +1240,9 @@ class XSpectrum1D(object):
         hdf5.create_dataset('data', data=self.data.filled(fill_val),
                                        chunks=True, compression='gzip')
         # Finish
-        hdf5.close()
-        print('Wrote spectrum to {:s}'.format(outfil))
+        if close:
+            hdf5.close()
+            print('Wrote spectrum to {:s}'.format(outfil))
 
 
     def write_to_binary_fits_table(self, outfil, clobber=True):

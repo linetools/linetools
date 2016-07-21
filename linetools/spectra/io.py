@@ -595,7 +595,7 @@ def parse_linetools_spectrum_format(hdulist):
 
     return xspec1d
 
-def parse_hdf5(inp, **kwargs):
+def parse_hdf5(inp, path='/', **kwargs):
     """ Read a spectrum from HDF5 written in XSpectrum1D format
     Expects:  meta, data, units
 
@@ -615,17 +615,17 @@ def parse_hdf5(inp, **kwargs):
     else:
         hdf5 = inp
     # Data
-    data = hdf5['data'].value
+    data = hdf5[path+'data'].value
     # Meta
-    if 'meta' in hdf5.keys():
-        meta = json.loads(hdf5['meta'].value)
+    if 'meta' in hdf5[path].keys():
+        meta = json.loads(hdf5[path+'meta'].value)
         # Headers
         for jj,heads in enumerate(meta['headers']):
             meta['headers'][jj] = fits.Header.fromstring(meta['headers'][jj])
     else:
         meta = None
     # Units
-    units = json.loads(hdf5['units'].value)
+    units = json.loads(hdf5[path+'units'].value)
     for key,item in units.items():
         if item == 'dimensionless_unit':
             units[key] = u.dimensionless_unscaled
