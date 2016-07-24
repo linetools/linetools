@@ -55,7 +55,8 @@ def main(*args, **kwargs):
 
 
     # Splice?
-    if hasattr(pargs, 'splice'):
+    if pargs.splice is not None:
+        pdb.set_trace()
         if pargs.splice[-1] == '#':
             prs = pargs.splice.split('#')
             exten = [exten, int(prs[1])]

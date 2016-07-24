@@ -74,6 +74,7 @@ class ExamineSpecWidget(QtGui.QWidget):
             spec.airtovac()
         self.orig_spec = spec  # For smoothing
         self.spec = self.orig_spec
+        self.parent = parent
 
         # determine the filename (if any)
         if isinstance(ispec, (str, basestring)):
@@ -181,6 +182,11 @@ class ExamineSpecWidget(QtGui.QWidget):
         """
         # Flag to control re-draw
         flg = -1
+
+        # Quit
+        if event.key == 'q':
+            self.parent.quit()
+            return
 
         # NAVIGATING
         if event.key in self.psdict['nav']:

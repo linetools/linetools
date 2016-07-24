@@ -54,6 +54,7 @@ class XSpecGui(QtGui.QMainWindow):
 
         # Hook the spec widget to Plot Line
         self.spec_widg = ltgsp.ExamineSpecWidget(ispec,status=self.statusBar,
+                                                 parent=self,
                                                 llist=self.pltline_widg.llist,
                                                 zsys=zsys, norm=norm, exten=exten,
                                                  rsp_kwargs=rsp_kwargs, **kwargs)
