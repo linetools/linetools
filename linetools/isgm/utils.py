@@ -394,7 +394,7 @@ def get_wvobs_chunks(comp):
         cond = absline.analy['wvlim'] != init_analy['wvlim']
         if np.sum(cond) > 0: # not default, use these values then
             wvlim_aux = absline.analy['wvlim']
-            wobs_chunks += [wvlim_aux]
+            wvobs_chunks += [wvlim_aux]
         else:
             # Check whether the absline has already defined 'vlim'
             cond = absline.analy['vlim'] != init_analy['vlim']
