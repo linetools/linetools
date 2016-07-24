@@ -268,7 +268,14 @@ def test_get_wvobs_chunks():
     np.testing.assert_allclose(wvobs_chunks[0][1], 2432.15114303*u.AA)
     np.testing.assert_allclose(wvobs_chunks[1][0], 2050.76022589*u.AA)
     np.testing.assert_allclose(wvobs_chunks[1][1], 2052.12880236*u.AA)
-
+    abscomp, HIlines = mk_comp('HI', zcomp=1, vlim=[-100,100]*u.km/u.s)
+    abscomp._abslines[0].analy['wvlim'] = [0,0]*u.AA
+    wvobs_chunks = ltiu.get_wvobs_chunks(abscomp)
+    abscomp._abslines[1].analy['vlim'] = [0,0]*u.AA
+    wvobs_chunks = ltiu.get_wvobs_chunks(abscomp)
+    abscomp._abslines[0].attrib['z'] = 0
+    abscomp._abslines[0].analy['wvlim'] = [1,0]*u.AA
+    wvobs_chunks = ltiu.get_wvobs_chunks(abscomp)
 
 def test_coincident_components():
     abscomp, HIlines = mk_comp('HI', zcomp=2.92939)
@@ -277,3 +284,7 @@ def test_coincident_components():
     assert ltiu.coincident_components(abscomp, abscomp)  # should overlap
     assert not ltiu.coincident_components(abscomp, SiIIcomp1)  # should not overlap
     assert not ltiu.coincident_components(SiIIcomp2, SiIIcomp1) # should not overlap
+    with pytest.raises(ValueError):
+        a = ltiu.coincident_components('not_a_component', SiIIcomp1)
+    with pytest.raises(ValueError):
+        a = ltiu.coincident_components(abscomp, 'not_a_component')
