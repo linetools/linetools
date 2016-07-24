@@ -7,6 +7,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import pytest
 from astropy import units as u
 from astropy.table import QTable
+from astropy.coordinates import SkyCoord
 import numpy as np
 import pdb
 
@@ -62,7 +63,19 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
     return abscomp, abslines
 
 
-def test_todict():
+def test_add_absline():
+    abscomp,_ = mk_comp('HI', zcomp=0)
+    abscomp.add_absline(AbsLine('HI 972'), chk_sep=False, chk_vel=False)
+    with pytest.raises(ValueError):
+        abscomp.add_absline(AbsLine('HI 949'), vtoler=-10)
+    # failed addition
+    bad_absline = AbsLine('CIV 1550')
+    bad_absline.analy['vlim'] = [500, 1000]*u.km/u.s
+    bad_absline.attrib['coord'] = SkyCoord(20,20, unit='deg')
+    abscomp.add_absline(bad_absline)
+
+
+def test_fromtodict():
     SiIIcomp1,_ = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s, add_spec=True)
     cdict = SiIIcomp1.to_dict()
     #
@@ -71,6 +84,8 @@ def test_todict():
     # And instantiate
     newcomp = AbsComponent.from_dict(cdict)
     assert isinstance(newcomp, AbsComponent)
+    newcomp = AbsComponent.from_dict(cdict, coord=SkyCoord(0,0, unit='deg'))
+
 
 def test_build_table():
     abscomp,_ = mk_comp('HI')
@@ -78,6 +93,10 @@ def test_build_table():
     comp_tbl = abscomp.build_table()
     # Test
     assert isinstance(comp_tbl,QTable)
+    # empty
+    abscomp._abslines = []
+    comp_tbl = abscomp.build_table()
+
 
 def test_synthesize_colm():
     abscomp,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True,
@@ -113,6 +132,12 @@ def test_synthesize_colm():
     abscomp3.synthesize_colm()
     # Test
     np.testing.assert_allclose(abscomp3.logN, 13.3)
+    # test error
+    with pytest.raises(IOError):
+        abscomp3.synthesize_colm(overwrite=False)
+    with pytest.raises(ValueError):
+        abscomp3._abslines[0].attrib['N'] = 0 / u.cm / u.cm
+        abscomp3.synthesize_colm(overwrite=True)
 
 def test_build_components_from_lines():
     # Lines
@@ -121,6 +146,7 @@ def test_build_components_from_lines():
     # Components
     comps = ltiu.build_components_from_abslines([HIlines[0],HIlines[1],SiIIlines[0],SiIIlines[1]])
     assert len(comps) == 2
+
 
 def test_iontable_from_components():
     # Lines
@@ -131,6 +157,7 @@ def test_iontable_from_components():
     tbl = ltiu.iontable_from_components(comps)
     assert len(tbl) == 2
 
+
 def test_cog():
     # Component
     abscomp,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True)
@@ -139,6 +166,7 @@ def test_cog():
     # Test
     np.testing.assert_allclose(COG_dict['logN'],13.693355878125537)
     np.testing.assert_allclose(COG_dict['sig_logN'],0.054323725737309987)
+
 
 def test_synthesize_components():
     #
@@ -175,9 +203,6 @@ def test_stack_plot():
 """
 
 
-
-
-
 def test_repr_vpfit():
     abscomp, HIlines = mk_comp('HI')
     s = abscomp.repr_vpfit()
@@ -196,6 +221,15 @@ def test_repr_vpfit():
     s = abscomp.repr_vpfit()
     assert s == 'SiII 2.92939 0.00000 10.00 0.00 0.00 0.00\n'
 
+    # errors
+    with pytest.raises(TypeError):
+        s = abscomp.repr_vpfit(tie_strs='bad_format')
+    with pytest.raises(TypeError):
+        s = abscomp.repr_vpfit(fix_strs='bad_format')
+    with pytest.raises(TypeError):
+        s = abscomp.repr_vpfit(fix_strs=('1','2','3','4','5'))
+
+
 
 def test_repr_alis():
     abscomp, HIlines = mk_comp('HI')
@@ -211,6 +245,15 @@ def test_repr_alis():
     assert s == 'voigt   ion=28Si_II 0.00 redshift=2.92939 0.0 1.0E+04# Something\n'
     s = abscomp.repr_alis(tie_strs=('a', 'b', 'CD',''), fix_strs=('', 'f', '', ''))
     assert s == 'voigt   ion=28Si_II 0.00a redshift=2.92939F 0.0cd 1.0E+04# Something\n'
+
+    # errors
+    with pytest.raises(TypeError):
+        s = abscomp.repr_alis(tie_strs='bad_format')
+    with pytest.raises(TypeError):
+        s = abscomp.repr_alis(fix_strs='bad_format')
+    with pytest.raises(TypeError):
+        s = abscomp.repr_alis(fix_strs=('1','2','3','4','5'))
+
 
 def test_get_wvobs_chunks():
     abscomp, HIlines = mk_comp('HI', zcomp=0, vlim=[0,10]*u.km/u.s)

@@ -413,7 +413,7 @@ class AbsComponent(object):
         """
         # Check
         if (self.flag_N != 0) and (not overwrite):
-            raise IOError("Column densities already set.  Use clobber=True to redo.")
+            raise IOError("Column densities already set.  Use overwrite=True to redo.")
         # Redo?
         if redo_aodm:
             for aline in self._abslines:
