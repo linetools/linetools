@@ -8,7 +8,7 @@ import warnings
 import pdb
 
 import numpy as np
-from astropy.constants import c
+from astropy import constants as const
 from astropy import units as u
 from astropy.units import Quantity, Unit
 
@@ -242,7 +242,7 @@ def v_from_z(z1, z2):
     -----
     """
     R = (1+z1) / (1+z2)
-    v = c * (R**2 - 1)/(1+R**2)
+    v = const.c * (R**2 - 1)/(1+R**2)
 
     return v.to('km/s')
 
@@ -271,7 +271,7 @@ def z_from_v(z, v):
         v = v * u.Unit('km/s')
 
     # b
-    bval = (v/c.to('km/s'))
+    bval = (v / const.c.to('km/s'))
 
     # R
     R = np.sqrt((1-bval)/(1+bval))
@@ -313,7 +313,7 @@ def give_dv(z, zmean, rel=True):
     else:
         dv = (z - zmean) / (1. + zmean)
 
-    return dv * c.to('km/s')
+    return dv * const.c.to('km/s')
 
 def give_dz(dv, zmean, rel=True):
     """Gives redshift difference for a given
@@ -349,11 +349,11 @@ def give_dz(dv, zmean, rel=True):
     zmean = np.array(zmean)
 
     if rel:
-        beta = dv / c.to('km/s').value
+        beta = dv / const.c.to('km/s').value
         aux = np.sqrt((1.+ beta)/(1.- beta))
         dz = (1. + zmean) * (aux - 1.)
     else:
-        dz = dv * (1. + zmean) / c.to('km/s').value
+        dz = dv * (1. + zmean) / const.c.to('km/s').value
     return dz
 
 
