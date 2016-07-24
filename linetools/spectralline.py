@@ -386,7 +386,7 @@ class SpectralLine(object):
         # Return
         return adict
 
-    def coincident_lines(self, specline):
+    def coincident_line(self, specline):
         """Whether the current SpectralLine overlaps in
         observed wavelength space with the given input SpectralLine
 

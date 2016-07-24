@@ -448,7 +448,7 @@ def coincident_components(comp1, comp2, tol=0.2*u.arcsec):
     # loop over abslines
     for line1 in comp1._abslines:
         for line2 in comp2._abslines:
-            overlap = line1.coincident_lines(line2)
+            overlap = line1.coincident_line(line2)
             if overlap is True:
                 return True
     return False

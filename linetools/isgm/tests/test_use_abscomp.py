@@ -230,7 +230,6 @@ def test_repr_vpfit():
         s = abscomp.repr_vpfit(fix_strs=('1','2','3','4','5'))
 
 
-
 def test_repr_alis():
     abscomp, HIlines = mk_comp('HI')
     s = abscomp.repr_alis()
