@@ -386,6 +386,29 @@ class SpectralLine(object):
         # Return
         return adict
 
+    def coincident_lines(self, specline):
+        """Whether the current SpectralLine overlaps in
+        observed wavelength space with the given input SpectralLine
+
+        Parameters
+        ----------
+        specline : SpectralLine
+            A SpectralLine object
+
+        Returns
+        -------
+        answer : bool
+          True if there is overlap in wvobs space, False otherwise.
+
+        """
+        if np.sum(self.analy['wvlim'] != init_analy['wvlim']) == 0:
+            raise ValueError("{} has not set its analy['wvlim'] values!".format(self.__repr__()))
+        if np.sum(specline.analy['wvlim'] != init_analy['wvlim']) == 0:
+            raise ValueError("{} has not set its analy['wvlim'] values!".format(specline.__repr__()))
+
+        return ltu.overlapping_chunks(self.analy['wvlim'], specline.analy['wvlim'])
+
+
     def copy(self):
         """ Generate a copy
 

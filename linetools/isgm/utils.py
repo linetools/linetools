@@ -368,78 +368,56 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
     return synth_comp
 
 
-def overlapping_chunks(chunk1, chunk2):
-    """True if there is overlap between chunks
-    `chunk1` and `chunk2`. Otherwise False. Chunks are
-    assumed to represent continuous coverage, so the only
-    information that matters are the minimum and maximum
-    values of a given chunk. Chunks must be sorted though.
+def get_wvobs_chunks(comp):
+    """For a given component, it gets a list of tuples with the
+    min/max observed wavelengths for each absorption line in the
+    component.
 
     Parameters
     ----------
-    chunk1 : tuple, list, 1-d np.array, Quantity, Quantity array
-        A given chunk, assumed to represent a contiguous region
-        so only its minimum and maximum values matter. Still,
-        chunk must be sorted.
-    chunk2 : tuple, list, 1-d np.array
-        Ditto.
+    comp : AbsComponent
+        The input AbsComponent object
 
     Returns
     -------
-    Boolean, True if there is overlap, False otherwise.
-
+    wvobs_chunks : list of Quantity arrays
+        A list with the wvmin, wvmax values for each absorption
+        line within the component.
     """
-    # Check units in case chunks are Quantity
-    if isinstance(chunk1, Quantity):
-        unit1 = chunk1.unit
-        chunk1 = np.array(chunk1.value)
-        if not isinstance(chunk2, Quantity):
-            raise ValueError('chunk2 must be Quantity because chunk1 is!')
-        try:
-            chunk2 = chunk2.to(unit1)
-            chunk2 = np.array(chunk2.value)  # has the same units as chunk1
-        except u.core.UnitConversionError:
-            raise ValueError('If chunks are given as Quantity they must have convertible units!')
-    else:
-        chunk1 = np.array(chunk1)  # not a quantity
 
-    # this may be redundant but cleaner code
-    if isinstance(chunk2, Quantity):
-        unit2 = chunk2.unit
-        chunk2 = np.array(chunk2.value)
-        if not isinstance(chunk1, Quantity):
-            raise ValueError('chunk1 must be Quantity because chunk2 is!')
-    else:
-        chunk2 = np.array(chunk2)  # not a quantity
-    # here we have chunks as values (i.e no units)
+    if not isinstance(comp, AbsComponent):
+        raise ValueError('`comp` must be AbsComponent object.')
 
-    # make sure the chunks are sorted
-    cond1 = np.sort(chunk1) != chunk1
-    cond2 = np.sort(chunk2) != chunk2
-    if (np.sum(cond1) > 0) or (np.sum(cond2) > 0):
-        raise ValueError('chunks must be sorted!')
+    wvobs_chunks = []
+    for absline in comp._abslines:
+        # Check whether the absline has already defined 'wvlim'
+        cond = absline.analy['wvlim'] != init_analy['wvlim']
+        if np.sum(cond) > 0: # not default, use these values then
+            wvlim_aux = absline.analy['wvlim']
+            wobs_chunks += [wvlim_aux]
+        else:
+            # Check whether the absline has already defined 'vlim'
+            cond = absline.analy['vlim'] != init_analy['vlim']
+            if np.sum(cond) > 0:  # i.e. absline vlim not equal than the default, so we use these
+                # define the best redshift
+                if absline.attrib['z'] != 0:
+                    zline = absline.attrib['z']
+                else:
+                    zline = comp.zcomp
+                dzlim = give_dz(absline.analy['vlim'], zline)
+            else:  # use the vlim from component otherwise
+                zline = comp.zcomp
+                dzlim = give_dz(comp.vlim, zline)
+            wrest_aux = absline.wrest
+            wvlim_aux = wrest_aux * (1 + zline + dzlim)
+            wvobs_chunks += [wvlim_aux]
+    return wvobs_chunks
 
-    # figure out the lowest of the chunks
-    # and sort them such that chunk1 is by definition
-    # the one with the lowest limit
-    if np.min(chunk1) <= np.min(chunk2):
-        pass
-    else: # invert them if necessary
-        aux = chunk1
-        chunk1 = chunk2
-        chunk2 = aux
 
-    # now the chunk1 is the one with the lowest value
-    # then, the only way they do not overlap is:
-    if np.min(chunk2) > np.max(chunk1):
-        return False
-    else:  # overlap exists
-        return True
-
-def overlapping_components(comp1, comp2, tol=0.2*u.arcsec):
-    """Whether two components overlap in wavelength
+def coincident_components(comp1, comp2, tol=0.2*u.arcsec):
+    """Whether two components overlap in wavelength (observed)
     space and (ra,dec) sky position. This is useful to identify
-    components that may need to be fit together.
+    components that may need to be fit together in a given spectrum.
 
     Parameters
     ----------
@@ -453,8 +431,9 @@ def overlapping_components(comp1, comp2, tol=0.2*u.arcsec):
 
     Returns
     -------
-    Boolean : True if there is overlapping wavelength range
-    and radec coordinates, otherwise False.
+    answer : bool
+        True if there is overlapping wavelength range and
+        radec coordinates, otherwise False.
     """
 
     if not isinstance(comp1, AbsComponent):
@@ -466,38 +445,10 @@ def overlapping_components(comp1, comp2, tol=0.2*u.arcsec):
     if comp1.coord.separation(comp2.coord) > tol:
         return False
 
-    # Define wavelength chunks, appending them from each absline
-    # These will correpond to (wvmin, wvmax) tuples for each absline
-    # in the respective component
-    wobs_chunks_1 = []
-    wobs_chunks_2 = []
-    for absline in comp1._abslines:
-        cond = absline.analy['vlim'] != init_analy['vlim']  # default value?
-        if np.sum(cond) > 0:  # i.e. absline vlim not equal than the default
-            dzlim = give_dz(absline.analy['vlim'], comp1.zcomp)
-        else:  # use the vlim from component otherwise
-            dzlim = give_dz(comp1.vlim, comp1.zcomp)
-        wrest_aux = absline.wrest.to('AA').value  # in AA
-        wobs_aux = wrest_aux * (1 + comp1.zcomp + dzlim)
-        wobs_chunks_1 += [tuple(wobs_aux)]
-
-    for absline in comp2._abslines:
-        cond = absline.analy['vlim'] != init_analy['vlim']  # default value
-        if np.sum(cond) > 0:  # i.e. absline vlim not equal than the default
-            dzlim = give_dz(absline.analy['vlim'], comp2.zcomp)
-        else:  # use the vlim from component otherwise
-            dzlim = give_dz(comp2.vlim, comp2.zcomp)
-        wrest_aux = absline.wrest.to('AA').value  # in AA
-        wobs_aux = wrest_aux * (1 + comp2.zcomp + dzlim)
-        wobs_chunks_2 += [tuple(wobs_aux)]
-
-    # now we have two lists of wobs chunks:
-    # so lets do the checking until at least 1
-    # overlap is found
-    for ii in range(len(wobs_chunks_1)):
-        for jj in range(len(wobs_chunks_2)):
-            overlap = overlapping_chunks(
-                wobs_chunks_1[ii], wobs_chunks_2[jj])
+    # loop over abslines
+    for line1 in comp1._abslines:
+        for line2 in comp2._abslines:
+            overlap = line1.coincident_lines(line2)
             if overlap is True:
                 return True
     return False

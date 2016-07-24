@@ -18,6 +18,7 @@ from linetools.spectralline import AbsLine
 from linetools.spectra import io as lsio
 from linetools.analysis import absline as ltaa
 from linetools.isgm import utils as ltiu
+import linetools.utils as ltu
 
 import imp
 lt_path = imp.find_module('linetools')[1]
@@ -53,6 +54,7 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
         iline.attrib['flag_N'] = 1
         iline.analy['spec'] = xspec
         iline.analy['vlim'] = vlim
+        iline.analy['wvlim'] = iline.wrest * (1 + zcomp + ltu.give_dz(vlim, zcomp))
         _,_ = ltaa.linear_clm(iline.attrib)  # Loads N, sig_N
         abslines.append(iline)
     # Component
@@ -210,13 +212,25 @@ def test_repr_alis():
     s = abscomp.repr_alis(tie_strs=('a', 'b', 'CD',''), fix_strs=('', 'f', '', ''))
     assert s == 'voigt   ion=28Si_II 0.00a redshift=2.92939F 0.0cd 1.0E+04# Something\n'
 
+def test_get_wvobs_chunks():
+    abscomp, HIlines = mk_comp('HI', zcomp=0, vlim=[0,10]*u.km/u.s)
+    wvobs_chunks = ltiu.get_wvobs_chunks(abscomp)
+    np.testing.assert_allclose(wvobs_chunks[0][0], 1215.67*u.AA)
+    np.testing.assert_allclose(wvobs_chunks[0][1], 1215.71055106*u.AA)
+    np.testing.assert_allclose(wvobs_chunks[1][0], 1025.7222*u.AA)
+    np.testing.assert_allclose(wvobs_chunks[1][1], 1025.75641498*u.AA)
+    abscomp, HIlines = mk_comp('HI', zcomp=1, vlim=[-100,100]*u.km/u.s)
+    wvobs_chunks = ltiu.get_wvobs_chunks(abscomp)
+    np.testing.assert_allclose(wvobs_chunks[0][0], 2430.52912749*u.AA)
+    np.testing.assert_allclose(wvobs_chunks[0][1], 2432.15114303*u.AA)
+    np.testing.assert_allclose(wvobs_chunks[1][0], 2050.76022589*u.AA)
+    np.testing.assert_allclose(wvobs_chunks[1][1], 2052.12880236*u.AA)
 
-def test_overlapping_components():
-    abscomp, HIlines = mk_comp('HI')
-    SiIIcomp1,_ = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s, zcomp)
-    SiIIcomp2,_ = mk_comp('SiII',vlim=[-300.,0.]*u.km/u.s)
-    assert ltiu.overlapping_components(abscomp, abscomp)  # should overlap
-    f = ltiu.overlapping_components(abscomp, SiIIcomp1)  # should not overlap
-    assert ~f
-    f = ltiu.overlapping_components(SiIIcomp2, SiIIcomp1) # should not overlap
-    assert ~f
+
+def test_coincident_components():
+    abscomp, HIlines = mk_comp('HI', zcomp=2.92939)
+    SiIIcomp1,_ = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s, zcomp=2.92939)
+    SiIIcomp2,_ = mk_comp('SiII',vlim=[-300.,0.]*u.km/u.s, zcomp=2.92939)
+    assert ltiu.coincident_components(abscomp, abscomp)  # should overlap
+    assert not ltiu.coincident_components(abscomp, SiIIcomp1)  # should not overlap
+    assert not ltiu.coincident_components(SiIIcomp2, SiIIcomp1) # should not overlap

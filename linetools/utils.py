@@ -355,3 +355,73 @@ def give_dz(dv, zmean, rel=True):
     else:
         dz = dv * (1. + zmean) / c.to('km/s').value
     return dz
+
+
+def overlapping_chunks(chunk1, chunk2):
+    """True if there is overlap between chunks
+    `chunk1` and `chunk2`. Otherwise False. Chunks are
+    assumed to represent continuous coverage, so the only
+    information that matters are the minimum and maximum
+    values of a given chunk. Chunks must be sorted though.
+
+    Parameters
+    ----------
+    chunk1 : tuple, list, 1-d np.array, Quantity, Quantity array
+        A given chunk, assumed to represent a contiguous region
+        so only its minimum and maximum values matter. Still,
+        chunk must be sorted.
+    chunk2 : tuple, list, 1-d np.array
+        Ditto.
+
+    Returns
+    -------
+    answer : bool
+        True if there is overlap, False otherwise.
+
+    """
+    # Check units in case chunks are Quantity
+    if isinstance(chunk1, Quantity):
+        unit1 = chunk1.unit
+        chunk1 = np.array(chunk1.value)
+        if not isinstance(chunk2, Quantity):
+            raise ValueError('chunk2 must be Quantity because chunk1 is!')
+        try:
+            chunk2 = chunk2.to(unit1)
+            chunk2 = np.array(chunk2.value)  # has the same units as chunk1
+        except u.core.UnitConversionError:
+            raise ValueError('If chunks are given as Quantity they must have convertible units!')
+    else:
+        chunk1 = np.array(chunk1)  # not a quantity
+
+    # this may be redundant but cleaner code
+    if isinstance(chunk2, Quantity):
+        unit2 = chunk2.unit
+        chunk2 = np.array(chunk2.value)
+        if not isinstance(chunk1, Quantity):
+            raise ValueError('chunk1 must be Quantity because chunk2 is!')
+    else:
+        chunk2 = np.array(chunk2)  # not a quantity
+    # here we have chunks as values (i.e no units)
+
+    # make sure the chunks are sorted
+    cond1 = np.sort(chunk1) != chunk1
+    cond2 = np.sort(chunk2) != chunk2
+    if (np.sum(cond1) > 0) or (np.sum(cond2) > 0):
+        raise ValueError('chunks must be sorted!')
+
+    # figure out the lowest of the chunks
+    # and sort them such that chunk1 is by definition
+    # the one with the lowest limit
+    if np.min(chunk1) <= np.min(chunk2):
+        pass
+    else: # invert them if necessary
+        aux = chunk1
+        chunk1 = chunk2
+        chunk2 = aux
+
+    # now the chunk1 is the one with the lowest value
+    # then, the only way they do not overlap is:
+    if np.min(chunk2) > np.max(chunk1):
+        return False
+    else:  # overlap exists
+        return True
