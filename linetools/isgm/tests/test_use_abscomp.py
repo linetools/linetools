@@ -251,7 +251,7 @@ def test_repr_alis():
         s = abscomp.repr_alis(tie_strs='bad_format')
     with pytest.raises(TypeError):
         s = abscomp.repr_alis(fix_strs='bad_format')
-    with pytest.raises(TypeError):
+    with pytest.raises(SyntaxError):
         s = abscomp.repr_alis(fix_strs=('1','2','3','4','5'))
 
 
