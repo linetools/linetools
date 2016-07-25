@@ -471,8 +471,6 @@ def group_coincident_compoments(comp_list):
         The grouped components as individual lists
         in the output list.
     """
-    groups = dict()
-    counter = 0
     # the first extreme case is that all components are independent
     # of each other, in which case we have the following output shape
     out = [[] for kk in range(len(comp_list))]
@@ -518,8 +516,8 @@ def group_coincident_compoments(comp_list):
             else:
                 pass
 
-    # Now we wave out as a list of lists with indices or empty lists
-    # So lets produce the final output
+    # Now we have out as a list of lists with indices, or empty lists
+    # So lets produce the final output from it
     output_list = []
     for ii in range(len(out)):
         if len(out[ii]) == 0:
