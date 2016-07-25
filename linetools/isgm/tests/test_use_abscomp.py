@@ -276,6 +276,7 @@ def test_get_wvobs_chunks():
     abscomp._abslines[0].analy['wvlim'] = [1,0]*u.AA
     wvobs_chunks = ltiu.get_wvobs_chunks(abscomp)
 
+
 def test_coincident_components():
     abscomp, HIlines = mk_comp('HI', zcomp=2.92939)
     SiIIcomp1,_ = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s, zcomp=2.92939)
@@ -287,3 +288,12 @@ def test_coincident_components():
         a = ltiu.coincident_components('not_a_component', SiIIcomp1)
     with pytest.raises(ValueError):
         a = ltiu.coincident_components(abscomp, 'not_a_component')
+
+
+# def test_group_coincident_compoments():
+if 1:
+    abscomp, HIlines = mk_comp('HI', zcomp=2.92939)
+    SiIIcomp1, _ = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s, zcomp=2.92939)
+    SiIIcomp2, _ = mk_comp('SiII',vlim=[-300.,0.]*u.km/u.s, zcomp=2.92939)
+    comp_list = [abscomp, abscomp, SiIIcomp1, abscomp, SiIIcomp2, abscomp, SiIIcomp1, SiIIcomp2]
+    out = ltiu.group_coincident_compoments(comp_list)

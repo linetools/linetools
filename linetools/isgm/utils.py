@@ -452,3 +452,82 @@ def coincident_components(comp1, comp2, tol=0.2*u.arcsec):
             if overlap is True:
                 return True
     return False
+
+
+def group_coincident_compoments(comp_list):
+    """For a given input list of component, this function
+    group together components that are coincident to each other
+    (including by transitivity), and return them as a list of
+    component lists.
+
+    Parameters
+    ----------
+    comp_list : list of AbsComponent
+        Input list of components to group
+
+    Returns
+    -------
+    output : list of lists of AbsComponent
+        The grouped components as individual lists
+        in the output list.
+    """
+    groups = dict()
+    counter = 0
+    # the first extreme case is that all components are independent
+    # of each other, in which case we have the following output shape
+    out = [[] for kk in range(len(comp_list))]
+
+    for ii in range(len(comp_list)):
+        comp_ii = comp_list[ii]
+        # only append if ii does not belong to a previous round
+        switch = 0
+        for kk in range(len(out[:ii])):
+            if ii in out[kk]:
+                switch = 1
+                break
+        if switch == 1:
+            pass
+        else:
+            out[ii].append(ii)
+
+        for jj in range(ii+1, len(comp_list)):
+            # print(ii,jj)
+            comp_jj = comp_list[jj]
+            overlap_ii_jj = coincident_components(comp_ii, comp_jj)
+            if overlap_ii_jj is True:
+                # check in the previous ones where does jj belongs to
+                switch = 0
+                for kk in range(len(out[:ii])):
+                    if ii in out[kk]:  # this means ii already belongs to out[kk]
+                        # so jj should also go there...(if not there already)
+                        if jj in out[kk]:
+                            pass
+                        else:
+                            out[kk].append(jj)
+                        switch = 1  # for not appending jj again
+                        break
+                if switch == 1:
+                    pass  # this jj was appended already
+                else:
+                    # but check is not already there...
+                    if jj in out[ii]:
+                        pass
+                    else:
+                        out[ii].append(jj)
+                # print(out)
+            else:
+                pass
+
+    # Now we wave out as a list of lists with indices or empty lists
+    # So lets produce the final output
+    output_list = []
+    for ii in range(len(out)):
+        if len(out[ii]) == 0:
+            continue
+        aux_list = []
+        for jj in out[ii]:
+            aux_list += [comp_list[jj]]
+        output_list += [aux_list]
+    return output_list
+
+
