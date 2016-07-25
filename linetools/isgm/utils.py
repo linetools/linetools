@@ -455,9 +455,9 @@ def coincident_components(comp1, comp2, tol=0.2*u.arcsec):
 
 
 def group_coincident_compoments(comp_list):
-    """For a given input list of component, this function
-    group together components that are coincident to each other
-    (including by transitivity), and return them as a list of
+    """For a given input list of components, this function
+    groups together components that are coincident to each other
+    (including by transitivity), and returns them as a list of
     component lists.
 
     Parameters
@@ -491,8 +491,7 @@ def group_coincident_compoments(comp_list):
         for jj in range(ii+1, len(comp_list)):
             # print(ii,jj)
             comp_jj = comp_list[jj]
-            overlap_ii_jj = coincident_components(comp_ii, comp_jj)
-            if overlap_ii_jj is True:
+            if coincident_components(comp_ii, comp_jj):  # There is overlap between comp_ii and comp_jj
                 # check in the previous ones where does jj belongs to
                 switch = 0
                 for kk in range(len(out[:ii])):
