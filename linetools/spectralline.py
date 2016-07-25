@@ -127,6 +127,8 @@ class SpectralLine(object):
                 #pdb.set_trace()
                 sline.analy[key] = ltu.convert_quantity_in_dict(idict['analy'][key])
             elif key == 'spec_file':
+                # spec_file is intended to be the name of the spectrum file
+                # spec is intendended to hold an XSpectrum1D object
                 warnings.warn("You will need to load {:s} into analy['spec'] yourself".format(
                         idict['analy'][key]))
                 sline.analy[key] = idict['analy'][key]
@@ -488,7 +490,7 @@ class AbsLine(SpectralLine):
         # Data
         newline = llist[trans]
         try:
-            self.data.update(newline)
+            self.data.update(newline)  # Expected to be a LineList dict object
         except TypeError:
             pdb.set_trace()
 
