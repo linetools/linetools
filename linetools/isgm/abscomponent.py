@@ -29,6 +29,9 @@ from linetools import utils as ltu
 #from xastropy.stats import basic as xsb
 #from xastropy.xutils import xdebug as xdb
 
+# Global import for speed
+c_kms = const.c.to('km/s').value
+
 # Class for Components
 class AbsComponent(object):
     """
@@ -226,8 +229,11 @@ class AbsComponent(object):
         chk_sep : bool, optional
           Perform coordinate check (expensive)
         vtoler : float
-          Tolerance for velocity in km/s
+          Tolerance for velocity in km/s (must be positive)
         """
+        if vtoler < 0:
+            raise ValueError('vtoler must be positive!')
+
         # Perform easy checks
         if chk_sep:
             testc = bool(self.coord.separation(absline.attrib['coord']) < tol)
@@ -238,18 +244,18 @@ class AbsComponent(object):
         testE = bool(self.Ej == absline.data['Ej'])
         # Now redshift/velocity
         if chk_vel:
-            dz_toler = (1+self.zcomp)*vtoler/3e5  # Avoid Quantity for speed
-            zlim_line = (1+absline.attrib['z'])*absline.analy['vlim']/const.c.to('km/s')
-            zlim_comp = (1+self.zcomp)*self.vlim/const.c.to('km/s')
-            testv = (zlim_line[0] >= (zlim_comp[0]-dz_toler)) & (
-                zlim_line[1] <= (zlim_comp[1]+dz_toler))
+            dz_toler = (1 + self.zcomp) * vtoler / c_kms  # Avoid Quantity for speed
+            zlim_line = (1 + absline.attrib['z']) * absline.analy['vlim'].to('km/s').value / c_kms
+            zlim_comp = (1+self.zcomp) * self.vlim.to('km/s').value / c_kms
+            testv = (zlim_line[0] >= (zlim_comp[0] - dz_toler)) & (
+                zlim_line[1] <= (zlim_comp[1] + dz_toler))
         else:
             testv = True
         # Combine
         test = testc & testZ & testi & testE & testv
         # Isotope
         if self.A is not None:
-            raise ValueError('Not ready for this yet')
+            raise ValueError('Not ready for this yet.')
         # Append?
         if test:
             self._abslines.append(absline)
@@ -407,7 +413,7 @@ class AbsComponent(object):
         """
         # Check
         if (self.flag_N != 0) and (not overwrite):
-            raise IOError("Column densities already set.  Use clobber=True to redo.")
+            raise IOError("Column densities already set.  Use overwrite=True to redo.")
         # Redo?
         if redo_aodm:
             for aline in self._abslines:
@@ -635,6 +641,8 @@ class AbsComponent(object):
                 setattr(abscomp, attr, getattr(self, attr))
         # Return
         return abscomp
+
+
 
     def __getitem__(self, attrib):
         """Passback attribute, if it exists

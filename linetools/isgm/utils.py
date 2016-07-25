@@ -16,12 +16,14 @@ import warnings
 from astropy import constants as const
 from astropy import units as u
 from astropy.table import Table
+from astropy.units import Quantity
 
 from linetools.analysis import absline as ltaa
 from linetools.isgm.abscomponent import AbsComponent
+from linetools.utils import give_dz
+from linetools.spectralline import init_analy
 
-
-def chk_components(components, chk_match=False, chk_A_none=False, toler=0.2*u.arcsec):
+def chk_components(components, chk_match=False, chk_A_none=False, tol=0.2*u.arcsec):
     """ Performs checks on a list of components
 
     Parameters
@@ -32,16 +34,16 @@ def chk_components(components, chk_match=False, chk_A_none=False, toler=0.2*u.ar
       if True, require that the components match in RA/DEC, Zion, Ej, A but not velocity
     chk_A_none : bool, optional
       if True, require that A *not* be set
-    toler : Angle, optional
-      Tolerance on matching coordinates
+    tol : Quantity, optional
+      Tolerance on matching SkyCoord. Default is 0.2*u.arcsec
     """
     tests = True
     # List
-    if not isinstance(components,list):
+    if not isinstance(components, list):
         tests = False
         raise IOError('Need a list of AbsComponent objects')
     # Object
-    if not all(isinstance(x,AbsComponent) for x in components):
+    if not all(isinstance(x, AbsComponent) for x in components):
         tests = False
         raise IOError('List needs to contain only AbsComponent objects')
     # A None
@@ -55,7 +57,7 @@ def chk_components(components, chk_match=False, chk_A_none=False, toler=0.2*u.ar
         comp0 = components[0]
         for comp in components[1:]:
             # RA/DEC
-            match = match & bool(comp0.coord.separation(comp.coord) < toler)
+            match = match & bool(comp0.coord.separation(comp.coord) < tol)
             # Zion
             match = match & (comp0.Zion == comp.Zion)
             # Ej
@@ -208,6 +210,7 @@ def build_systems_from_components(comps, **kwargs):
     # Return
     return abs_systems
 
+
 def xhtbl_from_components(components, ztbl=None, NHI_obj=None):
     """ Generate a Table of XH values from a list of components
     Parameters
@@ -223,6 +226,7 @@ def xhtbl_from_components(components, ztbl=None, NHI_obj=None):
     # Get started
     tbl = Table()
     #
+
 
 def iontable_from_components(components, ztbl=None, NHI_obj=None):
     """Generate a Table from a list of components
@@ -362,3 +366,89 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
 
     # Return
     return synth_comp
+
+
+def get_wvobs_chunks(comp):
+    """For a given component, it gets a list of tuples with the
+    min/max observed wavelengths for each absorption line in the
+    component.
+
+    Parameters
+    ----------
+    comp : AbsComponent
+        The input AbsComponent object
+
+    Returns
+    -------
+    wvobs_chunks : list of Quantity arrays
+        A list with the wvmin, wvmax values for each absorption
+        line within the component.
+    """
+
+    if not isinstance(comp, AbsComponent):
+        raise ValueError('`comp` must be AbsComponent object.')
+
+    wvobs_chunks = []
+    for absline in comp._abslines:
+        # Check whether the absline has already defined 'wvlim'
+        cond = absline.analy['wvlim'] != init_analy['wvlim']
+        if np.sum(cond) > 0: # not default, use these values then
+            wvlim_aux = absline.analy['wvlim']
+            wvobs_chunks += [wvlim_aux]
+        else:
+            # Check whether the absline has already defined 'vlim'
+            cond = absline.analy['vlim'] != init_analy['vlim']
+            if np.sum(cond) > 0:  # i.e. absline vlim not equal than the default, so we use these
+                # define the best redshift
+                if absline.attrib['z'] != 0:
+                    zline = absline.attrib['z']
+                else:
+                    zline = comp.zcomp
+                dzlim = give_dz(absline.analy['vlim'], zline)
+            else:  # use the vlim from component otherwise
+                zline = comp.zcomp
+                dzlim = give_dz(comp.vlim, zline)
+            wrest_aux = absline.wrest
+            wvlim_aux = wrest_aux * (1 + zline + dzlim)
+            wvobs_chunks += [wvlim_aux]
+    return wvobs_chunks
+
+
+def coincident_components(comp1, comp2, tol=0.2*u.arcsec):
+    """Whether two components overlap in wavelength (observed)
+    space and (ra,dec) sky position. This is useful to identify
+    components that may need to be fit together in a given spectrum.
+
+    Parameters
+    ----------
+    comp1 : AbsComponent
+        A given AbsComponent object
+    comp2 : AbsComponent
+        A given AbsComponent object
+    tol : Quantity, optional
+        Tolerance for checking whether the two components are
+        in the same sky region. Default is 0.2*u.arcsec
+
+    Returns
+    -------
+    answer : bool
+        True if there is overlapping wavelength range and
+        radec coordinates, otherwise False.
+    """
+
+    if not isinstance(comp1, AbsComponent):
+        raise ValueError('comp1 must be AbsComponent object.')
+    if not isinstance(comp2, AbsComponent):
+        raise ValueError('comp1 must be AbsComponent object.')
+
+    # Check whether they are in the same sky region
+    if comp1.coord.separation(comp2.coord) > tol:
+        return False
+
+    # loop over abslines
+    for line1 in comp1._abslines:
+        for line2 in comp2._abslines:
+            overlap = line1.coincident_line(line2)
+            if overlap is True:
+                return True
+    return False
