@@ -310,4 +310,9 @@ if 1:
         for comp in out[ii]:
             out_names[ii] += [comp.name]
     assert out_names == [['HI', 'HI', 'HI', 'HI'], ['SiII_1', 'SiII_1'], ['SiII_2', 'SiII_2']]
-
+    # now a case where are all different
+    comp_list = [abscomp, SiIIcomp1, SiIIcomp2]
+    out = ltiu.group_coincident_compoments(comp_list)
+    for a,b in zip(comp_list, out):
+        assert len(b) == 1
+        assert a == b[0]
