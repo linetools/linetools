@@ -295,5 +295,19 @@ if 1:
     abscomp, HIlines = mk_comp('HI', zcomp=2.92939)
     SiIIcomp1, _ = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s, zcomp=2.92939)
     SiIIcomp2, _ = mk_comp('SiII',vlim=[-300.,0.]*u.km/u.s, zcomp=2.92939)
+    # reset names for easy testing
+    abscomp.name = 'HI'
+    SiIIcomp1.name = 'SiII_1'
+    SiIIcomp2.name = 'SiII_2'
     comp_list = [abscomp, abscomp, SiIIcomp1, abscomp, SiIIcomp2, abscomp, SiIIcomp1, SiIIcomp2]
     out = ltiu.group_coincident_compoments(comp_list)
+    assert len(out) == 3  # only three groups
+    out_names_0 = [comp.name for comp in out[0]]  # these should be only HI in group 0, and 4 of them
+    assert np.sum([n == 'HI' for n in out_names_0]) == 4
+    assert len(out[0]) == 4
+    out_names = [[],[],[]]
+    for ii in range(len(out)):
+        for comp in out[ii]:
+            out_names[ii] += [comp.name]
+    assert out_names == [['HI', 'HI', 'HI', 'HI'], ['SiII_1', 'SiII_1'], ['SiII_2', 'SiII_2']]
+
