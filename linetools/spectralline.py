@@ -127,8 +127,9 @@ class SpectralLine(object):
                 #pdb.set_trace()
                 sline.analy[key] = ltu.convert_quantity_in_dict(idict['analy'][key])
             elif key == 'spec_file':
-                warnings.warn("You will need to load {:s} into attrib['spec'] yourself".format(
+                warnings.warn("You will need to load {:s} into analy['spec'] yourself".format(
                         idict['analy'][key]))
+                sline.analy[key] = idict['analy'][key]
             else:
                 sline.analy[key] = idict['analy'][key]
         # Set attrib
@@ -486,7 +487,11 @@ class AbsLine(SpectralLine):
 
         # Data
         newline = llist[trans]
-        self.data.update(newline)
+        try:
+            self.data.update(newline)
+        except TypeError:
+            pdb.set_trace()
+
 
         # Update
         self.wrest = self.data['wrest']
