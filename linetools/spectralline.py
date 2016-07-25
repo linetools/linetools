@@ -21,6 +21,7 @@ from linetools.analysis import utils as lau
 from linetools.analysis import absline as laa
 from linetools.lists.linelist import LineList
 from linetools import utils as ltu
+from linetools.spectra.xspectrum1d import XSpectrum1D
 
 # A few globals to speed up performance (astropy.Quantity issue)
 zero_coord = SkyCoord(ra=0.*u.deg, dec=0.*u.deg)  # Coords
@@ -126,8 +127,11 @@ class SpectralLine(object):
                 #pdb.set_trace()
                 sline.analy[key] = ltu.convert_quantity_in_dict(idict['analy'][key])
             elif key == 'spec_file':
-                warnings.warn("You will need to load {:s} into attrib['spec'] yourself".format(
+                # spec_file is intended to be the name of the spectrum file
+                # spec is intendended to hold an XSpectrum1D object
+                warnings.warn("You will need to load {:s} into analy['spec'] yourself".format(
                         idict['analy'][key]))
+                sline.analy[key] = idict['analy'][key]
             else:
                 sline.analy[key] = idict['analy'][key]
         # Set attrib
@@ -334,7 +338,6 @@ class SpectralLine(object):
         # Save
         self.attrib['kin'] = kin_data
 
-    # EW
     def to_dict(self):
         """ Convert class to dict
 
@@ -373,8 +376,12 @@ class SpectralLine(object):
         # Analysis
         for key in self.analy:
             if key == 'spec':
-                if self.analy['spec'] is not None:
+                if isinstance(self.analy['spec'], basestring):
+                    adict['analy']['spec_file'] = self.analy['spec']
+                elif isinstance(self.analy['spec'], XSpectrum1D):
                     adict['analy']['spec_file'] = self.analy['spec'].filename
+                else:
+                    pass
             elif isinstance(self.analy[key], Quantity):
                 adict['analy'][key] = dict(value=self.analy[key].value,
                                             unit=self.analy[key].unit.to_string())
@@ -482,7 +489,11 @@ class AbsLine(SpectralLine):
 
         # Data
         newline = llist[trans]
-        self.data.update(newline)
+        try:
+            self.data.update(newline)  # Expected to be a LineList dict object
+        except TypeError:
+            pdb.set_trace()
+
 
         # Update
         self.wrest = self.data['wrest']
