@@ -315,3 +315,6 @@ def test_group_coincident_compoments():
     for a,b in zip(comp_list, out):
         assert len(b) == 1
         assert a == b[0]
+    # check output as dictionary
+    out = ltiu.group_coincident_compoments(comp_list, output_type='dict')
+    assert isinstance(out, dict)

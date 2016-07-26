@@ -475,7 +475,7 @@ def group_coincident_compoments(comp_list, output_type='list'):
         in the output.
     """
     if output_type not in ['list', 'dict', 'dictionary']:
-        raise ValueError("`output_type` must be either 'list' or 'dict'".)
+        raise ValueError("`output_type` must be either 'list' or 'dict'.")
 
     # the first extreme case is that all components are independent
     # of each other, in which case we have the following output shape
