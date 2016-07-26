@@ -516,15 +516,21 @@ def group_coincident_compoments(comp_list):
                 pass
 
     # Now we have out as a list of lists with indices, or empty lists
-    # So lets produce the final output from it
+    # let's get rid of the empty lists
+    out = [x for x in out if x != []]
+
+    # Now lets produce the final output from it
     output_list = []
+    output_dict = {}
     for ii in range(len(out)):
-        if len(out[ii]) == 0:
-            continue
         aux_list = []
         for jj in out[ii]:
             aux_list += [comp_list[jj]]
+        output_dict['{}'.format(ii)] = aux_list
         output_list += [aux_list]
+
+    # choose between dict of list
+    # return output_dict
     return output_list
 
 
