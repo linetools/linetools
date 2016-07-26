@@ -454,23 +454,29 @@ def coincident_components(comp1, comp2, tol=0.2*u.arcsec):
     return False
 
 
-def group_coincident_compoments(comp_list):
+def group_coincident_compoments(comp_list, output_type='list'):
     """For a given input list of components, this function
     groups together components that are coincident to each other
-    (including by transitivity), and returns them as a list of
-    component lists.
+    (including by transitivity), and returns them as a list (default)
+    or dictionary of component lists.
 
     Parameters
     ----------
     comp_list : list of AbsComponent
         Input list of components to group
+    output_type : str, optional
+        Type of the output, choose either
+        'list' for list or 'dict' for dictionary.
 
     Returns
     -------
-    output : list of lists of AbsComponent
+    output : list (or dictionary) of lists of AbsComponent
         The grouped components as individual lists
-        in the output list.
+        in the output.
     """
+    if output_type not in ['list', 'dict', 'dictionary']:
+        raise ValueError("`output_type` must be either 'list' or 'dict'".)
+
     # the first extreme case is that all components are independent
     # of each other, in which case we have the following output shape
     out = [[] for kk in range(len(comp_list))]
@@ -530,7 +536,9 @@ def group_coincident_compoments(comp_list):
         output_list += [aux_list]
 
     # choose between dict of list
-    # return output_dict
-    return output_list
+    if output_type == 'list':
+        return output_list
+    elif output_type in ['dict', 'dictionary']:
+        return output_dict
 
 
