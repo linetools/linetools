@@ -6,7 +6,6 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 # TEST_UNICODE_LITERALS
 
 import os, sys
-import pdb
 import pytest
 from astropy import units as u
 
