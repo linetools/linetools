@@ -940,7 +940,6 @@ class XSpectrum1D(object):
                 new_sig = convolve(self.sig, Box1DKernel(nbox), **kwargs)
             else:
                 new_sig = None
-            new_sig = convolve(self.sig, Box1DKernel(nbox), **kwargs)
             new_wv = self.wavelength
         else:
             # Truncate arrays as need be
