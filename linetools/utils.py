@@ -17,6 +17,7 @@ try:
 except NameError:  # For Python 3
     basestring = str
 
+
 def between(a, vmin, vmax):
     """ Return a boolean array True where vmin <= a < vmax.
 
@@ -41,6 +42,7 @@ def between(a, vmin, vmax):
     c = a < vmax
     c &= a >= vmin
     return c
+
 
 def convert_quantity_in_dict(idict):
     """ Return a dict where Quantities (usually from a JSON file)
@@ -121,6 +123,7 @@ def radec_to_coord(radec):
             coord = SkyCoord(newradec, frame='fk5', unit=(u.hourangle, u.deg))
     # Return
     return coord
+
 
 def scipy_rebin(a, *args):
     """ Simple script to rebin an input array to a new shape.

@@ -9,10 +9,17 @@ from astropy import units as u
 from linetools.analysis.linelimits import LineLimits
 
 def test_init():
-    # Make fake spectrum
+    # Init
     llim = LineLimits(1215.67*u.AA, 1., (0.999, 1.001))
     # Test
-    #np.testing.assert_allclose((N.value, sig_N.value),
-    #                           (96652191688169.72, 194151305045168.12))
-    #assert N.unit == u.cm**-2
+    with pytest.raises(AttributeError):
+        llim.zlim=3
 
+def test_use():
+    # Init
+    llim = LineLimits(1215.67*u.AA, 1., (0.999, 1.001))
+    # Use
+    np.testing.assert_allclose(llim.zlim, (0.999, 1.001))
+    np.testing.assert_allclose(llim.wvlim.value, [2430.12433, 2432.55567])
+    np.testing.assert_allclose(llim.vlim.value, [-149.896229, 149.896229])
+    assert llim.vlim.unit == u.km/u.s
