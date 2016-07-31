@@ -67,7 +67,7 @@ class AbsSystem(object):
           Log10 of the HI column density
         sig_NHI :  np.array(2)
           Log10 error of the HI column density (-/+)
-        MH :  float
+        ZH :  float
           Metallicity (log10)
         name : str
             Name of the system
