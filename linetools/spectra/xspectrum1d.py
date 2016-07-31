@@ -936,7 +936,10 @@ class XSpectrum1D(object):
         if preserve:
             from astropy.convolution import convolve, Box1DKernel
             new_fx = convolve(self.flux, Box1DKernel(nbox), **kwargs)
-            new_sig = convolve(self.sig, Box1DKernel(nbox), **kwargs)
+            if self.sig_is_set:
+                new_sig = convolve(self.sig, Box1DKernel(nbox), **kwargs)
+            else:
+                new_sig = None
             new_wv = self.wavelength
         else:
             # Truncate arrays as need be
