@@ -13,7 +13,7 @@ from astropy.units.quantity import Quantity
 from astropy.io import fits, ascii
 from astropy.table import QTable, Column, Table, vstack
 
-from ..abund import roman
+from ..abund import roman, ions
 from ..abund.elements import ELEMENTS
 
 lt_path = imp.find_module('linetools')[1]
@@ -93,7 +93,7 @@ def line_data(nrows=1):
 
     return ldict, tbl
 
-#   
+
 def read_sets(infil=None):
     """ Read sets file
 
@@ -113,7 +113,7 @@ def read_sets(infil=None):
     # Return
     return set_data
 
-#
+
 def read_euv():
     """ read additional EUV lines
 
@@ -130,7 +130,8 @@ def read_euv():
 
     # Return
     return data
-#
+
+
 def read_H2():
     """ Simple def to read H2 data
 
@@ -170,7 +171,7 @@ def read_H2():
     # Return
     return data
 
-#
+
 def read_CO():
     """ Simple def to read CO UV data
 
@@ -212,7 +213,7 @@ def read_CO():
     return data
 
 
-#
+
 def read_verner94():
     """ Read Verner1994 Table
     """
@@ -239,7 +240,12 @@ def read_verner94():
             row['Species'][0:2].strip() + row['Species'][2:].strip() + 
             ' {:d}'.format(int(row['lambda'].value)))
         #xdb.set_trace()
-
+        # name
+    names = []
+    for row in data:
+        ionnm = ions.ion_name((row['Z'], row['ion']))
+        names.append('{:s} {:d}'.format(ionnm, int(row['wrest'])))
+    data['name'] = names
     #  Finish
     data['group'] = 1
     data['Ref'] = 'Verner1994'
@@ -416,6 +422,10 @@ def parse_verner96(orig=False, write=False):
             data[kk]['ion'] = int(line[2:4].strip())
             # wrest
             data[kk]['wrest'] = float(line[47:56].strip())
+            # name
+            ionnm = ions.ion_name((data[kk]['Z'], data[kk]['ion']))
+            data[kk]['name'] = '{:s} {:d}'.format(ionnm,
+                    int(data[kk]['wrest']))
             # Ej, Ek
             data[kk]['Ej'] = float(line[59:73].strip())
             data[kk]['Ek'] = float(line[73:89].strip())
@@ -910,6 +920,7 @@ def _write_ref_ISM_table():
     produced to linetools/data/lines/ISM_table.fits inside the github
     repository, and then check it in.
     """
+    from linetools.lists.linelist import LineList
 
     ism = LineList('ISM', use_ISM_table=False)
     strong = LineList('Strong', use_ISM_table=False)
