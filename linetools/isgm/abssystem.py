@@ -67,7 +67,7 @@ class AbsSystem(object):
           Log10 of the HI column density
         sig_NHI :  np.array(2)
           Log10 error of the HI column density (-/+)
-        MH :  float
+        ZH :  float
           Metallicity (log10)
         name : str
             Name of the system
@@ -153,18 +153,12 @@ class AbsSystem(object):
         return slf
 
     @classmethod
-    def from_dict(cls, idict, skip_components=False, use_coord=False, **kwargs):
+    def from_dict(cls, idict, use_coord=False, **kwargs):
         """ Instantiate from a dict.  Usually read from the hard-drive
 
         Parameters
         ----------
         idict : dict
-        skip_components : bool, optional
-          If True, absorption components (if any exist) are not loaded from the input dict.
-          Use when you are only interested in the global properties of an AbsSystem
-        use_coord : bool, optinal
-          Use coordinates from the AbsSystem to build the components (and lines)
-          Speeds up performance, but you should know things are OK before using this
 
         Returns
         -------
@@ -177,21 +171,9 @@ class AbsSystem(object):
                   idict['zabs'], idict['vlim']*u.km/u.s, zem=idict['zem'],
                   name=idict['Name'], **ckwargs)
         # Other
-        if 'kin' in idict.keys():
-            slf.kin = ltu.convert_quantity_in_dict(idict['kin'])
-        if 'Refs' in idict.keys():
-            slf.Refs = idict['Refs']
+        add_other_from_dict(slf, idict)
         # Components
-        if not skip_components:
-            # Components
-            if use_coord:  # Speed up performance
-                coord = slf.coord
-            else:
-                coord = None
-            components = ltiu.build_components_from_dict(idict, coord=coord, **kwargs)
-            for component in components:
-                # This is to insure the components follow the rules
-                slf.add_component(component, **kwargs)
+        add_comps_from_dict(slf, idict, **kwargs)
 
         # Return
         return slf
@@ -225,6 +207,10 @@ class AbsSystem(object):
 
         # Kinematics
         self.kin = {}
+
+        # Metallicity
+        self.ZH = 0.
+        self.sig_ZH = 0.
 
         # Abundances and Tables
         self._EW = QTable()
@@ -493,6 +479,7 @@ class AbsSystem(object):
                        NHI=self.NHI, sig_NHI=self.sig_NHI, flag_NHI=self.flag_NHI,
                        RA=self.coord.ra.value, DEC=self.coord.dec.value,
                        kin=self.kin, Refs=self.Refs, CreationDate=date,
+                       ZH=self.ZH, sig_ZH=self.sig_ZH,
                        user=user
                        )
         # Components
@@ -565,3 +552,48 @@ class LymanAbsSystem(AbsSystem):
         """"Return a string representing the type of vehicle this is."""
         return 'HILyman'
 
+
+def add_comps_from_dict(slf, idict, skip_components=False, use_coord=False, **kwargs):
+    """
+    Parameters
+    ----------
+    slf : AbsSystem
+    skip_components : bool, optional
+      If True, absorption components (if any exist) are not loaded from the input dict.
+      Use when you are only interested in the global properties of an AbsSystem
+    use_coord : bool, optinal
+      Use coordinates from the AbsSystem to build the components (and lines)
+      Speeds up performance, but you should know things are OK before using this
+
+    Returns
+    -------
+
+    """
+    if not skip_components:
+        # Components
+        if use_coord:  # Speed up performance
+            coord = slf.coord
+        else:
+            coord = None
+        components = ltiu.build_components_from_dict(idict, coord=coord, **kwargs)
+        for component in components:
+            # This is to insure the components follow the rules
+            slf.add_component(component, **kwargs)
+
+def add_other_from_dict(slf, idict):
+    """ Add other attributes to a system from a dict
+    Useful for handling various AbsSystem types
+
+    Parameters
+    ----------
+    slf : AbsSystem
+    idict : dict
+    """
+    # Other
+    if 'kin' in idict.keys():
+        slf.kin = ltu.convert_quantity_in_dict(idict['kin'])
+    if 'Refs' in idict.keys():
+        slf.Refs = idict['Refs']
+    if 'ZH' in idict.keys():
+        slf.ZH = idict['ZH']
+        slf.sig_ZH = idict['sig_ZH']
