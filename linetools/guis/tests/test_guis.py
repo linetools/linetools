@@ -65,10 +65,12 @@ def test_rdspec():
     ispec = lsio.readspec(data_path('UM184_nF.fits'))
     spec, spec_fil = ltgu.read_spec(ispec)
 
+
 def test_xspecgui():
     # Init
     spec_fil = data_path('UM184_nF.fits')
     xsgui = xspecgui.XSpecGui(spec_fil, unit_test=True)
+
 
 def test_xabsgui():
     # Init
