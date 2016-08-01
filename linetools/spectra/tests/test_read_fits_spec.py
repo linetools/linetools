@@ -17,11 +17,13 @@ def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
 
+
 def test_get_cdelt_dcflag():
     hd = fits.getheader(data_path('UM184_nF.fits'))
     cdelt1, dc_flag = io.get_cdelt_dcflag(hd)
     np.testing.assert_allclose(cdelt1, 3.1870310099e-05)
     np.testing.assert_allclose(dc_flag, 1)
+
 
 # Separate flux/error files
 def test_sep_files():
@@ -30,8 +32,8 @@ def test_sep_files():
     #np.testing.assert_allclose(spec.wavelength.value, idl['wave'])
     np.testing.assert_allclose(spec.data['wave'][spec.select], idl['wave'])
     np.testing.assert_allclose(spec.data['sig'][spec.select], idl['sig'], atol=2e-3, rtol=0)
-
     assert spec.wavelength.unit == u.Unit('AA')
+
 
 def test_setwave():
     hd = fits.getheader(data_path('UM184_nF.fits'))
@@ -41,9 +43,11 @@ def test_setwave():
     wave = io.setwave(hd)
     np.testing.assert_allclose(wave[0], 3040.33648468)
 
+
 def test_getwave():  # X-Shooter
     spec = io.readspec(data_path('XShooter_XQ100.fits.gz'))
     assert spec.wavelength.unit == u.nm
+
 
 # ASCII format
 def test_read_ascii():
@@ -52,10 +56,12 @@ def test_read_ascii():
     spec = io.readspec(data_path('q0002m422.txt.gz'))
     assert spec.filename.endswith('q0002m422.txt.gz')
 
+
 def test_uves_popler():
     spec = io.readspec(data_path('popler_sample.fits'))
     assert spec.wavelength.unit == u.Unit('AA')
     assert spec.filename.endswith('popler_sample.fits')
+
 
 def test_read_table():
     t = Table([(1,2,3), (1,2,3), (1,2,3)], names=['WAVE', 'FLUX', 'ERR'])
@@ -79,24 +85,24 @@ def test_read_table():
     spec = io.readspec(t, wave_tag='dumb_wave', flux_tag='dumb_flux',
                        var_tag='dumb_var')
 
+
 def test_errors():
     # no such file
     try:
         io.readspec('filename_that_should_not_exist.txt')
     except IOError:
         pass
-
     # bad format for ascii with more than 4 columns
     try:
         io.readspec('files/ascii_5columns.txt')
     except IOError:
         pass
-
     # bad spectra input
     try:
         io.readspec(5) #input as an int
     except IOError:
         pass
+    with pytest()
 
 
 
