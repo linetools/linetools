@@ -2,11 +2,12 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 # TEST_UNICODE_LITERALS
+import imp
 
 import pytest
 from linetools.scripts.lt_absline import plot_absline
 from linetools.scripts import lt_line
-
+from linetools.scripts import lt_plot
 
 def test_lt_absline():
     plot_absline(1550, 15, 5, show=False)
