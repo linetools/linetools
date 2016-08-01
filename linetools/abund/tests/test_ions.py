@@ -5,7 +5,8 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 # TEST_UNICODE_LITERALS
 
 import pytest
-from linetools.abund import ions
+from linetools.abund import ions, roman
+from linetools.abund.roman import OutOfRangeError, NotIntegerError,InvalidRomanNumeralError
 
 #import pdb
 #pdb.set_trace()
@@ -32,8 +33,7 @@ def test_ion_to_name():
         ionnm = ions.ion_name((6,2), flg=99)
 
 
-# def test_name_to_ion():
-if 1:
+def test_name_to_ion():
     Zion = ions.name_ion('Si II')
     assert Zion == (14,2)
     # bad input
@@ -42,3 +42,17 @@ if 1:
     # Deuterium
     aux = ions.name_ion('DI')
 
+
+def test_roman():
+    #  out of limits
+    with pytest.raises(OutOfRangeError):
+        s = roman.toRoman(6000)
+    # not integer
+    with pytest.raises(NotIntegerError):
+        s = roman.toRoman(1.5)
+    # no input
+    with pytest.raises(InvalidRomanNumeralError):
+        s = roman.fromRoman(None)
+    # bad pattern
+    with pytest.raises(InvalidRomanNumeralError):
+        s = roman.fromRoman('YT')
