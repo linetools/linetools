@@ -15,8 +15,9 @@ def test_elements_validate():
     # this one does self consistency checks
     for ele in ELEMENTS:
         ele.validate()
-        # test repr
+        # test reprs of description
         print(ele.description)
+
 
 def test_elements_misc():
     # Miscelaneous
@@ -56,8 +57,7 @@ def test_elements_isotopes():
         ele = ELEMENTS[name]
         assert len(ele.isotopes) == isotopes
 
-# def test_elements_repr():
-if 1:
+def test_elements_repr():
     print(ELEMENTS['H'])
     print(ELEMENTS[1])
     ele = ELEMENTS[1]
