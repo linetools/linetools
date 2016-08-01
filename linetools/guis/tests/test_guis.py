@@ -53,9 +53,6 @@ def test_navigate():
     ltgu.navigate(nav_dict, o, wave = np.linspace(1000,2000,100), flux = np.ones(100))
 
 
-
-
-
 def test_doublet():
     o = type(str('Dummy'), (object,), {})
     o.xdata = 5000.
@@ -70,6 +67,11 @@ def test_llist():
     idict = ltgu.set_llist('Strong')
     idict = ltgu.set_llist([1215.670*u.AA])
     assert idict['List'] == 'input.lst'
+    idict = ltgu.set_llist('None')
+    idict = ltgu.set_llist('OVI')
+    # wrong format
+    with pytest.raises(IOError):
+        idict = ltgu.set_llist((1,2))  # input is a tuple, so it is wrong.
 
 
 def test_rdspec():
