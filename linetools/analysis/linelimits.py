@@ -23,7 +23,7 @@ class LineLimits(object):
         Structured array containing all of the data
         This can be a set of 1D spectra
 
-    meta : `dict`-like object, optional
+    _data : `dict`-like object, optional
         Metadata for this object.  "Metadata" here means all information that
         is included with this object but not part of any other attribute
         of this particular object.  e.g., creation date, unique identifier,
@@ -35,22 +35,6 @@ class LineLimits(object):
     wvlim : Quantity
     vlim : Quantity
     """
-
-    @classmethod
-    def from_file(cls, ifile, **kwargs):
-        """ From file
-
-        Parameters
-        ----------
-        ifile : str
-          Filename
-        """
-        # put import here to avoid circular import with io.py
-        #from .io import readspec
-        from linetools.spectra import io as tio
-        slf = tio.readspec(ifile, **kwargs)
-        return slf
-
     def __init__(self, wrest, z, zlim):
         """
         Parameters
@@ -68,24 +52,40 @@ class LineLimits(object):
             raise IOError("Input zlim must be a tuple or list")
         if not isinstance(wrest, Quantity):
             raise IOError("Input wrest must be a quantity")
+        # Data
+        self._data = {}
         # Set
-        self.z = z
-        self.zlim = zlim
-        self.wrest = wrest
-        # Dict (for updating and pointing to)
-        self.data = {}
-        self.reset()  # Sets dict values
+        self._z = z
+        self._wrest = wrest
+        self.set(zlim)
+
+    @property
+    def zlim(self):
+        """ Return zlim
+        """
+        return self._data['zlim']
+
+    @property
+    def wvlim(self):
+        """ Return wvlim
+        """
+        return self._data['wvlim']
+
+    @property
+    def vlim(self):
+        """ Return vlim
+        """
+        return self._data['vlim']
 
     def reset(self):
         """ Update all the values
         """
-        self.data['zlim'] = self.zlim
-        self.data['wvlim'] = self.wrest*(1+np.array(self.zlim))
-        self.data['vlim'] = ckms*((self.data['wvlim']-self.wrest*(1+self.z))/(
-            self.wrest*(1+self.z))).decompose()
-        pdb.set_trace()
+        self._data['zlim'] = self.zlim
+        self._data['wvlim'] = self._wrest*(1+np.array(self.zlim))
+        self._data['vlim'] = ckms*((self._data['wvlim']-self._wrest*(1+self._z))/(
+            self._wrest*(1+self._z))).decompose()
 
-    def __eq__(self, inp, itype='zlim'):
+    def set(self, inp, itype='zlim'):
         """ Over-ride = to re-init values
 
         Parameters
@@ -104,10 +104,12 @@ class LineLimits(object):
         if not isinstance(inp, (tuple, list, Quantity)):
             raise IOError("Input must be tuple, list or Quantity")
         if itype == 'zlim':
-            self.zlim = inp
+            self._data['zlim'] = inp
         else:
             raise IOError("Input type must be zlim, vlim, or wvlim")
-        #
+        # Reset
+        self.reset()
+
     def __repr__(self):
         txt = '<{:s}'.format(self.__class__.__name__)
         # wrest
