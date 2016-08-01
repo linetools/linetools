@@ -3,44 +3,50 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import pdb
-import json
-import warnings
-
 
 from astropy import units as u
 from astropy.units import Quantity
 from astropy import constants as const
+
+from ..spectralline import AbsLine
 
 ckms = const.c.to('km/s')
 
 class LineLimits(object):
     """ An object for handling the 'limits' of a line
 
-    Parameters
+    Properties
     ----------
-    zlim : `~numpy.ndarray`
-        Structured array containing all of the data
-        This can be a set of 1D spectra
-
-    _data : `dict`-like object, optional
-        Metadata for this object.  "Metadata" here means all information that
-        is included with this object but not part of any other attribute
-        of this particular object.  e.g., creation date, unique identifier,
-        simulation parameters, exposure time, telescope name, etc.
-
-    Attributes
-    ----------
-    zlim : tuple
-    wvlim : Quantity
-    vlim : Quantity
+    zlim : tuple of floats
+      Redshift limits for a line
+      Defined as wave/wrest - 1.
+    wvlim : Quantity array
+      wavelength limits for the line
+    vlim : Quantity array
+      velocity limits for the line in km/s
     """
+    @classmethod
+    def from_absline(cls, aline, zlim):
+        """ From AbsLine
+
+        Parameters
+        ----------
+        aline : AbsLine
+        """
+        if not isinstance(aline, float):
+            raise IOError("Input aline must be AbsLine")
+        #
+        slf = cls(aline.wrest, aline.attrib['z'], zlim)
+        return slf
+
     def __init__(self, wrest, z, zlim):
         """
         Parameters
         ----------
         wrest : Quantity
+          Rest wavelength of the line.  Should match line.wrest
         z : float
+          Redshift of the line.  Should match line.attrib['z']
         zlim : tuple or list
           Redshift limits for a line
           Defined as wave/wrest - 1.
@@ -113,6 +119,6 @@ class LineLimits(object):
     def __repr__(self):
         txt = '<{:s}'.format(self.__class__.__name__)
         # wrest
-        txt = txt + ' wrest={:g}'.format(self.wrest)
+        txt = txt + ' wrest={:g}'.format(self._wrest)
         txt = txt + '>'
         return (txt)
