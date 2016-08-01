@@ -4,7 +4,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 # TEST_UNICODE_LITERALS
 
 import pytest
-from linetools.abund.elements import ELEMENTS
+from linetools.abund.elements import ELEMENTS, sqlite_script
 
 
 # import pdb
@@ -57,8 +57,19 @@ def test_elements_isotopes():
         ele = ELEMENTS[name]
         assert len(ele.isotopes) == isotopes
 
+
 def test_elements_repr():
     print(ELEMENTS['H'])
     print(ELEMENTS[1])
     ele = ELEMENTS[1]
     print(ele)
+
+
+def test_elements_sqlite():
+    import sqlite3
+    con = sqlite3.connect(':memory:')
+    cur = con.executescript(sqlite_script())
+    con.commit()
+    for r in cur.execute("SELECT name FROM element WHERE number=6"):
+        assert str(r[0]) == 'Carbon'
+    con.close()
