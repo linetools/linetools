@@ -128,7 +128,7 @@ class LineLimits(object):
             except UnitConversionError:
                 try:
                     self._zlim = ltu.give_dz(inp, self._z)
-                except UnitConversionError:
+                except ValueError:
                     raise IOError("Quantity must be length or speed")
         else:
             raise IOError("Input must be floats or Quantities")
