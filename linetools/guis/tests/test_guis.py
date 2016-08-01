@@ -25,7 +25,6 @@ def data_path(filename):
     return os.path.join(data_dir, filename)
 
 
-# ISM LineList
 def test_navigate():
     # Init
     nav_dict = dict(nav=ltgu.navigate(0,0,init=True))
@@ -41,6 +40,11 @@ def test_navigate():
     for key in nav_dict['nav']:
         o.key = key
         ltgu.navigate(nav_dict, o)
+    # test wrong key event
+    o.xdata = 'this_is_not_float'
+    out = ltgu.navigate(nav_dict, o)
+    assert out == 0
+
 
 
 def test_doublet():
