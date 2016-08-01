@@ -5,8 +5,8 @@ import astropy.units as u
 from linetools.analysis import interactive_plot as ltaip
 from linetools.spectra.xspectrum1d import XSpectrum1D
 
-# def test_local_median():
-if 1:
+
+def test_local_median():
     fl = np.ones(100)
     wv = np.linspace(1000,2000, 100)
     er = np.ones(100)*0.1
@@ -27,3 +27,5 @@ if 1:
     spec2 = spec.add_noise(s2n=spec.flux/spec.sig, rstate=rstate)
     lm = ltaip.local_median(spec2.wavelength, spec2.flux, spec2.sig, 1300*u.AA, npix=15)
     np.testing.assert_allclose(lm, 0.9428995251655579)
+
+

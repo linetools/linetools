@@ -15,6 +15,8 @@ def test_elements_validate():
     # this one does self consistency checks
     for ele in ELEMENTS:
         ele.validate()
+        # test repr
+        print(ele.description)
 
 def test_elements_misc():
     # Miscelaneous
@@ -38,6 +40,7 @@ def test_elements_nominalmass():
         ele = ELEMENTS[name]
         assert ele.nominalmass == mass
 
+
 def test_elements_neutrons():
     names = ['H', 'He', 'C', 'N', 'O', 'Ne', 'Mg']
     expected_neutrons = [0, 2, 6, 7, 8, 10, 12]
@@ -45,9 +48,17 @@ def test_elements_neutrons():
         ele = ELEMENTS[name]
         assert ele.neutrons == neutrons
 
+
 def test_elements_isotopes():
     names = ['H', 'He', 'C', 'N', 'O', 'Ne', 'Mg', 'Ca']
     expected_isotopes = [2, 2, 2, 2, 3, 3, 3, 6]
     for name, isotopes in zip(names, expected_isotopes):
         ele = ELEMENTS[name]
         assert len(ele.isotopes) == isotopes
+
+# def test_elements_repr():
+if 1:
+    print(ELEMENTS['H'])
+    print(ELEMENTS[1])
+    ele = ELEMENTS[1]
+    print(ele)
