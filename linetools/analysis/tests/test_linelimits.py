@@ -23,3 +23,5 @@ def test_use():
     np.testing.assert_allclose(llim.wvlim.value, [2430.12433, 2432.55567])
     np.testing.assert_allclose(llim.vlim.value, [-149.896229, 149.896229])
     assert llim.vlim.unit == u.km/u.s
+    # Print
+    print(llim)
