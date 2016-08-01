@@ -44,6 +44,15 @@ def test_navigate():
     o.xdata = 'this_is_not_float'
     out = ltgu.navigate(nav_dict, o)
     assert out == 0
+    # test event 's'
+    o.key = 's'
+    nav_dict['tmp_xy'] = (22, 1) #  i.e. not None
+    ltgu.navigate(nav_dict, o)
+    # test event 'y'
+    o.key = 'y'
+    ltgu.navigate(nav_dict, o, wave = np.linspace(1000,2000,100), flux = np.ones(100))
+
+
 
 
 
