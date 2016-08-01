@@ -5,10 +5,11 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import numpy as np
 
 from astropy import units as u
-from astropy.units import Quantity
+from astropy.units import Quantity, UnitConversionError
 from astropy import constants as const
 
 from ..spectralline import AbsLine
+from linetools import utils as ltu
 
 ckms = const.c.to('km/s')
 
@@ -33,7 +34,7 @@ class LineLimits(object):
         ----------
         aline : AbsLine
         """
-        if not isinstance(aline, float):
+        if not isinstance(aline, AbsLine):
             raise IOError("Input aline must be AbsLine")
         #
         slf = cls(aline.wrest, aline.attrib['z'], zlim)
@@ -86,18 +87,21 @@ class LineLimits(object):
     def reset(self):
         """ Update all the values
         """
-        self._data['zlim'] = self.zlim
-        self._data['wvlim'] = self._wrest*(1+np.array(self.zlim))
-        self._data['vlim'] = ckms*((self._data['wvlim']-self._wrest*(1+self._z))/(
-            self._wrest*(1+self._z))).decompose()
+        self._data['zlim'] = self._zlim
+        self._data['wvlim'] = self._wrest*(1+np.array(self._zlim))
+        self._data['vlim'] = ltu.give_dv(self._zlim, self._z)
+        #self._data['vlim'] = ckms*((self._data['wvlim']-self._wrest*(1+self._z))/(
+        #    self._wrest*(1+self._z))).decompose()
 
-    def set(self, inp, itype='zlim'):
+    def set(self, inp):#, itype='zlim'):
         """ Over-ride = to re-init values
 
         Parameters
         ----------
         inp : tuple, list, or Quantity array
-          * zlim : Redshift limits
+          * If floats -> zlim : Redshift limits
+          * If Quantity array with length units  -> wvlim : Wavelength limits
+          * If Quantity array with speed units  -> vlim : Velocity limits
         itype : str, optional
           Input type
 
@@ -109,10 +113,25 @@ class LineLimits(object):
         # Checks
         if not isinstance(inp, (tuple, list, Quantity)):
             raise IOError("Input must be tuple, list or Quantity")
+        '''
         if itype == 'zlim':
             self._data['zlim'] = inp
         else:
             raise IOError("Input type must be zlim, vlim, or wvlim")
+        '''
+        if isinstance(inp[0], float):  # zlim
+            self._zlim = inp
+        elif isinstance(inp[0], Quantity):  # wvlim or vlim
+            try:  # wvlim
+                self._zlim = (inp/self._wrest).decompose().to(
+                        u.dimensionless_unscaled).value - 1.
+            except UnitConversionError:
+                try:
+                    self._zlim = ltu.give_dz(inp, self._z)
+                except UnitConversionError:
+                    raise IOError("Quantity must be length or speed")
+        else:
+            raise IOError("Input must be floats or Quantities")
         # Reset
         self.reset()
 
@@ -120,5 +139,9 @@ class LineLimits(object):
         txt = '<{:s}'.format(self.__class__.__name__)
         # wrest
         txt = txt + ' wrest={:g}'.format(self._wrest)
+        txt = txt + ' z={:g}'.format(self._z)
+        txt = txt + ' zlim={}'.format(self.zlim)
+        txt = txt + ' wvlim={}'.format(self.wvlim)
+        txt = txt + ' vlim={}'.format(self.vlim)
         txt = txt + '>'
         return (txt)
