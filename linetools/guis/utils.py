@@ -187,7 +187,7 @@ def read_spec(ispec, exten=None, norm=True, **kwargs):
 
     Parameters
     ----------
-    ispec : Spectrum1D, str, list of files (ordered blue to red),
+    ispec : XSpectrum1D, str, list of files (ordered blue to red),
        or tuple of arrays
     exten : int, optional
       FITS extension

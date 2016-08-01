@@ -8,6 +8,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import os, sys
 import pdb
 import pytest
+import numpy as np
 from astropy import units as u
 
 from PyQt4 import QtGui
@@ -74,11 +75,27 @@ def test_llist():
         idict = ltgu.set_llist((1,2))  # input is a tuple, so it is wrong.
 
 
-def test_rdspec():
+# def test_rdspec():
+if 1:
     spec, spec_fil = ltgu.read_spec(data_path('UM184_nF.fits'))
     #
     ispec = lsio.readspec(data_path('UM184_nF.fits'))
     spec, spec_fil = ltgu.read_spec(ispec)
+    # as tuple without units
+    ispec = (np.ones(10), np.ones(10), np.ones(10))
+    spec, spec_fil = ltgu.read_spec(ispec)
+    assert spec_fil == 'none'
+    # as list
+    ispec = [data_path('UM184_nF.fits')]*2
+    spec, spec_fil = ltgu.read_spec(ispec)
+    # wrong format
+    with pytest.raises(ValueError):
+        spec, spec_fil = ltgu.read_spec(dict(a='dummy'))  # input is a dict
+    # normalize
+    spec, spec_fil = ltgu.read_spec(data_path('UM184_nF.fits'))
+    spec.co = spec.flux
+    spec, spec_fil = ltgu.read_spec(spec)
+    assert spec.normed
 
 
 def test_xspecgui():
