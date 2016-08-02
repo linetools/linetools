@@ -44,7 +44,7 @@ def test_interpolate_to_wv_array(plot=False, lp='2'):
         cos_dict_aux = dict(name='COS',grating='G160M',life_position=lp,cen_wave=cen_wave)
         lsf_dict[cen_wave] = LSF(cos_dict_aux)
         lsf_tab = lsf_dict[cen_wave].interpolate_to_wv_array(wv_array)
-        assert isinstance(lsf_tab,Table), err_msg
+        assert isinstance(lsf_tab, Table), err_msg
         if plot:
             import matplotlib.pyplot as plt
             plt.plot(wv_array,lsf_tab['kernel'],'-',color=colors[i])
@@ -52,6 +52,7 @@ def test_interpolate_to_wv_array(plot=False, lp='2'):
         plt.show()
     # other tests
     lsf = LSF(dict(name='COS', grating='G130M', life_position='1'))
+    wv_array = np.linspace(1200,1400,10)*u.AA
     # cubic
     tab = lsf.interpolate_to_wv_array(wv_array, kind='cubic')
 

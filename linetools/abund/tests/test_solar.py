@@ -46,7 +46,7 @@ def test_getitem_errors():
         a = sol[-1]
     with pytest.raises(ValueError):
         a = sol['bad_name']
-    with pytest.raises(ValueError):
+    with pytest.raises(IndexError):
         a = sol[None]  # bad input
 
 
