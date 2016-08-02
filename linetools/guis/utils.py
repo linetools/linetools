@@ -187,7 +187,7 @@ def read_spec(ispec, exten=None, norm=True, **kwargs):
 
     Parameters
     ----------
-    ispec : Spectrum1D, str, list of files (ordered blue to red),
+    ispec : XSpectrum1D, str, list of files (ordered blue to red),
        or tuple of arrays
     exten : int, optional
       FITS extension
@@ -238,7 +238,7 @@ def read_spec(ispec, exten=None, norm=True, **kwargs):
             spec_fil = ispec[0]
             spec.filename=spec_fil
     else:
-        raise ValueError('Bad input to read_spec: {:s}'.format(type(ispec)))
+        raise ValueError('Bad input to read_spec: {}'.format(type(ispec)))
 
     # Normalize?
     if norm:

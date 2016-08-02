@@ -32,7 +32,27 @@ def test_lsf_COS():
                 for cen_wave in cen_waves_aux:
                         instr_config['cen_wave'] = cen_wave
                         lsf = LSF(instr_config)
-                        print(lp,grating,cen_wave)
+                        print(lp, grating, cen_wave)
             elif lp == '1':
                 lsf = LSF(instr_config)
-                print(lp,grating)
+                print(lp, grating)
+
+
+def test_lsf_init_errors():
+    with pytest.raises(TypeError):
+        lsf = LSF('not_a_dict')
+    with pytest.raises(SyntaxError):
+        lsf = LSF(dict(wrong_key='xx'))
+    with pytest.raises(NotImplementedError):
+        lsf = LSF(dict(name='not_COS'))
+    with pytest.raises(SyntaxError):
+        lsf = LSF(dict(name='COS', not_grating_given='xx'))
+    with pytest.raises(NotImplementedError):
+        lsf = LSF(dict(name='COS', grating='not_implemented_grating'))
+    with pytest.raises(SyntaxError):
+        lsf = LSF(dict(name='COS', grating='G130M', not_life_pos_given='xx'))
+    with pytest.raises(ValueError):
+        lsf = LSF(dict(name='COS', grating='G130M', life_position='-1'))
+    with pytest.raises(SyntaxError):
+        lsf = LSF(dict(name='COS', grating='G130M', life_position='2', no_cen_wave_given='xx'))
+
