@@ -23,6 +23,10 @@ def test_parse_abslines():
     # data
     A_values = ltlu.parse_speclines(abslines, 'A')
     np.testing.assert_allclose(A_values[0].value, 626500000.0)
+    # append None
+    aux = ltlu.parse_speclines(abslines, 'wrong_attribute')
+    assert aux[0] is None
+
 
 def test_transtabl():
     # Init AbsLines
@@ -31,6 +35,10 @@ def test_transtabl():
     tbl = ltlu.transtable_from_speclines(abslines)
     assert len(tbl) == 2
     assert 'logN' in tbl.keys()
+    # add keys
+    tbl = ltlu.transtable_from_speclines(abslines, add_keys=['A', 'log(w*f)'])
+    assert 'A' in tbl.keys()
+
 
 def test_coincident_line():
     # Init AbsLines

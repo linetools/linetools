@@ -32,6 +32,7 @@ def test_interpolate_to_wv0(plot=False, lp='2'):
             # import pdb; pdb.set_trace()
         plt.show()
 
+
 def test_interpolate_to_wv_array(plot=False, lp='2'):
     err_msg = 'Something is wrong with LSF.interpolate_to_wv_array()'
     wv_array = np.arange(1600,1601,0.001)*u.AA
@@ -43,12 +44,27 @@ def test_interpolate_to_wv_array(plot=False, lp='2'):
         cos_dict_aux = dict(name='COS',grating='G160M',life_position=lp,cen_wave=cen_wave)
         lsf_dict[cen_wave] = LSF(cos_dict_aux)
         lsf_tab = lsf_dict[cen_wave].interpolate_to_wv_array(wv_array)
-        assert isinstance(lsf_tab,Table), err_msg
+        assert isinstance(lsf_tab, Table), err_msg
         if plot:
             import matplotlib.pyplot as plt
             plt.plot(wv_array,lsf_tab['kernel'],'-',color=colors[i])
     if plot:
         plt.show()
+    # other tests
+    lsf = LSF(dict(name='COS', grating='G130M', life_position='1'))
+    wv_array = np.linspace(1200,1400,10)*u.AA
+    # cubic
+    tab = lsf.interpolate_to_wv_array(wv_array, kind='cubic')
+
+    # errors
+    with pytest.raises(SyntaxError):
+        tbl = lsf.interpolate_to_wv_array('bad_input')
+    with pytest.raises(SyntaxError):
+        x = np.array([[1, 2, 3], [4, 5, 6]])
+        tbl = lsf.interpolate_to_wv_array(x)  # bad shape
+    with pytest.raises(ValueError):
+        tbl = lsf.interpolate_to_wv_array(np.array([1,2]*u.AA), kind='wrong_kind')
+
 
 def test_get_lsf(plot=False, lp='2'):
     err_msg = 'Something is wrong with LSF.get_lsf()'
