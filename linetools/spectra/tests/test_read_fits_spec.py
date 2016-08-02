@@ -102,7 +102,7 @@ def test_errors():
         io.readspec(5) #input as an int
     except IOError:
         pass
-    with pytest()
+
 
 
 
