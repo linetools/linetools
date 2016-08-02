@@ -1,10 +1,12 @@
 # Module to run tests on initializing AbsLine
 
 # TEST_UNICODE_LITERALS
+
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import os, pdb
+import os
+import pytest
 from astropy import units as u
 
 from linetools.spectralline import AbsLine
@@ -41,6 +43,7 @@ def test_transtabl():
 
 
 def test_coincident_line():
+    # TODO FOR TEJOS TO FIX
     # Init AbsLines
     line1 = AbsLine(1215.6700*u.AA)
     line2 = AbsLine('CII 1334')
@@ -49,7 +52,8 @@ def test_coincident_line():
         answer = line1.coincident_line(line2)
     except ValueError:
         pass
-    line1.analy['wvlim'] = (1500,1510)*u.AA
+    #line1.analy['wvlim'] = (1500,1510)*u.AA
+    line1.limits.set((1500,1510)*u.AA)
     try:
         answer = line1.coincident_line(line2)
     except ValueError:

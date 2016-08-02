@@ -19,6 +19,7 @@ from astropy.coordinates import SkyCoord
 
 from linetools.analysis import utils as lau
 from linetools.analysis import absline as laa
+from linetools.analysis.linelimits import LineLimits
 from linetools.lists.linelist import LineList
 from linetools import utils as ltu
 from linetools.spectra.xspectrum1d import XSpectrum1D
@@ -27,8 +28,6 @@ from linetools.spectra.xspectrum1d import XSpectrum1D
 zero_coord = SkyCoord(ra=0.*u.deg, dec=0.*u.deg)  # Coords
 init_analy = {
             'spec': None,              # Analysis inputs (e.g. spectrum; from .clm file or AbsID)
-            'wvlim': [0., 0.]*u.AA,    # Wavelength interval about the line (observed)
-            'vlim': [0., 0.]*u.km/u.s, # Rest-frame velocity limit of line, relative to self.attrib['z']
             'flag_kin': 0,             # Use for kinematic analysis?
             'do_analysis': 1           # Analyze?
             }
@@ -165,9 +164,16 @@ class SpectralLine(object):
         self.data = {} # Atomic/Molecular Data (e.g. f-value, A coefficient, Elow)
         self.analy = init_analy.copy()
         self.attrib = init_attrib.copy()
+        self.attrib['z'] = z
 
         # Fill data
         self.fill_data(trans, linelist=linelist, closest=closest, verbose=verbose)
+        # Limits
+        try:
+            zlim = kwargs['zlim']
+        except KeyError:
+            zlim = [z,z]
+        self.limits = LineLimits.from_absline(self, zlim)
 
     def ismatch(self, inp, Zion=None, RADec=None):
         """Query whether input line matches on:  z, Z, ion, RA, Dec
@@ -239,6 +245,7 @@ class SpectralLine(object):
             raise ValueError('Expecting a unit!')
 
         # Pixels for evaluation
+        '''
         if np.sum(self.analy['wvlim'].value > 0.):
             pix = self.analy['spec'].pix_minmax(self.analy['wvlim'])[0]
         elif np.sum(np.abs(self.analy['vlim'].value) > 0.):
@@ -246,6 +253,11 @@ class SpectralLine(object):
                 self.attrib['z'], self.wrest, self.analy['vlim'])[0]
         else:
             raise ValueError('spectralline.cut_spec: Need to set wvlim or vlim!')
+        '''
+        if self.limits.is_set():
+            pix = self.analy['spec'].pix_minmax(self.limits.wvlim)[0]
+        else:
+            raise ValueError('spectralline.cut_spec: Need to set limits!')
         self.analy['pix'] = pix
 
         # Normalize?
@@ -273,8 +285,10 @@ class SpectralLine(object):
     def measure_ew(self, flg=1, initial_guesses=None):
         """ Measures the observer frame equivalent width
 
-        Note this requires the keys `wvlim` and `spec` in analy to
-        be set! Default is simple boxcar integration.
+        [[Note this requires the keys `wvlim` and `spec` in analy to
+        be set!]]
+        Note this requires self.limits to be initialized
+        Default is simple boxcar integration.
         Observer frame, not rest-frame (use measure_restew()
         for rest-frame).
 
@@ -408,13 +422,18 @@ class SpectralLine(object):
           True if there is overlap in wvobs space, False otherwise.
 
         """
+        '''
         if np.sum(self.analy['wvlim'] != init_analy['wvlim']) == 0:
             raise ValueError("{} has not set its analy['wvlim'] values!".format(self.__repr__()))
         if np.sum(specline.analy['wvlim'] != init_analy['wvlim']) == 0:
             raise ValueError("{} has not set its analy['wvlim'] values!".format(specline.__repr__()))
+        '''
+        if not self.limits.is_set():
+            raise ValueError("{} has not set its limits!".format(self.__repr__()))
+        if not specline.limits.is_set():
+            raise ValueError("{} has not set its limits!".format(specline.__repr__()))
 
-        return ltu.overlapping_chunks(self.analy['wvlim'], specline.analy['wvlim'])
-
+        return ltu.overlapping_chunks(self.limits.wvlim, specline.limits.wvlim)
 
     def copy(self):
         """ Generate a copy

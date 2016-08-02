@@ -24,6 +24,9 @@ def test_init():
     # Bad zlim
     with pytest.raises(IOError):
         llim = LineLimits(1215.67*u.AA, 1., (1.1,1.2))
+    # Null zlim
+    llim = LineLimits(1215.67*u.AA, 1., (1.,1))
+    assert llim.is_set() is False
 
 def test_set():
     # Init

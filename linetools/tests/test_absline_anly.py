@@ -20,23 +20,24 @@ def data_path(filename):
 
 def test_aodm_absline():
     # Init CIV 1548
-    abslin = AbsLine(1548.195*u.AA)
+    abslin = AbsLine(1548.195*u.AA, z=2.9304)
 
     # Set spectrum
     abslin.analy['spec'] = lsio.readspec(data_path('UM184_nF.fits')) # Fumagalli+13 MagE spectrum
-    abslin.analy['wvlim'] = [6080.78, 6087.82]*u.AA
+    abslin.limits.set([6080.78, 6087.82]*u.AA)
+    #abslin.analy['wvlim'] = [6080.78, 6087.82]*u.AA
     #
     abslin.measure_aodm()
     N, sig_N, flgN = [abslin.attrib[key] for key in ['N','sig_N','flag_N']]
 
-    np.testing.assert_allclose(N.value, 300010067404184.0)
+    np.testing.assert_allclose(N.value, 76330670518067.16)
     assert N.unit == 1/u.cm**2
     assert flgN == 1
     # Now velocity limits
 
-    abslin.analy['wvlim'] = np.zeros(2)*u.AA
-    abslin.analy['vlim'] = (-150., 150.)*u.km/u.s
     abslin.attrib['z'] = 2.92929
+    abslin.limits._z = abslin.attrib['z']
+    abslin.limits.set((-150., 150.)*u.km/u.s)
     #
     abslin.measure_aodm()
     N, sig_N, flgN = [abslin.attrib[key] for key in ['N','sig_N','flag_N']]
@@ -46,11 +47,11 @@ def test_aodm_absline():
 def test_boxew_absline():
     # Text boxcar EW evaluation
         # Init CIV 1548
-    abslin = AbsLine(1548.195*u.AA)
+    abslin = AbsLine(1548.195*u.AA, z=2.9304)
 
     # Set spectrum
     abslin.analy['spec'] = lsio.readspec(data_path('UM184_nF.fits')) # Fumagalli+13 MagE spectrum
-    abslin.analy['wvlim'] = [6080.78, 6087.82]*u.AA
+    abslin.limits.set([6080.78, 6087.82]*u.AA)
     # Measure EW (not rest-frame)
     abslin.measure_ew()
     ew = abslin.attrib['EW']
@@ -65,11 +66,11 @@ def test_boxew_absline():
 def test_gaussew_absline():
     # Text Gaussian EW evaluation
     # Init CIV 1548
-    abslin = AbsLine(1548.195*u.AA)
+    abslin = AbsLine(1548.195*u.AA, z=2.9304)
 
     # Set spectrum
     abslin.analy['spec'] = lsio.readspec(data_path('UM184_nF.fits')) # Fumagalli+13 MagE spectrum
-    abslin.analy['wvlim'] = [6080.78, 6087.82]*u.AA
+    abslin.limits.set([6080.78, 6087.82]*u.AA)
     # Measure EW (not rest-frame)
     abslin.measure_ew(flg=2)
     ew = abslin.attrib['EW']
@@ -81,12 +82,11 @@ def test_gaussew_absline():
 
 def test_measurekin_absline():
     # Test Simple kinematics
-    abslin = AbsLine('NiII 1741')
+    abslin = AbsLine('NiII 1741',z=2.307922)
 
     # Set spectrum
     abslin.analy['spec'] = lsio.readspec(data_path('PH957_f.fits'))
-    abslin.analy['vlim'] = [-70., 70.]*u.km/u.s
-    abslin.attrib['z'] = 2.307922
+    abslin.limits.set([-70., 70.]*u.km/u.s)
 
     # Measure Kin
     abslin.measure_kin()
@@ -102,18 +102,19 @@ def test_ismatch():
     abslin2.attrib['z'] = 1.
     # Run
     answer = abslin1.ismatch(abslin2)
-    assert answer == True
+    assert answer
     # Tuple too
     answer2 = abslin1.ismatch((1., abslin1.wrest))
-    assert answer2 == True
+    assert answer2
+
 
 def test_repr():
     abslin = AbsLine('NiII 1741')
     print(abslin)
 
+
 def test_manyabslines():
     lines = [1215.670*u.AA, 1025.7222*u.AA, 972.5367*u.AA]*2
     llist = LineList('HI')
     alines = spectralline.many_abslines(lines, llist)
-
 

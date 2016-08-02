@@ -8,7 +8,6 @@ from astropy import units as u
 from astropy.units import Quantity, UnitConversionError
 from astropy import constants as const
 
-from ..spectralline import AbsLine
 from linetools import utils as ltu
 
 ckms = const.c.to('km/s')
@@ -34,6 +33,7 @@ class LineLimits(object):
         ----------
         aline : AbsLine
         """
+        from ..spectralline import AbsLine
         if not isinstance(aline, AbsLine):
             raise IOError("Input aline must be AbsLine")
         #
@@ -51,6 +51,7 @@ class LineLimits(object):
         zlim : tuple or list
           Redshift limits for a line
           Defined as wave/wrest - 1.
+          Ok to have zlim[1]==zlim[0], but then self.is_set() == False
         """
         # Error checking
         if not isinstance(z, float):
@@ -93,6 +94,20 @@ class LineLimits(object):
         #self._data['vlim'] = ckms*((self._data['wvlim']-self._wrest*(1+self._z))/(
         #    self._wrest*(1+self._z))).decompose()
 
+    def is_set(self):
+        """ Query if the limits are set to sensible values
+        (i.e. zlim[1]-zlim[0]>0)
+
+        Returns
+        -------
+        bool
+
+        """
+        if self._zlim[1] > self._zlim[0]:
+            return True
+        else:
+            return False
+
     def set(self, inp):#, itype='zlim'):
         """ Over-ride = to re-init values
 
@@ -126,7 +141,7 @@ class LineLimits(object):
                 self._zlim = (inp/self._wrest).decompose().to(
                         u.dimensionless_unscaled).value - 1.
             except UnitConversionError:
-                try:
+                try:  # vlim
                     self._zlim = ltu.give_dz(inp, self._z) + self._z
                 except ValueError:
                     raise IOError("Quantity must be length or speed")
