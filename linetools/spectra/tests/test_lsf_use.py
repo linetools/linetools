@@ -11,6 +11,7 @@ from astropy.table import Table
 
 from linetools.spectra.lsf import LSF
 
+
 def test_interpolate_to_wv0(plot=False, lp='2'):
     err_msg = 'Something is wrong with LSF.interpolate_to_wv0()'
     wv0 = 1160*u.AA
@@ -31,6 +32,9 @@ def test_interpolate_to_wv0(plot=False, lp='2'):
             plt.plot(lsf_tab['wv']-wv.value,lsf_tab['kernel'],'-')
             # import pdb; pdb.set_trace()
         plt.show()
+    # test last column interpolation
+    lsf = LSF(dict(name='COS', grating='G130M', life_position='1'))
+    tab = lsf.interpolate_to_wv0(1450*u.AA)
 
 
 def test_interpolate_to_wv_array(plot=False, lp='2'):
