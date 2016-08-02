@@ -127,11 +127,15 @@ class LineLimits(object):
                         u.dimensionless_unscaled).value - 1.
             except UnitConversionError:
                 try:
-                    self._zlim = ltu.give_dz(inp, self._z)
+                    self._zlim = ltu.give_dz(inp, self._z) + self._z
                 except ValueError:
                     raise IOError("Quantity must be length or speed")
         else:
             raise IOError("Input must be floats or Quantities")
+        # Check
+        if (self._zlim[0] > self._z) or (self._zlim[1] < self._z):
+            #import pdb; pdb.set_trace()
+            raise IOError("Invalid input.  zlim does not bound z")
         # Reset
         self.reset()
 

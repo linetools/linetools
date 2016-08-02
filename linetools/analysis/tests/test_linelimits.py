@@ -21,6 +21,9 @@ def test_init():
     lya = AbsLine('HI 1215')
     lya.attrib['z'] = 1.
     llim = LineLimits.from_absline(lya, zlim)
+    # Bad zlim
+    with pytest.raises(IOError):
+        llim = LineLimits(1215.67*u.AA, 1., (1.1,1.2))
 
 def test_set():
     # Init
