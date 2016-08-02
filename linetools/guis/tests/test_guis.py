@@ -40,18 +40,22 @@ def test_navigate():
     o.ydata = 1.
     for key in nav_dict['nav']:
         o.key = key
-        ltgu.navigate(nav_dict, o)
+        if key == 's':
+            # test two options
+            nav_dict['tmp_xy'] = [0, 0.5]  # is not None
+            ltgu.navigate(nav_dict, o)
+            nav_dict['tmp_xy'] = None # is None again
+            ltgu.navigate(nav_dict, o)
+        elif key == 'y':
+            # test two options
+            ltgu.navigate(nav_dict, o, wave = np.linspace(0,1,100), flux = np.ones(100))
+            ltgu.navigate(nav_dict, o)
+        else:
+            ltgu.navigate(nav_dict, o)
     # test wrong key event
     o.xdata = 'this_is_not_float'
     out = ltgu.navigate(nav_dict, o)
     assert out == 0
-    # test event 's'
-    o.key = 's'
-    nav_dict['tmp_xy'] = (22, 1) #  i.e. not None
-    ltgu.navigate(nav_dict, o)
-    # test event 'y'
-    o.key = 'y'
-    ltgu.navigate(nav_dict, o, wave = np.linspace(1000,2000,100), flux = np.ones(100))
 
 
 def test_doublet():
@@ -75,8 +79,7 @@ def test_llist():
         idict = ltgu.set_llist((1,2))  # input is a tuple, so it is wrong.
 
 
-# def test_rdspec():
-if 1:
+def test_rdspec():
     spec, spec_fil = ltgu.read_spec(data_path('UM184_nF.fits'))
     #
     ispec = lsio.readspec(data_path('UM184_nF.fits'))
@@ -85,9 +88,10 @@ if 1:
     ispec = (np.ones(10), np.ones(10), np.ones(10))
     spec, spec_fil = ltgu.read_spec(ispec)
     assert spec_fil == 'none'
-    # as list
+    # as list of files
     ispec = [data_path('UM184_nF.fits')]*2
     spec, spec_fil = ltgu.read_spec(ispec)
+    spec, spec_fil = ltgu.read_spec(ispec, exten=[1,1])  # is iterable exten
     # wrong format
     with pytest.raises(ValueError):
         spec, spec_fil = ltgu.read_spec(dict(a='dummy'))  # input is a dict
