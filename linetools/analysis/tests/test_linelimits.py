@@ -23,7 +23,7 @@ def test_init():
     llim = LineLimits.from_absline(lya, zlim)
     # Bad zlim
     with pytest.raises(IOError):
-        llim = LineLimits(1215.67*u.AA, 1., (1.1,1.2))
+        llim = LineLimits(1215.67*u.AA, 1., (1.1,1.2), chk_z=True)
     # Null zlim
     llim = LineLimits(1215.67*u.AA, 1., (1.,1))
     assert llim.is_set() is False

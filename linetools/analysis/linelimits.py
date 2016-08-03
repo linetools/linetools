@@ -40,7 +40,7 @@ class LineLimits(object):
         slf = cls(aline.wrest, aline.attrib['z'], zlim)
         return slf
 
-    def __init__(self, wrest, z, zlim):
+    def __init__(self, wrest, z, zlim, **kwargs):
         """
         Parameters
         ----------
@@ -54,7 +54,7 @@ class LineLimits(object):
           Ok to have zlim[1]==zlim[0], but then self.is_set() == False
         """
         # Error checking
-        if not isinstance(z, float):
+        if not isinstance(z, (float,int)):
             raise IOError("Input z must be a float")
         if not isinstance(zlim, (tuple,list)):
             raise IOError("Input zlim must be a tuple or list")
@@ -65,7 +65,7 @@ class LineLimits(object):
         # Set
         self._z = z
         self._wrest = wrest
-        self.set(zlim)
+        self.set(zlim, **kwargs)
 
     @property
     def zlim(self):
@@ -108,7 +108,7 @@ class LineLimits(object):
         else:
             return False
 
-    def set(self, inp):#, itype='zlim'):
+    def set(self, inp, chk_z=False):#, itype='zlim'):
         """ Over-ride = to re-init values
 
         Parameters
@@ -117,8 +117,9 @@ class LineLimits(object):
           * If floats -> zlim : Redshift limits
           * If Quantity array with length units  -> wvlim : Wavelength limits
           * If Quantity array with speed units  -> vlim : Velocity limits
-        itype : str, optional
-          Input type
+        chk_z : bool, optional
+          Demand that zlim bound z
+          Often not desired as z can be somewhat arbitrary
 
 
         Returns
@@ -148,9 +149,10 @@ class LineLimits(object):
         else:
             raise IOError("Input must be floats or Quantities")
         # Check
-        if (self._zlim[0] > self._z) or (self._zlim[1] < self._z):
-            #import pdb; pdb.set_trace()
-            raise IOError("Invalid input.  zlim does not bound z")
+        if chk_z:
+            if (self._zlim[0] > self._z) or (self._zlim[1] < self._z):
+                #import pdb; pdb.set_trace()
+                raise IOError("Invalid input.  zlim does not bound z")
         # Reset
         self.reset()
 

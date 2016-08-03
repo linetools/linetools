@@ -124,8 +124,8 @@ def build_components_from_abslines(iabslines, clmdict=None, coord=None,
         # Reset vmin, vmax
         vmin,vmax = 9999., -9999.
         for iline in lines:
-            vmin = min(vmin, iline.analy['vlim'][0].value)
-            vmax = max(vmax, iline.analy['vlim'][1].value)
+            vmin = min(vmin, iline.limits.vlim[0].value)
+            vmax = max(vmax, iline.limits.vlim[1].value)
         component.vlim = [vmin,vmax]*u.km/u.s
         # Append
         components.append(component)
