@@ -53,8 +53,6 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True,
 
     gs = gridspec.GridSpec(nrow, ncol)
 
-
-
     # Loop me
     for qq, iline in enumerate(gdiline):
         ax = plt.subplot(gs[qq % nrow, qq//nrow])
