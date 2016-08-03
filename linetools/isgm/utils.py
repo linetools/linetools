@@ -372,7 +372,7 @@ def get_wvobs_chunks(comp):
     """For a given component, it gets a list of tuples with the
     min/max observed wavelengths for each absorption line in the
     component. An error is raised if an absorption line within the
-    component does not have limits defined.
+    component does not have its limits defined.
 
     Parameters
     ----------

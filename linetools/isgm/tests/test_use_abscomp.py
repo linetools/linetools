@@ -255,8 +255,7 @@ def test_repr_alis():
         s = abscomp.repr_alis(fix_strs=('1','2','3','4','5'))
 
 
-# def test_get_wvobs_chunks():
-if 1:
+def test_get_wvobs_chunks():
     abscomp, HIlines = mk_comp('HI', zcomp=0., vlim=[0,10]*u.km/u.s)
     wvobs_chunks = ltiu.get_wvobs_chunks(abscomp)
     np.testing.assert_allclose(wvobs_chunks[0][0], 1215.67*u.AA)
