@@ -510,7 +510,7 @@ def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
     sig, sig_tag = get_table_column(sig_tags, hdulist)
     if sig is None:
         if ivar_tag is None:
-            ivar_tags = ['IVAR', 'IVAR_OPT', 'ivar']
+            ivar_tags = ['IVAR', 'IVAR_OPT', 'ivar', 'FLUX_IVAR']
         else:
             ivar_tags = [ivar_tag]
         ivar, ivar_tag = get_table_column(ivar_tags, hdulist, idx=exten)
