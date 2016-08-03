@@ -114,11 +114,11 @@ def test_todict_withjson():
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
     # HI Lya, Lyb
     lya = AbsLine(1215.670*u.AA)
-    lya.analy['vlim'] = [-300.,300.]*u.km/u.s
+    lya.limits.set([-300.,300.]*u.km/u.s)
     lya.attrib['z'] = 2.92939
     lya.attrib['coord'] = radec
     lyb = AbsLine(1025.7222*u.AA)
-    lyb.analy['vlim'] = [-300.,300.]*u.km/u.s
+    lyb.limits.set([-300.,300.]*u.km/u.s)
     lyb.attrib['z'] = lya.attrib['z']
     lyb.attrib['coord'] = radec
     abscomp = AbsComponent.from_abslines([lya,lyb])
