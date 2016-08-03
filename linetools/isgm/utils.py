@@ -371,7 +371,8 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
 def get_wvobs_chunks(comp):
     """For a given component, it gets a list of tuples with the
     min/max observed wavelengths for each absorption line in the
-    component.
+    component. An error is raised if an absorption line within the
+    component does not have limits defined.
 
     Parameters
     ----------
@@ -391,26 +392,11 @@ def get_wvobs_chunks(comp):
     wvobs_chunks = []
     for absline in comp._abslines:
         # Check whether the absline has already defined 'wvlim'
-        cond = absline.analy['wvlim'] != init_analy['wvlim']
-        if np.sum(cond) > 0: # not default, use these values then
-            wvlim_aux = absline.analy['wvlim']
+        if absline.limits.is_set():
+            wvlim_aux = absline.limits.wvlim
             wvobs_chunks += [wvlim_aux]
         else:
-            # Check whether the absline has already defined 'vlim'
-            cond = absline.analy['vlim'] != init_analy['vlim']
-            if np.sum(cond) > 0:  # i.e. absline vlim not equal than the default, so we use these
-                # define the best redshift
-                if absline.attrib['z'] != 0:
-                    zline = absline.attrib['z']
-                else:
-                    zline = comp.zcomp
-                dzlim = give_dz(absline.analy['vlim'], zline)
-            else:  # use the vlim from component otherwise
-                zline = comp.zcomp
-                dzlim = give_dz(comp.vlim, zline)
-            wrest_aux = absline.wrest
-            wvlim_aux = wrest_aux * (1 + zline + dzlim)
-            wvobs_chunks += [wvlim_aux]
+            raise ValueError('{} must have its limits defined.'.format(absline))
     return wvobs_chunks
 
 
