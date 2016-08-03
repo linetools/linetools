@@ -26,11 +26,13 @@ def test_aodm():
                                (96652191688169.72, 194151305045168.12))
     assert N.unit == u.cm**-2
 
+
 def test_logclm():
     obj = type(str('Dummy'), (object,), { str('N'): 1e13, str('sig_N'): 5e12 })
     #
     logN, sig_logN = log_clm(obj)
     np.testing.assert_allclose(logN, 13.)
+
 
 def test_linearclm():
     obj = type(str('Dummy'), (object,), { str('logN'): 13, str('sig_logN'): 0.2 })
@@ -38,10 +40,12 @@ def test_linearclm():
     N, sig_N = linear_clm(obj)
     np.testing.assert_allclose(N.value, 1e13)
 
+
 def test_photocross():
     phto = photo_cross(1, 1, 14.*u.eV)
     assert phto.unit == u.cm**2
     np.testing.assert_allclose(phto.value, 5.870146496955153e-18)
+
 
 def test_sumlogn_fail():
     obj1 = dict(flag_N=4)
@@ -50,6 +54,7 @@ def test_sumlogn_fail():
     #
     obj1 = dict(flag_N=1)
     pytest.raises(ValueError, sum_logN, obj1, obj2)
+
 
 def test_sumlogn_limit():
     obj1 = dict(flag_N=3, logN=15., sig_logN=99.)
