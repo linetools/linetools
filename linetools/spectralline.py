@@ -190,6 +190,9 @@ class SpectralLine(object):
         # Set
         self.attrib['z'] = z
         self.limits._z = z
+        # Warning?
+        if self.limits.is_set():
+            warnings.warn("Consider whether to update the limits of this line")
 
 
     def ismatch(self, inp, Zion=None, RADec=None):
