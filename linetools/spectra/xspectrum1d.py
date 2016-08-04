@@ -739,7 +739,7 @@ class XSpectrum1D(object):
             ax.plot(self.wavelength, self.sig, **kwargs)
 
         # Continuum
-        if self.co_is_set and self.normed:
+        if self.co_is_set and (not self.normed):
             if nocolor:
                 kwargs.update(color='r')
             ax.plot(self.wavelength, self.co, **kwargs)
