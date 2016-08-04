@@ -32,18 +32,20 @@ Attributes
 
 The base attributes for the SpectralLine class are:
 
-================ ================= ========= ========================================
-Property         Variable          Type      Description
-================ ================= ========= ========================================
-RA, Dec          attrib['coord']   Coord     astropy.coordinate
-Redshift         attrib['z']       float     Reference redshift
-Redshift sigma   attrib['sig_z']   float     Reference redshift uncertainty
-Velocity         attrib['v']       Quantity  line velocity relative to its redshift
-Velocity sigma   attrib['sig_v']   Quantity  1 sigma uncertainty in the velocity
-Equivalent Width attrib['EW']      Quantity  Equivalent width
-EW sigma         attrib['sig_EW']  Quantity  1 sigma uncertainty in EW
-EW flag          attrib['flag_EW'] int       Equivalent width flag
-================ ================= ========= ========================================
+================ ================= ========== ========================================
+Property         Variable          Type       Description
+================ ================= ========== ========================================
+RA, Dec          attrib['coord']   Coord      astropy.coordinate
+Redshift         attrib['z']       float      Reference redshift
+Redshift sigma   attrib['sig_z']   float      Reference redshift uncertainty
+Velocity         attrib['v']       Quantity   line velocity relative to its redshift
+Velocity sigma   attrib['sig_v']   Quantity   1 sigma uncertainty in the velocity
+Equivalent Width attrib['EW']      Quantity   Equivalent width
+EW sigma         attrib['sig_EW']  Quantity   1 sigma uncertainty in EW
+EW flag          attrib['flag_EW'] int        Equivalent width flag
+Limits           limits            LineLimits The limits of the line in redshift, velocity
+                                              (w/r to its redshift) and observed wavelength.
+================ ================= ========== ========================================
 
 .. _specanalysis
 
@@ -66,13 +68,14 @@ cut_spec
 
 Provide a spectrum has been associated to the line (see `Analysis`_):
 then this method returns the portion of the spectrum surrounding
-the line.  The limits are specified by either analy['wvlim'] (in
-observed wavelength) or analy['vlim'] with velocities relative
+the line.  The limits are specified in the LineLimits class held
+in the attribute *limits*,
+usually either with observed wavelengths or velocities relative
 to the line's redshift.  The code returns the flux, error array,
 and a *dict* containing the wavelength and velocity arrays.
 ::
 
-   spline.analy['vlim'] = [-300., 300.]*u.km/u.s
+   spline.limits.set([-300., 300.]*u.km/u.s) # vlim
    fx, sig, wv_dict = spline.cut_spec()
 
 ismatch

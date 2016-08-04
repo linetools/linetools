@@ -46,12 +46,10 @@ More commonly, one will instantiate with one or more AbsComponent objects::
 
     # HI Lya, Lyb
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
-    lya = AbsLine(1215.670*u.AA)
-    lya.analy['vlim'] = [-300.,300.]*u.km/u.s
-    lya.attrib['z'] = 2.92939
-    lyb = AbsLine(1025.7222*u.AA)
-    lyb.analy['vlim'] = [-300.,300.]*u.km/u.s
-    lyb.attrib['z'] = lya.attrib['z']
+    lya = AbsLine(1215.670*u.AA, z=2.92939)
+    lya.limits.set([-300.,300.]*u.km/u.s)  # vlim
+    lyb = AbsLine(1025.7222*u.AA, z=lya.attrib['z'])
+    lyb.limits.set([-300.,300.]*u.km/u.s)  # vlim
     abscomp = AbsComponent.from_abslines([lya,lyb])
     abscomp.coord = radec
     # Finish
