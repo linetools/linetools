@@ -593,6 +593,35 @@ class AbsComponent(object):
         s += '\n'
         return s
 
+    def repr_joevp(self):
+        def repr_alis(self, T_kin=1e4*u.K, bturb=0.*u.km/u.s,
+                  tie_strs=('', '', '', ''), fix_strs=('', '', '', '')):
+        """
+        String representation for ALIS (line fitting software)
+
+        Parameters
+        ----------
+        T_kin : Quantity, optional
+            Kinetic temperature. Default 1e4*u.K
+        bturb : Quantity, optional
+            Turbulent Doppler parameter. Default 0.*u.km/u.s
+        tie_strs : tuple of strings, optional
+            Strings to be used for tying parameters
+            (logN,z,bturb,T_kin), respectively.  These are all
+            converted to lower case format, following ALIS convention.
+        fix_strs : tuple of strings, optional
+            Strings to be used for fixing parameters
+            (logN,z,bturb,T_kin), respectively.  These are all
+            converted to upper case format, following ALIS convention.
+            These will take precedence over tie_strs if different from
+            ''.
+
+        Returns
+        -------
+        repr_alis : str
+
+        """
+
     def stack_plot(self, **kwargs):
         """Show a stack plot of the component, if spec are loaded
         Assumes the data are normalized.
