@@ -175,6 +175,23 @@ class SpectralLine(object):
             zlim = [z,z]
         self.limits = LineLimits.from_absline(self, zlim)
 
+    def setz(self, z):
+        """ Set redshift wherever it is needed/expected
+        Parameters
+        ----------
+        z : float
+
+        Returns
+        -------
+
+        """
+        if not isinstance(z,float):
+            raise IOError("Input redshift needs to be a float")
+        # Set
+        self.attrib['z'] = z
+        self.limits._z = z
+
+
     def ismatch(self, inp, Zion=None, RADec=None):
         """Query whether input line matches on:  z, Z, ion, RA, Dec
 
@@ -610,6 +627,8 @@ class AbsLine(SpectralLine):
             txt = txt+' {:s},'.format(self.data['name'])
         except KeyError:
             pass
+        # z
+        txt = txt + ' z={:.4f}'.format(self.attrib['z'])
         # wrest
         txt = txt + ' wrest={:.4f}'.format(self.wrest)
         # fval
@@ -619,6 +638,7 @@ class AbsLine(SpectralLine):
             pass
         txt = txt + '>'
         return (txt)
+
 
 def many_abslines(all_wrest, llist):
     """Generate a list of AbsLine objects.

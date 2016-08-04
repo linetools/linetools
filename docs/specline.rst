@@ -66,13 +66,14 @@ cut_spec
 
 Provide a spectrum has been associated to the line (see `Analysis`_):
 then this method returns the portion of the spectrum surrounding
-the line.  The limits are specified by either analy['wvlim'] (in
-observed wavelength) or analy['vlim'] with velocities relative
+the line.  The limits are specified in the LineLimits class held
+in the attribute *limits*,
+usually either with observed wavelengths or velocities relative
 to the line's redshift.  The code returns the flux, error array,
 and a *dict* containing the wavelength and velocity arrays.
 ::
 
-   spline.analy['vlim'] = [-300., 300.]*u.km/u.s
+   spline.limits.set([-300., 300.]*u.km/u.s) # vlim
    fx, sig, wv_dict = spline.cut_spec()
 
 ismatch
