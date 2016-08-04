@@ -66,7 +66,6 @@ def plot_absline(iinp,logN,b, show=True):
     # Calculate EW
     aline.analy['spec'] = xspec
     aline.limits.set([wrest-15., wrest+15]*u.AA)
-    #aline.analy['wvlim'] = np.array([wrest-15., wrest+15])*u.AA
     aline.measure_ew()
     print(aline)
     print('EW = {:g}'.format(aline.attrib['EW']))

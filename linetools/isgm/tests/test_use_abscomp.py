@@ -54,8 +54,6 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
         iline.attrib['flag_N'] = 1
         iline.analy['spec'] = xspec
         iline.limits.set(vlim)
-        #iline.analy['vlim'] = vlim
-        #iline.analy['wvlim'] = iline.wrest * (1 + zcomp + ltu.give_dz(vlim, zcomp))
         _,_ = ltaa.linear_clm(iline.attrib)  # Loads N, sig_N
         abslines.append(iline)
     # Component
@@ -71,7 +69,6 @@ def test_add_absline():
     # failed addition
     bad_absline = AbsLine('CIV 1550')
     bad_absline.limits.set([500, 1000]*u.km/u.s)
-    #bad_absline.analy['vlim'] = [500, 1000]*u.km/u.s
     bad_absline.attrib['coord'] = SkyCoord(20,20, unit='deg')
     abscomp.add_absline(bad_absline)
 

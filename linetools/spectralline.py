@@ -265,15 +265,6 @@ class SpectralLine(object):
             raise ValueError('Expecting a unit!')
 
         # Pixels for evaluation
-        '''
-        if np.sum(self.analy['wvlim'].value > 0.):
-            pix = self.analy['spec'].pix_minmax(self.analy['wvlim'])[0]
-        elif np.sum(np.abs(self.analy['vlim'].value) > 0.):
-            pix = self.analy['spec'].pix_minmax(
-                self.attrib['z'], self.wrest, self.analy['vlim'])[0]
-        else:
-            raise ValueError('spectralline.cut_spec: Need to set wvlim or vlim!')
-        '''
         if self.limits.is_set():
             pix = self.analy['spec'].pix_minmax(self.limits.wvlim)[0]
         else:
@@ -305,8 +296,6 @@ class SpectralLine(object):
     def measure_ew(self, flg=1, initial_guesses=None):
         """ Measures the observer frame equivalent width
 
-        [[Note this requires the keys `wvlim` and `spec` in analy to
-        be set!]]
         Note this requires self.limits to be initialized
         Default is simple boxcar integration.
         Observer frame, not rest-frame (use measure_restew()
@@ -442,12 +431,6 @@ class SpectralLine(object):
           True if there is overlap in wvobs space, False otherwise.
 
         """
-        '''
-        if np.sum(self.analy['wvlim'] != init_analy['wvlim']) == 0:
-            raise ValueError("{} has not set its analy['wvlim'] values!".format(self.__repr__()))
-        if np.sum(specline.analy['wvlim'] != init_analy['wvlim']) == 0:
-            raise ValueError("{} has not set its analy['wvlim'] values!".format(specline.__repr__()))
-        '''
         if not self.limits.is_set():
             raise ValueError("{} has not set its limits!".format(self.__repr__()))
         if not specline.limits.is_set():
