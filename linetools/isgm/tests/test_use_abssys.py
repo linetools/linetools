@@ -22,9 +22,11 @@ try:
 except NameError:
     unicode = str
 
+
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), '../../spectra/tests/files')
     return os.path.join(data_dir, filename)
+
 
 def test_methods():
     # Grab spectrum
@@ -33,11 +35,11 @@ def test_methods():
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
     # HI Lya, Lyb
     lya = AbsLine(1215.670*u.AA)
-    lya.analy['vlim'] = [-300.,300.]*u.km/u.s
+    lya.limits.set([-300.,300.]*u.km/u.s)
     lya.attrib['z'] = 2.92939
     lya.attrib['coord'] = radec
     lyb = AbsLine(1025.7222*u.AA)
-    lyb.analy['vlim'] = [-300.,300.]*u.km/u.s
+    lyb.limits.set([-300.,300.]*u.km/u.s)
     lyb.attrib['z'] = lya.attrib['z']
     lyb.attrib['coord'] = radec
     abscomp = AbsComponent.from_abslines([lya,lyb])
@@ -48,7 +50,7 @@ def test_methods():
         iline = AbsLine(trans)
         iline.attrib['z'] = 2.92939
         iline.attrib['coord'] = radec
-        iline.analy['vlim'] = [-250.,80.]*u.km/u.s
+        iline.limits.set([-250.,80.]*u.km/u.s)
         abslines.append(iline)
     #
     SiII_comp = AbsComponent.from_abslines(abslines)
@@ -106,16 +108,17 @@ def test_todict():
     newsys = AbsSystem.from_dict(adict)
     assert isinstance(newsys, AbsSystem)
 
+
 @pytest.mark.skipif("sys.version_info >= (3,0)")
 def test_todict_withjson():
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
     # HI Lya, Lyb
     lya = AbsLine(1215.670*u.AA)
-    lya.analy['vlim'] = [-300.,300.]*u.km/u.s
+    lya.limits.set([-300.,300.]*u.km/u.s)
     lya.attrib['z'] = 2.92939
     lya.attrib['coord'] = radec
     lyb = AbsLine(1025.7222*u.AA)
-    lyb.analy['vlim'] = [-300.,300.]*u.km/u.s
+    lyb.limits.set([-300.,300.]*u.km/u.s)
     lyb.attrib['z'] = lya.attrib['z']
     lyb.attrib['coord'] = radec
     abscomp = AbsComponent.from_abslines([lya,lyb])

@@ -77,8 +77,9 @@ class AbsComponent(object):
 
         # Instantiate with the first line
         init_line = abslines[0]
+        #init_line.attrib['z'], init_line.analy['vlim'],
         slf = cls( init_line.attrib['coord'], (init_line.data['Z'],init_line.data['ion']),
-                   init_line.attrib['z'], init_line.analy['vlim'],
+                   init_line.attrib['z'], init_line.limits.vlim,
                    Ej=init_line.data['Ej'], stars=stars)
         slf._abslines.append(init_line)
         # Append with component checking
@@ -245,7 +246,7 @@ class AbsComponent(object):
         # Now redshift/velocity
         if chk_vel:
             dz_toler = (1 + self.zcomp) * vtoler / c_kms  # Avoid Quantity for speed
-            zlim_line = (1 + absline.attrib['z']) * absline.analy['vlim'].to('km/s').value / c_kms
+            zlim_line = (1 + absline.attrib['z']) * absline.limits.vlim.to('km/s').value / c_kms
             zlim_comp = (1+self.zcomp) * self.vlim.to('km/s').value / c_kms
             testv = (zlim_line[0] >= (zlim_comp[0] - dz_toler)) & (
                 zlim_line[1] <= (zlim_comp[1] + dz_toler))

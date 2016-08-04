@@ -44,8 +44,7 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
             all_trans += ['SiII 1193']
     abslines = []
     for trans in all_trans:
-        iline = AbsLine(trans)
-        iline.attrib['z'] = zcomp
+        iline = AbsLine(trans, z=zcomp)
         if use_rand:
             rnd = np.random.rand()
         else:
@@ -54,8 +53,7 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
         iline.attrib['sig_logN'] = 0.15
         iline.attrib['flag_N'] = 1
         iline.analy['spec'] = xspec
-        iline.analy['vlim'] = vlim
-        iline.analy['wvlim'] = iline.wrest * (1 + zcomp + ltu.give_dz(vlim, zcomp))
+        iline.limits.set(vlim)
         _,_ = ltaa.linear_clm(iline.attrib)  # Loads N, sig_N
         abslines.append(iline)
     # Component
@@ -64,13 +62,13 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
 
 
 def test_add_absline():
-    abscomp,_ = mk_comp('HI', zcomp=0)
+    abscomp,_ = mk_comp('HI', zcomp=0.)
     abscomp.add_absline(AbsLine('HI 972'), chk_sep=False, chk_vel=False)
     with pytest.raises(ValueError):
         abscomp.add_absline(AbsLine('HI 949'), vtoler=-10)
     # failed addition
     bad_absline = AbsLine('CIV 1550')
-    bad_absline.analy['vlim'] = [500, 1000]*u.km/u.s
+    bad_absline.limits.set([500, 1000]*u.km/u.s)
     bad_absline.attrib['coord'] = SkyCoord(20,20, unit='deg')
     abscomp.add_absline(bad_absline)
 
@@ -255,19 +253,19 @@ def test_repr_alis():
 
 
 def test_get_wvobs_chunks():
-    abscomp, HIlines = mk_comp('HI', zcomp=0, vlim=[0,10]*u.km/u.s)
+    abscomp, HIlines = mk_comp('HI', zcomp=0., vlim=[0,10]*u.km/u.s)
     wvobs_chunks = ltiu.get_wvobs_chunks(abscomp)
     np.testing.assert_allclose(wvobs_chunks[0][0], 1215.67*u.AA)
     np.testing.assert_allclose(wvobs_chunks[0][1], 1215.71055106*u.AA)
     np.testing.assert_allclose(wvobs_chunks[1][0], 1025.7222*u.AA)
     np.testing.assert_allclose(wvobs_chunks[1][1], 1025.75641498*u.AA)
-    abscomp, HIlines = mk_comp('HI', zcomp=1, vlim=[-100,100]*u.km/u.s)
+    abscomp, HIlines = mk_comp('HI', zcomp=1., vlim=[-100,100]*u.km/u.s)
     wvobs_chunks = ltiu.get_wvobs_chunks(abscomp)
     np.testing.assert_allclose(wvobs_chunks[0][0], 2430.52912749*u.AA)
     np.testing.assert_allclose(wvobs_chunks[0][1], 2432.15114303*u.AA)
     np.testing.assert_allclose(wvobs_chunks[1][0], 2050.76022589*u.AA)
     np.testing.assert_allclose(wvobs_chunks[1][1], 2052.12880236*u.AA)
-    abscomp, HIlines = mk_comp('HI', zcomp=1, vlim=[-100,100]*u.km/u.s)
+    abscomp, HIlines = mk_comp('HI', zcomp=1., vlim=[-100,100]*u.km/u.s)
     abscomp._abslines[0].analy['wvlim'] = [0,0]*u.AA
     wvobs_chunks = ltiu.get_wvobs_chunks(abscomp)
     abscomp._abslines[1].analy['vlim'] = [0,0]*u.AA
