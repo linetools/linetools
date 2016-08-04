@@ -157,7 +157,7 @@ class SelectLineWidget(QtGui.QDialog):
         else:
             raise ValueError('SelectLineWidget: Wrong type of input')
 
-        self.resize(350, 800)
+        self.resize(250, 800)
 
         # Create the line list
         line_label = QtGui.QLabel('Lines:')
@@ -173,6 +173,7 @@ class SelectLineWidget(QtGui.QDialog):
             #  is there a column called 'redshift'? (only used in igmguesses for now)
             try:
                 s += ' :: z{:.3f}'.format(lines['redshift'][ii])
+                self.resize(350, 800)
             except KeyError:
                 pass
             self.lines_widget.addItem(s)
