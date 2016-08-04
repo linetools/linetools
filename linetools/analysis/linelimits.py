@@ -91,8 +91,6 @@ class LineLimits(object):
         self._data['zlim'] = self._zlim
         self._data['wvlim'] = self._wrest*(1+np.array(self._zlim))
         self._data['vlim'] = ltu.give_dv(self._zlim, self._z)
-        #self._data['vlim'] = ckms*((self._data['wvlim']-self._wrest*(1+self._z))/(
-        #    self._wrest*(1+self._z))).decompose()
 
     def is_set(self):
         """ Query if the limits are set to sensible values
@@ -121,38 +119,32 @@ class LineLimits(object):
           Demand that zlim bound z
           Often not desired as z can be somewhat arbitrary
 
-
         Returns
         -------
 
         """
         # Checks
         if not isinstance(inp, (tuple, list, Quantity)):
-            raise IOError("Input must be tuple, list or Quantity")
-        '''
-        if itype == 'zlim':
-            self._data['zlim'] = inp
-        else:
-            raise IOError("Input type must be zlim, vlim, or wvlim")
-        '''
-        if isinstance(inp[0], float):  # zlim
+            raise IOError("Input must be tuple, list or Quantity.")
+
+        if isinstance(inp[0], float):  # assume zlim
             self._zlim = inp
-        elif isinstance(inp[0], Quantity):  # wvlim or vlim
-            try:  # wvlim
+        elif isinstance(inp[0], Quantity):  # may be wvlim or vlim
+            try:  # assume wvlim
                 self._zlim = (inp/self._wrest).decompose().to(
                         u.dimensionless_unscaled).value - 1.
             except UnitConversionError:
-                try:  # vlim
+                try:  # assume vlim
                     self._zlim = ltu.give_dz(inp, self._z) + self._z
                 except ValueError:
-                    raise IOError("Quantity must be length or speed")
+                    raise IOError("Quantity must be length or speed.")
         else:
-            raise IOError("Input must be floats or Quantities")
+            raise IOError("Input must be floats or Quantities.")
         # Check
         if chk_z:
             if (self._zlim[0] > self._z) or (self._zlim[1] < self._z):
                 #import pdb; pdb.set_trace()
-                raise IOError("Invalid input.  zlim does not bound z")
+                raise IOError("Invalid input. `zlim` does not bound `z`.")
         # Reset
         self.reset()
 

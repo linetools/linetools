@@ -366,8 +366,6 @@ class ExamineSpecWidget(QtGui.QWidget):
                         # Calculate the velocity limits and load-up
                         aline.limits.set(const.c.to('km/s') * (
                             (iwv/(1+self.llist['z']) - wrest) / wrest ))
-                        #aline.analy['vlim'] = const.c.to('km/s') * (
-                        #    (iwv/(1+self.llist['z']) - wrest) / wrest )
 
                         # AODM
                         #QtCore.pyqtRemoveInputHook()
@@ -814,17 +812,13 @@ U         : Indicate as a upper limit
         unit = u.km/u.s
         if event.key == '1':
             absline.limits.set((event.xdata, absline.limits.vlim[1].value)*unit)
-            #absline.analy['vlim'][0] = event.xdata*unit
         if event.key == '2':
             absline.limits.set((absline.limits.vlim[0].value, event.xdata)*unit)
-            #absline.analy['vlim'][1] = event.xdata*unit
         if event.key == '!':  # Set all lines to this value
             for iline in self.abs_lines:
-                #iline.analy['vlim'][0] = event.xdata*unit
                 iline.limits.set((event.xdata, iline.limits.vlim[1].value)*unit)
         if event.key == '@':
             for iline in self.abs_lines:
-                #iline.analy['vlim'][1] = event.xdata*unit
                 iline.limits.set((iline.limits.vlim[0].value, event.xdata)*unit)
         ## Line type
         if event.key == 'A': # Add to lines

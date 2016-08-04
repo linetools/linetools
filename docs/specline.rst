@@ -32,18 +32,20 @@ Attributes
 
 The base attributes for the SpectralLine class are:
 
-================ ================= ========= ========================================
-Property         Variable          Type      Description
-================ ================= ========= ========================================
-RA, Dec          attrib['coord']   Coord     astropy.coordinate
-Redshift         attrib['z']       float     Reference redshift
-Redshift sigma   attrib['sig_z']   float     Reference redshift uncertainty
-Velocity         attrib['v']       Quantity  line velocity relative to its redshift
-Velocity sigma   attrib['sig_v']   Quantity  1 sigma uncertainty in the velocity
-Equivalent Width attrib['EW']      Quantity  Equivalent width
-EW sigma         attrib['sig_EW']  Quantity  1 sigma uncertainty in EW
-EW flag          attrib['flag_EW'] int       Equivalent width flag
-================ ================= ========= ========================================
+================ ================= ========== ========================================
+Property         Variable          Type       Description
+================ ================= ========== ========================================
+RA, Dec          attrib['coord']   Coord      astropy.coordinate
+Redshift         attrib['z']       float      Reference redshift
+Redshift sigma   attrib['sig_z']   float      Reference redshift uncertainty
+Velocity         attrib['v']       Quantity   line velocity relative to its redshift
+Velocity sigma   attrib['sig_v']   Quantity   1 sigma uncertainty in the velocity
+Equivalent Width attrib['EW']      Quantity   Equivalent width
+EW sigma         attrib['sig_EW']  Quantity   1 sigma uncertainty in EW
+EW flag          attrib['flag_EW'] int        Equivalent width flag
+Limits           limits            LineLimits The limits of the line in redshift, velocity
+                                              (w/r to its redshift) and observed wavelength.
+================ ================= ========== ========================================
 
 .. _specanalysis
 
