@@ -353,8 +353,8 @@ class ExamineSpecWidget(QtGui.QWidget):
                         wrest = wrest * u.AA
 
                     # Generate the Spectral Line
-                    aline = AbsLine(wrest,linelist=self.llist[self.llist['List']])
-                    aline.attrib['z'] = self.llist['z']
+                    aline = AbsLine(wrest,linelist=self.llist[self.llist['List']],
+                                    z=self.llist['z'])
                     # Generate a temporary spectrum for analysis and apply the local continuum
                     tspec = XSpectrum1D.from_tuple((self.spec.wavelength,
                                                     self.spec.flux, self.spec.sig))
@@ -364,8 +364,10 @@ class ExamineSpecWidget(QtGui.QWidget):
                     # AODM
                     if event.key == 'N':
                         # Calculate the velocity limits and load-up
-                        aline.analy['vlim'] = const.c.to('km/s') * (
-                            ( iwv/(1+self.llist['z']) - wrest) / wrest )
+                        aline.limits.set(const.c.to('km/s') * (
+                            (iwv/(1+self.llist['z']) - wrest) / wrest ))
+                        #aline.analy['vlim'] = const.c.to('km/s') * (
+                        #    (iwv/(1+self.llist['z']) - wrest) / wrest )
 
                         # AODM
                         #QtCore.pyqtRemoveInputHook()
@@ -376,7 +378,7 @@ class ExamineSpecWidget(QtGui.QWidget):
                         mssg = mssg + ' ::  logN = {:g} +/- {:g}'.format(
                             aline.attrib['logN'], aline.attrib['sig_logN'])
                     elif event.key == 'E':  #EW
-                        aline.analy['wvlim'] = iwv
+                        aline.limits.set(iwv)
                         aline.measure_restew()
                         mssg = 'Using '+ aline.__repr__()
                         mssg = mssg + ' ::  Rest EW = {:g} +/- {:g}'.format(
@@ -527,7 +529,7 @@ class ExamineSpecWidget(QtGui.QWidget):
                         if lines[jj].analy['do_analysis'] == 0:
                             continue
                         # Paint spectrum red
-                        wvlim = wvobs[jj]*(1 + lines[jj].analy['vlim']/const.c.to('km/s'))
+                        wvlim = wvobs[jj]*(1 + lines[jj].limits.vlim/const.c.to('km/s'))
                         pix = np.where( (self.spec.wavelength > wvlim[0]) & (self.spec.wavelength < wvlim[1]))[0]
                         self.ax.plot(self.spec.wavelength[pix], self.spec.flux[pix], '-',drawstyle='steps-mid',
                                      color=clrs[ii])
@@ -733,10 +735,10 @@ U         : Indicate as a upper limit
             #QtCore.pyqtRemoveInputHook()
             #xdb.set_trace()
             #QtCore.pyqtRestoreInputHook()
-            newline = AbsLine(inp[1],linelist=self.llist[self.llist['List']])
+            newline = AbsLine(inp[1],linelist=self.llist[self.llist['List']],
+                              z=self.z)
             print('VelPlot: Generating line {:g}'.format(inp[1]))
-            newline.analy['vlim'] = self.vmnx/2.
-            newline.attrib['z'] = self.z
+            newline.limits.set(self.vmnx/2.)
             newline.analy['do_analysis'] = 1  # Init to ok
             # Spec file
             if self.spec_fil is not None:
@@ -811,15 +813,19 @@ U         : Indicate as a upper limit
         ## Velocity limits
         unit = u.km/u.s
         if event.key == '1':
-            absline.analy['vlim'][0] = event.xdata*unit
+            absline.limits.set((event.xdata, absline.limits.vlim[1].value)*unit)
+            #absline.analy['vlim'][0] = event.xdata*unit
         if event.key == '2':
-            absline.analy['vlim'][1] = event.xdata*unit
+            absline.limits.set((absline.limits.vlim[0].value, event.xdata)*unit)
+            #absline.analy['vlim'][1] = event.xdata*unit
         if event.key == '!':  # Set all lines to this value
             for iline in self.abs_lines:
-                iline.analy['vlim'][0] = event.xdata*unit
+                #iline.analy['vlim'][0] = event.xdata*unit
+                iline.limits.set((event.xdata, iline.limits.vlim[1].value)*unit)
         if event.key == '@':
             for iline in self.abs_lines:
-                iline.analy['vlim'][1] = event.xdata*unit
+                #iline.analy['vlim'][1] = event.xdata*unit
+                iline.limits.set((iline.limits.vlim[0].value, event.xdata)*unit)
         ## Line type
         if event.key == 'A': # Add to lines
             self.generate_line((self.z,wrest))
@@ -1020,10 +1026,14 @@ U         : Indicate as a upper limit
 
                 clr='black'
                 if absline is not None:
-                    try:
-                        vlim = absline.analy['vlim']
-                    except KeyError:
+                    if absline.limits.is_set():
+                        vlim = absline.limits.vlim
+                    else:
                         pass
+                    #try:
+                    #    vlim = absline.analy['vlim']
+                    #except KeyError:
+                    #    pass
                     # Color coding
                     try:  # .clm style
                         flag = absline.analy['FLAGS'][0]

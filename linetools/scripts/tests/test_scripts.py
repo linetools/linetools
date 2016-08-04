@@ -20,4 +20,4 @@ def test_lt_line():
     lt_line.main(['HI1215'])
     lt_line.main(['1215'])
     lt_line.main(['--all'])
-    lt_line.main(None)
+    #lt_line.main()
