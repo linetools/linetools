@@ -594,34 +594,45 @@ class AbsComponent(object):
         s += '\n'
         return s
 
-    def repr_joevp(self):
-        def repr_alis(self, T_kin=1e4*u.K, bturb=0.*u.km/u.s,
-                  tie_strs=('', '', '', ''), fix_strs=('', '', '', '')):
+    def repr_joevp(self, specfile, b=0.*u.km/u.s, flags=(1,1,1)):
         """
-        String representation for ALIS (line fitting software)
+        String representation for JOEVP (line fitting software).
 
         Parameters
         ----------
-        T_kin : Quantity, optional
-            Kinetic temperature. Default 1e4*u.K
-        bturb : Quantity, optional
-            Turbulent Doppler parameter. Default 0.*u.km/u.s
-        tie_strs : tuple of strings, optional
-            Strings to be used for tying parameters
-            (logN,z,bturb,T_kin), respectively.  These are all
-            converted to lower case format, following ALIS convention.
-        fix_strs : tuple of strings, optional
-            Strings to be used for fixing parameters
-            (logN,z,bturb,T_kin), respectively.  These are all
-            converted to upper case format, following ALIS convention.
-            These will take precedence over tie_strs if different from
-            ''.
+        specfile : str
+            Name of the spectrum file
+        b : Quantity, optional
+            Doppler parameter of the component. Default is 10*u.km/u.s
+        flags : tuple of ints
+            Flags (nflag, bflag, vflag). See JOEVP input for details
+            about these flags.
 
         Returns
         -------
-        repr_alis : str
+        repr_joevp : str
+            May contain multiple "\n" (1 per absline within component)
 
         """
+        # get Doppler parameter to km/s
+        b = b.to('km/s').value
+
+        # Reference:
+        # specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|trans
+        s = ''
+        for aline in self._abslines:
+            s += '{:s}|{}|'.format(specfile, aline.wrest.to('AA').value)
+            s += '{}|{}|{}|0.|'.format(self.zcomp, aline.attrib['logN'], b)  # vel is set to 0. because z is zcomp
+            s += '{}|{}|{}|'.format(flags[0], flags[1], flags[2])
+            vlim = aline.limits.vlim.to('km/s').value
+            wvlim = aline.limits.wvlim.to('AA').value
+            s += '{}|{}|{}|{}|'.format(vlim[0], vlim[1], wvlim[0], wvlim[1])
+            s += '{}'.format(aline.data['ion_name'])
+
+            if len(self.comment) > 0:
+                s += '# {:s}'.format(self.comment)
+            s += '\n'
+        return s
 
     def stack_plot(self, **kwargs):
         """Show a stack plot of the component, if spec are loaded

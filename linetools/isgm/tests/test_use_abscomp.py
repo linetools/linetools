@@ -251,6 +251,11 @@ def test_repr_alis():
     with pytest.raises(SyntaxError):
         s = abscomp.repr_alis(fix_strs=('1','2','3','4','5'))
 
+# def test_repr_joevp():
+if 1:
+    abscomp, HIlines = mk_comp('HI')
+    s = abscomp.repr_joevp('test.fits')
+
 
 def test_get_wvobs_chunks():
     abscomp, HIlines = mk_comp('HI', zcomp=0., vlim=[0,10]*u.km/u.s)
