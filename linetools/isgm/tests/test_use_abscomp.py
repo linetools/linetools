@@ -21,7 +21,7 @@ from linetools.analysis import absline as ltaa
 from linetools.isgm import utils as ltiu
 import linetools.utils as ltu
 
-import imp
+import imp, os
 lt_path = imp.find_module('linetools')[1]
 
 #import pdb
@@ -61,6 +61,11 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
     # Component
     abscomp = AbsComponent.from_abslines(abslines)
     return abscomp, abslines
+
+
+def data_path(filename):
+    data_dir = os.path.join(os.path.dirname(__file__), 'files')
+    return os.path.join(data_dir, filename)
 
 
 def compare_two_files(file1, file2):
@@ -287,13 +292,13 @@ def test_complist_to_joevp():
     # will write a file in directory ./files/
     abscomp, HIlines = mk_comp('HI', b=15*u.km/u.s, use_rand=False)
     comp_list = [abscomp, abscomp]
-    ltiu.complist_to_joevp(comp_list, 'test.fits', './files/test_joevp_repr.joevp')
+    ltiu.complist_to_joevp(comp_list, 'test.fits', data_path('test_joevp_repr.joevp'))
     # now read the output and compare to reference
-    compare_two_files('./files/test_joevp_repr.joevp', './files/test_joevp_repr_reference.joevp')
+    compare_two_files(data_path('test_joevp_repr.joevp'), data_path('test_joevp_repr_reference.joevp'))
     # now add attribute to comp and compare again
     abscomp.attrib['b'] = 15*u.km/u.s
-    ltiu.complist_to_joevp(comp_list, 'test.fits', './files/test_joevp_repr.joevp')
-    compare_two_files('./files/test_joevp_repr.joevp', './files/test_joevp_repr_reference.joevp')
+    ltiu.complist_to_joevp(comp_list, 'test.fits', data_path('test_joevp_repr.joevp'))
+    compare_two_files(data_path('test_joevp_repr.joevp'), data_path('test_joevp_repr_reference.joevp'))
 
 
 def test_get_wvobs_chunks():
