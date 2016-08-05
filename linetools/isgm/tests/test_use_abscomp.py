@@ -28,8 +28,9 @@ lt_path = imp.find_module('linetools')[1]
 #pdb.set_trace()
 # Set of Input lines
 
+
 def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
-            add_trans=False, zcomp=2.92939):
+            add_trans=False, zcomp=2.92939, b=20*u.km/u.s):
     # Read a spectrum Spec
     if add_spec:
         xspec = lsio.readspec(lt_path+'/spectra/tests/files/UM184_nF.fits')
@@ -52,6 +53,7 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
         iline.attrib['logN'] = 13.3 + rnd
         iline.attrib['sig_logN'] = 0.15
         iline.attrib['flag_N'] = 1
+        iline.attrib['b'] = b
         iline.analy['spec'] = xspec
         iline.limits.set(vlim)
         _,_ = ltaa.linear_clm(iline.attrib)  # Loads N, sig_N
@@ -251,10 +253,22 @@ def test_repr_alis():
     with pytest.raises(SyntaxError):
         s = abscomp.repr_alis(fix_strs=('1','2','3','4','5'))
 
-# def test_repr_joevp():
-if 1:
-    abscomp, HIlines = mk_comp('HI')
+def test_repr_joevp():
+    # test with b=0, should be replaced by b_default
+    abscomp, HIlines = mk_comp('HI', b=0*u.km/u.s, use_rand=False)
+    s = abscomp.repr_joevp('test.fits', b_default=3.3*u.km/u.s)
+    assert s == 'test.fits|1215.67|2.92939|13.3|3.3|0.|1|1|1|-300.0|300.0|4772.06378216|4781.6240839|HI\n' \
+    'test.fits|1025.7222|2.92939|13.3|3.3|0.|1|1|1|-300.0|300.0|4026.43131868|4034.49782829|HI\n'
+    # test with b != 0
+    abscomp, HIlines = mk_comp('HI', b=15*u.km/u.s, use_rand=False)
+    s = abscomp.repr_joevp('test.fits', b_default=3.3*u.km/u.s)
+    assert s == 'test.fits|1215.67|2.92939|13.3|15.0|0.|1|1|1|-300.0|300.0|4772.06378216|4781.6240839|HI\n' \
+    'test.fits|1025.7222|2.92939|13.3|15.0|0.|1|1|1|-300.0|300.0|4026.43131868|4034.49782829|HI\n'
+    # test with comment
+    abscomp.comment = 'Something'
     s = abscomp.repr_joevp('test.fits')
+    assert s == 'test.fits|1215.67|2.92939|13.3|15.0|0.|1|1|1|-300.0|300.0|4772.06378216|4781.6240839|HI# Something\n' \
+    'test.fits|1025.7222|2.92939|13.3|15.0|0.|1|1|1|-300.0|300.0|4026.43131868|4034.49782829|HI# Something\n'
 
 
 def test_get_wvobs_chunks():

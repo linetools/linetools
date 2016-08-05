@@ -594,7 +594,7 @@ class AbsComponent(object):
         s += '\n'
         return s
 
-    def repr_joevp(self, specfile, b=0.*u.km/u.s, flags=(1,1,1)):
+    def repr_joevp(self, specfile, flags=(1,1,1), b_default=10*u.km/u.s):
         """
         String representation for JOEVP (line fitting software).
 
@@ -602,11 +602,13 @@ class AbsComponent(object):
         ----------
         specfile : str
             Name of the spectrum file
-        b : Quantity, optional
-            Doppler parameter of the component. Default is 10*u.km/u.s
-        flags : tuple of ints
+        flags : tuple of ints, optional
             Flags (nflag, bflag, vflag). See JOEVP input for details
             about these flags.
+        b_default : Quantity, optional
+            Doppler parameter value adopted in case an absorption
+            line within the component has not set this attribute
+            Default is 10 km/s.
 
         Returns
         -------
@@ -614,15 +616,16 @@ class AbsComponent(object):
             May contain multiple "\n" (1 per absline within component)
 
         """
-        # get Doppler parameter to km/s
-        b = b.to('km/s').value
-
         # Reference:
         # specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|trans
         s = ''
         for aline in self._abslines:
             s += '{:s}|{}|'.format(specfile, aline.wrest.to('AA').value)
-            s += '{}|{}|{}|0.|'.format(self.zcomp, aline.attrib['logN'], b)  # vel is set to 0. because z is zcomp
+            logN = aline.attrib['logN']
+            b_val = aline.attrib['b'].to('km/s').value
+            if b_val == 0:  # set the default
+                b_val = b_default.to('km/s').value
+            s += '{}|{}|{}|0.|'.format(self.zcomp, logN, b_val)  # `vel` is set to 0. because z is zcomp
             s += '{}|{}|{}|'.format(flags[0], flags[1], flags[2])
             vlim = aline.limits.vlim.to('km/s').value
             wvlim = aline.limits.wvlim.to('AA').value
