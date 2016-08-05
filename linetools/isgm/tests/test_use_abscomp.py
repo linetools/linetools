@@ -63,6 +63,17 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
     return abscomp, abslines
 
 
+def compare_two_files(file1, file2):
+    f1 = open(file1, 'r')
+    f2 = open(file2, 'r')
+    lines1 = f1.readlines()
+    lines2 = f2.readlines()
+    for l1,l2 in zip(lines1,lines2):
+        assert l1 == l2
+    f1.close()
+    f2.close()
+
+
 def test_add_absline():
     abscomp,_ = mk_comp('HI', zcomp=0.)
     abscomp.add_absline(AbsLine('HI 972'), chk_sep=False, chk_vel=False)
@@ -253,6 +264,7 @@ def test_repr_alis():
     with pytest.raises(SyntaxError):
         s = abscomp.repr_alis(fix_strs=('1','2','3','4','5'))
 
+
 def test_repr_joevp():
     # test with b=0, should be replaced by b_default
     abscomp, HIlines = mk_comp('HI', b=0*u.km/u.s, use_rand=False)
@@ -269,6 +281,19 @@ def test_repr_joevp():
     s = abscomp.repr_joevp('test.fits')
     assert s == 'test.fits|1215.67|2.92939|13.3|15.0|0.|1|1|1|-300.0|300.0|4772.06378216|4781.6240839|HI# Something\n' \
     'test.fits|1025.7222|2.92939|13.3|15.0|0.|1|1|1|-300.0|300.0|4026.43131868|4034.49782829|HI# Something\n'
+
+
+def test_complist_to_joevp():
+    # will write a file in directory ./files/
+    abscomp, HIlines = mk_comp('HI', b=15*u.km/u.s, use_rand=False)
+    comp_list = [abscomp, abscomp]
+    ltiu.complist_to_joevp(comp_list, 'test.fits', './files/test_joevp_repr.joevp')
+    # now read the output and compare to reference
+    compare_two_files('./files/test_joevp_repr.joevp', './files/test_joevp_repr_reference.joevp')
+    # now add attribute to comp and compare again
+    abscomp.attrib['b'] = 15*u.km/u.s
+    ltiu.complist_to_joevp(comp_list, 'test.fits', './files/test_joevp_repr.joevp')
+    compare_two_files('./files/test_joevp_repr.joevp', './files/test_joevp_repr_reference.joevp')
 
 
 def test_get_wvobs_chunks():

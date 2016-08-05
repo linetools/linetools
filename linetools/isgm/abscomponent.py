@@ -207,6 +207,10 @@ class AbsComponent(object):
             self.name = '{:s}_z{:0.5f}'.format(iname, self.zcomp)
         else:
             self.name = name
+
+        # Potential for attributes
+        self.attrib = dict()
+
         # Other
         self._abslines = []
 
@@ -685,8 +689,6 @@ class AbsComponent(object):
                 setattr(abscomp, attr, getattr(self, attr))
         # Return
         return abscomp
-
-
 
     def __getitem__(self, attrib):
         """Passback attribute, if it exists
