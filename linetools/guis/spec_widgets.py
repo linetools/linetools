@@ -354,7 +354,7 @@ class ExamineSpecWidget(QtGui.QWidget):
 
                     # Generate the Spectral Line
                     aline = AbsLine(wrest,linelist=self.llist[self.llist['List']],
-                                    z=self.llist['z'])
+                                    z=self.llist['z'], closest=True)
                     # Generate a temporary spectrum for analysis and apply the local continuum
                     tspec = XSpectrum1D.from_tuple((self.spec.wavelength,
                                                     self.spec.flux, self.spec.sig))
