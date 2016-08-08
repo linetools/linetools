@@ -552,7 +552,7 @@ def complist_to_joebvp(comp_list, specfile, outfile):
 
     # Components
     for ii, comp in enumerate(comp_list):
-        flags = (ii,ii,ii)
+        flags = (ii+2,ii+2,ii+2)
         try:
             b_val = comp.attrib['b']
         except KeyError:

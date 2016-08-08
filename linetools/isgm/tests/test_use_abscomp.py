@@ -294,11 +294,11 @@ def test_complist_to_joebvp():
     comp_list = [abscomp, abscomp]
     ltiu.complist_to_joebvp(comp_list, 'test.fits', data_path('test_joebvp_repr.joebvp'))
     # now read the output and compare to reference
-    compare_two_files(data_path('test_joebvp_repr.joebvp'), lt_path + '/linetools/isgm/tests/files/test_joebvp_repr_reference.joebvp')
+    compare_two_files(data_path('test_joebvp_repr.joebvp'), lt_path + '/data/test/test_joebvp_repr_reference.joebvp')
     # now add attribute to comp and compare again
     abscomp.attrib['b'] = 15*u.km/u.s
     ltiu.complist_to_joebvp(comp_list, 'test.fits', data_path('test_joebvp_repr.joebvp'))
-    compare_two_files(data_path('test_joebvp_repr.joebvp'), lt_path + '/isgm/tests/files/test_joebvp_repr_reference.joebvp')
+    compare_two_files(data_path('test_joebvp_repr.joebvp'), lt_path + '/data/test/test_joebvp_repr_reference.joebvp')
 
 
 def test_get_wvobs_chunks():
