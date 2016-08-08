@@ -270,35 +270,35 @@ def test_repr_alis():
         s = abscomp.repr_alis(fix_strs=('1','2','3','4','5'))
 
 
-def test_repr_joevp():
+def test_repr_joebvp():
     # test with b=0, should be replaced by b_default
     abscomp, HIlines = mk_comp('HI', b=0*u.km/u.s, use_rand=False)
-    s = abscomp.repr_joevp('test.fits', b_default=3.3*u.km/u.s)
-    assert s == 'test.fits|1215.67|2.92939|13.3|3.3|0.|1|1|1|-300.0|300.0|4772.06378216|4781.6240839|HI\n' \
-    'test.fits|1025.7222|2.92939|13.3|3.3|0.|1|1|1|-300.0|300.0|4026.43131868|4034.49782829|HI\n'
+    s = abscomp.repr_joebvp('test.fits', b_default=3.3*u.km/u.s)
+    assert s == 'test.fits|1215.67|2.92939|13.3|3.3|0.|2|2|2|-300.0|300.0|4772.06378216|4781.6240839|HI\n' \
+    'test.fits|1025.7222|2.92939|13.3|3.3|0.|2|2|2|-300.0|300.0|4026.43131868|4034.49782829|HI\n'
     # test with b != 0
     abscomp, HIlines = mk_comp('HI', b=15*u.km/u.s, use_rand=False)
-    s = abscomp.repr_joevp('test.fits', b_default=3.3*u.km/u.s)
-    assert s == 'test.fits|1215.67|2.92939|13.3|15.0|0.|1|1|1|-300.0|300.0|4772.06378216|4781.6240839|HI\n' \
-    'test.fits|1025.7222|2.92939|13.3|15.0|0.|1|1|1|-300.0|300.0|4026.43131868|4034.49782829|HI\n'
+    s = abscomp.repr_joebvp('test.fits', b_default=3.3*u.km/u.s)
+    assert s == 'test.fits|1215.67|2.92939|13.3|15.0|0.|2|2|2|-300.0|300.0|4772.06378216|4781.6240839|HI\n' \
+    'test.fits|1025.7222|2.92939|13.3|15.0|0.|2|2|2|-300.0|300.0|4026.43131868|4034.49782829|HI\n'
     # test with comment
     abscomp.comment = 'Something'
-    s = abscomp.repr_joevp('test.fits')
-    assert s == 'test.fits|1215.67|2.92939|13.3|15.0|0.|1|1|1|-300.0|300.0|4772.06378216|4781.6240839|HI# Something\n' \
-    'test.fits|1025.7222|2.92939|13.3|15.0|0.|1|1|1|-300.0|300.0|4026.43131868|4034.49782829|HI# Something\n'
+    s = abscomp.repr_joebvp('test.fits')
+    assert s == 'test.fits|1215.67|2.92939|13.3|15.0|0.|2|2|2|-300.0|300.0|4772.06378216|4781.6240839|HI# Something\n' \
+    'test.fits|1025.7222|2.92939|13.3|15.0|0.|2|2|2|-300.0|300.0|4026.43131868|4034.49782829|HI# Something\n'
 
 
-def test_complist_to_joevp():
+def test_complist_to_joebvp():
     # will write a file in directory ./files/
     abscomp, HIlines = mk_comp('HI', b=15*u.km/u.s, use_rand=False)
     comp_list = [abscomp, abscomp]
-    ltiu.complist_to_joevp(comp_list, 'test.fits', data_path('test_joevp_repr.joevp'))
+    ltiu.complist_to_joebvp(comp_list, 'test.fits', data_path('test_joebvp_repr.joebvp'))
     # now read the output and compare to reference
-    compare_two_files(data_path('test_joevp_repr.joevp'), data_path('test_joevp_repr_reference.joevp'))
+    compare_two_files(data_path('test_joebvp_repr.joebvp'), lt_path + '/linetools/isgm/tests/files/test_joebvp_repr_reference.joebvp')
     # now add attribute to comp and compare again
     abscomp.attrib['b'] = 15*u.km/u.s
-    ltiu.complist_to_joevp(comp_list, 'test.fits', data_path('test_joevp_repr.joevp'))
-    compare_two_files(data_path('test_joevp_repr.joevp'), data_path('test_joevp_repr_reference.joevp'))
+    ltiu.complist_to_joebvp(comp_list, 'test.fits', data_path('test_joebvp_repr.joebvp'))
+    compare_two_files(data_path('test_joebvp_repr.joebvp'), lt_path + '/isgm/tests/files/test_joebvp_repr_reference.joebvp')
 
 
 def test_get_wvobs_chunks():
