@@ -598,16 +598,16 @@ class AbsComponent(object):
         s += '\n'
         return s
 
-    def repr_joevp(self, specfile, flags=(1,1,1), b_default=10*u.km/u.s):
+    def repr_joebvp(self, specfile, flags=(2,2,2), b_default=10*u.km/u.s):
         """
-        String representation for JOEVP (line fitting software).
+        String representation for JOEBVP (line fitting software).
 
         Parameters
         ----------
         specfile : str
             Name of the spectrum file
         flags : tuple of ints, optional
-            Flags (nflag, bflag, vflag). See JOEVP input for details
+            Flags (nflag, bflag, vflag). See JOEBVP input for details
             about these flags.
         b_default : Quantity, optional
             Doppler parameter value adopted in case an absorption
@@ -616,7 +616,7 @@ class AbsComponent(object):
 
         Returns
         -------
-        repr_joevp : str
+        repr_joebvp : str
             May contain multiple "\n" (1 per absline within component)
 
         """

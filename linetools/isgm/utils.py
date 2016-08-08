@@ -528,9 +528,9 @@ def group_coincident_compoments(comp_list, output_type='list'):
         return output_dict
 
 
-def complist_to_joevp(comp_list, specfile, outfile):
+def complist_to_joebvp(comp_list, specfile, outfile):
     """ From a given component list, it produces an
-    input file for JOEVP (Voigt profile fitter).
+    input file for JOEBVP (Voigt profile fitter).
 
     Parameters
     ----------
@@ -557,6 +557,6 @@ def complist_to_joevp(comp_list, specfile, outfile):
             b_val = comp.attrib['b']
         except KeyError:
             b_val = 10*u.km/u.s
-        s = comp.repr_joevp(specfile, flags=flags, b_default=b_val)  # still, b values from abslines take precedence if they exist
+        s = comp.repr_joebvp(specfile, flags=flags, b_default=b_val)  # still, b values from abslines take precedence if they exist
         f.write(s)
     f.close()
