@@ -274,31 +274,31 @@ def test_repr_joebvp():
     # test with b=0, should be replaced by b_default
     abscomp, HIlines = mk_comp('HI', b=0*u.km/u.s, use_rand=False)
     s = abscomp.repr_joebvp('test.fits', b_default=3.3*u.km/u.s)
-    assert s == 'test.fits|1215.67|2.92939|13.3|3.3|0.|2|2|2|-300.0|300.0|4772.06378216|4781.6240839|HI\n' \
-    'test.fits|1025.7222|2.92939|13.3|3.3|0.|2|2|2|-300.0|300.0|4026.43131868|4034.49782829|HI\n'
+    assert s == 'test.fits|1215.67000|2.92939000|13.3000|3.3000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|HI\n' \
+                'test.fits|1025.72220|2.92939000|13.3000|3.3000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI\n'
     # test with b != 0
     abscomp, HIlines = mk_comp('HI', b=15*u.km/u.s, use_rand=False)
     s = abscomp.repr_joebvp('test.fits', b_default=3.3*u.km/u.s)
-    assert s == 'test.fits|1215.67|2.92939|13.3|15.0|0.|2|2|2|-300.0|300.0|4772.06378216|4781.6240839|HI\n' \
-    'test.fits|1025.7222|2.92939|13.3|15.0|0.|2|2|2|-300.0|300.0|4026.43131868|4034.49782829|HI\n'
+    assert s == 'test.fits|1215.67000|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|HI\n' \
+                'test.fits|1025.72220|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI\n'
     # test with comment
     abscomp.comment = 'Something'
     s = abscomp.repr_joebvp('test.fits')
-    assert s == 'test.fits|1215.67|2.92939|13.3|15.0|0.|2|2|2|-300.0|300.0|4772.06378216|4781.6240839|HI# Something\n' \
-    'test.fits|1025.7222|2.92939|13.3|15.0|0.|2|2|2|-300.0|300.0|4026.43131868|4034.49782829|HI# Something\n'
+    assert s == 'test.fits|1215.67000|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|HI# Something\n' \
+                'test.fits|1025.72220|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI# Something\n'
 
 
 def test_complist_to_joebvp():
     # will write a file in directory ./files/
     abscomp, HIlines = mk_comp('HI', b=15*u.km/u.s, use_rand=False)
     comp_list = [abscomp, abscomp]
-    ltiu.complist_to_joebvp(comp_list, 'test.fits', data_path('test_joebvp_repr.joebvp'))
+    ltiu.joebvp_from_components(comp_list, 'test.fits', data_path('test_joebvp_repr.joebvp'))
     # now read the output and compare to reference
-    compare_two_files(data_path('test_joebvp_repr.joebvp'), lt_path + '/data/test/test_joebvp_repr_reference.joebvp')
+    compare_two_files(data_path('test_joebvp_repr.joebvp'), lt_path + '/data/tests/test_joebvp_repr_reference.joebvp')
     # now add attribute to comp and compare again
     abscomp.attrib['b'] = 15*u.km/u.s
-    ltiu.complist_to_joebvp(comp_list, 'test.fits', data_path('test_joebvp_repr.joebvp'))
-    compare_two_files(data_path('test_joebvp_repr.joebvp'), lt_path + '/data/test/test_joebvp_repr_reference.joebvp')
+    ltiu.joebvp_from_components(comp_list, 'test.fits', data_path('test_joebvp_repr.joebvp'))
+    compare_two_files(data_path('test_joebvp_repr.joebvp'), lt_path + '/data/tests/test_joebvp_repr_reference.joebvp')
 
 
 def test_get_wvobs_chunks():

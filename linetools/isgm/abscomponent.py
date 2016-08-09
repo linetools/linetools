@@ -624,17 +624,17 @@ class AbsComponent(object):
         # specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|trans
         s = ''
         for aline in self._abslines:
-            s += '{:s}|{}|'.format(specfile, aline.wrest.to('AA').value)
+            s += '{:s}|{:.5f}|'.format(specfile, aline.wrest.to('AA').value)
             logN = aline.attrib['logN']
             b_val = aline.attrib['b'].to('km/s').value
             if b_val == 0:  # set the default
                 b_val = b_default.to('km/s').value
-            s += '{}|{}|{}|0.|'.format(self.zcomp, logN, b_val)  # `vel` is set to 0. because z is zcomp
-            s += '{}|{}|{}|'.format(flags[0], flags[1], flags[2])
+            s += '{:.8f}|{:.4f}|{:.4f}|0.|'.format(self.zcomp, logN, b_val)  # `vel` is set to 0. because z is zcomp
+            s += '{}|{}|{}|'.format(int(flags[0]), int(flags[1]), int(flags[2]))
             vlim = aline.limits.vlim.to('km/s').value
             wvlim = aline.limits.wvlim.to('AA').value
-            s += '{}|{}|{}|{}|'.format(vlim[0], vlim[1], wvlim[0], wvlim[1])
-            s += '{}'.format(aline.data['ion_name'])
+            s += '{:.4f}|{:.4f}|{:.5f}|{:.5f}|'.format(vlim[0], vlim[1], wvlim[0], wvlim[1])
+            s += '{:s}'.format(aline.data['ion_name'])
 
             if len(self.comment) > 0:
                 s += '# {:s}'.format(self.comment)

@@ -528,7 +528,7 @@ def group_coincident_compoments(comp_list, output_type='list'):
         return output_dict
 
 
-def complist_to_joebvp(comp_list, specfile, outfile):
+def joebvp_from_components(comp_list, specfile, outfile):
     """ From a given component list, it produces an
     input file for JOEBVP (Voigt profile fitter).
 
