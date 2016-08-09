@@ -337,6 +337,7 @@ class ExamineSpecWidget(QtGui.QWidget):
                                     (self.llist[self.llist['List']].wrest-rng_wrest[1]) < 0.)[0]
                     if len(gdl) == 1:
                         wrest = self.llist[self.llist['List']].wrest[gdl[0]]
+                        closest = False
                     else:
                         if len(gdl) == 0: # Search through them all
                             gdl = np.arange(len(self.llist[self.llist['List']]))
@@ -347,6 +348,7 @@ class ExamineSpecWidget(QtGui.QWidget):
                         quant = line.split('::')[1].lstrip()
                         spltw = quant.split(' ')
                         wrest = Quantity(float(spltw[0]), unit=spltw[1])
+                        closest = True
                     # Units
                     if not hasattr(wrest,'unit'):
                         # Assume Ang
@@ -354,7 +356,7 @@ class ExamineSpecWidget(QtGui.QWidget):
 
                     # Generate the Spectral Line
                     aline = AbsLine(wrest,linelist=self.llist[self.llist['List']],
-                                    z=self.llist['z'])
+                                    z=self.llist['z'], closest=closest)
                     # Generate a temporary spectrum for analysis and apply the local continuum
                     tspec = XSpectrum1D.from_tuple((self.spec.wavelength,
                                                     self.spec.flux, self.spec.sig))
