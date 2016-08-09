@@ -121,7 +121,7 @@ class SpectralLine(object):
                     if warn_only:
                         warnings.warn("Different data value for {:s}: {}, {}".format(key,sline.data[key],val))
         # Set analy
-        for key in idict['analy']:
+        for key in idict['analy'].keys():
             if isinstance(idict['analy'][key], dict):  # Assume Quantity
                 #sline.analy[key] = Quantity(idict['analy'][key]['value'],
                 #                             unit=idict['analy'][key]['unit'])
@@ -137,7 +137,7 @@ class SpectralLine(object):
                 sline.analy[key] = idict['analy'][key]
 
         # Set attrib
-        for key in idict['attrib']:
+        for key in idict['attrib'].keys():
             if isinstance(idict['attrib'][key], dict):
                 sline.attrib[key] = ltu.convert_quantity_in_dict(idict['attrib'][key])
             elif key in ['RA','DEC']:
@@ -150,20 +150,23 @@ class SpectralLine(object):
                 sline.attrib[key] = idict['attrib'][key]
 
         # Set limits
+        sline.limits._z = sline.attrib['z']
         try:  # this try is for compatibility with previous versions w/o limits
             for key in idict['limits']:
                 if isinstance(idict['limits'][key], dict):
                     qlim = ltu.convert_quantity_in_dict(idict['limits'][key])
                     sline.limits.set(qlim)
-                    break  # only one limits is needed to define them all
+                    break  # only one limit is needed to define them all
                 else:
                     sline.limits.set(idict['limits'][key])  # this is zlim
-                    break  # only one limits is needed to define them all
+                    break  # only one limit is needed to define them all
         except KeyError:
-            print('Warning: {} was defined in a older version of linetools, '
-                  'its limits are not set'.format(sline.__repr__()))
-            pass  # the line has not defined limits.
-
+            if 'vlim' in sline.analy.keys():  # Backwards compatability
+                if sline.analy['vlim'][1] > sline.analy['vlim'][0]:
+                    sline.limits.set(sline.analy['vlim'])
+            elif 'wvlim' in sline.analy.keys():  # Backwards compatability
+                if sline.analy['wvlim'][1] > sline.analy['wvlim'][0]:
+                    sline.limits.set(sline.analy['wvlim'])
         return sline
 
     # Initialize with wavelength
