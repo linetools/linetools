@@ -528,3 +528,35 @@ def group_coincident_compoments(comp_list, output_type='list'):
         return output_dict
 
 
+def joebvp_from_components(comp_list, specfile, outfile):
+    """ From a given component list, it produces an
+    input file for JOEBVP (Voigt profile fitter).
+
+    Parameters
+    ----------
+    comp_list : list of AbsComponent
+        Input list of components to group
+    specfile : str
+        Name of the spectrum file associated to the components
+        in comp_list
+    outfile : str
+        Name of the output file
+
+    """
+    # Open new file to write out
+    f = open(outfile, 'w')
+
+    # Print header
+    s = 'specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|trans\n'
+    f.write(s)
+
+    # Components
+    for ii, comp in enumerate(comp_list):
+        flags = (ii+2,ii+2,ii+2)
+        try:
+            b_val = comp.attrib['b']
+        except KeyError:
+            b_val = 10*u.km/u.s
+        s = comp.repr_joebvp(specfile, flags=flags, b_default=b_val)  # still, b values from abslines take precedence if they exist
+        f.write(s)
+    f.close()
