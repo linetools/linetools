@@ -57,7 +57,7 @@ def test_interpolate_to_wv_array(plot=False, lp='2'):
     lsf = LSF(dict(name='COS', grating='G130M', life_position='1'))
     wv_array = np.linspace(1200, 1400, 10) * u.AA
     # cubic
-    tab = lsf.interpolate_to_wv_array(wv_array, kind='cubic')
+    tab = lsf.interpolate_to_wv_array(wv_array, kind='cubic', debug=True)
 
     # errors
     with pytest.raises(SyntaxError):
