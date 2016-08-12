@@ -61,14 +61,14 @@ class LSF(object):
 
 
     def get_lsf(self, wv_array, kind = 'Akima'):
-        """ Given a wavelenth array `wv_array`, it returns 
+        """ Given a wavelength array `wv_array`, it returns
         the LSF kernel at the central wavelength of the array, 
         using the same pixel scale and extent of `wv_array`. 
 
-        Method: First, tabulated LSF are linearly interpolated
+        Method: First, tabulated LSFs are linearly interpolated
         to the center of `wv_array` (see LSF.interpolate_to_wv0() for
         details); then, the LSF is interpolated to match the `wv_array`
-        scale and extent using Akima interpolation (see 
+        scale and extent using Akima (or cubic) interpolation (see
         LSF.interpolate_to_wv_array() for details).
 
         Parameters
@@ -88,11 +88,11 @@ class LSF(object):
             The lsf kernel.
 
         """
-        lsf_array = self.interpolate_to_wv_array(wv_array,kind=kind)
+        lsf_array = self.interpolate_to_wv_array(wv_array, kind=kind)
         return lsf_array['kernel'].data
 
     def check_and_reformat_data(self):
-        """Any reformating of self._data should happen here. 
+        """Any re-formating of self._data should happen here.
 
         At the moment this function does the following:
          - Make sure that relative pixels of the LSF are given as odd integers
@@ -114,7 +114,6 @@ class LSF(object):
         #normalize given LSFs
         for col_name in self._data.keys()[1:]:
             self._data[col_name] /= np.sum(self._data[col_name])
-            #self._data[col_name] /= np.max(self._data[col_name])
 
     def load_COS_data(self):
         """Load the right data according to `instr_config` for HST/COS 
@@ -211,25 +210,25 @@ class LSF(object):
         return pixel_scale, data
 
     def interpolate_to_wv0(self, wv0):
-        """Retrieves a unique LSF valid at wavelength wv0
+        """Retrieves an unique LSF valid at wavelength wv0
 
         This is done by linearly interpolating from tabulated values
-        at different wavelengths (this tabulated values (stored in
-        self._data) are usually given as calibration products by
-        instrument developers and should be loaded by
+        at different wavelengths. These tabulated values (stored
+        internally in self._data) are usually given as calibration
+        products by instrument developers and should be loaded by
         self.load_XX_data() in the initialization stage of LSF(),
         where XX is the name of the instrument)
 
         Parameters
         ----------
         wv0 : Quantity 
-            Wavelenght at which an LSF solution is required
+            Wavelength at which an LSF solution is required
 
         Returns
         -------
         lsf_table : Table
             The interpolated lsf at wv0. This table has two 
-            columns: 'wv' and 'kernel' 
+            columns: 'wv' and 'kernel'
         """
         # get wa0 to Angstroms
         wv0 = wv0.to('AA').value
@@ -292,27 +291,25 @@ class LSF(object):
         lsf_vals = np.array(lsf_vals)
 
         # normalize
-        lsfsum = np.sum(lsf_vals)
-        lsf_vals /= lsfsum
-        #lsf_vals /= np.max(lsf_vals)
+        lsf_vals /= np.sum(lsf_vals)
 
-        #create Column to store the interpolated LSF
-        #lsf_vals = Column(name='{:.0f}A'.format(wv0.value),data=lsf_vals)
+        # create Column to store the interpolated LSF
+        # lsf_vals = Column(name='{:.0f}A'.format(wv0.value),data=lsf_vals)
         lsf_vals = Column(name='kernel', data=lsf_vals)
 
-        #create column of relative pixel in absolute wavelength
+        # create column of relative pixel in absolute wavelength
         wv_array = [(self.pixel_scale * self._data['rel_pix'][i] + wv0*u.AA).value for i in range(len(self._data))]
         wv = Column(name='wv',data=wv_array, unit=u.AA)
 
-        #create lsf Table
+        # create lsf Table
         lsf = Table()
         lsf.add_column(wv)
         lsf.add_column(lsf_vals)
 
-        #return lsf Table()
+        # return lsf Table()
         return lsf
 
-    def interpolate_to_wv_array(self,wv_array, kind='Akima'):
+    def interpolate_to_wv_array(self,wv_array, kind='Akima', debug=False):
         """ Interpolate an LSF to a wavelength array.
         
         Given `wv_array` this function interpolates an LSF
@@ -348,17 +345,17 @@ class LSF(object):
         if kind not in ['cubic','Akima','akima']:
             raise ValueError('Only `cubic` or `Akima` interpolation available.')
 
-        #define useful quantities
+        # define useful quantities
         wv_min = np.min(wv_array)
         wv_max = np.max(wv_array)
         wv0 = 0.5 * (wv_max + wv_min)
         
         lsf_tab = self.interpolate_to_wv0(wv0)
 
-        #convert to Angstroms
+        # convert to Angstroms
         wv_array_AA = np.array([wv.to('AA').value for wv in wv_array])
         
-        #interpolate to wv_array
+        # interpolate to wv_array
         if kind == 'cubic':
             f = interp1d(lsf_tab['wv'],lsf_tab['kernel'],kind='cubic',bounds_error=False,fill_value=0)
             lsf_vals =  f(wv_array_AA)
@@ -367,17 +364,25 @@ class LSF(object):
             # NT: I tried Akima interpolator from scipy.interpolate
             # and is not robust in extreme situations where the
             # wv_array is large compared to the kernel FWHM.
-            #Let's try linetools.analysis.interp Akima version 
+            # Let's try linetools.analysis.interp Akima version
             lsf_vals = interp_Akima(wv_array_AA,lsf_tab['wv'],lsf_tab['kernel'])
 
-        # normalize
-        lsfsum=np.sum(lsf_vals)
-        lsf_vals /= lsfsum
-        #lsf_vals /= np.max(lsf_vals)
+        # make sure the kernel is never negative
+        cond = lsf_vals < 0
+        if np.sum(cond) > 0:
+            warnings.warn('The interpolated kernel has negative values; imposing them to be 0.')
+            if debug:
+                import matplotlib.pyplot as plt
+                plt.plot(wv_array_AA, lsf_vals, 'k-')
+                # import pdb; pdb.set_trace()
+            lsf_vals = np.where(lsf_vals < 0, 0., lsf_vals)
 
-        #re-define Table
+        # normalize
+        lsf_vals /= np.sum(lsf_vals)
+
+        # re-define Table
         lsf_tab = Table()
-        lsf_tab.add_column(Column(name='wv',data=wv_array))
-        lsf_tab.add_column(Column(name='kernel',data=lsf_vals))
+        lsf_tab.add_column(Column(name='wv', data=wv_array))
+        lsf_tab.add_column(Column(name='kernel', data=lsf_vals))
 
         return lsf_tab
