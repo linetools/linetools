@@ -119,3 +119,10 @@ def test_interpolate_to_wv0_wv0shortlong(plot=False):
         lsf_tab = lsf_cos.interpolate_to_wv0(wv0)
         plt.plot(lsf_tab['wv'] - wv0.value, lsf_tab['kernel'], '-')
         plt.show()
+    # test error
+    wv0 = 1300.0 * u.AA
+    with pytest.raises(ValueError):
+        lsf_tab = lsf_cos.interpolate_to_wv0(wv0)
+    wv0 = 1900.0 * u.AA
+    with pytest.raises(ValueError):
+        lsf_tab = lsf_cos.interpolate_to_wv0(wv0)
