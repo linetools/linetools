@@ -116,7 +116,7 @@ def voigt_tau(wave, par):
     uvoigt = ((c_cgs / (wave/zp1)) - nujk) / dnu
     # Voigt
     cne = 0.014971475 * cold * par[4] #line.data['f'] * u.cm * u.cm * u.Hz
-    tau = cne * voigt_wofz(uvoigt,avoigt) / dnu 
+    tau = cne * voigt_wofz(uvoigt,avoigt) / dnu
     #
     return tau
 
@@ -230,7 +230,7 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'],
         vmodel = vmodel.rebin(iwave)
     # Convolve
     if fwhm is not None:
-        vmodel.gauss_smooth(fwhm=fwhm)
+        vmodel = vmodel.gauss_smooth(fwhm=fwhm)
     else:
         warnings.warn('Assuming infinite spectral resolution, i.e. no smoothing.')
         warnings.warn('Set fwhm to smooth.')
@@ -277,6 +277,6 @@ class single_voigt_model(FittableModel):
     def evaluate(wave,logN,b,z,wrest,f,gamma,fwhm):
         tau = voigt_tau(wave/1e8, [logN,z,b*1e5,wrest/1e8,f,gamma])
         fx = np.exp(-1*tau)
-        if fwhm > 0.: 
+        if fwhm > 0.:
             fx = lsc.convolve_psf(fx, fwhm)
         return fx 

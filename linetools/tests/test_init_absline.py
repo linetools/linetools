@@ -18,21 +18,23 @@ def data_path(filename):
 '''
 
 def test_mk_absline():
-	# Init HI Lya
+    # Init HI Lya
     abslin = AbsLine(1215.6700*u.AA)
     np.testing.assert_allclose(abslin.data['f'], 0.4164)
 
-	# Init CII 1334 with LineList
+    # Init CII 1334 with LineList
     abslin2 = AbsLine(1334.5323*u.AA, linelist='Strong')
     np.testing.assert_allclose(abslin2.data['Ek'], 74932.62 / u.cm)
 
-	# Init CII 1334 by name
+    # Init CII 1334 by name
     abslin3 = AbsLine('CII 1334')
     np.testing.assert_allclose(abslin3.data['wrest'], 1334.5323*u.AA)
+
 
 def test_dicts():
     # Init HI Lya
     abslin = AbsLine(1215.6700*u.AA)
+    abslin.analy['spec'] = 'tmp.fits'
     adict = abslin.to_dict()
     assert isinstance(adict, dict)
     # Write

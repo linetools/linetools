@@ -20,6 +20,9 @@ import matplotlib.pyplot as plt
 def local_median(wa, fl, er, x, npix=10, default=None):
     """ find the median flux value at x using +/- npix pixels.
     """
+    if (x > np.max(wa)) or (x < np.min(wa)):
+        # out or range
+        return default
     i = np.searchsorted(wa, x)
     i0,i1 = i - npix, i + npix
     good = (er[i0:i1] > 0) & ~np.isnan(fl[i0:i1])
@@ -404,6 +407,7 @@ q        : quit
         w0,w1 = self.fig.axes[1].get_xlim()
         i,j = self.indices
         x,_ = np.histogram(resid[between(wa[i:j], w0, w1)],
+                           range=(bins[0],bins[-1]),  # For NaNs
                            bins=bins)
         b = np.repeat(bins, 2)
         X = np.concatenate([[0], np.repeat(x,2), [0]])

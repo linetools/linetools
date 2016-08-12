@@ -3,12 +3,12 @@ from __future__ import print_function, absolute_import, \
      division, unicode_literals
 import os
 import pytest
-import pdb
 from astropy import units as u
 import numpy as np
 
 from linetools.spectra import io
 from linetools.spectra.xspectrum1d import XSpectrum1D
+from linetools.spectra import utils as ltsu
 
 @pytest.fixture
 def spec():
@@ -18,9 +18,56 @@ def spec():
 def spec2():
     return io.readspec(data_path('PH957_f.fits'))
 
+@pytest.fixture
+def specm(spec,spec2):
+    return XSpectrum1D.from_list([spec,spec2])
+
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
+
+def test_airtovac_andback(spec):
+    npix = 1000
+    spec = XSpectrum1D.from_tuple((np.linspace(5000.,6000,npix), np.ones(npix)))
+    # Airtovac
+    spec.meta['airvac'] = 'air'
+    spec.airtovac()
+    # Test
+    np.testing.assert_allclose(spec.wavelength[0].value, 5001.394869990007, rtol=1e-5)
+    assert spec.meta['airvac'] == 'vac'
+    # Vactoair
+    spec.vactoair()
+    np.testing.assert_allclose(spec.wavelength[0].value, 5000., rtol=1e-5)
+    assert spec.meta['airvac'] == 'air'
+
+
+def test_write(spec,specm):
+    # FITS
+    spec.write(data_path('tmp.fits'))
+    spec.write(data_path('tmp.fits'), FITS_TABLE=True)
+    # ASCII
+    spec.write(data_path('tmp.ascii'))
+    # HDF5
+    specm.write(data_path('tmp.hdf5'))
+
+
+def test_hdf5(specm):
+    import h5py
+    # Write. Should be replaced with tempfile.TemporaryFile
+    specm.write_to_hdf5(data_path('tmp.hdf5'))
+    #
+    specread = io.readspec(data_path('tmp.hdf5'))
+    # check a round trip works
+    np.testing.assert_allclose(specm.wavelength, specread.wavelength)
+    # Add to existing file
+    tmp2 = h5py.File(data_path('tmp2.hdf5'), 'w')
+    foo = tmp2.create_group('boxcar')
+    specm.add_to_hdf5(tmp2, path='/boxcar/')
+    tmp2.close()
+    # check a round trip works
+    spec3 = io.readspec(data_path('tmp2.hdf5'), path='/boxcar/')
+    np.testing.assert_allclose(specm.wavelength, spec3.wavelength)
+
 
 def test_rebin(spec):
     # Rebin
@@ -37,27 +84,29 @@ def test_rebin(spec):
     i2 = np.argmin(np.abs(newspec.wavelength-5000.*u.AA))
     s2n_2 = newspec.flux[i2] / newspec.sig[i2]
     """
-    np.testing.assert_allclose(newspec.sig[1000].value, 0.01432187, rtol=1e-5)
+    imn = np.argmin(np.abs(newspec.wavelength-8055*u.AA))
+    np.testing.assert_allclose(newspec.sig[imn].value, 0.0169634, rtol=1e-5)
+
 
 def test_addnoise(spec):
     #
     newspec = spec.add_noise(seed=12)
-    np.testing.assert_allclose(newspec.flux[1000].value, 0.4480615, rtol=1e-5)
+    np.testing.assert_allclose(newspec.flux[1000].value, 0.6003435, rtol=1e-5)
 
     # With S/N input
     newspec2 = spec.add_noise(seed=19,s2n=10.)
-    np.testing.assert_allclose(newspec2.flux[1000].value, -0.3028939, rtol=1e-5)
+    np.testing.assert_allclose(newspec2.flux[1000].value, -0.130012, rtol=1e-5)
 
 
 def test_box_smooth(spec):
 
     # Smooth
     newspec3 = spec.box_smooth(3)
-    np.testing.assert_allclose(newspec3.flux[4000], 0.9967582821846008)
+    np.testing.assert_allclose(newspec3.flux[4000], 0.9650185, rtol=1e-5)
     assert newspec3.flux.unit == u.dimensionless_unscaled
 
     newspec5 = spec.box_smooth(5)
-    np.testing.assert_allclose(newspec5.flux[3000], 1.086308240890503)
+    np.testing.assert_allclose(newspec5.flux[3000], 1.0405008,rtol=1e-5)
     # Preserve
     newspec5p = spec.box_smooth(5, preserve=True)
 
@@ -67,7 +116,7 @@ def test_gauss_smooth(spec):
     # Smooth
     smth_spec = spec.gauss_smooth(4.)
     # Test
-    np.testing.assert_allclose(smth_spec.flux[3000].value, 0.82889723777)
+    np.testing.assert_allclose(smth_spec.flux[3000].value, 0.749937, rtol=1e-5)
     assert smth_spec.flux.unit == spec.flux.unit
 
 
@@ -77,13 +126,19 @@ def test_print_repr(spec):
 
 
 def test_rebin(spec):
+    # Add units
+    funit = u.erg/u.s/u.cm**2
+    spec.units['flux'] = funit
     # Rebin
     new_wv = np.arange(3000., 9000., 5) * u.AA
     newspec = spec.rebin(new_wv, do_sig=True)
     # Test
-
-    np.testing.assert_allclose(newspec.flux[1000], 0.9999280967617779)
-    assert newspec.flux.unit == u.dimensionless_unscaled
+    np.testing.assert_allclose(newspec.flux[1000].value, 1.0192499, rtol=1e-5)
+    assert newspec.flux.unit == funit
+    # Without sig
+    spec_nosig = XSpectrum1D.from_tuple((spec.wavelength, spec.flux))
+    newspec = spec.rebin(new_wv)
+    assert newspec.sig_is_set is False
 
 
 def test_relvel(spec):
@@ -91,21 +146,26 @@ def test_relvel(spec):
     # Velocity
     velo = spec.relative_vel(5000.*u.AA)
     # Test
-    np.testing.assert_allclose(velo[6600].value, -3716.441360213781)
+    np.testing.assert_allclose(velo[6600].value, -2322.625, rtol=1e-5)
     assert velo.unit == (u.km/u.s)
 
 
-def test_splice(spec, spec2):
-    spec3 = spec.splice(spec2)
+def test_splice_two(spec, spec2):
+    spec3 = ltsu.splice_two(spec, spec2)
+    assert spec3.npix == 18390
+
+def test_stitch(specm):
+    spec = specm.stitch()
+    assert spec.npix == 18390
 
 
 def test_write_ascii(spec):
     # Write. Should be replaced with tempfile.TemporaryFile
     spec.write_to_ascii(data_path('tmp.ascii'))
     #
-    spec2 = io.readspec(data_path('tmp.ascii'))
+    specb = io.readspec(data_path('tmp.ascii'))
     # check a round trip works
-    np.testing.assert_allclose(spec.wavelength, spec2.wavelength)
+    np.testing.assert_allclose(spec.wavelength, specb.wavelength)
 
 
 def test_write_fits(spec, spec2):
@@ -143,12 +203,21 @@ def test_readwrite_metadata(spec):
 
 
 def test_copy(spec):
+    # From existing
     spec2 = spec.copy()
     assert spec.wavelength[0] == spec2.wavelength[0]
     assert spec.flux[-1] == spec2.flux[-1]
+    #
+    wave = np.arange(3000., 6500)
+    npix = len(wave)
+    spect = XSpectrum1D.from_tuple((wave*u.AA,np.ones(npix)))
+    specf = spect.copy()
+    assert specf.sig_is_set is False
+
 
 def test_plot(spec):
     spec.plot(show=False)
+
 
 def test_continuum_utils(spec):
     # define continuum in a non-interactive way...
@@ -159,17 +228,23 @@ def test_continuum_utils(spec):
     xy = xy.transpose()
     x, y = xy[0], xy[1]
     # test interpolate
-    spec.normalize(spec._interp_continuum(x, y))
+    spec.normalize(spec._interp_continuum(x, y, spec.wavelength.value))
     np.testing.assert_allclose(spec.co, 1.)
     co_old = spec.co
     # test perturb
     spec.perturb_continuum(rel_var=0.05, seed=2)
     assert all(co_old != spec.co)
-    np.testing.assert_allclose(np.max(spec.co), 1.2319426067564621)
-    np.testing.assert_allclose(np.min(spec.co), 0.86589518482815)
+    np.testing.assert_allclose(np.max(spec.co), 1.11636, rtol=1e-5)
+    np.testing.assert_allclose(np.min(spec.co), 0.8658872, rtol=1e-5)
+
     #test reset
     spec.reset_continuum()
     np.testing.assert_allclose(spec.co, 1.)
+
+    # Test generation of normalized spec
+    norm_spec = spec.normalized_spec()
+    assert isinstance(norm_spec, XSpectrum1D)
+    assert norm_spec.normed is False
 
     # test normalize/unnormalize
     flux_old = spec.flux
@@ -179,8 +254,8 @@ def test_continuum_utils(spec):
 
 
 def test_assignment(spec):
-    temp = np.arange(1, len(spec.wavelength) + 1)
-    spec.wavelength =  temp * u.m
+    temp = np.arange(1, spec.npix + 1)
+    spec.wavelength = temp * u.m
     assert spec.wavelength[0] == temp[0] * u.m
     unit = u.erg / u.s / u.cm**2 / u.AA
     spec.flux = temp * unit
@@ -189,3 +264,19 @@ def test_assignment(spec):
     assert spec.sig[0] == temp[0] * unit
     spec.co = temp
     assert spec.co[0] == temp[0] * unit
+
+
+def test_wvmnx():
+    npix = 1000
+    # Without sig
+    spec = XSpectrum1D.from_tuple((np.linspace(5000.,6000,npix), np.ones(npix)))
+    assert spec.wvmin.value == 5000.
+    assert spec.wvmax.value == 6000.
+    # With sig
+    spec = XSpectrum1D.from_tuple((np.linspace(5000.,6000,npix), np.ones(npix),
+                                   np.ones(npix)*0.1))
+    assert spec.wvmin.value == 5000.
+    assert spec.wvmax.value == 6000.
+
+
+

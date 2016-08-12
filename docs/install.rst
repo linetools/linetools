@@ -13,25 +13,21 @@ Linetools depends on these packages:
 * `scipy <http://www.scipy.org/>`_ version 0.16 or later
 * `matplotlib <http://matplotlib.org/>`_  version 1.4 or later
 * `PyQT4 <https://wiki.python.org/moin/PyQt>`_ version 4 (for GUIs)
+* `h5py <https://www.h5py.org/>`_ version 2.6 (for data I/O)
 
 We strongly recommend that you use `Anaconda
 <https://www.continuum.io/downloads>`_ to install them. With Anaconda
 you can check for the presence and versions of the dependencies with::
 
-  conda list "^python$|numpy|astropy$|scipy$|matplotlib|specutils|PyQT"
+  conda list "^python|numpy|astropy|scipy|matplotlib|PyQT|h5py"
 
 If you're missing any, install them with (for example)::
 
-  conda install astropy scipy matplotlib PyQT
+  conda install astropy scipy matplotlib PyQT h5py
 
 If their versions are too old, update them with (for example)::
 
   conda update astropy
-
-Specutils can't be installed with conda; use `pip
-<https://pip.pypa.io/en/latest/>`_ instead::
-  
-  pip install --no-deps specutils
 
 If you aren't using Anaconda then all of the dependencies can also be
 installed with pip.
@@ -90,6 +86,13 @@ To test your installation, run::
 The tests take a couple of minutes to finish. If you notice any
 failures, we'd love you to report them on the `linetools issue tracker
 <http://github.com/linetools/linetools/issues>`_.
+
+Before Launching GUIs
+=====================
+
+If you are a Mac user, we **highly** recommend that you set your
+matplotlib backend from MacOSX to TkAgg (or another option, see
+`backends <http://matplotlib.org/faq/usage_faq.html#what-is-a-backend>`__).
 
 
 Building Documentation

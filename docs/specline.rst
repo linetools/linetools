@@ -32,18 +32,20 @@ Attributes
 
 The base attributes for the SpectralLine class are:
 
-================ ================= ========= ========================================
-Property         Variable          Type      Description
-================ ================= ========= ========================================
-RA, Dec          attrib['coord']   Coord     astropy.coordinate
-Redshift         attrib['z']       float     Reference redshift
-Redshift sigma   attrib['sig_z']   float     Reference redshift uncertainty
-Velocity         attrib['v']       Quantity  line velocity relative to its redshift
-Velocity sigma   attrib['sig_v']   Quantity  1 sigma uncertainty in the velocity
-Equivalent Width attrib['EW']      Quantity  Equivalent width
-EW sigma         attrib['sig_EW']  Quantity  1 sigma uncertainty in EW
-EW flag          attrib['flag_EW'] int       Equivalent width flag
-================ ================= ========= ========================================
+================ ================= ========== ========================================
+Property         Variable          Type       Description
+================ ================= ========== ========================================
+RA, Dec          attrib['coord']   Coord      astropy.coordinate
+Redshift         attrib['z']       float      Reference redshift
+Redshift sigma   attrib['sig_z']   float      Reference redshift uncertainty
+Velocity         attrib['v']       Quantity   line velocity relative to its redshift
+Velocity sigma   attrib['sig_v']   Quantity   1 sigma uncertainty in the velocity
+Equivalent Width attrib['EW']      Quantity   Equivalent width
+EW sigma         attrib['sig_EW']  Quantity   1 sigma uncertainty in EW
+EW flag          attrib['flag_EW'] int        Equivalent width flag
+Limits           limits            LineLimits The limits of the line in redshift, velocity
+                                              (w/r to its redshift) and observed wavelength.
+================ ================= ========== ========================================
 
 .. _specanalysis
 
@@ -66,13 +68,14 @@ cut_spec
 
 Provide a spectrum has been associated to the line (see `Analysis`_):
 then this method returns the portion of the spectrum surrounding
-the line.  The limits are specified by either analy['wvlim'] (in
-observed wavelength) or analy['vlim'] with velocities relative
+the line.  The limits are specified in the LineLimits class held
+in the attribute *limits*,
+usually either with observed wavelengths or velocities relative
 to the line's redshift.  The code returns the flux, error array,
 and a *dict* containing the wavelength and velocity arrays.
 ::
 
-   spline.analy['vlim'] = [-300., 300.]*u.km/u.s
+   spline.limits.set([-300., 300.]*u.km/u.s) # vlim
    fx, sig, wv_dict = spline.cut_spec()
 
 ismatch
@@ -100,6 +103,19 @@ are filled::
    specline.measure_ew()
 
 
+measure_kin
+-----------
+
+Measure kinematic characteristics of an AbsLine.
+To perform the calculation, the line must be associated to
+a spectrum (see `Analysis_`) and vlim must
+be specified.  When executed, the 'kin' attribute is filled
+with a dict of measurements.  Default set of measurements
+are the v90, fedg, and fmm statistics of Prochaska & Wolfe 1997::
+
+   specline.measure_kin()
+
+
 measure_restew
 --------------
 
@@ -116,5 +132,30 @@ be easily written to the disk, e.g.::
    with io.open(outfil, 'w', encoding='utf-8') as f:
       f.write(unicode(json.dumps(tdict, sort_keys=True,
          indent=4, separators=(',', ': '))))
+
+
+
+Utilities
+=========
+
+There are several utilites related to spectral lines.
+These are located in the line_utils module.
+
+parse_speclines
+---------------
+
+Given a list of SpectralLines and desired property (key),
+this method returns a list or array of the values.::
+
+   from linetools import line_utils
+   array_of_values = line_utils.parse_speclines(list_of_speclines, mk_array=True)
+
+transtable_from_speclines
+-------------------------
+
+Given a list of SpectralLines, this method returns a Table
+of a subset of the properties (e.g. wavelength, name, EW).::
+
+   trans_tbl = line_utils.transtable_from_speclines(list_of_speclines)
 
 
