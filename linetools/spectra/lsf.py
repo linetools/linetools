@@ -112,7 +112,8 @@ class LSF(object):
 
         #normalize given LSFs
         for col_name in self._data.keys()[1:]:
-            self._data[col_name] /= np.max(self._data[col_name]) 
+            self._data[col_name] /= np.sum(self._data[col_name])
+            #self._data[col_name] /= np.max(self._data[col_name])
 
     def load_COS_data(self):
         """Load the right data according to `instr_config` for HST/COS 
@@ -230,17 +231,36 @@ class LSF(object):
         #transform to wavelength in float() form assuming Angstroms
         col_names = self._data.keys()
         col_waves = [float(name.split('A')[0]) for name in col_names[1:]]
-                    
+
         lsf_vals = []
         for row in self._data:
             aux_val = []
             for i in range(1,len(row)):
                 aux_val += [row[i]]
-            f = interp1d(col_waves,aux_val,bounds_error=True,kind='linear') #we do not want to extrapolate
-            lsf_vals += [f(wv0.value)]
+            #we don't want to extrapolate wildly, but allow small extrapolations for wv0
+            if (wv0.value >= col_waves[0]) & (wv0.value <= col_waves[-1]):
+                f = interp1d(col_waves,aux_val,bounds_error=True,kind='linear') #no need to extrapolate
+                lsf_vals += [f(wv0.value)]
+
+            elif (wv0.value < col_waves[0]) & \
+                    ((col_waves[0]-wv0.value) < np.abs(col_waves[1]-col_waves[0])):
+                f = interp1d(col_waves, aux_val, bounds_error=False,
+                             fill_value=aux_val[0], kind='linear')  #assign shortest wv LSF definition
+                lsf_vals += [f(wv0.value)]
+
+            elif (wv0.value > col_waves[-1]) & ((wv0.value - col_waves[-1]) < np.abs(col_waves[-1] - col_waves[-2])):
+                f = interp1d(col_waves, aux_val, bounds_error=False,
+                             fill_value=aux_val[-1], kind='linear') #assign longest wv LSF definition
+                lsf_vals += [f(wv0.value)]
+
+            else:
+                raise ValueError("wv0 too far outside range of defined LSFs.  Perhaps you've chosen the wrong grating?")
         lsf_vals = np.array(lsf_vals)
-        #normalize
-        lsf_vals /= np.max(lsf_vals)
+
+        # normalize
+        lsfsum=np.sum(lsf_vals)
+        lsf_vals /= lsfsum
+        #lsf_vals /= np.max(lsf_vals)
 
         #create Column to store the interpolated LSF
         #lsf_vals = Column(name='{:.0f}A'.format(wv0.value),data=lsf_vals)
@@ -316,8 +336,10 @@ class LSF(object):
             #Let's try linetools.analysis.interp Akima version 
             lsf_vals = interp_Akima(wv_array_AA,lsf_tab['wv'],lsf_tab['kernel'])
 
-        #normalize
-        lsf_vals /= np.max(lsf_vals)
+        # normalize
+        lsfsum=np.sum(lsf_vals)
+        lsf_vals /= lsfsum
+        #lsf_vals /= np.max(lsf_vals)
 
         #re-define Table
         lsf_tab = Table()
