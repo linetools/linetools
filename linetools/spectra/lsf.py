@@ -263,33 +263,36 @@ class LSF(object):
             for i in range(0, len(row)):
                 aux_val += [row[i]]
 
-            #we don't want to extrapolate wildly, but allow LSF instantiations for wv0 outside range of 'col_waves'
-            if (wv0.value >= col_waves[0]) & (wv0.value <= col_waves[-1]):
-                f = interp1d(col_waves,aux_val,bounds_error=True,kind='linear') #no need to extrapolate
-                lsf_vals += [f(wv0.value)]
+            # we don't want to extrapolate wildly, but allow LSF instantiations for wv0 outside range of 'col_waves'
+            if (wv0 >= col_waves[0]) & (wv0 <= col_waves[-1]):
+                f = interp1d(col_waves_aux,aux_val,bounds_error=True,kind='linear')  # no need to extrapolate
+                lsf_vals += [f(wv0)]
 
-            elif (wv0.value < col_waves[0]) & \
-                    ((col_waves[0]-wv0.value) < np.abs(col_waves[1]-col_waves[0])):
-                f = interp1d(col_waves, aux_val, bounds_error=False,
-                             fill_value=aux_val[0], kind='linear')  #assign shortest wv LSF definition
-                lsf_vals += [f(wv0.value)]
-                if (col_waves[0] - wv0.value) > (np.abs(col_waves[1] - col_waves[0])/2.):
+            elif (wv0 < col_waves[0]) & ((col_waves[0] - wv0) < np.abs(col_waves[1] - col_waves[0])):
+                f = interp1d(col_waves_aux, aux_val, bounds_error=False,
+                             fill_value=aux_val[0], kind='linear')  # assign shortest wv LSF definition
+                lsf_vals += [f(wv0)]
+
+                # warning
+                if (col_waves[0] - wv0) > (np.abs(col_waves[1] - col_waves[0])/2.):
                     warnings.warn(
-                        "LSF may result from extrapolation outside wavelength range characterized for grating.")
+                        "LSF may result from extrapolation outside wavelength range characterized for current grating.")
 
-            elif (wv0.value > col_waves[-1]) & ((wv0.value - col_waves[-1]) < np.abs(col_waves[-1] - col_waves[-2])):
-                f = interp1d(col_waves, aux_val, bounds_error=False,
+            elif (wv0 > col_waves[-1]) & ((wv0 - col_waves[-1]) < np.abs(col_waves[-1] - col_waves[-2])):
+                f = interp1d(col_waves_aux, aux_val, bounds_error=False,
                              fill_value=aux_val[-1], kind='linear') #assign longest wv LSF definition
-                lsf_vals += [f(wv0.value)]
-                if (wv0.value - col_waves[-1]) > (np.abs(col_waves[-1] - col_waves[-2])/2.):
+                lsf_vals += [f(wv0)]
+
+                # warning
+                if (wv0 - col_waves[-1]) > (np.abs(col_waves[-1] - col_waves[-2])/2.):
                     warnings.warn(
-                        "LSF may result from extrapolation outside wavelength range characterized for grating.")
+                        "LSF may result from extrapolation outside wavelength range characterized for current grating.")
             else:
-                raise ValueError("wv0 too far outside range of defined LSFs.  Perhaps you've chosen the wrong grating?")
+                raise ValueError("wv0 too far outside range of defined LSFs. Perhaps you've chosen the wrong grating?")
         lsf_vals = np.array(lsf_vals)
 
         # normalize
-        lsfsum=np.sum(lsf_vals)
+        lsfsum = np.sum(lsf_vals)
         lsf_vals /= lsfsum
         #lsf_vals /= np.max(lsf_vals)
 
