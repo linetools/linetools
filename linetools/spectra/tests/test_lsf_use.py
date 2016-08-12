@@ -27,6 +27,32 @@ def test_interpolate_to_wv0(plot=False):
             plt.plot(lsf_tab['wv']-wv.value,lsf_tab['kernel'],'-')
         plt.show()
 
+def test_interpolate_to_wv0_wv0shortlong(plot=False):
+    err_msg = 'Something is wrong with short wavelength handling in LSF.interpolate_to_wv0()'
+    wv0 = 1105.0 * u.AA
+    cos_dict = dict(name='COS', grating='G130M', life_position='1')
+    lsf_cos = LSF(cos_dict)
+    lsf_tab = lsf_cos.interpolate_to_wv0(wv0)
+    assert lsf_tab[len(lsf_tab) // 2]['wv'] == wv0.value, err_msg
+    assert lsf_tab[len(lsf_tab) // 2]['kernel'] == np.max(lsf_tab['kernel']), err_msg
+    if plot:
+        import matplotlib.pyplot as plt
+        lsf_tab = lsf_cos.interpolate_to_wv0(wv0)
+        plt.plot(lsf_tab['wv'] - wv0.value, lsf_tab['kernel'], '-')
+        plt.show()
+    err_msg = 'Something is wrong with long wavelength handling in LSF.interpolate_to_wv0()'
+    wv0 = 1796.0 * u.AA
+    cos_dict = dict(name='COS', grating='G160M', life_position='1')
+    lsf_cos = LSF(cos_dict)
+    lsf_tab = lsf_cos.interpolate_to_wv0(wv0)
+    assert lsf_tab[len(lsf_tab) // 2]['wv'] == wv0.value, err_msg
+    assert lsf_tab[len(lsf_tab) // 2]['kernel'] == np.max(lsf_tab['kernel']), err_msg
+    if plot:
+        import matplotlib.pyplot as plt
+        lsf_tab = lsf_cos.interpolate_to_wv0(wv0)
+        plt.plot(lsf_tab['wv'] - wv0.value, lsf_tab['kernel'], '-')
+        plt.show()
+
 def test_interpolate_to_wv_array(plot=False):
     err_msg = 'Something is wrong with LSF.interpolate_to_wv_array()'
     wv_array = np.arange(1600,1601,0.001)*u.AA
