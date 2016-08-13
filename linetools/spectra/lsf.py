@@ -210,7 +210,7 @@ class LSF(object):
         return pixel_scale, data
 
     def interpolate_to_wv0(self, wv0):
-        """Retrieves an unique LSF valid at wavelength wv0
+        """Retrieves a unique LSF valid at wavelength wv0
 
         This is done by linearly interpolating from tabulated values
         at different wavelengths. These tabulated values (stored
@@ -349,8 +349,16 @@ class LSF(object):
         wv_min = np.min(wv_array)
         wv_max = np.max(wv_array)
         wv0 = 0.5 * (wv_max + wv_min)
+        dw_mean = (wv_max - wv_min) / len(wv_array)
         
         lsf_tab = self.interpolate_to_wv0(wv0)
+
+        # make sure the wv_array is dense enough to sample the LSF kernel
+        kernel_wvmin = np.min(lsf_tab['wv']) * u.AA
+        kernel_wvmax = np.max(lsf_tab['wv']) * u.AA
+        cond = (wv_array >= kernel_wvmin) & (wv_array <= kernel_wvmax)
+        if np.sum(cond) < 10:  # this number is somewhat arbitrary but reasonable
+            raise ValueError('The input `wv_array` is undersampling the LSF! Try a finer grid.')
 
         # convert to Angstroms
         wv_array_AA = np.array([wv.to('AA').value for wv in wv_array])
