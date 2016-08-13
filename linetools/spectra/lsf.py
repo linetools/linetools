@@ -358,7 +358,7 @@ class LSF(object):
         kernel_wvmax = np.max(lsf_tab['wv']) * u.AA
         cond = (wv_array >= kernel_wvmin) & (wv_array <= kernel_wvmax)
         if np.sum(cond) < 10:  # this number is somewhat arbitrary but reasonable
-            raise ValueError('The input `wv_array` is undersampling the LSF! Try a finer grid.')
+            raise ValueError('The input `wv_array` is undersampling the LSF kernel! Try a finer grid.')
 
         # convert to Angstroms
         wv_array_AA = np.array([wv.to('AA').value for wv in wv_array])
