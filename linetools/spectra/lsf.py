@@ -309,7 +309,7 @@ class LSF(object):
         # return lsf Table()
         return lsf
 
-    def interpolate_to_wv_array(self,wv_array, kind='Akima', debug=False):
+    def interpolate_to_wv_array(self, wv_array, kind='Akima', debug=False):
         """ Interpolate an LSF to a wavelength array.
         
         Given `wv_array` this function interpolates an LSF
@@ -349,8 +349,7 @@ class LSF(object):
         wv_min = np.min(wv_array)
         wv_max = np.max(wv_array)
         wv0 = 0.5 * (wv_max + wv_min)
-        dw_mean = (wv_max - wv_min) / len(wv_array)
-        
+
         lsf_tab = self.interpolate_to_wv0(wv0)
 
         # make sure the wv_array is dense enough to sample the LSF kernel
@@ -365,7 +364,7 @@ class LSF(object):
         
         # interpolate to wv_array
         if kind == 'cubic':
-            f = interp1d(lsf_tab['wv'],lsf_tab['kernel'],kind='cubic',bounds_error=False,fill_value=0)
+            f = interp1d(lsf_tab['wv'], lsf_tab['kernel'], kind='cubic', bounds_error= False, fill_value=0)
             lsf_vals =  f(wv_array_AA)
         elif kind in ('Akima','akima'):
             # f = Akima1DInterpolator(lsf_tab['wv'],lsf_tab['kernel']) 

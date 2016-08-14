@@ -55,7 +55,7 @@ def test_interpolate_to_wv_array(plot=False, lp='2'):
         plt.show()
     # other tests
     lsf = LSF(dict(name='COS', grating='G130M', life_position='1'))
-    wv_array = np.linspace(1200, 1400, 10) * u.AA
+    wv_array = np.linspace(1210, 1211, 100) * u.AA
     # cubic
     tab = lsf.interpolate_to_wv_array(wv_array, kind='cubic', debug=True)
 
@@ -66,8 +66,9 @@ def test_interpolate_to_wv_array(plot=False, lp='2'):
         x = np.array([[1, 2, 3], [4, 5, 6]])
         tbl = lsf.interpolate_to_wv_array(x)  # bad shape
     with pytest.raises(ValueError):
-        tbl = lsf.interpolate_to_wv_array(np.array([1, 2] * u.AA), kind='wrong_kind')
-
+        tbl = lsf.interpolate_to_wv_array(np.array([1, 2]) * u.AA, kind='wrong_kind')
+    with pytest.raises(ValueError):
+        tbl = lsf.interpolate_to_wv_array(np.array([1, 2]) * u.AA, kind='cubic')  # bad input wv_array
 
 def test_get_lsf(plot=False, lp='2'):
     err_msg = 'Something is wrong with LSF.get_lsf()'
@@ -119,7 +120,7 @@ def test_interpolate_to_wv0_wv0shortlong(plot=False):
         lsf_tab = lsf_cos.interpolate_to_wv0(wv0)
         plt.plot(lsf_tab['wv'] - wv0.value, lsf_tab['kernel'], '-')
         plt.show()
-    # test error
+    # test error outside range
     wv0 = 1300.0 * u.AA
     with pytest.raises(ValueError):
         lsf_tab = lsf_cos.interpolate_to_wv0(wv0)
