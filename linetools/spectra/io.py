@@ -124,6 +124,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
             xspec1d = parse_linetools_spectrum_format(hdulist)
 
         else:  # ASSUMING MULTI-EXTENSION
+            co=None
             if debug:
                 print(
               'linetools.spectra.io.readspec(): Assuming multi-extension')
@@ -149,8 +150,12 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
                 sig = tmpsig
                 wave = 10.**wave
 
+            # Look for co
+            if len(hdulist) == 4:
+                co = hdulist[3].data.flatten()
+
             wave = give_wv_units(wave)
-            xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, None), **kwargs)
+            xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, co), **kwargs)
 
     elif head0['NAXIS'] == 2:
         if (hdulist[0].name == 'FLUX') and (hdulist[2].name == 'WAVELENGTH'):  # DESI
