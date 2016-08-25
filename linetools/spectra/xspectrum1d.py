@@ -353,7 +353,7 @@ class XSpectrum1D(object):
     @wavelength.setter
     def wavelength(self, value):
         gdp = ~self.data['wave'][self.select].mask
-        self.data['wave'][self.select][gdp] = value
+        self.data['wave'][self.select][gdp] = value[gdp]
         if hasattr(value, 'unit'):
             self.units['wave'] = value.unit
 
@@ -370,7 +370,7 @@ class XSpectrum1D(object):
     @flux.setter
     def flux(self, value):
         gdp = ~self.data['flux'][self.select].mask
-        self.data['flux'][self.select][gdp] = value
+        self.data['flux'][self.select][gdp] = value[gdp]
         if hasattr(value, 'unit'):
             self.units['flux'] = value.unit
 
@@ -428,7 +428,7 @@ class XSpectrum1D(object):
         """ Assumes units are the same as the flux
         """
         gdp = ~self.data['co'][self.select].mask
-        self.data['co'][self.select][gdp] = value
+        self.data['co'][self.select][gdp] = value[gdp]
 
     @property
     def npix(self):
@@ -594,7 +594,7 @@ class XSpectrum1D(object):
         no_check: bool [False]
           Check size of array?
         """
-        if len(co) != self.npix:
+        if len(co) != len(self.data['flux'][self.select]):
             if no_check:
                 print('WARNING: Continuum length differs from flux')
                 if len(co) > len(self.flux):
