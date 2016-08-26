@@ -95,20 +95,24 @@ class LSF(object):
         """Any re-formating of self._data should happen here.
 
         At the moment this function does the following:
-         - Make sure that relative pixels of the LSF are given as odd integers
+         - Make sure that the number of relative pixels of the LSF is odd integer
          - Impose the middle value to define the 0 relative pixel
+         - Make sure tables with 'rel_pix' given in fraction of pixels (e.g. COS NUV) work properly
          - Normalize tabulated LSFs
         """
-        
+
+        # odd integer for total number of relative pixels
         rel_pix_array = self._data['rel_pix']
-        assert len(rel_pix_array) % 2 != 0, SyntaxError('LSF tables should be given as odd integers!')
-        
+        n_pix = len(rel_pix_array)
+        assert n_pix % 2 != 0, SyntaxError('LSF tables should be given as odd integers!')
+
         # redefine rel_pix_array making sure the maximum is 
         # always the center value. Here we assume rel_pix are 
-        # given in linear scale, which should be checked in load_XX_data()
+        # given in ***linear scale***, which should be checked in load_XX_data()
+        n_half = (n_pix - 1) / 2
+        mid_value = rel_pix_array[n_half]
+        rel_pixel_array = rel_pix_array - mid_value  # recenter at 0 in the middle
 
-        n = len(rel_pix_array) // 2  # this should be always integer
-        rel_pixel_array = np.arange(-n,n+1,1)
         self._data['rel_pix'] = rel_pixel_array
 
         #normalize given LSFs
