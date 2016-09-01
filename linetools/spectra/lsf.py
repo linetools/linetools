@@ -279,7 +279,8 @@ class LSF(object):
             'E140M': ['0.1x0.03', '0.2x0.06', '0.2x0.2', '6x0.2'],
             'E230H': ['0.1x0.03', '0.1x0.09', '0.1x0.2', '6x0.2'],
             'E230M': ['0.1x0.03', '0.2x0.06', '0.2x0.2', '6x0.2'],
-            'G430L': ['52x0.1', '52x0.2', '52x0.5', '52x2.0']
+            'G430L': ['52x0.1', '52x0.2', '52x0.5', '52x2.0'],
+            'G750L': ['52x0.1', '52x0.2', '52x0.5', '52x2.0']
         }
 
         try:
@@ -339,6 +340,7 @@ class LSF(object):
 
         # project to a single rel_pix scale; for simplicity use the first one only
         # todo: work out a cleverer approach to this whole issue of having different rel_pix, pixel_scales, etc
+        # import pdb; pdb.set_trace()
         data_table = Table()
         data_table['rel_pix'] = kernels_dict[wa_names[0]]['rel_pix']
         for wa_name in wa_names:
@@ -346,7 +348,6 @@ class LSF(object):
                                       kernels_dict[wa_name]['rel_pix'], kernels_dict[wa_name]['kernel'])
             data_table['{}A'.format(wa_name)] = kernel_aux
 
-        # import pdb; pdb.set_trace()
         pixel_scale = pixel_scale_dict[grating]  # read from dictionary defined above
         return pixel_scale, data_table
 

@@ -39,12 +39,11 @@ def test_lsf_COS():
                 print(lp, grating)
 
 
-def test_lsf_STIS():
-
-    gratings = ['G430M', 'G430L', 'G750L', 'G750M',
-                'G140M', 'G140L', 'G230M', 'G230L']
-                # Echelle gratings, G230LB G230MB still not fully implemented.
-                #todo : implement Echelle gratings, G230LB G230MB
+# def test_lsf_STIS():
+if 1:
+    gratings = ['G750L', 'G140M', 'G140L', 'G230M', 'G230L']
+                # Echelle gratings, G750M, G430M, G430L, G230LB G230MB still not fully implemented.
+                #todo : implement Echelle gratings, G430M, G430L, G230LB G230MB
 
     available_slits = {
             'G140L': ['52x0.1', '52x0.2', '52x0.5', '52x2.0'],
@@ -55,7 +54,9 @@ def test_lsf_STIS():
             'E140M': ['0.1x0.03', '0.2x0.06', '0.2x0.2', '6x0.2'],
             'E230H': ['0.1x0.03', '0.1x0.09', '0.1x0.2', '6x0.2'],
             'E230M': ['0.1x0.03', '0.2x0.06', '0.2x0.2', '6x0.2'],
-            'G430L': ['52x0.1', '52x0.2', '52x0.5', '52x2.0']
+            'G430L': ['52x0.1', '52x0.2', '52x0.5', '52x2.0'],
+            'G750L': ['52x0.1', '52x0.2', '52x0.5', '52x2.0']
+    }
 
     for grating in gratings:
         # slits
