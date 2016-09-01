@@ -81,7 +81,7 @@ class LSF(object):
             define the extent of the kernel.
         kind : str, optional
             Specifies the kind of interpolation as a string either 
-            ('cubic', 'Akima'); only used for COS LSFs.
+            ('cubic', 'Akima')
 
         Returns
         -------
@@ -317,7 +317,7 @@ class LSF(object):
             lines = f.readlines()  # get all lines
             f.close()
             col_names = lines[1] # column names are in second line
-            # get rid of '\n' in first line
+            # get rid of '\n'
             col_names = col_names.split('\n')[0]
             # split by blank space(s) and remove the first element
             col_names = col_names.split()[1:]
