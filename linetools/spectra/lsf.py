@@ -19,7 +19,7 @@ class LSF(object):
     """Class to deal with line-spread-functions (LSFs) from
     various different astronomical spectrographs.
 
-    Note: only implemented for HST/COS at the moment.
+    Note: only implemented for HST/COS and HST/STIS at the moment.
 
     Parameters
     ----------
@@ -44,21 +44,22 @@ class LSF(object):
         #Initialize basics
         self.instr_config = instr_config
         self.name = instr_config['name']
-        if self.name not in ['COS']:
+        if self.name not in ['COS', 'STIS']:
             raise NotImplementedError('Not ready for this instrument: {}'.format(self.name))
         
-        # initialize specific to given intrument name
-        # only implemented for HST/COS so far
+        # initialize specific to given instrument name
+        # only implemented for HST/COS  and HST/STIS so far
         if self.name == 'COS':
             self.pixel_scale , self._data = self.load_COS_data()
-
+        elif self.name == 'STIS':
+            self.pixel_scale , self._data = self.load_STIS_data()
         # IMPORTANT: make sure that LSFs are given in linear wavelength scales !!!
-                
+
+
         #reformat self._data
         self.check_and_reformat_data()
         
         #other relevant values to initialize?
-
 
     def get_lsf(self, wv_array, kind='Akima'):
         """ Given a wavelength array `wv_array`, it returns
@@ -200,7 +201,7 @@ class LSF(object):
         
         # get column names
         f = open(file_name,'r')
-        line = f.readline() #first line of file
+        line = f.readline()  # first line of file
         f.close()
         # get rid of '\n' in first line
         line = line.split('\n')[0]
@@ -237,7 +238,7 @@ class LSF(object):
                     'G750M': 0.56 * u.AA
                     }
         # define channel based on grating name
-        detector_dict = {
+        channel_dict = {
                     'G140L': 'FUV-MAMA',
                     'G140M': 'FUV-MAMA',
                     'G230L': 'NUV-MAMA',
@@ -253,6 +254,62 @@ class LSF(object):
                     'G750L': 'CCD',
                     'G750M': 'CCD'
                     }
+        # also need slits
+        available_slits = {
+            'G140L': ['52x0.1', '52x0.2', '52x0.5', '52x2.0'],
+            'G140M': ['52x0.1', '52x0.2', '52x0.5', '52x2.0'],
+            'G230L': ['52x0.1', '52x0.2', '52x0.5', '52x2.0'],
+            'G230M': ['52x0.1', '52x0.2', '52x0.5', '52x2.0'],
+            'E140H': ['0.1x0.03', '0.2x0.09', '0.2x0.2', '6x0.2'],
+            'E140M': ['0.1x0.03', '0.2x0.06', '0.2x0.2', '6x0.2'],
+            'E230H': ['0.1x0.03', '0.1x0.09', '0.1x0.2', '6x0.2'],
+            'E230M': ['0.1x0.03', '0.2x0.06', '0.2x0.2', '6x0.2'],
+            'G430L': ['52x0.1', '52x0.2', '52x0.5', '52x2.0']
+        }
+
+        try:
+            grating = self.instr_config['grating']
+        except:
+            raise SyntaxError('`grating` keyword missing in `instr_config` dictionary.')
+        if grating not in channel_dict.keys():
+            raise NotImplementedError('Not ready for this HST/STIS grating: {}. '
+                                      'Available gratings for HST/STIS are: {}'.format(grating, channel_dict.keys()))
+
+        # We also need to know the slit width
+        try:
+            slit = self.instr_config['slit']
+        except:
+            raise SyntaxError('`slit` keyword missing in `instr_config` dictionary.')
+        if slit not in available_slits[grating]:
+            raise NotImplementedError('Not ready for this HST/STIS slit: {}. '
+                                      'Available slits for HST/STIS grating {} are: {}'.format(slit, grating, available_slits[grating]))
+
+        # now we need to read the right files
+        lsf_files = glob.glob(lt_path + '/data/lsf/STIS/stis_LSF_{}_????.txt'.format(grating))
+        # figure relevant wavelengths from file names
+        wa_names = [fname.split('/')[-1].split('_')[-1].split('.')[0] for fname in lsf_files]
+
+        # read the relevant kernels; they may have different rel_pix values depending on wave
+        kernels = dict()
+        for ii, file_name in enumerate(lsf_files):
+            # get the column names
+            f = open(file_name,'r')
+            lines = f.readlines()  # get all lines
+            f.close()
+            col_names = lines[1] # column names are in second line
+            # get rid of '\n' in first line
+            col_names = col_names.split('\n')[0]
+            # split by blank space(s) and remove the first element
+            col_names = col_names.split()[1:]
+            # rename new first column
+            col_names[0] = 'rel_pix'
+
+            # store the original data into kernels dict
+            kernels[wa_names[ii]] = ascii.read(file_name, data_start=2, names=col_names)
+
+
+        import pdb; pdb.set_trace()
+
 
 
 
