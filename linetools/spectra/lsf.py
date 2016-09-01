@@ -60,14 +60,15 @@ class LSF(object):
         #other relevant values to initialize?
 
 
-    def get_lsf(self, wv_array, kind = 'Akima'):
+    def get_lsf(self, wv_array, kind='Akima'):
         """ Given a wavelength array `wv_array`, it returns
         the LSF kernel at the central wavelength of the array, 
         using the same pixel scale and extent of `wv_array`. 
 
-        Method: First, tabulated LSFs are linearly interpolated
-        to the center of `wv_array` (see LSF.interpolate_to_wv0() for
-        details); then, the LSF is interpolated to match the `wv_array`
+        Method for non-Gaussian kernels: First, tabulated LSFs
+        are linearly interpolated to the center of `wv_array`
+        (see LSF.interpolate_to_wv0() for details); then, the
+        LSF is interpolated to match the `wv_array`
         scale and extent using Akima (or cubic) interpolation (see
         LSF.interpolate_to_wv_array() for details).
 
@@ -80,7 +81,7 @@ class LSF(object):
             define the extent of the kernel.
         kind : str, optional
             Specifies the kind of interpolation as a string either 
-            ('cubic', 'Akima')
+            ('cubic', 'Akima'); only used for COS LSFs.
 
         Returns
         -------
@@ -123,8 +124,8 @@ class LSF(object):
         """Load the right data according to `instr_config` for HST/COS 
         instrument"""
 
-        #define pixel scales; values obtained from STScI
-        #these values must be consistent with the given LSFs
+        # define pixel scales; values obtained from STScI
+        # these values must be consistent with the given LSFs
         pixel_scale_dict = {'G130M': 9.97 / 1000. * u.AA,
                     'G160M': 12.23 / 1000. * u.AA,
                     'G140L': 80.3 / 1000. * u.AA,
@@ -132,7 +133,7 @@ class LSF(object):
                     'G185M': 37. / 1000. * u.AA,
                     'G225M': 33. / 1000. * u.AA,
                     'G285M': 40. / 1000. * u.AA}
-        #define channel based on grating name
+        # define channel based on grating name
         channel_dict = {'G130M':  'FUV',
                     'G160M': 'FUV',
                     'G140L': 'FUV',
@@ -212,6 +213,50 @@ class LSF(object):
         data = ascii.read(file_name, data_start=1, names=col_names)
         
         return pixel_scale, data
+
+    def load_STIS_data(self):
+        """Load the right data according to `instr_config` for HST/STIS
+        instrument"""
+
+        # define pixel scales; values obtained from STScI
+        # these values must be consistent with the given LSFs
+        pixel_scale_dict = {
+                    'G140L': 0.60 * u.AA,
+                    'G140M': 0.05 * u.AA,
+                    'G230L': 1.58 * u.AA,
+                    'G230M': 0.09 * u.AA,
+                    'E140M': 'lambda/91700',
+                    'E140H': 'lambda/228000',
+                    'E230M': 'lambda/60000',
+                    'E230H': 'lambda/228000',
+                    'G230LB': 1.35 * u.AA,
+                    'G230MB': 0.15 * u.AA,
+                    'G430L': 2.73 * u.AA,
+                    'G430M': 0.28 * u.AA,
+                    'G750L': 4.92 * u.AA,
+                    'G750M': 0.56 * u.AA
+                    }
+        # define channel based on grating name
+        detector_dict = {
+                    'G140L': 'FUV-MAMA',
+                    'G140M': 'FUV-MAMA',
+                    'G230L': 'NUV-MAMA',
+                    'G230M': 'NUV_MAMA',
+                    'E140M': 'FUV-MAMA',
+                    'E140H': 'FUV-MAMA',
+                    'E230M': 'NUV-MAMA',
+                    'E230H': 'NUV-MAMA',
+                    'G230LB': 'CCD',
+                    'G230MB': 'CCD',
+                    'G430L': 'CCD',
+                    'G430M': 'CCD',
+                    'G750L': 'CCD',
+                    'G750M': 'CCD'
+                    }
+
+
+
+
 
     def interpolate_to_wv0(self, wv0):
         """Retrieves a unique LSF valid at wavelength wv0
