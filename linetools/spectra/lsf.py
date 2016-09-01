@@ -32,16 +32,16 @@ class LSF(object):
     """
 
     def __init__(self, instr_config):
-        #mandatory keys for characterizing a spectrograph mode
+        # mandatory keys for characterizing a spectrograph mode
         self.mandatory_dict_keys = ['name']
                 
-        #Check correct format
-        if not isinstance(instr_config,dict):
+        # Check correct format
+        if not isinstance(instr_config, dict):
             raise TypeError('`instr_config` must be a dictionary.')
         elif not all([key in instr_config.keys() for key in self.mandatory_dict_keys]):
             raise SyntaxError('`instr_config` must have the following mandatory keys {}:'.format(self.mandatory_dict_keys))
 
-        #Initialize basics
+        # Initialize basics
         self.instr_config = instr_config
         self.name = instr_config['name']
         if self.name not in ['COS', 'STIS']:
@@ -50,11 +50,10 @@ class LSF(object):
         # initialize specific to given instrument name
         # only implemented for HST/COS  and HST/STIS so far
         if self.name == 'COS':
-            self.pixel_scale , self._data = self.load_COS_data()
+            self.pixel_scale, self._data = self.load_COS_data()
         elif self.name == 'STIS':
-            self.pixel_scale , self._data = self.load_STIS_data()
+            self.pixel_scale, self._data = self.load_STIS_data()
         # IMPORTANT: make sure that LSFs are given in linear wavelength scales !!!
-
 
         #reformat self._data
         self.check_and_reformat_data()
@@ -103,23 +102,39 @@ class LSF(object):
          - Normalize tabulated LSFs
         """
 
-        # odd integer for total number of relative pixels
-        rel_pix_array = self._data['rel_pix']
-        n_pix = len(rel_pix_array)
-        assert n_pix % 2 != 0, SyntaxError('LSF tables should be given as odd integers!')
-
-        # redefine rel_pix_array making sure the maximum is 
-        # always the center value. Here we assume rel_pix are 
-        # given in ***linear scale***, which should be checked in load_XX_data()
-        n_half = (n_pix - 1) / 2
-        mid_value = rel_pix_array[n_half]
-        rel_pixel_array = rel_pix_array - mid_value  # recenter at 0 in the middle
-
-        self._data['rel_pix'] = rel_pixel_array
+        self._data['rel_pix'] = self.check_and_reformat_relpix(self._data['rel_pix'].data)
 
         #normalize given LSFs
         for col_name in self._data.keys()[1:]:
             self._data[col_name] /= np.sum(self._data[col_name])
+
+    def check_and_reformat_relpix(self, relpix):
+        """Performs checks and reformating on a relative pixel array.
+
+        At the moment this function does the following:
+         - Make sure that the number of relative pixels of the LSF is odd integer
+         - Impose the middle value to define the 0 relative pixel
+
+        Parameters
+        ----------
+        relpix : np.array
+            Relative pixel array
+
+        Returns
+        -------
+        new_relpix array that conforms to the LSF class standards.
+        """
+
+        # odd integer for total number of relative pixels
+        n_pix = len(relpix)
+        assert n_pix % 2 != 0, ValueError('LSF tables must be given as odd integers!')
+
+        # make sure relpix == 0 is in the middle of the array
+        n_half = (n_pix - 1) / 2
+        mid_value = relpix[n_half]
+        new_relpix = relpix - mid_value  # 0 in the middle
+
+        return new_relpix
 
     def load_COS_data(self):
         """Load the right data according to `instr_config` for HST/COS 
@@ -222,38 +237,38 @@ class LSF(object):
         # define pixel scales; values obtained from STScI
         # these values must be consistent with the given LSFs
         pixel_scale_dict = {
-                    'G140L': 0.60 * u.AA,
-                    'G140M': 0.05 * u.AA,
-                    'G230L': 1.58 * u.AA,
-                    'G230M': 0.09 * u.AA,
-                    'E140M': 'lambda/91700',
-                    'E140H': 'lambda/228000',
-                    'E230M': 'lambda/60000',
-                    'E230H': 'lambda/228000',
-                    'G230LB': 1.35 * u.AA,
-                    'G230MB': 0.15 * u.AA,
-                    'G430L': 2.73 * u.AA,
-                    'G430M': 0.28 * u.AA,
-                    'G750L': 4.92 * u.AA,
-                    'G750M': 0.56 * u.AA
-                    }
+            'G140L': 0.60 * u.AA,
+            'G140M': 0.05 * u.AA,
+            'G230L': 1.58 * u.AA,
+            'G230M': 0.09 * u.AA,
+            'E140M': 'lambda/91700',
+            'E140H': 'lambda/228000',
+            'E230M': 'lambda/60000',
+            'E230H': 'lambda/228000',
+            'G230LB': 1.35 * u.AA,
+            'G230MB': 0.15 * u.AA,
+            'G430L': 2.73 * u.AA,
+            'G430M': 0.28 * u.AA,
+            'G750L': 4.92 * u.AA,
+            'G750M': 0.56 * u.AA
+        }
         # define channel based on grating name
         channel_dict = {
-                    'G140L': 'FUV-MAMA',
-                    'G140M': 'FUV-MAMA',
-                    'G230L': 'NUV-MAMA',
-                    'G230M': 'NUV_MAMA',
-                    'E140M': 'FUV-MAMA',
-                    'E140H': 'FUV-MAMA',
-                    'E230M': 'NUV-MAMA',
-                    'E230H': 'NUV-MAMA',
-                    'G230LB': 'CCD',
-                    'G230MB': 'CCD',
-                    'G430L': 'CCD',
-                    'G430M': 'CCD',
-                    'G750L': 'CCD',
-                    'G750M': 'CCD'
-                    }
+            'G140L': 'FUV-MAMA',
+            'G140M': 'FUV-MAMA',
+            'G230L': 'NUV-MAMA',
+            'G230M': 'NUV_MAMA',
+            'E140M': 'FUV-MAMA',
+            'E140H': 'FUV-MAMA',
+            'E230M': 'NUV-MAMA',
+            'E230H': 'NUV-MAMA',
+            'G230LB': 'CCD',
+            'G230MB': 'CCD',
+            'G430L': 'CCD',
+            'G430M': 'CCD',
+            'G750L': 'CCD',
+            'G750M': 'CCD'
+        }
         # also need slits
         available_slits = {
             'G140L': ['52x0.1', '52x0.2', '52x0.5', '52x2.0'],
@@ -288,9 +303,13 @@ class LSF(object):
         lsf_files = glob.glob(lt_path + '/data/lsf/STIS/stis_LSF_{}_????.txt'.format(grating))
         # figure relevant wavelengths from file names
         wa_names = [fname.split('/')[-1].split('_')[-1].split('.')[0] for fname in lsf_files]
+        # sort them
+        sorted_inds = np.argsort(wa_names)
+        lsf_files = np.array(lsf_files)[sorted_inds]
+        wa_names = np.array(wa_names)[sorted_inds]
 
         # read the relevant kernels; they may have different rel_pix values depending on wave
-        kernels = dict()
+        kernels_dict = dict()
         for ii, file_name in enumerate(lsf_files):
             # get the column names
             f = open(file_name,'r')
@@ -304,11 +323,34 @@ class LSF(object):
             # rename new first column
             col_names[0] = 'rel_pix'
 
-            # store the original data into kernels dict
-            kernels[wa_names[ii]] = ascii.read(file_name, data_start=2, names=col_names)
+            # get original data
+            data_aux = ascii.read(file_name, data_start=2, names=col_names)
+            # reformat rel_pix
+            data_aux['rel_pix'] = self.check_and_reformat_relpix(data_aux['rel_pix'])
+            # create column with absolute wavelength based on pixel scales
+            wave_aux = float(wa_names[ii])*u.AA + data_aux['rel_pix']*pixel_scale_dict[grating]
+            data_aux['wv'] = wave_aux
+            # create column with normalized kernel for relevant slit
+            kernel = data_aux[slit] / np.sum(data_aux[slit])
+            data_aux['kernel'] = kernel
+
+            # store only rel_pix, wv, kernel as Table
+            kernels_dict[wa_names[ii]] = data_aux['rel_pix', 'wv', 'kernel']
+
+        # project to a single rel_pix scale; for simplicity use the first one only
+        # todo: work out a cleverer approach to this whole issue of having different rel_pix, pixel_scales, etc
+        data_table = Table()
+        data_table['rel_pix'] = kernels_dict[wa_names[0]]['rel_pix']
+        for wa_name in wa_names:
+            kernel_aux = interp_Akima(data_table['rel_pix'],
+                                      kernels_dict[wa_name]['rel_pix'], kernels_dict[wa_name]['kernel'])
+            data_table['{}A'.format(wa_name)] = kernel_aux
+
+        # import pdb; pdb.set_trace()
+        pixel_scale = pixel_scale_dict[grating]  # read from dictionary defined above
+        return pixel_scale, data_table
 
 
-        import pdb; pdb.set_trace()
 
 
 
