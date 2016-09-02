@@ -15,22 +15,26 @@ def test_interpolate_to_wv0(plot=False, lp='2'):
     err_msg = 'Something is wrong with LSF.interpolate_to_wv0()'
     wv0 = 1160 * u.AA
     cos_dict = dict(name='COS', grating='G130M', life_position=lp, cen_wave='1309')
+    stis_dict = dict(name='STIS', grating='G140L', slit='52x0.2')
     lsf_cos = LSF(cos_dict)
-    lsf_tab = lsf_cos.interpolate_to_wv0(wv0)
-    assert lsf_tab[len(lsf_tab) // 2]['wv'] == wv0.value, err_msg
-    assert lsf_tab[len(lsf_tab) // 2]['kernel'] == np.max(lsf_tab['kernel']), err_msg
-    if plot:
-        import matplotlib.pyplot as plt
-        if lp == '3':
-            wv_array = np.linspace(1200, 1400, 10) * u.AA
-        else:
-            wv_array = np.arange(1200, 1400, 10) * u.AA
+    lsf_stis = LSF(stis_dict)
+    for lsf in [lsf_cos, lsf_stis]:
+        lsf_tab = lsf.interpolate_to_wv0(wv0)
+        assert lsf_tab[len(lsf_tab) // 2]['wv'] == wv0.value, err_msg
+        assert lsf_tab[len(lsf_tab) // 2]['kernel'] == np.max(lsf_tab['kernel']), err_msg
+        if plot:
+            import matplotlib.pyplot as plt
+            if lp == '3':
+                wv_array = np.linspace(1200, 1400, 10) * u.AA
+            else:
+                wv_array = np.arange(1200, 1400, 10) * u.AA
 
-        for wv in wv_array:
-            lsf_tab = lsf_cos.interpolate_to_wv0(wv)
-            plt.plot(lsf_tab['wv'] - wv.value, lsf_tab['kernel'], '-')
+            for wv in wv_array:
+                lsf_tab = lsf_cos.interpolate_to_wv0(wv)
+                plt.plot(lsf_tab['wv'] - wv.value, lsf_tab['kernel'], '-')
+                plt.suptitle(lsf.name)
             # import pdb; pdb.set_trace()
-        plt.show()
+            plt.show()
     # test last column interpolation
     lsf = LSF(dict(name='COS', grating='G130M', life_position='1'))
     tab = lsf.interpolate_to_wv0(1450 * u.AA)

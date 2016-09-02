@@ -356,7 +356,7 @@ class LSF(object):
             data_table['{}A'.format(wa_name)] = kernel_aux
 
         pixel_scale = pixel_scale_dict[grating]  # read from dictionary defined above
-        import pdb; pdb.set_trace()
+        # import pdb; pdb.set_trace()
         # todo: work out a cleverer approach to this whole issue of having different rel_pix, pixel_scales, etc
         return pixel_scale, data_table
 
