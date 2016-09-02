@@ -91,5 +91,5 @@ def test_lsf_init_errors():
         lsf = LSF(dict(name='STIS', grating='not_implemented_grating'))
     with pytest.raises(SyntaxError):
         lsf = LSF(dict(name='STIS', grating='G140L', not_slit_given='xx'))
-    with pytest.raises(ValueError):
+    with pytest.raises(NotImplementedError):
         lsf = LSF(dict(name='STIS', grating='G140L', slit='bad_slit'))

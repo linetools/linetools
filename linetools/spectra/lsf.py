@@ -338,17 +338,20 @@ class LSF(object):
             # store only rel_pix, wv, kernel as Table
             kernels_dict[wa_names[ii]] = data_aux['rel_pix', 'wv', 'kernel']
 
-        # project to a single rel_pix scale; for simplicity use the first one only
-        # todo: work out a cleverer approach to this whole issue of having different rel_pix, pixel_scales, etc
+        # project to a single rel_pix scale; for simplicity use a custom one because
+        # STScI sometimes provide them as non-constant pixel fractions.
         # import pdb; pdb.set_trace()
+        rel_pix = kernels_dict[wa_names[0]]['rel_pix']  # use the first one as reference
+        rel_pix = np.linspace(np.min(rel_pix), np.max(rel_pix), len(rel_pix))
         data_table = Table()
-        data_table['rel_pix'] = kernels_dict[wa_names[0]]['rel_pix']
+        data_table['rel_pix'] = rel_pix
         for wa_name in wa_names:
             kernel_aux = interp_Akima(data_table['rel_pix'],
                                       kernels_dict[wa_name]['rel_pix'], kernels_dict[wa_name]['kernel'])
             data_table['{}A'.format(wa_name)] = kernel_aux
 
         pixel_scale = pixel_scale_dict[grating]  # read from dictionary defined above
+        # todo: work out a cleverer approach to this whole issue of having different rel_pix, pixel_scales, etc
         return pixel_scale, data_table
 
 
