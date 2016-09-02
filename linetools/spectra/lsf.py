@@ -330,7 +330,7 @@ class LSF(object):
             data_aux['rel_pix'] = self.check_and_reformat_relpix(data_aux['rel_pix'])
             # create column with absolute wavelength based on pixel scales
             wave_aux = float(wa_names[ii])*u.AA + data_aux['rel_pix']*pixel_scale_dict[grating]
-            data_aux['wv'] = wave_aux
+            data_aux['wv'] = wave_aux  # not used for now, but may be useful with a different approach
             # create column with normalized kernel for relevant slit
             kernel = data_aux[slit] / np.sum(data_aux[slit])
             data_aux['kernel'] = kernel
@@ -338,11 +338,16 @@ class LSF(object):
             # store only rel_pix, wv, kernel as Table
             kernels_dict[wa_names[ii]] = data_aux['rel_pix', 'wv', 'kernel']
 
-        # project to a single rel_pix scale; for simplicity use a custom one because
-        # STScI sometimes provide them as non-constant pixel fractions.
-        # import pdb; pdb.set_trace()
+        # at this point the kernels_dict have the original information as given by the STScI
+        # tables, in their various formats...
+
+        # project to a single rel_pix scale using interpolation; for simplicity use a
+        # custom rel_pix because STScI sometimes provide them as non-constant pixel fractions.
+        # This new rel_pix grid will apply to all the wavelengths
+
         rel_pix = kernels_dict[wa_names[0]]['rel_pix']  # use the first one as reference
-        rel_pix = np.linspace(np.min(rel_pix), np.max(rel_pix), len(rel_pix))
+        rel_pix = np.linspace(-1*np.max(rel_pix), np.max(rel_pix), len(rel_pix))  # impose them linear and symmetric
+        rel_pix = self.check_and_reformat_relpix(rel_pix)  # again just in case something odd happened
         data_table = Table()
         data_table['rel_pix'] = rel_pix
         for wa_name in wa_names:
@@ -351,6 +356,7 @@ class LSF(object):
             data_table['{}A'.format(wa_name)] = kernel_aux
 
         pixel_scale = pixel_scale_dict[grating]  # read from dictionary defined above
+        import pdb; pdb.set_trace()
         # todo: work out a cleverer approach to this whole issue of having different rel_pix, pixel_scales, etc
         return pixel_scale, data_table
 
