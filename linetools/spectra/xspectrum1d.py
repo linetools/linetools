@@ -810,6 +810,13 @@ class XSpectrum1D(object):
         funit = self.flux.unit
         flux = self.flux.value
 
+        # Deal with nan
+        badf = np.isnan(flux)
+        if np.sum(badf) > 0:
+            warnings.warn("Ignoring NAN in flux")
+        gdf = ~badf
+        flux = flux[gdf]
+
         # Endpoints of original pixels
         npix = len(self.wavelength)
         wvh = (self.wavelength + np.roll(self.wavelength, -1)) / 2.
@@ -819,9 +826,13 @@ class XSpectrum1D(object):
         dwv[0] = 2 * (wvh[0] - self.wavelength[0])
         med_dwv = np.median(dwv.value)
 
+        wvh = wvh[gdf]
+        dwv = dwv[gdf]
+
         # Error
         if do_sig:
             var = self.sig.value**2
+            var = var[gdf]
         else:
             var = np.ones_like(flux)
 
