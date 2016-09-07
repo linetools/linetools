@@ -963,7 +963,6 @@ class XSpectrum1D(object):
         return XSpectrum1D.from_tuple(
             (new_wv, new_fx, new_sig), meta=self.meta.copy())
 
-    # Splice two spectra together
     def gauss_smooth(self, fwhm, **kwargs):
         """ Smooth a spectrum with a Gaussian
 
@@ -994,6 +993,55 @@ class XSpectrum1D(object):
         # Return
         return XSpectrum1D.from_tuple(
             (self.wavelength, new_fx, new_sig), meta=self.meta.copy())
+
+    def ivar_smooth(self, window):
+        """ Inverse variance smoothing -- port of ivarsmooth from IDL
+
+        Parameters
+        ----------
+        window -- int
+          smoothing length in pixels (turned into odd number if even)
+
+        Returns
+        -------
+        spec -- XSpectrum1D
+          New, smoothed spectrum
+
+        """
+        if not isinstance(window,int):
+            raise IOError("Input window must be int")
+        #
+        halfwindow = np.floor((window-1)/2).astype(int)
+        ivar = 1./self.sig**2
+
+        shiftarr = np.zeros((self.npix, 2*halfwindow+1))
+        shiftivar = shiftarr.copy()
+        shiftindex = shiftarr.copy()
+        indexarr = np.arange(self.npix)
+        indnorm = np.outer(indexarr, (np.zeros(2*halfwindow+1)+1))
+
+        for i in range(-halfwindow, halfwindow+1):
+            shiftarr[:, i+halfwindow] = np.roll(self.flux, i)
+            shiftivar[:, i+halfwindow] = np.roll(ivar, i)
+            shiftindex[:, i+halfwindow] = np.roll(indexarr, i)
+
+        wh = np.abs(shiftindex-indnorm) > (halfwindow+1)
+        shiftivar[wh] = 0.
+
+        outivar = np.sum(shiftivar, axis=1)
+        nzero =  np.where(outivar > 0)[0]
+        smoothflux = np.sum(shiftarr*shiftivar, axis=1)
+        if len(nzero)>0:
+            smoothflux[nzero] = smoothflux[nzero]/outivar[nzero]
+        else:
+            from astropy.convolution import convolve, Box1DKernel
+            smoothflux = convolve(self.flux, Box1DKernel(2*halfwindow+1))
+            #smoothflux = boxcar(self.flux,(2*halfwindow+1,))#kill off NAN's
+        # Return new spectrum
+        newsig = np.sqrt(1./outivar)
+        return XSpectrum1D.from_tuple(
+                (self.wavelength, smoothflux, newsig), meta=self.meta.copy())
+
 
     def stitch(self, idx=None, scale=1.):
         """ Combine two or more spectra within the .data array
