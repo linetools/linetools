@@ -25,7 +25,8 @@ from .xspectrum1d import XSpectrum1D
 
 
 def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
-             format='ascii', exten=None, debug=False, select=0, **kwargs):
+             format='ascii', exten=None, debug=False, select=0,
+             head_ext=0, **kwargs):
     """ Read a FITS file (or astropy Table or ASCII file) into a
     XSpectrum1D class
 
@@ -49,6 +50,8 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
       FITS extension (mainly for multiple binary FITS tables)
     select : int, optional
       Selected spectrum (for sets of 1D spectra, e.g. DESI brick)
+    head_ext : int, optional
+      Extension for header to ingest
 
     Returns
     -------
@@ -199,7 +202,11 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
 
     # Add in the header
     #xspec1d.head = head0
-    xspec1d.meta['headers'][0] = head0
+    if head_ext == 0:
+        xspec1d.meta['headers'][0] = head0
+    else:
+        head = hdulist[head_ext].header
+        xspec1d.meta['headers'][0] = head
     if xspec1d.nspec > 1:
         warnings.warn("Read in only 1 header (into meta['headers'][0]")
 

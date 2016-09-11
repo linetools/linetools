@@ -25,14 +25,21 @@ def test_get_cdelt_dcflag():
     np.testing.assert_allclose(dc_flag, 1)
 
 
-# Separate flux/error files
 def test_sep_files():
+    """ Separate flux/error files"""
     spec = io.readspec(data_path('UM184_nF.fits'))
     idl = ascii.read(data_path('UM184.dat.gz'), names=['wave', 'flux', 'sig'])
     #np.testing.assert_allclose(spec.wavelength.value, idl['wave'])
     np.testing.assert_allclose(spec.data['wave'][spec.select], idl['wave'])
     np.testing.assert_allclose(spec.data['sig'][spec.select], idl['sig'], atol=2e-3, rtol=0)
     assert spec.wavelength.unit == u.Unit('AA')
+
+def test_binary_table():
+    spec = io.readspec(data_path('NGC4151sic2a.fits'), head_ext=1)
+    # Test head1
+    assert len(spec.header['HISTORY']) == 476
+    # Data
+    np.testing.assert_allclose(spec.flux[0].value, -1.3274571970938327e-16)
 
 
 def test_setwave():
