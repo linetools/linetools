@@ -33,7 +33,7 @@ def test_sep_files():
     np.testing.assert_allclose(spec.data['wave'][spec.select], idl['wave'])
     np.testing.assert_allclose(spec.data['sig'][spec.select], idl['sig'], atol=2e-3, rtol=0)
     assert spec.wavelength.unit == u.Unit('AA')
-    
+
 
 def test_binary_table():
     spec = io.readspec(data_path('NGC4151sic2a.fits'), head_exten=1)
