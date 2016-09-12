@@ -201,7 +201,6 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
                 xspec1d.data['co'] = fits.getdata(co_filename)
 
     # Add in the header
-    #xspec1d.head = head0
     if head_exten == 0:
         xspec1d.meta['headers'][0] = head0
     else:
