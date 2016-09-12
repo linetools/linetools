@@ -35,7 +35,7 @@ def test_sep_files():
     assert spec.wavelength.unit == u.Unit('AA')
 
 def test_binary_table():
-    spec = io.readspec(data_path('NGC4151sic2a.fits'), head_ext=1)
+    spec = io.readspec(data_path('NGC4151sic2a.fits'), head_exten=1)
     # Test head1
     assert len(spec.header['HISTORY']) == 476
     # Data
