@@ -329,8 +329,6 @@ class LSF(object):
             # reformat rel_pix
             data_aux['rel_pix'] = self.check_and_reformat_relpix(data_aux['rel_pix'])
             # create column with absolute wavelength based on pixel scales
-            import pdb; pdb.set_trace()
-
             wave_aux = float(wa_names[ii])*u.AA + data_aux['rel_pix']*pixel_scale_dict[grating]
             data_aux['wv'] = wave_aux  # not used for now, but may be useful with a different approach
             # create column with normalized kernel for relevant slit
