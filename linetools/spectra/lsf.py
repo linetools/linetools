@@ -329,6 +329,8 @@ class LSF(object):
             # reformat rel_pix
             data_aux['rel_pix'] = self.check_and_reformat_relpix(data_aux['rel_pix'])
             # create column with absolute wavelength based on pixel scales
+            import pdb; pdb.set_trace()
+
             wave_aux = float(wa_names[ii])*u.AA + data_aux['rel_pix']*pixel_scale_dict[grating]
             data_aux['wv'] = wave_aux  # not used for now, but may be useful with a different approach
             # create column with normalized kernel for relevant slit
@@ -360,13 +362,6 @@ class LSF(object):
         # todo: work out a cleverer approach to this whole issue of having different rel_pix, pixel_scales, etc
         return pixel_scale, data_table
 
-
-
-
-
-
-
-
     def interpolate_to_wv0(self, wv0):
         """Retrieves a unique LSF valid at wavelength wv0
 
@@ -395,25 +390,17 @@ class LSF(object):
         col_names = self._data.keys()
         col_waves = np.array([float(name.split('A')[0]) for name in col_names[1:]])
 
-        # find out the closest 3 columns to wv0, for simplicity
-        # find the closest column first
-        ind_min = np.where(np.fabs(col_waves - wv0) == np.min(np.fabs(col_waves - wv0)))[0][0]
-        # find out which will be the middle column out of the three
-        if ind_min == len(col_waves) - 1:
-            #  i.e. the minimum is the last column
-            ind_mid = ind_min - 1
-        elif ind_min == 0:
-            #  i.e. the minimum is the first column
-            ind_mid = ind_min + 1
-        else:
-            ind_mid = ind_min
+        # find out the closest 2 columns in self._data to wv0; these kernels will be used for interpolation
+        seps =  np.fabs(col_waves - wv0)
+        sorted_inds = np.argsort(seps)[:2]  # only keep the 2 closest
+        ind_blue = np.min(sorted_inds)
+        ind_red = np.max(sorted_inds)
 
-        # create a smaller version of self._data with the 3 most relevant columns
-        good_keys = col_names[1:] # get rid of the first name, i.e. 'rel_pix'
-        good_keys = good_keys[ind_mid - 1 : ind_mid + 2]
+        # create a smaller version of self._data with the 2 most relevant columns
+        good_keys = col_names[1:]  # get rid of the first name, i.e. 'rel_pix'
+        good_keys = good_keys[ind_blue : ind_red + 1]
         data_aux = self._data[good_keys]
-        col_waves_aux = col_waves[ind_mid - 1 : ind_mid + 2]
-
+        col_waves_aux = col_waves[ind_blue : ind_red + 1]
         lsf_vals = []
         for row in data_aux:
             aux_val = []
