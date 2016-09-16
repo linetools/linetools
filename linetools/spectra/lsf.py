@@ -290,6 +290,8 @@ class LSF(object):
         if grating not in channel_dict.keys():
             raise NotImplementedError('Not ready for this HST/STIS grating: {}. '
                                       'Available gratings for HST/STIS are: {}'.format(grating, channel_dict.keys()))
+        if grating in ['E140H', 'E140M', 'E230M', 'E230H', 'G750M', 'G430M', 'G430L']:
+            raise NotImplementedError('{} not implemented yet; coming soon...'.format(grating))
 
         # We also need to know the slit width
         try:
