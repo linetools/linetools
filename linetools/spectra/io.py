@@ -198,7 +198,16 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
         if isinstance(specfil, basestring) and specfil.endswith('.fits'):
             co_filename = specfil.replace('.fits', '_c.fits')
             if os.path.exists(co_filename):
-                xspec1d.data['co'] = fits.getdata(co_filename)
+                tmpco = fits.getdata(co_filename)
+                if tmpco.size != xspec1d.totpix:
+                    warnings.warn("Continuum size does not match native spectrum")
+                    warnings.warn("Continuing under the assumption that this is due to a masked array")
+                    gdp = ~xspec1d.data['flux'][xspec1d.select].mask
+                    xspec1d.data['co'][xspec1d.select][gdp] = tmpco
+                else:
+                    xspec1d.data['co'][xspec1d.select] = tmpco
+                # Mask
+                xspec1d.data['co'][xspec1d.select].mask = xspec1d.data['flux'][xspec1d.select].mask
 
     # Add in the header
     if head_exten == 0:
