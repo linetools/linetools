@@ -300,7 +300,10 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
         mt = np.where((iontbl['Z'] == 1) & (iontbl['ion']==1))[0]
         if len(mt) == 1:
             iontbl[mt[0]]['logN'] = NHI_obj.NHI
-            iontbl[mt[0]]['sig_logN'] = NHI_obj.sig_NHI
+            try:
+                iontbl[mt[0]]['sig_logN'] = NHI_obj.sig_NHI
+            except ValueError:
+                iontbl[mt[0]]['sig_logN'] = np.mean(NHI_obj.sig_NHI) # Two values
             iontbl[mt[0]]['flag_N'] = NHI_obj.flag_NHI
         else:
             if len(components) > 0:
