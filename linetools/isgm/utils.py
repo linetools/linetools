@@ -313,10 +313,7 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
             row = dict(Z=1,ion=1, z=ztbl,
                        Ej=0./u.cm,vmin=vmin, vmax=vmax, logN=NHI_obj.NHI,
                        flag_N=NHI_obj.flag_NHI,sig_logN=np.mean(NHI_obj.sig_NHI))
-            try:
-                iontbl.add_row(row)
-            except ValueError:
-                pdb.set_trace()
+            iontbl.add_row(row)
 
     # Add zlim to metadata
     meta = OrderedDict()
