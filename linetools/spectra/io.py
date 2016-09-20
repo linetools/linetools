@@ -195,7 +195,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
 
     if not xspec1d.co_is_set:
         # Final check for continuum in a separate file
-        if isinstance(specfil, basestring) and specfil.endswith('.fits'):
+        if isinstance(specfil, basestring) and (specfil.endswith('.fits') or specfil.endswith('.fits.gz')):
             co_filename = specfil.replace('.fits', '_c.fits')
             if os.path.exists(co_filename):
                 tmpco = fits.getdata(co_filename)
