@@ -300,7 +300,7 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
         mt = np.where((iontbl['Z'] == 1) & (iontbl['ion']==1))[0]
         if len(mt) == 1:
             iontbl[mt[0]]['logN'] = NHI_obj.NHI
-            iontbl[mt[0]]['sig_logN'] = NHI_obj.sig_NHI
+            iontbl[mt[0]]['sig_logN'] = np.mean(NHI_obj.sig_NHI) # Allow for two values
             iontbl[mt[0]]['flag_N'] = NHI_obj.flag_NHI
         else:
             if len(components) > 0:
@@ -312,7 +312,7 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
             #
             row = dict(Z=1,ion=1, z=ztbl,
                        Ej=0./u.cm,vmin=vmin, vmax=vmax, logN=NHI_obj.NHI,
-                       flag_N=NHI_obj.flag_NHI,sig_logN=NHI_obj.sig_NHI)
+                       flag_N=NHI_obj.flag_NHI,sig_logN=np.mean(NHI_obj.sig_NHI))
             iontbl.add_row(row)
 
     # Add zlim to metadata
