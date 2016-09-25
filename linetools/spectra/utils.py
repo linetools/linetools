@@ -8,8 +8,11 @@ import json
 import pdb
 
 from astropy import units as u
+from astropy import constants as const
 
 from linetools import utils as liu
+from linetools.spectra.xspectrum1d import XSpectrum1D
+
 
 def meta_to_disk(in_meta):
     """ Polish up the meta dict for I/O
@@ -38,6 +41,7 @@ def meta_to_disk(in_meta):
     # Clean up the dict
     d = liu.jsonify(meta)
     return json.dumps(d)
+
 
 def splice_two(spec1, spec2, wvmx=None, scale=1., chk_units=True):
     """ Combine two overlapping spectra.
@@ -97,3 +101,59 @@ def splice_two(spec1, spec2, wvmx=None, scale=1., chk_units=True):
         (uwave, u.Quantity(new_fx), new_sig, new_co), meta=spec1.meta.copy())
     # Return
     return spec3
+
+
+def rebin_to_rest(spec, zarr, dv, debug=True):
+    """ Shuffle an XSpectrum1D dataset to an array of
+    observed wavelengths and rebin to dv pixels.
+    Note: This works on the unmasked data array and returns
+    unmasked spectra
+
+    Parameters
+    ----------
+    spec : XSpectrum1D
+    zarr : nd.array
+      Array of redshifts
+    dv : Quantity
+      Velocity width of the new pixels
+
+    Returns
+    -------
+    new_spec : XSpectrum1D
+      Not masked
+
+    """
+    # Error checking
+    if spec.nspec <= 1:
+        raise IOError("Use spec.rebin instead")
+    if spec.nspec != len(zarr):
+        raise IOError("Input redshift array must have same dimension as nspec")
+    # Generate final wave array
+    dlnlamb = np.log(1+dv/const.c)
+    z2d = np.outer(zarr, np.ones(spec.totpix))
+    wvmin, wvmax = (np.min(spec.data['wave']/(1+z2d))*spec.units['wave'],
+                    np.max(spec.data['wave']/(1+z2d))*spec.units['wave'])
+    npix = int(np.round(np.log(wvmax/wvmin) / dlnlamb)) + 1
+    new_wv = wvmin * np.exp(dlnlamb*np.arange(npix))
+    # Final image
+    f_flux = np.zeros((spec.nspec, npix))
+    f_sig = np.zeros((spec.nspec, npix))
+    f_wv = np.outer(np.ones(spec.nspec), new_wv.value)
+    # Let's loop
+    for ispec in range(spec.nspec):
+        if debug:
+            print("ispec={:d}".format(ispec))
+        # Select
+        spec.select = ispec
+        # Rebin
+        tspec = spec.rebin(new_wv, do_sig=True)
+        # Save
+        f_flux[ispec, :] = tspec.flux.value
+        f_sig[ispec, :] = tspec.sig.value
+    # Finish
+    new_spec = XSpectrum1D(f_wv, f_flux, sig=f_sig, masking='none',
+                           units=spec.units.copy())
+    new_spec.meta = spec.meta.copy()
+    # Return
+    return new_spec
+
