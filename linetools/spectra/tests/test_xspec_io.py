@@ -55,14 +55,9 @@ def test_hdf5(specm):
     np.testing.assert_allclose(specm.wavelength, spec3.wavelength)
 
 
-
 def test_print_repr(spec):
     print(repr(spec))
     print(spec)
-
-
-    newspec = spec.rebin(new_wv)
-    assert newspec.sig_is_set is False
 
 
 def test_write_ascii(spec):
