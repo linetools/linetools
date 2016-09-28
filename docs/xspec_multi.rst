@@ -4,7 +4,7 @@
 Multi XSpectrum1D
 *****************
 
-.. index:: XSpec_multi
+.. index:: xspec_multi
 
 Overview
 ========
