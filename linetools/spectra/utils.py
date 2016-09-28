@@ -11,7 +11,6 @@ from astropy import units as u
 from astropy import constants as const
 
 from linetools import utils as liu
-from linetools.spectra.xspectrum1d import XSpectrum1D
 
 
 def meta_to_disk(in_meta):
@@ -123,6 +122,8 @@ def rebin_to_rest(spec, zarr, dv, debug=True):
       Not masked
 
     """
+    from linetools.spectra.xspectrum1d import XSpectrum1D
+
     # Error checking
     if spec.nspec <= 1:
         raise IOError("Use spec.rebin instead")
@@ -145,9 +146,9 @@ def rebin_to_rest(spec, zarr, dv, debug=True):
             print("ispec={:d}".format(ispec))
         # Select
         spec.select = ispec
-        # Rebin
-        tspec = spec.rebin(new_wv, do_sig=True)
-        # Save
+        # Rebin in obs frame
+        tspec = spec.rebin(new_wv*(1+zarr[ispec]), do_sig=True, masking='none')
+        # Save in rest-frame (worry about flambda)
         f_flux[ispec, :] = tspec.flux.value
         f_sig[ispec, :] = tspec.sig.value
     # Finish
