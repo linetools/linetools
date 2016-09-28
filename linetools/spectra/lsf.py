@@ -390,11 +390,18 @@ class LSF(object):
         col_names = self._data.keys()
         col_waves = np.array([float(name.split('A')[0]) for name in col_names[1:]])
 
-        # find out the closest 2 columns in self._data to wv0; these kernels will be used for interpolation
+        # find out the closest 2 columns in self._data to wv0 (on each side); these kernels will be used for interpolation
         seps =  np.fabs(col_waves - wv0)
-        sorted_inds = np.argsort(seps)[:2]  # only keep the 2 closest
-        ind_blue = np.min(sorted_inds)
-        ind_red = np.max(sorted_inds)
+        closest_ind = np.argsort(seps)[0]  # the 1 closest
+        if closest_ind == 0:  # lower edge
+            ind_blue = closest_ind
+        elif closest_ind == len(col_waves) - 1:  # upper edge
+            ind_blue = closest_ind - 1
+        elif (col_waves[closest_ind] - wv0) > 0:  # middle case 1
+            ind_blue = closest_ind - 1
+        else:  # middle case 2
+            ind_blue = closest_ind
+        ind_red = ind_blue + 1
 
         # create a smaller version of self._data with the 2 most relevant columns
         good_keys = col_names[1:]  # get rid of the first name, i.e. 'rel_pix'
@@ -408,7 +415,7 @@ class LSF(object):
                 aux_val += [row[i]]
 
             # we don't want to extrapolate wildly, but allow LSF instantiations for wv0 outside range of 'col_waves'
-            if (wv0 >= col_waves[0]) & (wv0 <= col_waves[-1]):
+            if (wv0 >= col_waves_aux[0]) & (wv0 <= col_waves_aux[-1]):
                 f = interp1d(col_waves_aux,aux_val,bounds_error=True,kind='linear')  # no need to extrapolate
                 lsf_vals += [f(wv0)]
 
