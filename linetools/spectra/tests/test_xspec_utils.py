@@ -51,7 +51,7 @@ def test_smash_spectra(spec,spec2):
     # Stack rebinned
     zarr = np.array([2.1,2.2])
     rest_spec = ltsu.rebin_to_rest(coll_spec, zarr, 100*u.km/u.s, debug=False)
-    stack = ltsu.smash_spectra(rest_spec)
+    stack = ltsu.smash_spectra(rest_spec, method='average')
     # Test
     assert stack.totpix == 3716
     np.testing.assert_allclose(stack.flux[0].value, -1.19753563, rtol=1e-5)

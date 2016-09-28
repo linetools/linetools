@@ -140,7 +140,12 @@ pixel indices corresponding to a wavelength or velocity range, and
 `~linetools.spectra.xspectrum1d.XSpectrum1D.add_noise` adds noise to
 the spectrum. For a complete list of all the available methods, see
 the API: `~linetools.spectra.xspectrum1d.XSpectrum1D`.
-  
+
+Multi-spec methods
+------------------
+
+See :ref:`xspec_multi` for more.
+
 File Formats Read
 =================
 

@@ -1,8 +1,8 @@
-.. _XSpectrum1D:
+.. _xspec_multi:
 
-***********
-Multi Xspec
-***********
+*****************
+Multi XSpectrum1D
+*****************
 
 .. index:: XSpec_multi
 
@@ -36,5 +36,23 @@ Alternatively, one can generate from a list of
     mspec = ltsu.collate([spec1,spec2])
 
 
-Generation
-==========
+Rebin to Rest
+=============
+
+By inputting an array of redshifts and a velocity
+width, one can rebin the multi-spec to a common
+rest-frame spectrum with constant dv pixels.::
+
+    rest_spec = ltsu.rebin_to_rest(mspec, zarr, 100*u.km/u.s)
+
+The output is a new multi-spec object with a common
+rest-frame wavelength array.
+
+Smash(stack)
+============
+
+Smash down a multi-spec object into a 1D spectrum.::
+
+    stack = ltsu.smash_spectra(rest_spec, method='average')
+
+
