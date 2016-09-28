@@ -158,3 +158,42 @@ def rebin_to_rest(spec, zarr, dv, debug=True):
     # Return
     return new_spec
 
+
+def smash_spectra(spec, method='average', debug=True):
+    """ Collapse the data in XSpectrum1D.data
+    One might call this 'stacking'
+    Note: This works on the unmasked data array and returns
+    unmasked spectra
+
+    Parameters
+    ----------
+    spec : XSpectrum1D
+    method : str, optional
+      Approach to the smash ['smash']
+    debug : bool, optional
+
+    Returns
+    -------
+    stack : XSpectrum1D
+
+    """
+    from linetools.spectra.xspectrum1d import XSpectrum1D
+    # Checks
+    if spec.nspec <= 1:
+        raise IOError("Use spec.rebin instead")
+    np.testing.assert_allclose(spec.data['wave'][0],spec.data['wave'][1])
+    # Generate mask
+    stack_msk = spec.data['sig'] > 0.
+    if method == 'average':
+        tot_flx = np.sum(spec.data['flux']*stack_msk,0)
+        navg = np.sum(stack_msk,0)
+        fin_flx = tot_flx / np.maximum(navg, 1.)
+    else:
+        raise IOError("Not prepared for this smash method")
+    # Finish
+    new_spec = XSpectrum1D(spec.data['wave'][0], fin_flx, masking='none',
+                           units=spec.units.copy())
+    new_spec.meta = spec.meta.copy()
+    # Return
+    return new_spec
+
