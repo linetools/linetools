@@ -103,7 +103,6 @@ def test_addnoise(spec):
 
 
 def test_box_smooth(spec):
-
     # Smooth
     newspec3 = spec.box_smooth(3)
     np.testing.assert_allclose(newspec3.flux[4000], 0.9650185, rtol=1e-5)
@@ -116,11 +115,18 @@ def test_box_smooth(spec):
 
 
 def test_gauss_smooth(spec):
-
     # Smooth
     smth_spec = spec.gauss_smooth(4.)
     # Test
     np.testing.assert_allclose(smth_spec.flux[3000].value, 0.749937, rtol=1e-5)
+    assert smth_spec.flux.unit == spec.flux.unit
+
+
+def test_ivar_smooth(spec):
+    # Smooth
+    smth_spec = spec.ivar_smooth(4)
+    # Test
+    np.testing.assert_allclose(smth_spec.flux[3000].value, 0.7220675349235535, rtol=1e-5)
     assert smth_spec.flux.unit == spec.flux.unit
 
 

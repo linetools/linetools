@@ -129,6 +129,15 @@ anchor points with
 `~linetools.spectra.xspectrum1d.XSpectrum1D.perturb_continuum` to see
 how changes in the continuum level affect your analysis.
 
+Smoothing
+---------
+
+There are several algorithms included that smooth the
+input spectrum and return a new XSpectrum1D.  These are
+`~linetools.spectra.xspectrum1d.XSpectrum1D.box_smooth`,
+`~linetools.spectra.xspectrum1d.XSpectrum1D.gauss_smooth`,
+and
+`~linetools.spectra.xspectrum1d.XSpectrum1D.ivar_smooth`.
 
 Other methods
 -------------
