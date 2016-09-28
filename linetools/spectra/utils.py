@@ -102,7 +102,57 @@ def splice_two(spec1, spec2, wvmx=None, scale=1., chk_units=True):
     return spec3
 
 
-def rebin_to_rest(spec, zarr, dv, debug=True):
+def collate(spectra):
+    """ Pack list of XSpectrum1D files into one object
+    Meta data will be scrubbed..
+
+    Parameters
+    ----------
+    spectra : list of XSpectrum1D
+
+    Returns
+    -------
+    new_spec : XSpectrum1D
+
+    """
+    from linetools.spectra.xspectrum1d import XSpectrum1D
+    # Init
+    maxpix = 0
+    flg_co = False
+    nspec = len(spectra)
+    units = None
+    for spec in spectra:
+        maxpix = max(maxpix, spec.npix)
+        if spec.co_is_set:
+            flg_co = True
+        # Check for identical units
+        if units is None:
+            units = spec.units
+        else:
+            assert spec.units == units
+    # Generate data arrays
+    wave = np.zeros((nspec, maxpix))
+    flux = np.zeros_like(wave)
+    sig = np.zeros_like(wave)
+    if flg_co:
+        co = np.zeros_like(wave)
+    else:
+        co = None
+    # Load
+    for ii, spec in enumerate(spectra):
+        wave[ii,:spec.npix] = spec.wavelength.value
+        flux[ii,:spec.npix] = spec.flux.value
+        sig[ii,:spec.npix] = spec.sig.value
+        if flg_co:
+            co[ii,:spec.npix] = spec.co.value
+    # Finish
+    new_spec = XSpectrum1D(wave, flux, sig=sig, co=co, units=units.copy())
+    #new_spec.meta = spec.meta.copy()
+    # Return
+    return new_spec
+
+
+def rebin_to_rest(spec, zarr, dv, debug=False):
     """ Shuffle an XSpectrum1D dataset to an array of
     observed wavelengths and rebin to dv pixels.
     Note: This works on the unmasked data array and returns
@@ -159,7 +209,7 @@ def rebin_to_rest(spec, zarr, dv, debug=True):
     return new_spec
 
 
-def smash_spectra(spec, method='average', debug=True):
+def smash_spectra(spec, method='average', debug=False):
     """ Collapse the data in XSpectrum1D.data
     One might call this 'stacking'
     Note: This works on the unmasked data array and returns
@@ -174,7 +224,7 @@ def smash_spectra(spec, method='average', debug=True):
 
     Returns
     -------
-    stack : XSpectrum1D
+    new_spec : XSpectrum1D
 
     """
     from linetools.spectra.xspectrum1d import XSpectrum1D

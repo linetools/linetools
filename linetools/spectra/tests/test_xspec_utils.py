@@ -26,6 +26,37 @@ def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
 
+
+def test_collate(spec,spec2):
+    coll_spec = ltsu.collate([spec,spec2])
+    assert coll_spec.nspec == 2
+    assert coll_spec.totpix == 20379
+
+
+def test_rebin_to_rest(spec,spec2):
+    zarr = np.array([2.1,2.2])
+    # Build spectra array
+    coll_spec = ltsu.collate([spec,spec2])
+    rest_spec = ltsu.rebin_to_rest(coll_spec, zarr, 100*u.km/u.s, debug=False)
+    # Test
+    assert rest_spec.totpix == 3716
+    np.testing.assert_allclose(rest_spec.wvmin.value, 986.021738877745, rtol=1e-5)
+
+
+def test_smash_spectra(spec,spec2):
+    # Try to stack 2 spectra with different wavelengths
+    coll_spec = ltsu.collate([spec,spec2])
+    with pytest.raises(AssertionError):
+        stack = ltsu.smash_spectra(coll_spec)
+    # Stack rebinned
+    zarr = np.array([2.1,2.2])
+    rest_spec = ltsu.rebin_to_rest(coll_spec, zarr, 100*u.km/u.s, debug=False)
+    stack = ltsu.smash_spectra(rest_spec)
+    # Test
+    assert stack.totpix == 3716
+    np.testing.assert_allclose(stack.flux[0].value, -1.19753563, rtol=1e-5)
+
+
 def test_airtovac_andback(spec):
     npix = 1000
     spec = XSpectrum1D.from_tuple((np.linspace(5000.,6000,npix), np.ones(npix)))
@@ -39,34 +70,6 @@ def test_airtovac_andback(spec):
     spec.vactoair()
     np.testing.assert_allclose(spec.wavelength[0].value, 5000., rtol=1e-5)
     assert spec.meta['airvac'] == 'air'
-
-
-def test_write(spec,specm):
-    # FITS
-    spec.write(data_path('tmp.fits'))
-    spec.write(data_path('tmp.fits'), FITS_TABLE=True)
-    # ASCII
-    spec.write(data_path('tmp.ascii'))
-    # HDF5
-    specm.write(data_path('tmp.hdf5'))
-
-
-def test_hdf5(specm):
-    import h5py
-    # Write. Should be replaced with tempfile.TemporaryFile
-    specm.write_to_hdf5(data_path('tmp.hdf5'))
-    #
-    specread = io.readspec(data_path('tmp.hdf5'))
-    # check a round trip works
-    np.testing.assert_allclose(specm.wavelength, specread.wavelength)
-    # Add to existing file
-    tmp2 = h5py.File(data_path('tmp2.hdf5'), 'w')
-    foo = tmp2.create_group('boxcar')
-    specm.add_to_hdf5(tmp2, path='/boxcar/')
-    tmp2.close()
-    # check a round trip works
-    spec3 = io.readspec(data_path('tmp2.hdf5'), path='/boxcar/')
-    np.testing.assert_allclose(specm.wavelength, spec3.wavelength)
 
 
 def test_rebin(spec):
@@ -124,10 +127,6 @@ def test_gauss_smooth(spec):
     assert smth_spec.flux.unit == spec.flux.unit
 
 
-def test_print_repr(spec):
-    print(repr(spec))
-    print(spec)
-
 
 def test_rebintwo(spec):
     # Add units
@@ -161,49 +160,6 @@ def test_splice_two(spec, spec2):
 def test_stitch(specm):
     spec = specm.stitch()
     assert spec.npix == 18390
-
-
-def test_write_ascii(spec):
-    # Write. Should be replaced with tempfile.TemporaryFile
-    spec.write_to_ascii(data_path('tmp.ascii'))
-    #
-    specb = io.readspec(data_path('tmp.ascii'))
-    # check a round trip works
-    np.testing.assert_allclose(spec.wavelength, specb.wavelength)
-
-
-def test_write_fits(spec, spec2):
-    # Write. Should be replaced with tempfile.TemporaryFile
-    spec.write_to_fits(data_path('tmp.fits'))
-    specin = io.readspec(data_path('tmp.fits'))
-    # check a round trip works
-    np.testing.assert_allclose(spec.wavelength, specin.wavelength)
-    # ESI
-    spec2.write_to_fits(data_path('tmp2.fits'))
-    specin2 = io.readspec(data_path('tmp2.fits'))
-    # check a round trip works
-    np.testing.assert_allclose(spec2.wavelength, specin2.wavelength)
-
-
-def test_readwrite_without_sig():
-    sp = XSpectrum1D.from_tuple((np.array([5,6,7]), np.ones(3)))
-    sp.write_to_fits(data_path('tmp.fits'))
-    sp1 = io.readspec(data_path('tmp.fits'))
-    np.testing.assert_allclose(sp1.wavelength.value, sp.wavelength.value)
-    np.testing.assert_allclose(sp1.flux.value, sp.flux.value)
-
-
-def test_readwrite_metadata(spec):
-    d = {'a':1, 'b':'abc', 'c':3.2, 'd':np.array([1,2,3]),
-         'e':dict(a=1,b=2)}
-    spec.meta.update(d)
-    spec.write_to_fits(data_path('tmp.fits'))
-    spec2 = io.readspec(data_path('tmp.fits'))
-    assert spec2.meta['a'] == d['a']
-    assert spec2.meta['b'] == d['b']
-    np.testing.assert_allclose(spec2.meta['c'], d['c'])
-    np.testing.assert_allclose(spec2.meta['d'], d['d'])
-    assert spec2.meta['e'] == d['e']
 
 
 def test_copy(spec):
@@ -281,6 +237,4 @@ def test_wvmnx():
                                    np.ones(npix)*0.1))
     assert spec.wvmin.value == 5000.
     assert spec.wvmax.value == 6000.
-
-
 
