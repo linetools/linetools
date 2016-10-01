@@ -433,30 +433,21 @@ class XSpectrum1D(object):
     @property
     def npix(self):
         """ Number of *unmasked* pixels """
-        try:
-            return self._npix
-        except AttributeError:
-            self.set_diagnostics()
-            return self._npix
+        self.set_diagnostics()  # Need to re-run in case self.select changes
+        return self._npix
 
 
     @property
     def wvmin(self):
         """Minimum wavelength """
-        try:
-            return self._wvmin
-        except AttributeError:
-            self.set_diagnostics()
-            return self._wvmin
+        self.set_diagnostics()
+        return self._wvmin
 
     @property
     def wvmax(self):
         """Maximum wavelength """
-        try:
-            return self._wvmax
-        except AttributeError:
-            self.set_diagnostics()
-            return self._wvmax
+        self.set_diagnostics()
+        return self._wvmax
 
     def set_diagnostics(self):
         """Generate simple diagnostics on the spectrum.
@@ -781,7 +772,7 @@ class XSpectrum1D(object):
                 plt.show()
 
     #  Rebin
-    def rebin(self, new_wv, do_sig=False):
+    def rebin(self, new_wv, do_sig=False, **kwargs):
         """ Rebin to a new wavelength array
 
         Uses simple linear interpolation.  The default (and only)
@@ -900,7 +891,7 @@ class XSpectrum1D(object):
 
         newspec = XSpectrum1D.from_tuple((new_wv, new_fx*funit,
                                           new_sig, new_co),
-                                         meta=self.meta.copy())
+                                         meta=self.meta.copy(), **kwargs)
         # Return
         return newspec
 
