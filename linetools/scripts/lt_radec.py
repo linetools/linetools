@@ -2,8 +2,6 @@
 
 """
 Ingest input coordinates and print them to the screen
-Plot the data for a line (or lines)
-Also print the line data
   Examples:
   lt_radec 152.25900,7.22885
 """
