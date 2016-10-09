@@ -43,7 +43,7 @@ def ion_name(ion, flg=0, nspace=None):
     Returns
     -------
     name : str
-      e.g. Si II, {\\rm Si}^{+}
+      e.g. SiII, {\\rm Si}^{+}
 
     """
     if isinstance(ion,tuple):
@@ -90,7 +90,7 @@ def name_ion(ion):
     Returns
     -------
     ion_tup : tuple
-      e.g. (14,2)
+      Z, ion -- e.g. (14,2)
     """
     if isinstance(ion,basestring):
         pass

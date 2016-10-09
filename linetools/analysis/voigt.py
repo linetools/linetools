@@ -230,7 +230,7 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'],
         vmodel = vmodel.rebin(iwave)
     # Convolve
     if fwhm is not None:
-        vmodel.gauss_smooth(fwhm=fwhm)
+        vmodel = vmodel.gauss_smooth(fwhm=fwhm)
     else:
         warnings.warn('Assuming infinite spectral resolution, i.e. no smoothing.')
         warnings.warn('Set fwhm to smooth.')

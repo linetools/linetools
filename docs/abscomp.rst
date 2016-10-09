@@ -47,16 +47,14 @@ The default sets the properties listed above::
 More commonly, one will instantiate with one
 `~linetools.spectralline.AbsLine` object::
 
-    lya = AbsLine(1215.670*u.AA)
-    lya.analy['vlim'] = [-300.,300.]*u.km/u.s
-    lya.attrib['z'] = 2.92939
+    lya = AbsLine(1215.670*u.AA, z=2.92939)
+    lya.limits.set([-300.,300.]*u.km/u.s)  # vlim
     abscomp1 = AbsComponent.from_abslines([lya])
 
 or multiple::
 
-    lyb = AbsLine(1025.7222*u.AA)
-    lyb.analy['vlim'] = [-300.,300.]*u.km/u.s
-    lyb.attrib['z'] = lya.attrib['z']
+    lyb = AbsLine(1025.7222*u.AA, z=lya.attrib['z'])
+    lyb.limits.set([-300.,300.]*u.km/u.s)  # vlim
     abscomp = AbsComponent.from_abslines([lya,lyb])
 
 One may also instantiate from a *dict*, usually read

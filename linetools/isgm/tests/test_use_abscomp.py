@@ -7,6 +7,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import pytest
 from astropy import units as u
 from astropy.table import QTable
+from astropy.coordinates import SkyCoord
 import numpy as np
 import pdb
 
@@ -18,15 +19,18 @@ from linetools.spectralline import AbsLine
 from linetools.spectra import io as lsio
 from linetools.analysis import absline as ltaa
 from linetools.isgm import utils as ltiu
+import linetools.utils as ltu
 
-import imp
+import imp, os
 lt_path = imp.find_module('linetools')[1]
 
 #import pdb
 #pdb.set_trace()
 # Set of Input lines
 
-def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True):
+
+def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
+            add_trans=False, zcomp=2.92939, b=20*u.km/u.s):
     # Read a spectrum Spec
     if add_spec:
         xspec = lsio.readspec(lt_path+'/spectra/tests/files/UM184_nF.fits')
@@ -37,10 +41,11 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True):
         all_trans = ['HI 1215', 'HI 1025']
     elif ctype == 'SiII':
         all_trans = ['SiII 1260', 'SiII 1304', 'SiII 1526', 'SiII 1808']
+        if add_trans:
+            all_trans += ['SiII 1193']
     abslines = []
     for trans in all_trans:
-        iline = AbsLine(trans)
-        iline.attrib['z'] = 2.92939
+        iline = AbsLine(trans, z=zcomp)
         if use_rand:
             rnd = np.random.rand()
         else:
@@ -48,8 +53,9 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True):
         iline.attrib['logN'] = 13.3 + rnd
         iline.attrib['sig_logN'] = 0.15
         iline.attrib['flag_N'] = 1
+        iline.attrib['b'] = b
         iline.analy['spec'] = xspec
-        iline.analy['vlim'] = vlim
+        iline.limits.set(vlim)
         _,_ = ltaa.linear_clm(iline.attrib)  # Loads N, sig_N
         abslines.append(iline)
     # Component
@@ -57,7 +63,35 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True):
     return abscomp, abslines
 
 
-def test_todict():
+def data_path(filename):
+    data_dir = os.path.join(os.path.dirname(__file__), 'files')
+    return os.path.join(data_dir, filename)
+
+
+def compare_two_files(file1, file2):
+    f1 = open(file1, 'r')
+    f2 = open(file2, 'r')
+    lines1 = f1.readlines()
+    lines2 = f2.readlines()
+    for l1,l2 in zip(lines1,lines2):
+        assert l1 == l2
+    f1.close()
+    f2.close()
+
+
+def test_add_absline():
+    abscomp,_ = mk_comp('HI', zcomp=0.)
+    abscomp.add_absline(AbsLine('HI 972'), chk_sep=False, chk_vel=False)
+    with pytest.raises(ValueError):
+        abscomp.add_absline(AbsLine('HI 949'), vtoler=-10)
+    # failed addition
+    bad_absline = AbsLine('CIV 1550')
+    bad_absline.limits.set([500, 1000]*u.km/u.s)
+    bad_absline.attrib['coord'] = SkyCoord(20,20, unit='deg')
+    abscomp.add_absline(bad_absline)
+
+
+def test_fromtodict():
     SiIIcomp1,_ = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s, add_spec=True)
     cdict = SiIIcomp1.to_dict()
     #
@@ -66,6 +100,8 @@ def test_todict():
     # And instantiate
     newcomp = AbsComponent.from_dict(cdict)
     assert isinstance(newcomp, AbsComponent)
+    newcomp = AbsComponent.from_dict(cdict, coord=SkyCoord(0,0, unit='deg'))
+
 
 def test_build_table():
     abscomp,_ = mk_comp('HI')
@@ -73,20 +109,28 @@ def test_build_table():
     comp_tbl = abscomp.build_table()
     # Test
     assert isinstance(comp_tbl,QTable)
+    # empty
+    abscomp._abslines = []
+    comp_tbl = abscomp.build_table()
+
 
 def test_synthesize_colm():
-    abscomp,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True)
+    abscomp,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True,
+                        add_trans=True)
     # Column
     abscomp.synthesize_colm(redo_aodm=True)
     # Test
     np.testing.assert_allclose(abscomp.logN, 13.594445560856554)
     # Reset flags (for testing)
-    abscomp2,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True, use_rand=False)
+    abscomp2,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True, use_rand=False,
+                         add_trans=True)
     for iline in abscomp2._abslines:
         if iline.data['name'] == 'SiII 1260':
             iline.attrib['flag_N'] = 2
         elif iline.data['name'] == 'SiII 1808':
             iline.attrib['flag_N'] = 3
+        elif iline.data['name'] == 'SiII 1193':
+            iline.attrib['flag_N'] = 0
         else:
             iline.attrib['flag_N'] = 1
     abscomp2.synthesize_colm()
@@ -104,6 +148,12 @@ def test_synthesize_colm():
     abscomp3.synthesize_colm()
     # Test
     np.testing.assert_allclose(abscomp3.logN, 13.3)
+    # test error
+    with pytest.raises(IOError):
+        abscomp3.synthesize_colm(overwrite=False)
+    with pytest.raises(ValueError):
+        abscomp3._abslines[0].attrib['N'] = 0 / u.cm / u.cm
+        abscomp3.synthesize_colm(overwrite=True)
 
 def test_build_components_from_lines():
     # Lines
@@ -112,6 +162,7 @@ def test_build_components_from_lines():
     # Components
     comps = ltiu.build_components_from_abslines([HIlines[0],HIlines[1],SiIIlines[0],SiIIlines[1]])
     assert len(comps) == 2
+
 
 def test_iontable_from_components():
     # Lines
@@ -122,6 +173,7 @@ def test_iontable_from_components():
     tbl = ltiu.iontable_from_components(comps)
     assert len(tbl) == 2
 
+
 def test_cog():
     # Component
     abscomp,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True)
@@ -130,6 +182,7 @@ def test_cog():
     # Test
     np.testing.assert_allclose(COG_dict['logN'],13.693355878125537)
     np.testing.assert_allclose(COG_dict['sig_logN'],0.054323725737309987)
+
 
 def test_synthesize_components():
     #
@@ -166,9 +219,6 @@ def test_stack_plot():
 """
 
 
-
-
-
 def test_repr_vpfit():
     abscomp, HIlines = mk_comp('HI')
     s = abscomp.repr_vpfit()
@@ -180,12 +230,20 @@ def test_repr_vpfit():
     abscomp.comment = 'Something'
     s = abscomp.repr_vpfit()
     assert s == 'HI 2.92939 0.00000 10.00 0.00 0.00 0.00! Something\n'
-    s = abscomp.repr_vpfit(tie_strs=('a', 'b', 'CD'),fix_strs=('', 'f', ''))
+    s = abscomp.repr_vpfit(tie_strs=('a', 'b', 'CD'), fix_strs=('', 'f', ''))
     assert s == 'HI 2.92939a 0.00000 10.00F 0.00 0.00cd 0.00! Something\n'
 
     abscomp, SiIIlines = mk_comp('SiII')
     s = abscomp.repr_vpfit()
     assert s == 'SiII 2.92939 0.00000 10.00 0.00 0.00 0.00\n'
+
+    # errors
+    with pytest.raises(TypeError):
+        s = abscomp.repr_vpfit(tie_strs='bad_format')
+    with pytest.raises(TypeError):
+        s = abscomp.repr_vpfit(fix_strs='bad_format')
+    with pytest.raises(SyntaxError):
+        s = abscomp.repr_vpfit(fix_strs=('1','2','3','4','5'))
 
 
 def test_repr_alis():
@@ -200,5 +258,110 @@ def test_repr_alis():
     abscomp.comment = 'Something'
     s = abscomp.repr_alis()
     assert s == 'voigt   ion=28Si_II 0.00 redshift=2.92939 0.0 1.0E+04# Something\n'
-    s = abscomp.repr_alis(tie_strs=('a', 'b', 'CD',''),fix_strs=('', 'f', '', ''))
+    s = abscomp.repr_alis(tie_strs=('a', 'b', 'CD',''), fix_strs=('', 'f', '', ''))
     assert s == 'voigt   ion=28Si_II 0.00a redshift=2.92939F 0.0cd 1.0E+04# Something\n'
+
+    # errors
+    with pytest.raises(TypeError):
+        s = abscomp.repr_alis(tie_strs='bad_format')
+    with pytest.raises(TypeError):
+        s = abscomp.repr_alis(fix_strs='bad_format')
+    with pytest.raises(SyntaxError):
+        s = abscomp.repr_alis(fix_strs=('1','2','3','4','5'))
+
+
+def test_repr_joebvp():
+    # test with b=0, should be replaced by b_default
+    abscomp, HIlines = mk_comp('HI', b=0*u.km/u.s, use_rand=False)
+    s = abscomp.repr_joebvp('test.fits', b_default=3.3*u.km/u.s)
+    assert s == 'test.fits|1215.67000|2.92939000|13.3000|3.3000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|HI\n' \
+                'test.fits|1025.72220|2.92939000|13.3000|3.3000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI\n'
+    # test with b != 0
+    abscomp, HIlines = mk_comp('HI', b=15*u.km/u.s, use_rand=False)
+    s = abscomp.repr_joebvp('test.fits', b_default=3.3*u.km/u.s)
+    assert s == 'test.fits|1215.67000|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|HI\n' \
+                'test.fits|1025.72220|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI\n'
+    # test with comment
+    abscomp.comment = 'Something'
+    s = abscomp.repr_joebvp('test.fits')
+    assert s == 'test.fits|1215.67000|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|HI# Something\n' \
+                'test.fits|1025.72220|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI# Something\n'
+
+
+def test_complist_to_joebvp():
+    # will write a file in directory ./files/
+    abscomp, HIlines = mk_comp('HI', b=15*u.km/u.s, use_rand=False)
+    comp_list = [abscomp, abscomp]
+    ltiu.joebvp_from_components(comp_list, 'test.fits', data_path('test_joebvp_repr.joebvp'))
+    # now read the output and compare to reference
+    compare_two_files(data_path('test_joebvp_repr.joebvp'), lt_path + '/data/tests/test_joebvp_repr_reference.joebvp')
+    # now add attribute to comp and compare again
+    abscomp.attrib['b'] = 15*u.km/u.s
+    ltiu.joebvp_from_components(comp_list, 'test.fits', data_path('test_joebvp_repr.joebvp'))
+    compare_two_files(data_path('test_joebvp_repr.joebvp'), lt_path + '/data/tests/test_joebvp_repr_reference.joebvp')
+
+
+def test_get_wvobs_chunks():
+    abscomp, HIlines = mk_comp('HI', zcomp=0., vlim=[0,10]*u.km/u.s)
+    wvobs_chunks = ltiu.get_wvobs_chunks(abscomp)
+    np.testing.assert_allclose(wvobs_chunks[0][0], 1215.67*u.AA)
+    np.testing.assert_allclose(wvobs_chunks[0][1], 1215.71055106*u.AA)
+    np.testing.assert_allclose(wvobs_chunks[1][0], 1025.7222*u.AA)
+    np.testing.assert_allclose(wvobs_chunks[1][1], 1025.75641498*u.AA)
+    abscomp, HIlines = mk_comp('HI', zcomp=1., vlim=[-100,100]*u.km/u.s)
+    wvobs_chunks = ltiu.get_wvobs_chunks(abscomp)
+    np.testing.assert_allclose(wvobs_chunks[0][0], 2430.52912749*u.AA)
+    np.testing.assert_allclose(wvobs_chunks[0][1], 2432.15114303*u.AA)
+    np.testing.assert_allclose(wvobs_chunks[1][0], 2050.76022589*u.AA)
+    np.testing.assert_allclose(wvobs_chunks[1][1], 2052.12880236*u.AA)
+    abscomp, HIlines = mk_comp('HI', zcomp=1., vlim=[-100,100]*u.km/u.s)
+    abscomp._abslines[0].analy['wvlim'] = [0,0]*u.AA
+    wvobs_chunks = ltiu.get_wvobs_chunks(abscomp)
+    abscomp._abslines[1].analy['vlim'] = [0,0]*u.AA
+    wvobs_chunks = ltiu.get_wvobs_chunks(abscomp)
+    abscomp._abslines[0].attrib['z'] = 0
+    abscomp._abslines[0].analy['wvlim'] = [1,0]*u.AA
+    wvobs_chunks = ltiu.get_wvobs_chunks(abscomp)
+
+
+def test_coincident_components():
+    abscomp, HIlines = mk_comp('HI', zcomp=2.92939)
+    SiIIcomp1,_ = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s, zcomp=2.92939)
+    SiIIcomp2,_ = mk_comp('SiII',vlim=[-300.,0.]*u.km/u.s, zcomp=2.92939)
+    assert ltiu.coincident_components(abscomp, abscomp)  # should overlap
+    assert not ltiu.coincident_components(abscomp, SiIIcomp1)  # should not overlap
+    assert not ltiu.coincident_components(SiIIcomp2, SiIIcomp1) # should not overlap
+    with pytest.raises(ValueError):
+        a = ltiu.coincident_components('not_a_component', SiIIcomp1)
+    with pytest.raises(ValueError):
+        a = ltiu.coincident_components(abscomp, 'not_a_component')
+
+
+def test_group_coincident_compoments():
+    abscomp, HIlines = mk_comp('HI', zcomp=2.92939)
+    SiIIcomp1, _ = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s, zcomp=2.92939)
+    SiIIcomp2, _ = mk_comp('SiII',vlim=[-300.,0.]*u.km/u.s, zcomp=2.92939)
+    # reset names for easy testing
+    abscomp.name = 'HI'
+    SiIIcomp1.name = 'SiII_1'
+    SiIIcomp2.name = 'SiII_2'
+    comp_list = [abscomp, abscomp, SiIIcomp1, abscomp, SiIIcomp2, abscomp, SiIIcomp1, SiIIcomp2]
+    out = ltiu.group_coincident_compoments(comp_list)
+    assert len(out) == 3  # only three groups
+    out_names_0 = [comp.name for comp in out[0]]  # these should be only HI in group 0, and 4 of them
+    assert np.sum([n == 'HI' for n in out_names_0]) == 4
+    assert len(out[0]) == 4
+    out_names = [[],[],[]]
+    for ii in range(len(out)):
+        for comp in out[ii]:
+            out_names[ii] += [comp.name]
+    assert out_names == [['HI', 'HI', 'HI', 'HI'], ['SiII_1', 'SiII_1'], ['SiII_2', 'SiII_2']]
+    # now a case where are all different
+    comp_list = [abscomp, SiIIcomp1, SiIIcomp2]
+    out = ltiu.group_coincident_compoments(comp_list)
+    for a,b in zip(comp_list, out):
+        assert len(b) == 1
+        assert a == b[0]
+    # check output as dictionary
+    out = ltiu.group_coincident_compoments(comp_list, output_type='dict')
+    assert isinstance(out, dict)

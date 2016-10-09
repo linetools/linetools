@@ -9,13 +9,22 @@ Also print the line data
 """
 import pdb
 
-def plot_absline(wrest,logN,b, show=True):
+try:
+    ustr = unicode
+except NameError:
+    ustr = str
+try:
+    basestring
+except NameError:
+    basestring = str
+
+def plot_absline(iinp,logN,b, show=True):
     """Plot an absorption line with N,b properties
 
     Parameters
     ----------
-    wrest : float
-      Rest wavelength (Ang)
+    iinp : float or str
+      Rest wavelength (Ang) or name of transition (e.g. CIV1548)
     logN : float
       Log10 column
     b : float
@@ -29,7 +38,11 @@ def plot_absline(wrest,logN,b, show=True):
     from astropy import units as u
 
     # Search for the closest absline
-    aline = AbsLine(wrest*u.AA, closest=True)
+    if isinstance(iinp,basestring):
+        aline = AbsLine(iinp, closest=True)
+    else:
+        aline = AbsLine(iinp*u.AA, closest=True)
+    wrest = aline.wrest.value
 
     # Generate a fake wavelength array near the line
     wvoff = 50. # Ang
@@ -52,7 +65,7 @@ def plot_absline(wrest,logN,b, show=True):
 
     # Calculate EW
     aline.analy['spec'] = xspec
-    aline.analy['wvlim'] = np.array([wrest-15., wrest+15])*u.AA
+    aline.limits.set([wrest-15., wrest+15]*u.AA)
     aline.measure_ew()
     print(aline)
     print('EW = {:g}'.format(aline.attrib['EW']))
@@ -65,10 +78,19 @@ def main(args=None):
     # Parse
     parser = argparse.ArgumentParser(
         description='Plot an absorption line with the given parameters.')
-    parser.add_argument("wrest", type=float, help="Rest wavelength in Angstroms")
+    parser.add_argument("inp", type=str, help="Rest wavelength in Angstroms or name of transition (e.g. CIV1548)")
     parser.add_argument("logN", type=float, help="log10 column density")
     parser.add_argument("b", type=float, help="b-value in km/s")
      
     pargs = parser.parse_args()
-    plot_absline(pargs.wrest, pargs.logN, pargs.b)
+    # Deal with over-loaded input
+    if ustr(pargs.inp[0]).isdecimal():  # Input rest wavelength
+        iinp = float(pargs.inp)
+    else:
+        # Add space in for name
+        for kk,ic in enumerate(pargs.inp):
+            if ustr(ic).isdecimal():
+                break
+        iinp = str(pargs.inp[0:kk]+' '+pargs.inp[kk:])
+    plot_absline(iinp, pargs.logN, pargs.b)
 

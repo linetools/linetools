@@ -55,8 +55,8 @@ matrix:
           env: SETUP_CMD='test'
 
         # Try older numpy versions.
-        - python: 2.7
-          env: NUMPY_VERSION=1.9 SETUP_CMD='test'
+        # - python: 2.7
+        # env: NUMPY_VERSION=1.9 SETUP_CMD='test'
 
 before_install:
 
@@ -84,7 +84,7 @@ install:
     - source activate test
 
     # CORE DEPENDENCIES
-    - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION pytest pip Cython jinja2; fi
+    - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION pytest pip Cython jinja2 pyqt; fi
     - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL pytest-xdist; fi
 
     # ASTROPY
@@ -97,7 +97,7 @@ install:
     # packages. You should leave the `numpy=$NUMPY_VERSION` in the `conda`
     # install since this ensures Numpy does not get automatically upgraded.
     - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION scipy; fi
-    - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL specutils; fi
+    - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION h5py; fi
     - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL pyyaml; fi
     - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION matplotlib; fi
 

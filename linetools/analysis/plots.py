@@ -53,13 +53,22 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True,
 
     gs = gridspec.GridSpec(nrow, ncol)
 
+    # Loop me
     for qq, iline in enumerate(gdiline):
         ax = plt.subplot(gs[qq % nrow, qq//nrow])
         ax.clear()
+        # Normalize as need be (note the spectrum can vary with iline)
+        if iline.analy['spec'].co_is_set:
+            co = iline.analy['spec'].co
+        else:
+            co = 1.
+        norm_flux = iline.analy['spec'].flux/co
+        norm_sig = iline.analy['spec'].sig/co
+        #
         # Plot
         velo = iline.analy['spec'].relative_vel((1+iline.attrib['z'])*iline.wrest)
-        ax.plot(velo, iline.analy['spec'].flux, 'k-', linestyle='steps-mid')
-        ax.plot(velo, iline.analy['spec'].sig, 'r:')
+        ax.plot(velo, norm_flux,  'k-', linestyle='steps-mid')
+        ax.plot(velo, norm_sig,  'r:')
         # Lines
         ax.plot([0]*2, ymnx, 'g--')
         # Axes

@@ -15,13 +15,15 @@ import warnings
 
 from astropy import constants as const
 from astropy import units as u
-from astropy.table import QTable
+from astropy.table import Table
+from astropy.units import Quantity
 
 from linetools.analysis import absline as ltaa
 from linetools.isgm.abscomponent import AbsComponent
+from linetools.utils import give_dz
+from linetools.spectralline import init_analy
 
-
-def chk_components(components, chk_match=False, chk_A_none=False, toler=0.2*u.arcsec):
+def chk_components(components, chk_match=False, chk_A_none=False, tol=0.2*u.arcsec):
     """ Performs checks on a list of components
 
     Parameters
@@ -32,16 +34,16 @@ def chk_components(components, chk_match=False, chk_A_none=False, toler=0.2*u.ar
       if True, require that the components match in RA/DEC, Zion, Ej, A but not velocity
     chk_A_none : bool, optional
       if True, require that A *not* be set
-    toler : Angle, optional
-      Tolerance on matching coordinates
+    tol : Quantity, optional
+      Tolerance on matching SkyCoord. Default is 0.2*u.arcsec
     """
     tests = True
     # List
-    if not isinstance(components,list):
+    if not isinstance(components, list):
         tests = False
         raise IOError('Need a list of AbsComponent objects')
     # Object
-    if not all(isinstance(x,AbsComponent) for x in components):
+    if not all(isinstance(x, AbsComponent) for x in components):
         tests = False
         raise IOError('List needs to contain only AbsComponent objects')
     # A None
@@ -55,7 +57,7 @@ def chk_components(components, chk_match=False, chk_A_none=False, toler=0.2*u.ar
         comp0 = components[0]
         for comp in components[1:]:
             # RA/DEC
-            match = match & bool(comp0.coord.separation(comp.coord) < toler)
+            match = match & bool(comp0.coord.separation(comp.coord) < tol)
             # Zion
             match = match & (comp0.Zion == comp.Zion)
             # Ej
@@ -122,8 +124,8 @@ def build_components_from_abslines(iabslines, clmdict=None, coord=None,
         # Reset vmin, vmax
         vmin,vmax = 9999., -9999.
         for iline in lines:
-            vmin = min(vmin, iline.analy['vlim'][0].value)
-            vmax = max(vmax, iline.analy['vlim'][1].value)
+            vmin = min(vmin, iline.limits.vlim[0].value)
+            vmax = max(vmax, iline.limits.vlim[1].value)
         component.vlim = [vmin,vmax]*u.km/u.s
         # Append
         components.append(component)
@@ -151,14 +153,14 @@ def build_components_from_dict(idict, coord=None, **kwargs):
     if 'components' in idict.keys():
         # Components
         for key in idict['components']:
-            components.append(AbsComponent.from_dict(idict['components'][key], **kwargs))
+            components.append(AbsComponent.from_dict(idict['components'][key], coord=coord, **kwargs))
     elif 'lines' in idict.keys():  # to be deprecated
         lines = []
         for key in idict['lines']:
             if isinstance(idict['lines'][key], AbsLine):
                 line = idict['lines'][key]
             elif isinstance(idict['lines'][key], dict):
-                line = AbsLine.from_dict(idict['lines'][key])
+                line = AbsLine.from_dict(idict['lines'][key], coord=coord)
             else:
                 raise IOError("Need those lines")
             if coord is not None:
@@ -171,8 +173,63 @@ def build_components_from_dict(idict, coord=None, **kwargs):
     return components
 
 
+def build_systems_from_components(comps, **kwargs):
+    """ Build a list of AbsSystems from a list of AbsComponents
+    Current default implementation allows for overlapping components, i.e.
+      only_overalp=True in add_component
+
+    Parameters
+    ----------
+    comps : list
+
+    Returns
+    -------
+    abs_systems : list
+
+    """
+    from linetools.isgm.abssystem import GenericAbsSystem
+    if 'overlap_only' not in kwargs.keys():
+        kwargs['overlap_only'] = True
+    # Add
+    abs_systems = []
+    cpy_comps = [comp.copy() for comp in comps]
+    # Loop until all components assigned
+    while len(cpy_comps) > 0:
+        # Use the first one
+        comp = cpy_comps.pop(0)
+        abssys = GenericAbsSystem.from_components([comp])
+        abs_systems.append(abssys)
+        # Try the rest
+        comps_left = []
+        for icomp in cpy_comps:
+            if abssys.add_component(icomp, **kwargs):
+                pass
+            else:
+                comps_left.append(icomp)
+        cpy_comps = comps_left
+    # Return
+    return abs_systems
+
+
+def xhtbl_from_components(components, ztbl=None, NHI_obj=None):
+    """ Generate a Table of XH values from a list of components
+    Parameters
+    ----------
+    components
+    ztbl
+    NHI_obj
+
+    Returns
+    -------
+
+    """
+    # Get started
+    tbl = Table()
+    #
+
+
 def iontable_from_components(components, ztbl=None, NHI_obj=None):
-    """Generate a QTable from a list of components
+    """Generate a Table from a list of components
 
     Method does *not* perform logic on redshifts or vlim.
     Includes rules for adding components of like ion
@@ -189,7 +246,7 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
 
     Returns
     -------
-    iontbl : QTable
+    iontbl : Table
     """
     from collections import OrderedDict
     # Checks
@@ -199,7 +256,7 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
     if ztbl is None:
         ztbl = np.mean([comp.zcomp for comp in components])
 
-    # Construct the QTable
+    # Construct the Table
     cols = OrderedDict()  # Keeps columns in order
     cols['Z']=int
     cols['ion']=int
@@ -213,7 +270,8 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
     cols['sig_logN']=float
     names = cols.keys()
     dtypes = [cols[key] for key in names]
-    iontbl = QTable(names=names,dtype=dtypes)
+    iontbl = Table(names=names,dtype=dtypes)
+    iontbl['Ej'].unit=1./u.cm
     iontbl['vmin'].unit=u.km/u.s
     iontbl['vmax'].unit=u.km/u.s
 
@@ -242,7 +300,7 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
         mt = np.where((iontbl['Z'] == 1) & (iontbl['ion']==1))[0]
         if len(mt) == 1:
             iontbl[mt[0]]['logN'] = NHI_obj.NHI
-            iontbl[mt[0]]['sig_logN'] = NHI_obj.sig_NHI
+            iontbl[mt[0]]['sig_logN'] = np.mean(NHI_obj.sig_NHI) # Allow for two values
             iontbl[mt[0]]['flag_N'] = NHI_obj.flag_NHI
         else:
             if len(components) > 0:
@@ -254,7 +312,7 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
             #
             row = dict(Z=1,ion=1, z=ztbl,
                        Ej=0./u.cm,vmin=vmin, vmax=vmax, logN=NHI_obj.NHI,
-                       flag_N=NHI_obj.flag_NHI,sig_logN=NHI_obj.sig_NHI)
+                       flag_N=NHI_obj.flag_NHI,sig_logN=np.mean(NHI_obj.sig_NHI))
             iontbl.add_row(row)
 
     # Add zlim to metadata
@@ -308,3 +366,197 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
 
     # Return
     return synth_comp
+
+
+def get_wvobs_chunks(comp):
+    """For a given component, it gets a list of tuples with the
+    min/max observed wavelengths for each absorption line in the
+    component. An error is raised if an absorption line within the
+    component does not have its limits defined.
+
+    Parameters
+    ----------
+    comp : AbsComponent
+        The input AbsComponent object
+
+    Returns
+    -------
+    wvobs_chunks : list of Quantity arrays
+        A list with the wvmin, wvmax values for each absorption
+        line within the component.
+    """
+
+    if not isinstance(comp, AbsComponent):
+        raise ValueError('`comp` must be AbsComponent object.')
+
+    wvobs_chunks = []
+    for absline in comp._abslines:
+        # Check whether the absline has already defined 'wvlim'
+        if absline.limits.is_set():
+            wvlim_aux = absline.limits.wvlim
+            wvobs_chunks += [wvlim_aux]
+        else:
+            raise ValueError('{} must have its limits defined.'.format(absline))
+    return wvobs_chunks
+
+
+def coincident_components(comp1, comp2, tol=0.2*u.arcsec):
+    """Whether two components overlap in wavelength (observed)
+    space and (ra,dec) sky position. This is useful to identify
+    components that may need to be fit together in a given spectrum.
+
+    Parameters
+    ----------
+    comp1 : AbsComponent
+        A given AbsComponent object
+    comp2 : AbsComponent
+        A given AbsComponent object
+    tol : Quantity, optional
+        Tolerance for checking whether the two components are
+        in the same sky region. Default is 0.2*u.arcsec
+
+    Returns
+    -------
+    answer : bool
+        True if there is overlapping wavelength range and
+        radec coordinates, otherwise False.
+    """
+
+    if not isinstance(comp1, AbsComponent):
+        raise ValueError('comp1 must be AbsComponent object.')
+    if not isinstance(comp2, AbsComponent):
+        raise ValueError('comp1 must be AbsComponent object.')
+
+    # Check whether they are in the same sky region
+    if comp1.coord.separation(comp2.coord) > tol:
+        return False
+
+    # loop over abslines
+    for line1 in comp1._abslines:
+        for line2 in comp2._abslines:
+            overlap = line1.coincident_line(line2)
+            if overlap is True:
+                return True
+    return False
+
+
+def group_coincident_compoments(comp_list, output_type='list'):
+    """For a given input list of components, this function
+    groups together components that are coincident to each other
+    (including by transitivity), and returns them as a list (default)
+    or dictionary of component lists.
+
+    Parameters
+    ----------
+    comp_list : list of AbsComponent
+        Input list of components to group
+    output_type : str, optional
+        Type of the output, choose either
+        'list' for list or 'dict' for dictionary.
+
+    Returns
+    -------
+    output : list (or dictionary) of lists of AbsComponent
+        The grouped components as individual lists
+        in the output.
+    """
+    if output_type not in ['list', 'dict', 'dictionary']:
+        raise ValueError("`output_type` must be either 'list' or 'dict'.")
+
+    # the first extreme case is that all components are independent
+    # of each other, in which case we have the following output shape
+    out = [[] for kk in range(len(comp_list))]
+
+    for ii in range(len(comp_list)):
+        comp_ii = comp_list[ii]
+        # only append if ii does not belong to a previous round
+        switch = 0
+        for kk in range(len(out[:ii])):
+            if ii in out[kk]:
+                switch = 1
+                break
+        if switch == 1:
+            pass
+        else:
+            out[ii].append(ii)
+
+        for jj in range(ii+1, len(comp_list)):
+            # print(ii,jj)
+            comp_jj = comp_list[jj]
+            if coincident_components(comp_ii, comp_jj):  # There is overlap between comp_ii and comp_jj
+                # check in the previous ones where does jj belongs to
+                switch = 0
+                for kk in range(len(out[:ii])):
+                    if ii in out[kk]:  # this means ii already belongs to out[kk]
+                        # so jj should also go there...(if not there already)
+                        if jj in out[kk]:
+                            pass
+                        else:
+                            out[kk].append(jj)
+                        switch = 1  # for not appending jj again
+                        break
+                if switch == 1:
+                    pass  # this jj was appended already
+                else:
+                    # but check is not already there...
+                    if jj in out[ii]:
+                        pass
+                    else:
+                        out[ii].append(jj)
+                # print(out)
+            else:
+                pass
+
+    # Now we have out as a list of lists with indices, or empty lists
+    # let's get rid of the empty lists
+    out = [x for x in out if x != []]
+
+    # Now lets produce the final output from it
+    output_list = []
+    output_dict = {}
+    for ii in range(len(out)):
+        aux_list = []
+        for jj in out[ii]:
+            aux_list += [comp_list[jj]]
+        output_dict['{}'.format(ii)] = aux_list
+        output_list += [aux_list]
+
+    # choose between dict of list
+    if output_type == 'list':
+        return output_list
+    elif output_type in ['dict', 'dictionary']:
+        return output_dict
+
+
+def joebvp_from_components(comp_list, specfile, outfile):
+    """ From a given component list, it produces an
+    input file for JOEBVP (Voigt profile fitter).
+
+    Parameters
+    ----------
+    comp_list : list of AbsComponent
+        Input list of components to group
+    specfile : str
+        Name of the spectrum file associated to the components
+        in comp_list
+    outfile : str
+        Name of the output file
+
+    """
+    # Open new file to write out
+    f = open(outfile, 'w')
+
+    # Print header
+    s = 'specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|trans\n'
+    f.write(s)
+
+    # Components
+    for ii, comp in enumerate(comp_list):
+        flags = (ii+2,ii+2,ii+2)
+        try:
+            b_val = comp.attrib['b']
+        except KeyError:
+            b_val = 10*u.km/u.s
+        s = comp.repr_joebvp(specfile, flags=flags, b_default=b_val)  # still, b values from abslines take precedence if they exist
+        f.write(s)
+    f.close()

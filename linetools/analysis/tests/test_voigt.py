@@ -8,6 +8,7 @@ from astropy import units as u
 from linetools.spectralline import AbsLine
 from linetools.analysis.voigt import voigt_from_abslines, voigtking
 
+
 def test_voigt_sngl_line():
     # Wavelength array
     wave = np.linspace(3644, 3650, 100)*u.AA
@@ -40,6 +41,7 @@ def test_voigt_multi_line():
     vmodel3 = voigt_from_abslines(wave,[abslin,abslin2])
     np.testing.assert_allclose(vmodel3.flux[imn].value,0.5715512949324375)
 
+
 def test_voigt_fail():
     #
     wave = np.linspace(3644, 3650, 100)
@@ -61,6 +63,7 @@ def test_voigt_sngl_tau():
     # Tau
     tau = voigt_from_abslines(wave,abslin,ret='tau')
     np.testing.assert_allclose(tau[imn], 2.9681283001576779)
+
 
 def test_voigt_king():
     vin = np.linspace(0., 1., num=1000)
