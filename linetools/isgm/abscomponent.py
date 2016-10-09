@@ -207,6 +207,10 @@ class AbsComponent(object):
             self.name = '{:s}_z{:0.5f}'.format(iname, self.zcomp)
         else:
             self.name = name
+
+        # Potential for attributes
+        self.attrib = dict()
+
         # Other
         self._abslines = []
 
@@ -594,6 +598,49 @@ class AbsComponent(object):
         s += '\n'
         return s
 
+    def repr_joebvp(self, specfile, flags=(2,2,2), b_default=10*u.km/u.s):
+        """
+        String representation for JOEBVP (line fitting software).
+
+        Parameters
+        ----------
+        specfile : str
+            Name of the spectrum file
+        flags : tuple of ints, optional
+            Flags (nflag, bflag, vflag). See JOEBVP input for details
+            about these flags.
+        b_default : Quantity, optional
+            Doppler parameter value adopted in case an absorption
+            line within the component has not set this attribute
+            Default is 10 km/s.
+
+        Returns
+        -------
+        repr_joebvp : str
+            May contain multiple "\n" (1 per absline within component)
+
+        """
+        # Reference:
+        # specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|trans
+        s = ''
+        for aline in self._abslines:
+            s += '{:s}|{:.5f}|'.format(specfile, aline.wrest.to('AA').value)
+            logN = aline.attrib['logN']
+            b_val = aline.attrib['b'].to('km/s').value
+            if b_val == 0:  # set the default
+                b_val = b_default.to('km/s').value
+            s += '{:.8f}|{:.4f}|{:.4f}|0.|'.format(self.zcomp, logN, b_val)  # `vel` is set to 0. because z is zcomp
+            s += '{}|{}|{}|'.format(int(flags[0]), int(flags[1]), int(flags[2]))
+            vlim = aline.limits.vlim.to('km/s').value
+            wvlim = aline.limits.wvlim.to('AA').value
+            s += '{:.4f}|{:.4f}|{:.5f}|{:.5f}|'.format(vlim[0], vlim[1], wvlim[0], wvlim[1])
+            s += '{:s}'.format(aline.data['ion_name'])
+
+            if len(self.comment) > 0:
+                s += '# {:s}'.format(self.comment)
+            s += '\n'
+        return s
+
     def stack_plot(self, **kwargs):
         """Show a stack plot of the component, if spec are loaded
         Assumes the data are normalized.
@@ -642,8 +689,6 @@ class AbsComponent(object):
                 setattr(abscomp, attr, getattr(self, attr))
         # Return
         return abscomp
-
-
 
     def __getitem__(self, attrib):
         """Passback attribute, if it exists

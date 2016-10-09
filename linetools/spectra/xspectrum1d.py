@@ -433,30 +433,21 @@ class XSpectrum1D(object):
     @property
     def npix(self):
         """ Number of *unmasked* pixels """
-        try:
-            return self._npix
-        except AttributeError:
-            self.set_diagnostics()
-            return self._npix
+        self.set_diagnostics()  # Need to re-run in case self.select changes
+        return self._npix
 
 
     @property
     def wvmin(self):
         """Minimum wavelength """
-        try:
-            return self._wvmin
-        except AttributeError:
-            self.set_diagnostics()
-            return self._wvmin
+        self.set_diagnostics()
+        return self._wvmin
 
     @property
     def wvmax(self):
         """Maximum wavelength """
-        try:
-            return self._wvmax
-        except AttributeError:
-            self.set_diagnostics()
-            return self._wvmax
+        self.set_diagnostics()
+        return self._wvmax
 
     def set_diagnostics(self):
         """Generate simple diagnostics on the spectrum.
@@ -781,7 +772,7 @@ class XSpectrum1D(object):
                 plt.show()
 
     #  Rebin
-    def rebin(self, new_wv, do_sig=False):
+    def rebin(self, new_wv, do_sig=False, **kwargs):
         """ Rebin to a new wavelength array
 
         Uses simple linear interpolation.  The default (and only)
@@ -810,6 +801,13 @@ class XSpectrum1D(object):
         funit = self.flux.unit
         flux = self.flux.value
 
+        # Deal with nan
+        badf = np.isnan(flux)
+        if np.sum(badf) > 0:
+            warnings.warn("Ignoring NAN in flux")
+        gdf = ~badf
+        flux = flux[gdf]
+
         # Endpoints of original pixels
         npix = len(self.wavelength)
         wvh = (self.wavelength + np.roll(self.wavelength, -1)) / 2.
@@ -819,9 +817,13 @@ class XSpectrum1D(object):
         dwv[0] = 2 * (wvh[0] - self.wavelength[0])
         med_dwv = np.median(dwv.value)
 
+        wvh = wvh[gdf]
+        dwv = dwv[gdf]
+
         # Error
         if do_sig:
             var = self.sig.value**2
+            var = var[gdf]
         else:
             var = np.ones_like(flux)
 
@@ -889,7 +891,7 @@ class XSpectrum1D(object):
 
         newspec = XSpectrum1D.from_tuple((new_wv, new_fx*funit,
                                           new_sig, new_co),
-                                         meta=self.meta.copy())
+                                         meta=self.meta.copy(), **kwargs)
         # Return
         return newspec
 
@@ -963,7 +965,6 @@ class XSpectrum1D(object):
         return XSpectrum1D.from_tuple(
             (new_wv, new_fx, new_sig), meta=self.meta.copy())
 
-    # Splice two spectra together
     def gauss_smooth(self, fwhm, **kwargs):
         """ Smooth a spectrum with a Gaussian
 
@@ -994,6 +995,55 @@ class XSpectrum1D(object):
         # Return
         return XSpectrum1D.from_tuple(
             (self.wavelength, new_fx, new_sig), meta=self.meta.copy())
+
+    def ivar_smooth(self, window):
+        """ Inverse variance smoothing -- port of ivarsmooth from IDL
+
+        Parameters
+        ----------
+        window -- int
+          smoothing length in pixels (turned into odd number if even)
+
+        Returns
+        -------
+        spec -- XSpectrum1D
+          New, smoothed spectrum
+
+        """
+        if not isinstance(window,int):
+            raise IOError("Input window must be int")
+        #
+        halfwindow = np.floor((window-1)/2).astype(int)
+        ivar = 1./self.sig**2
+
+        shiftarr = np.zeros((self.npix, 2*halfwindow+1))
+        shiftivar = shiftarr.copy()
+        shiftindex = shiftarr.copy()
+        indexarr = np.arange(self.npix)
+        indnorm = np.outer(indexarr, (np.zeros(2*halfwindow+1)+1))
+
+        for i in range(-halfwindow, halfwindow+1):
+            shiftarr[:, i+halfwindow] = np.roll(self.flux, i)
+            shiftivar[:, i+halfwindow] = np.roll(ivar, i)
+            shiftindex[:, i+halfwindow] = np.roll(indexarr, i)
+
+        wh = np.abs(shiftindex-indnorm) > (halfwindow+1)
+        shiftivar[wh] = 0.
+
+        outivar = np.sum(shiftivar, axis=1)
+        nzero =  np.where(outivar > 0)[0]
+        smoothflux = np.sum(shiftarr*shiftivar, axis=1)
+        if len(nzero)>0:
+            smoothflux[nzero] = smoothflux[nzero]/outivar[nzero]
+        else:
+            from astropy.convolution import convolve, Box1DKernel
+            smoothflux = convolve(self.flux, Box1DKernel(2*halfwindow+1))
+            #smoothflux = boxcar(self.flux,(2*halfwindow+1,))#kill off NAN's
+        # Return new spectrum
+        newsig = np.sqrt(1./outivar)
+        return XSpectrum1D.from_tuple(
+                (self.wavelength, smoothflux, newsig), meta=self.meta.copy())
+
 
     def stitch(self, idx=None, scale=1.):
         """ Combine two or more spectra within the .data array

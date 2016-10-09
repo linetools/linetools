@@ -2,12 +2,12 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 # TEST_UNICODE_LITERALS
-import imp
 
 import pytest
 from linetools.scripts.lt_absline import plot_absline
 from linetools.scripts import lt_line
-from linetools.scripts import lt_plot
+from linetools.scripts import lt_radec
+#from linetools.scripts import lt_plot
 
 def test_lt_absline():
     plot_absline(1550, 15, 5, show=False)
@@ -21,3 +21,9 @@ def test_lt_line():
     lt_line.main(['1215'])
     lt_line.main(['--all'])
     #lt_line.main()
+
+
+def test_lt_radec():
+    lt_radec.main(['152.25900,7.22885'])
+    lt_radec.main(['J100902.16+071343.8'])
+

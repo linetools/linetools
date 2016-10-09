@@ -129,6 +129,15 @@ anchor points with
 `~linetools.spectra.xspectrum1d.XSpectrum1D.perturb_continuum` to see
 how changes in the continuum level affect your analysis.
 
+Smoothing
+---------
+
+There are several algorithms included that smooth the
+input spectrum and return a new XSpectrum1D.  These are
+`~linetools.spectra.xspectrum1d.XSpectrum1D.box_smooth`,
+`~linetools.spectra.xspectrum1d.XSpectrum1D.gauss_smooth`,
+and
+`~linetools.spectra.xspectrum1d.XSpectrum1D.ivar_smooth`.
 
 Other methods
 -------------
@@ -140,7 +149,12 @@ pixel indices corresponding to a wavelength or velocity range, and
 `~linetools.spectra.xspectrum1d.XSpectrum1D.add_noise` adds noise to
 the spectrum. For a complete list of all the available methods, see
 the API: `~linetools.spectra.xspectrum1d.XSpectrum1D`.
-  
+
+Multi-spec methods
+------------------
+
+See :ref:`xspec_multi` for more.
+
 File Formats Read
 =================
 

@@ -18,6 +18,7 @@ def main(*args, **kwargs):
     parser.add_argument("outfil", type=str, help="Output, normalized spectrum filename; FITS [can be the same]")
     parser.add_argument("--redshift", type=float, help="Redshift of the Source")
     parser.add_argument("--wchunk", type=float, help="Width of a 'chunk' (Ang)")
+    parser.add_argument("--native", default=True, action='store_true', help="Do not mask input spectrum")
     #parser.add_argument("-exten", type=int, help="FITS extension")
 
     pargs = parser.parse_args()
@@ -27,7 +28,11 @@ def main(*args, **kwargs):
     from linetools.spectra import io as lsio
 
     # Read spectrum
-    xspec = lsio.readspec(pargs.file)
+    if pargs.native:
+        masking = 'none'
+    else:
+        masking = 'edges'
+    xspec = lsio.readspec(pargs.file, masking=masking)
 
     kwrds = {}
     if pargs.wchunk is not None:

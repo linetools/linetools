@@ -75,6 +75,8 @@ class SpectralLine(object):
         Analysis inputs (e.g. a spectrum, wavelength limits)
     data : dict
         Line atomic/molecular data (e.g. f-value, A coefficient, Elow)
+    limits : LineLimit
+        Limits including zlim, vlim, wvlim.
     """
 
     @classmethod
@@ -119,7 +121,7 @@ class SpectralLine(object):
                     if warn_only:
                         warnings.warn("Different data value for {:s}: {}, {}".format(key,sline.data[key],val))
         # Set analy
-        for key in idict['analy']:
+        for key in idict['analy'].keys():
             if isinstance(idict['analy'][key], dict):  # Assume Quantity
                 #sline.analy[key] = Quantity(idict['analy'][key]['value'],
                 #                             unit=idict['analy'][key]['unit'])
@@ -133,8 +135,9 @@ class SpectralLine(object):
                 sline.analy[key] = idict['analy'][key]
             else:
                 sline.analy[key] = idict['analy'][key]
+
         # Set attrib
-        for key in idict['attrib']:
+        for key in idict['attrib'].keys():
             if isinstance(idict['attrib'][key], dict):
                 sline.attrib[key] = ltu.convert_quantity_in_dict(idict['attrib'][key])
             elif key in ['RA','DEC']:
@@ -145,6 +148,25 @@ class SpectralLine(object):
                     sline.attrib['coord'] = coord
             else:
                 sline.attrib[key] = idict['attrib'][key]
+
+        # Set limits
+        sline.limits._z = sline.attrib['z']
+        try:  # this try is for compatibility with previous versions w/o limits
+            for key in idict['limits']:
+                if isinstance(idict['limits'][key], dict):
+                    qlim = ltu.convert_quantity_in_dict(idict['limits'][key])
+                    sline.limits.set(qlim)
+                    break  # only one limit is needed to define them all
+                else:
+                    sline.limits.set(idict['limits'][key])  # this is zlim
+                    break  # only one limit is needed to define them all
+        except KeyError:
+            if 'vlim' in sline.analy.keys():  # Backwards compatability
+                if sline.analy['vlim'][1] > sline.analy['vlim'][0]:
+                    sline.limits.set(sline.analy['vlim'])
+            elif 'wvlim' in sline.analy.keys():  # Backwards compatability
+                if sline.analy['wvlim'][1] > sline.analy['wvlim'][0]:
+                    sline.limits.set(sline.analy['wvlim'])
         return sline
 
     # Initialize with wavelength
@@ -372,8 +394,8 @@ class SpectralLine(object):
         from numpy.ma.core import MaskedConstant
         from astropy.units import Quantity
         # Starting
-        adict = dict(ltype=self.ltype, analy=dict(), attrib=dict(), data=dict(),
-                     name=self.name, wrest=dict(value=self.wrest.value,
+        adict = dict(ltype=self.ltype, analy=dict(), attrib=dict(), data=dict(),\
+                     limits=dict(), name=self.name, wrest=dict(value=self.wrest.value,\
                                                   unit=self.wrest.unit.to_string()))
         # Data
         for key in self.data:
@@ -410,6 +432,15 @@ class SpectralLine(object):
                                             unit=self.analy[key].unit.to_string())
             else:
                 adict['analy'][key] = self.analy[key]
+
+        # Limits
+        for key in self.limits._data.keys():
+            if isinstance(self.limits._data[key], Quantity):
+                adict['limits'][key] = dict(value=self.limits._data[key].value,
+                                            unit=self.limits._data[key].unit.to_string())
+            else:
+                adict['limits'][key] = self.limits._data[key]
+
 
         # Polish for JSON
         adict = ltu.jsonify(adict)

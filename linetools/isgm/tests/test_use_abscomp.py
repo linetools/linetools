@@ -21,15 +21,16 @@ from linetools.analysis import absline as ltaa
 from linetools.isgm import utils as ltiu
 import linetools.utils as ltu
 
-import imp
+import imp, os
 lt_path = imp.find_module('linetools')[1]
 
 #import pdb
 #pdb.set_trace()
 # Set of Input lines
 
+
 def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
-            add_trans=False, zcomp=2.92939):
+            add_trans=False, zcomp=2.92939, b=20*u.km/u.s):
     # Read a spectrum Spec
     if add_spec:
         xspec = lsio.readspec(lt_path+'/spectra/tests/files/UM184_nF.fits')
@@ -52,6 +53,7 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
         iline.attrib['logN'] = 13.3 + rnd
         iline.attrib['sig_logN'] = 0.15
         iline.attrib['flag_N'] = 1
+        iline.attrib['b'] = b
         iline.analy['spec'] = xspec
         iline.limits.set(vlim)
         _,_ = ltaa.linear_clm(iline.attrib)  # Loads N, sig_N
@@ -59,6 +61,22 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
     # Component
     abscomp = AbsComponent.from_abslines(abslines)
     return abscomp, abslines
+
+
+def data_path(filename):
+    data_dir = os.path.join(os.path.dirname(__file__), 'files')
+    return os.path.join(data_dir, filename)
+
+
+def compare_two_files(file1, file2):
+    f1 = open(file1, 'r')
+    f2 = open(file2, 'r')
+    lines1 = f1.readlines()
+    lines2 = f2.readlines()
+    for l1,l2 in zip(lines1,lines2):
+        assert l1 == l2
+    f1.close()
+    f2.close()
 
 
 def test_add_absline():
@@ -250,6 +268,37 @@ def test_repr_alis():
         s = abscomp.repr_alis(fix_strs='bad_format')
     with pytest.raises(SyntaxError):
         s = abscomp.repr_alis(fix_strs=('1','2','3','4','5'))
+
+
+def test_repr_joebvp():
+    # test with b=0, should be replaced by b_default
+    abscomp, HIlines = mk_comp('HI', b=0*u.km/u.s, use_rand=False)
+    s = abscomp.repr_joebvp('test.fits', b_default=3.3*u.km/u.s)
+    assert s == 'test.fits|1215.67000|2.92939000|13.3000|3.3000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|HI\n' \
+                'test.fits|1025.72220|2.92939000|13.3000|3.3000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI\n'
+    # test with b != 0
+    abscomp, HIlines = mk_comp('HI', b=15*u.km/u.s, use_rand=False)
+    s = abscomp.repr_joebvp('test.fits', b_default=3.3*u.km/u.s)
+    assert s == 'test.fits|1215.67000|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|HI\n' \
+                'test.fits|1025.72220|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI\n'
+    # test with comment
+    abscomp.comment = 'Something'
+    s = abscomp.repr_joebvp('test.fits')
+    assert s == 'test.fits|1215.67000|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|HI# Something\n' \
+                'test.fits|1025.72220|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI# Something\n'
+
+
+def test_complist_to_joebvp():
+    # will write a file in directory ./files/
+    abscomp, HIlines = mk_comp('HI', b=15*u.km/u.s, use_rand=False)
+    comp_list = [abscomp, abscomp]
+    ltiu.joebvp_from_components(comp_list, 'test.fits', data_path('test_joebvp_repr.joebvp'))
+    # now read the output and compare to reference
+    compare_two_files(data_path('test_joebvp_repr.joebvp'), lt_path + '/data/tests/test_joebvp_repr_reference.joebvp')
+    # now add attribute to comp and compare again
+    abscomp.attrib['b'] = 15*u.km/u.s
+    ltiu.joebvp_from_components(comp_list, 'test.fits', data_path('test_joebvp_repr.joebvp'))
+    compare_two_files(data_path('test_joebvp_repr.joebvp'), lt_path + '/data/tests/test_joebvp_repr_reference.joebvp')
 
 
 def test_get_wvobs_chunks():

@@ -89,6 +89,12 @@ def test_masking():
     spec3 = XSpectrum1D.from_tuple((wave,flux,sig), masking='none')
     assert len(spec3.wavelength) == len(wave)
 
+
+def test_co_kludges():
+    spec = XSpectrum1D.from_file(data_path('SDSSJ220248.31+123656.3.fits'))
+    assert spec.co.size == 4599
+
+
 def test_errors():
 
     # from_tuple
