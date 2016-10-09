@@ -76,6 +76,16 @@ Try::
 
 for the full set of options.
 
+lt_radec
+--------
+
+Input coordinates in one format and print them out
+in several formats::
+
+   lt_radec 152.25900,7.22885
+   lt_radec J100902.16+071343.86
+
+
 lt_line
 -------
 
