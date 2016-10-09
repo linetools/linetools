@@ -98,6 +98,18 @@ or rest-wavelength of a transition, e.g. ::
    lyb = abssys.get_absline(1025.72*u.AA)  # Nearest 0.01 A is required
 
 
+Components
+----------
+
+`~linetools.igsm.abssystem.get_component`
+grabs components matching an input where the input is either
+a tuple of (Z, ion) or an AbsLine::
+
+   spec = io.readspec(data_path('UM184_nF.fits'))
+
+`~linetools.igsm.abssystem.update_component_colm` synthesizes
+and updates the column densities for the components.
+
 ionN
 ----
 
