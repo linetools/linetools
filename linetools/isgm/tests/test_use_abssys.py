@@ -57,6 +57,8 @@ def init_system():
 
 
 def test_list_of_abslines():
+    spec = io.readspec(data_path('UM184_nF.fits'))
+
     gensys = init_system()
     # Now the list
     abslines = gensys.list_of_abslines()
