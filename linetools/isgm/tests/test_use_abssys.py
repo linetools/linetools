@@ -80,6 +80,13 @@ def test_get_component():
     # Grab SiII
     SiII = gensys.get_component((14,2))
     assert isinstance(SiII, AbsComponent)
+    # Fail
+    SiV = gensys.get_component((14,5))
+    assert SiV is None
+    # Line
+    alines = gensys.list_of_abslines()
+    comp = gensys.get_component(alines[0])
+    assert isinstance(comp, AbsComponent)
 
 
 def test_todict():
