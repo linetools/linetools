@@ -105,10 +105,13 @@ Components
 grabs components matching an input where the input is either
 a tuple of (Z, ion) or an AbsLine::
 
-   spec = io.readspec(data_path('UM184_nF.fits'))
+   SiII = gensys.get_component((14,2))
 
 `~linetools.igsm.abssystem.update_component_colm` synthesizes
-and updates the column densities for the components.
+and updates the column densities for the components.::
+
+   gensys.update_component_colm()
+
 
 ionN
 ----

@@ -106,6 +106,9 @@ def test_get_component():
     alines = gensys.list_of_abslines()
     comp = gensys.get_component(alines[0])
     assert isinstance(comp, AbsComponent)
+    # Junk
+    with pytest.raises(IOError):
+        junk = gensys.get_component(None)
 
 
 def test_todict():
