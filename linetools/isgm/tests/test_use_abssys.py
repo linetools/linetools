@@ -28,10 +28,7 @@ def data_path(filename):
     return os.path.join(data_dir, filename)
 
 
-def test_methods():
-    # Grab spectrum
-    spec = io.readspec(data_path('UM184_nF.fits'))
-    # Generate GenericAbsSystem
+def init_system():
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
     # HI Lya, Lyb
     lya = AbsLine(1215.670*u.AA)
@@ -56,6 +53,13 @@ def test_methods():
     SiII_comp = AbsComponent.from_abslines(abslines)
     # Instantiate
     gensys = GenericAbsSystem.from_components([abscomp,SiII_comp])
+    return gensys
+
+
+def test_list_of_abslines():
+    spec = io.readspec(data_path('UM184_nF.fits'))
+
+    gensys = init_system()
     # Now the list
     abslines = gensys.list_of_abslines()
     # Test
@@ -72,6 +76,10 @@ def test_methods():
     np.testing.assert_allclose(lyb.wrest.value, 1025.7222)
     lyb = gensys.get_absline(1025.72*u.AA)
     np.testing.assert_allclose(lyb.wrest.value, 1025.7222)
+
+
+def test_ionn():
+    gensys = init_system()
     # Component columns
     gensys.update_component_colm()
     # ionN
@@ -84,6 +92,23 @@ def test_methods():
     gensys.fill_ionN(NHI_obj=gensys)
     HI = np.where(gensys._ionN['Z']==1)
     np.testing.assert_allclose(gensys._ionN[HI]['logN'], 15.3)
+
+
+def test_get_component():
+    gensys = init_system()
+    # Grab SiII
+    SiII = gensys.get_component((14,2))
+    assert isinstance(SiII, AbsComponent)
+    # Fail
+    SiV = gensys.get_component((14,5))
+    assert SiV is None
+    # Line
+    alines = gensys.list_of_abslines()
+    comp = gensys.get_component(alines[0])
+    assert isinstance(comp, AbsComponent)
+    # Junk
+    with pytest.raises(IOError):
+        junk = gensys.get_component(None)
 
 
 def test_todict():
