@@ -214,7 +214,7 @@ class AbsSystem(object):
 
         # Abundances and Tables
         self._EW = QTable()
-        self._ionN = QTable()
+        self._ionN = None   # Needs to be None for fill_ion
         self._trans = QTable()
         self._ionstate = {}
         self._abund = QTable()
