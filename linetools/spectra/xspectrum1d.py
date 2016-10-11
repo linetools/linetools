@@ -8,9 +8,8 @@ import json
 import warnings
 
 
-import astropy as apy
 from astropy import units as u
-from astropy.units import Quantity
+from astropy.units import Quantity, UnitBase
 from astropy import constants as const
 from astropy.io import fits
 #from astropy.nddata import StdDevUncertainty
@@ -19,6 +18,7 @@ from astropy.table import QTable, Column, Table
 import linetools.utils as liu
 
 from .plotting import get_flux_plotrange
+from .utils import meta_to_disk
 
 from ..analysis.interactive_plot import InteractiveCoFit
 from ..analysis.continuum import prepare_knots
@@ -41,6 +41,15 @@ class XSpectrum1D(object):
         is included with this object but not part of any other attribute
         of this particular object.  e.g., creation date, unique identifier,
         simulation parameters, exposure time, telescope name, etc.
+
+    Attributes
+    ----------
+    wvmin : Quantity
+      min wavelength (with sig>0.) in selected spectrum
+      This may differ from np.min(self.wavelength) if you have not masked the edges
+    wvmax : Quantity
+      max wavelength (with sig>0.) in selected spectrum
+      This may differ from np.min(self.wavelength) if you have not masked the edges
     """
 
     @classmethod
@@ -65,10 +74,59 @@ class XSpectrum1D(object):
         Avoids error array for now
         """
         slf = cls.from_tuple((spec1d.dispersion, spec1d.flux))
-        #slf = cls(flux=spec1d.flux, wcs=spec1d.wcs, unit=spec1d.unit,
-        #          uncertainty=spec1d.uncertainty, mask=spec1d.mask,
-        #          meta=spec1d.meta.copy())
         return slf
+
+    @classmethod
+    def from_list(cls, xspecs, **kwargs):
+        """ Generate a single XSpectrum1D instance containing an array of
+        spectra from a list of individual XSpectrum1D spectra.
+        Each spectrum is padded with extra pixels so that the
+        wavelength ranges of all spectra are covered.
+        Padded pixels are masked.
+
+        Also note that masked pixels in the original data are ignored!
+
+        Uses meta to store headers
+
+        Parameters
+        ----------
+        xspecs : list
+
+        """
+        nspec = len(xspecs)
+        # Find max npix
+        max_npix = 0
+        unit0 = xspecs[0].units
+        for xspec in xspecs:
+            max_npix = max(max_npix, xspec.npix)
+            # Check units
+            for key in unit0.keys():
+                assert unit0[key] == xspec.units[key]
+        # Generate dummy arrays
+        wave = np.zeros([nspec, max_npix], dtype='float64')
+        flux = np.zeros([nspec, max_npix], dtype='float32')
+        if xspec.sig_is_set:
+            sig = np.zeros_like(flux)
+        else:
+            sig = None
+        if xspec.co_is_set:
+            co = np.zeros_like(flux)
+        else:
+            co = None
+        # Fill
+        meta = dict(headers=[])
+        for jj,xspec in enumerate(xspecs):
+            wave[jj,0:xspec.npix] = xspec.wavelength.value
+            flux[jj,0:xspec.npix] = xspec.flux.value
+            if xspec.sig_is_set:
+                sig[jj,0:xspec.npix] = xspec.sig.value
+            if xspec.co_is_set:
+                co[jj,0:xspec.npix] = xspec.co.value
+            # Meta
+            meta['headers'].append(xspec.header)
+        # Finish
+        return cls(wave,flux,sig=sig,co=co, units=unit0, masking='edges',
+                   meta=meta)
 
     @classmethod
     def from_tuple(cls, ituple, sort=True, **kwargs):
@@ -84,6 +142,11 @@ class XSpectrum1D(object):
         sort : bool, optional
           Sort by wavelength?
         """
+        # Checks
+        if not isinstance(ituple,tuple):
+            raise IOError("Input tuple only")
+        if len(ituple[0].shape) != 1:
+            raise IOError("Not ready for multi-dimension.  Sorting will fail..")
         # Parse wavelength
         try:
             wv_unit = ituple[0].unit
@@ -121,7 +184,7 @@ class XSpectrum1D(object):
             srt = np.argsort(iwave)
             iwave = iwave[srt]
             iflux = iflux[srt]
-            for ii in range(1, len(ltuple)):
+            for ii in range(2, len(ltuple)):
                 if ltuple[ii] is not None:
                     ltuple[ii] = ituple[ii][srt]
 
@@ -132,7 +195,7 @@ class XSpectrum1D(object):
         return spec
 
     def __init__(self, wave, flux, sig=None, co=None, units=None, select=0,
-                 meta=None, verbose=False):
+                 meta=None, verbose=False, masking='edges'):
         """
         Parameters
         ----------
@@ -142,63 +205,94 @@ class XSpectrum1D(object):
         units : dict, optional
           Dict containing the units of wavelength, flux
           Required keys are 'wave' and 'flux'
+        meta : dict, optional
+          Meta data.
+          meta['headers'] is a list of input headers (or None's)
         select : int, optional
           Selected Spectrum
+        masking: str, optional
+          Approach to masking the data using the 'sig' array
+          'none'
+          'edges' -- Masks all data values with sig <=0 on the 'edge' of each spectrum
+             e.g.   sig = [0.,0.,0.,0.2,0.,0.2,0.2,0.,0.] would have the first 3 and last 2 masked
+          'all' -- Masks all data values with sig <=0
         """
         # Error checking
         if not isinstance(wave, np.ndarray):
-            raise IOError("Input x-vector must be an ndarray")
+            raise IOError("Input `wave` vector must be an numpy.ndarray.")
         if not isinstance(flux, np.ndarray):
-            raise IOError("Input y-vector must be an ndarray")
+            raise IOError("Input `flux` vector must be an numpy.ndarray.")
         if wave.shape[0] != flux.shape[0]:
-            raise IOError("Shape of x and y vectors must be identical")
+            raise IOError("Shape of `flux` and `wave` vectors must be identical.")
+        if masking not in ['none', 'edges', 'all']:
+            raise IOError("Invalid masking type.")
+        #if (masking != 'None') and (sig is None):
+        #    warnings.warn("Must input sig array to use masking")
 
         # Handle many spectra
         if len(wave.shape) == 1:
             self.nspec = 1
-            self.npix = wave.shape[0]
+            self.totpix = wave.shape[0]
         else:
             self.nspec = wave.shape[0]
-            self.npix = wave.shape[1]
+            self.totpix = wave.shape[1]
         self.select = select
 
         if verbose:
             print("We have {:d} spectra with {:d} pixels each.".format(
-                self.nspec, self.npix))
+                self.nspec, self.totpix))
 
-        # Data array
-        self.data = np.empty((self.nspec,), #self.npix),
-                               dtype=[(str('wave'), 'float64', (self.npix)),
-                                      (str('flux'), 'float32', (self.npix)),
-                                      (str('sig'),  'float32', (self.npix)),
-                                      (str('co'),   'float32', (self.npix)),
+        # Data arrays are always MaskedArray
+        self.data = np.ma.empty((self.nspec,), #self.npix),
+                               dtype=[(str('wave'), 'float64', (self.totpix)),
+                                      (str('flux'), 'float32', (self.totpix)),
+                                      (str('sig'),  'float32', (self.totpix)),
+                                      (str('co'),   'float32', (self.totpix)),
                                      ])
-        self.data['wave'] = np.reshape(wave, (self.nspec, self.npix))
-        self.data['flux'] = np.reshape(flux, (self.nspec, self.npix))
+        self.data['wave'] = np.reshape(wave, (self.nspec, self.totpix))
+        self.data['flux'] = np.reshape(flux, (self.nspec, self.totpix))
 
-        if sig is not None:
-            if wave.shape[0] != sig.shape[0]:
-                raise IOError("Shape of wave and sig vectors must be identical")
-            self.data['sig'] = np.reshape(sig, (self.nspec, self.npix))
-        else:
-            self.data['sig'] = np.nan
         if co is not None:
             if wave.shape[0] != co.shape[0]:
-                raise IOError("Shape of wave and co vectors must be identical")
-            self.data['co'] = np.reshape(co, (self.nspec, self.npix))
+                raise IOError("Shape of `wave` and `co` vectors must be identical.")
+            self.data['co'] = np.reshape(co, (self.nspec, self.totpix))
         else:
             self.data['co'] = np.nan
+
+        # Need to set sig last for masking
+        if sig is not None:
+            if wave.shape[0] != sig.shape[0]:
+                raise IOError("Shape of `wave` and `sig` vectors must be identical.")
+            self.data['sig'] = np.reshape(sig, (self.nspec, self.totpix))
+            if masking != 'none':
+                for kk in range(self.nspec):
+                    gdsigval = np.where(self.data['sig'][kk].data > 0.)[0]
+                    badsigval = self.data['sig'][kk].data <= 0.
+                    for key in self.data.dtype.names:
+                        if masking == 'edges':
+                            try:
+                                self.data[key][kk][0:gdsigval[0]].mask = True
+                            except IndexError:
+                                pdb.set_trace()
+                            self.data[key][kk][gdsigval[-1]+1:].mask = True
+                        elif masking == 'all':
+                            self.data[key][kk].mask = badsigval
+        else:
+            self.data['sig'] = np.nan
+
 
         # Units
         if units is not None:
             if not isinstance(units, dict):
-                raise IOError("Units must be dict like")
-            for key in units.keys():
-                if key not in ['wave', 'flux']:
-                    raise IOError("Units must have key: {:s}".format(key))
+                raise IOError("`units` must be a dictionary.")
+            valid_keys = ['wave', 'flux']
+            for key,item in units.items():
+                if key not in valid_keys:
+                    raise IOError("{:s} is a wrong key in the `units` dictionary. Valid keys are: {}".format(key, valid_keys))
+                assert isinstance(item, UnitBase)
             self.units = units
         else:
-            warnings.warn("Assuming wavelength unit is Angstroms")
+            warnings.warn("No unit given to wavelength, assuming Angstroms.")
             self.units = dict(wave=u.AA, flux=u.dimensionless_unscaled)
 
         # Apply continuum?
@@ -206,34 +300,60 @@ class XSpectrum1D(object):
 
         # Meta
         if meta is None:
-            self.meta = {}
+            self.meta = dict(headers=[None]*self.nspec)
         else:
             self.meta = meta
+        if 'airvac' not in self.meta.keys():
+            self.meta['airvac'] = 'vac'
 
         # Filename
         self.filename = 'none'
 
-    def copy(self):
+    def copy(self, select=None):
         """ Copy the spectrum
+
+        Parameters
+        ----------
+        select : int, optional
+          Allow the user to specify a different spectrum on the copy
         """
+        # Select
+        if select is None:
+            select = self.select
         # Key components
         data = self.data.copy()
         units = self.units.copy()
         meta = self.meta.copy()
         #
-        new = XSpectrum1D(data['wave'], data['flux'], data['sig'], data['co'],
-                          units=units, meta=meta, select=self.select)
+        if self.sig_is_set:
+            sig = data['sig']
+        else:
+            sig = None
+        #
+        if self.co_is_set:
+            co = data['co']
+        else:
+            co = None
+        new = XSpectrum1D(data['wave'], data['flux'], sig=sig, co=co,
+                          units=units, meta=meta, select=select)
         return new
+
+    @property
+    def header(self):
+        """ Return the header (may be None)
+        """
+        return self.meta['headers'][self.select]
 
     @property
     def wavelength(self):
         """ Return the wavelength array with units
         """
-        return self.data[self.select]['wave'] * self.units['wave']
+        return self.data['wave'][self.select].compressed() * self.units['wave']
 
     @wavelength.setter
     def wavelength(self, value):
-        self.data['wave'][self.select] = value
+        gdp = ~self.data['wave'][self.select].mask
+        self.data['wave'][self.select][gdp] = value
         if hasattr(value, 'unit'):
             self.units['wave'] = value.unit
 
@@ -241,14 +361,16 @@ class XSpectrum1D(object):
     def flux(self):
         """ Return the flux with units
         """
-        flux =  self.data[self.select]['flux'] * self.units['flux']
+        #flux =  self.data[self.select]['flux'] * self.units['flux']
+        flux =  self.data['flux'][self.select].compressed() * self.units['flux']
         if self.normed and self.co_is_set:
-            flux /= self.data[self.select]['co']
+            flux /= self.data['co'][self.select].compressed()
         return flux
 
     @flux.setter
     def flux(self, value):
-        self.data['flux'][self.select] = value
+        gdp = ~self.data['flux'][self.select].mask
+        self.data['flux'][self.select][gdp] = value
         if hasattr(value, 'unit'):
             self.units['flux'] = value.unit
 
@@ -256,7 +378,7 @@ class XSpectrum1D(object):
     def sig_is_set(self):
         """ Returns whether the error array is set
         """
-        if np.isnan(self.data[self.select]['sig'][0]):
+        if np.isnan(self.data['sig'][self.select].compressed()[0]):
             return False
         else:
             return True
@@ -269,23 +391,25 @@ class XSpectrum1D(object):
             warnings.warn("This spectrum does not contain an input error array")
             return np.nan
         #
-        sig = self.data[self.select]['sig'] * self.units['flux']
+        #sig = self.data[self.select]['sig'] * self.units['flux']
+        sig = self.data['sig'][self.select].compressed() * self.units['flux']
         if self.normed and self.co_is_set:
-            sig /= self.data[self.select]['co']
+            sig /= self.data['co'][self.select].compressed()
         return sig
 
     @sig.setter
     def sig(self, value):
         """ Assumes units are the same as the flux
         """
-        self.data['sig'][self.select] = value
+        gdp = ~self.data['sig'][self.select].mask
+        self.data['sig'][self.select][gdp] = value
 
 
     @property
     def co_is_set(self):
         """ Returns whether a continuum is defined
         """
-        if np.isnan(self.data[self.select]['co'][0]):
+        if np.isnan(self.data['co'][self.select].compressed()[0]):
             return False
         else:
             return True
@@ -297,33 +421,33 @@ class XSpectrum1D(object):
         if not self.co_is_set:
             warnings.warn("This spectrum does not contain an input continuum array")
             return np.nan
-        return self.data[self.select]['co'] * self.units['flux']
+        return self.data['co'][self.select].compressed() * self.units['flux']
 
     @co.setter
     def co(self, value):
         """ Assumes units are the same as the flux
         """
-        self.data['co'][self.select] = value
+        gdp = ~self.data['co'][self.select].mask
+        self.data['co'][self.select][gdp] = value
+
+    @property
+    def npix(self):
+        """ Number of *unmasked* pixels """
+        self.set_diagnostics()  # Need to re-run in case self.select changes
+        return self._npix
 
 
     @property
     def wvmin(self):
         """Minimum wavelength """
-        try:
-            return self._wvmin
-        except AttributeError:
-            self.set_diagnostics()
-            return self._wvmin
+        self.set_diagnostics()
+        return self._wvmin
 
     @property
     def wvmax(self):
         """Maximum wavelength """
-        try:
-            return self._wvmax
-        except AttributeError:
-            self.set_diagnostics()
-            return self._wvmax
-
+        self.set_diagnostics()
+        return self._wvmax
 
     def set_diagnostics(self):
         """Generate simple diagnostics on the spectrum.
@@ -334,11 +458,13 @@ class XSpectrum1D(object):
         and `_wvmax`.
         """
         # Cut on good pixels
-        if self.sig is not None:
+        if self.sig_is_set:
             gdpx = self.sig > 0.
         else:
-            gdpx = np.array([True] * self.data['flux'].size)
+            gdpx = np.array([True] * self.wavelength.value.size)
+            #gdpx = np.array([True] * self.data['flux'].size)
         # Fill in attributes
+        self._npix = len(self.data['flux'][self.select].compressed())
         self._wvmin = np.min(self.wavelength[gdpx])
         self._wvmax = np.max(self.wavelength[gdpx])
 
@@ -377,10 +503,65 @@ class XSpectrum1D(object):
             sig = self.sig.value
         # Copy
         newspec = self.copy()
-        newspec.data['flux'][self.select] = self.flux.value + (rand * sig)
-        newspec.data['sig'][self.select] = np.ones_like(self.flux) * sig
+        # Deal with mask
+        gdp = ~self.data['flux'][self.select].mask
+        newspec.data['flux'][self.select][gdp] = self.flux.value + (rand * sig)
+        newspec.data['sig'][self.select][gdp] = np.ones_like(self.flux) * sig
         #
         return newspec
+
+    def airtovac(self):
+        """ Converts current wavelength array from an assumed air to vacuum wavelength scale
+
+        Returns
+        -------
+        Resultant wavelength array is in AA no matter the input units
+        """
+        if self.meta['airvac'] == 'vac':
+            warnings.warn("Already in vacuum.  Not applying any correction")
+            return
+        # Convert to AA
+        wavelength = self.wavelength.to(u.AA).value
+
+        # Standard conversion format
+        sigma_sq = (1.e4/wavelength)**2. #wavenumber squared
+        factor = 1 + (5.792105e-2/(238.0185-sigma_sq)) + (1.67918e-3/(57.362-sigma_sq))
+        factor = factor*(wavelength>=2000.) + 1.*(wavelength<2000.) #only modify above 2000A
+
+        # Convert
+        wavelength = wavelength*factor
+        # Units
+        new_wave = wavelength*u.AA
+        # Finish
+        self.wavelength = new_wave
+        self.meta['airvac'] = 'vac'
+
+    def vactoair(self):
+        """Convert to air-based wavelengths from vacuum
+
+        Returns:
+        ----------
+        Resultant wavelength array is in AA no matter the input units
+        """
+        # Check
+        if self.meta['airvac'] == 'air':
+            warnings.warn("Already in air.  Not applying any correction")
+            return
+        # Convert to AA
+        wavelength = self.wavelength.to(u.AA).value
+
+        # Standard conversion format
+        sigma_sq = (1.e4/wavelength)**2. #wavenumber squared
+        factor = 1 + (5.792105e-2/(238.0185-sigma_sq)) + (1.67918e-3/(57.362-sigma_sq))
+        factor = factor*(wavelength>=2000.) + 1.*(wavelength<2000.) #only modify above 2000A
+
+        # Convert
+        wavelength = wavelength/factor
+        # Units
+        new_wave = wavelength*u.AA
+        # Finish
+        self.wavelength = new_wave
+        self.meta['airvac'] = 'air'
 
     def constant_sig(self, sigv=0.):
         """Set the uncertainty array to a constant value.
@@ -414,7 +595,7 @@ class XSpectrum1D(object):
             else:
                 raise ValueError('normalize: Continuum needs to be same length as flux array')
         else:
-            self.data['co'] = co
+            self.co = co
         self.normed = True
 
     def unnormalize(self):
@@ -492,21 +673,45 @@ class XSpectrum1D(object):
           from a script and wish to delay showing the plot.
         xlim : tuple of two floats
           The initial x plotting limits (xmin, xmax)
+        inline : bool
+          Recommended to use if displaying inline in a Notebook
+        plot_two : XSpectrum1D
+          Plot another spectrum
+        scale_two : float
+          Scale the 2nd spectrum
+        xspec : bool
+          Launch XSpecGUI instead
 
         Other keyword arguments are passed to the matplotlib plot
         command.
         """
-        #import matplotlib
-        #matplotlib.use('Agg')
+        # Launch XSpectrum1D??
+        if 'xspec' in kwargs:
+            import sys
+            from PyQt4 import QtGui
+            from linetools.guis.xspecgui import XSpecGui
+            app = QtGui.QApplication(sys.argv)
+            gui = XSpecGui(self)
+            gui.show()
+            app.exec_()
+            return
+
         import matplotlib.pyplot as plt
         from ..analysis.interactive_plot import PlotWrapNav
         plt.rcParams['axes.formatter.useoffset'] = False  # avoid scientific notation in axes tick labels
 
+        # Keywords
         nocolor = (False if 'color' in kwargs else True)
         xlim = kwargs.pop('xlim', None)
+        inline = kwargs.pop('inline', False)
+        xspec2 = kwargs.pop('plot_two', None)
+        scale_two = kwargs.pop('scale_two', 1.)
 
+        if inline:
+            fig = plt.figure(figsize=(12,8))
+        else:
+            fig = plt.gcf()
         ax = plt.gca()
-        fig = plt.gcf()
 
         artists = {}
         ax.axhline(0, color='k', lw=0.5)
@@ -516,7 +721,7 @@ class XSpectrum1D(object):
         if nocolor:
             kwargs.update(color='0.5')
         artists['fl'] = ax.plot(self.wavelength, self.flux,
-                                drawstyle='steps-mid', **kwargs)[0]
+                                drawstyle='steps-mid', label='1', **kwargs)[0]
 
         # Error
         if nocolor:
@@ -525,10 +730,17 @@ class XSpectrum1D(object):
             ax.plot(self.wavelength, self.sig, **kwargs)
 
         # Continuum
-        if (not np.isnan(self.data[self.select]['co'][0])) and (not self.normed):
+        if self.co_is_set and (not self.normed):
             if nocolor:
                 kwargs.update(color='r')
             ax.plot(self.wavelength, self.co, **kwargs)
+
+        # Second spectrum
+        if xspec2 is not None:
+            ax.plot(xspec2.wavelength, xspec2.flux*scale_two, color='blue',
+                    label='2')
+            legend = ax.legend(loc='upper left', borderpad=0.3,
+                            handletextpad=0.3, fontsize='large')
 
         ax.set_ylim(*get_flux_plotrange(self.flux))
 
@@ -545,9 +757,9 @@ class XSpectrum1D(object):
 
         if plt.get_backend() == 'MacOSX':
             warnings.warn("""\
-Looks like you're using the MacOSX matplotlib backend. Switch to the TkAgg
-or QtAgg backends to enable all interactive plotting commands.
-""")
+            Looks like you're using the MacOSX matplotlib backend. Switch to the TkAgg
+            or QtAgg backends to enable all interactive plotting commands.
+            """)
         else:
             # Enable xspecplot-style navigation (i/o for zooming, etc).
             # Need to save this as an attribute so it doesn't get
@@ -560,7 +772,7 @@ or QtAgg backends to enable all interactive plotting commands.
                 plt.show()
 
     #  Rebin
-    def rebin(self, new_wv, do_sig=False):
+    def rebin(self, new_wv, do_sig=False, **kwargs):
         """ Rebin to a new wavelength array
 
         Uses simple linear interpolation.  The default (and only)
@@ -585,6 +797,16 @@ or QtAgg backends to enable all interactive plotting commands.
         XSpectrum1D of the rebinned spectrum
         """
         from scipy.interpolate import interp1d
+        # Save flux info to avoid unit issues
+        funit = self.flux.unit
+        flux = self.flux.value
+
+        # Deal with nan
+        badf = np.isnan(flux)
+        if np.sum(badf) > 0:
+            warnings.warn("Ignoring NAN in flux")
+        gdf = ~badf
+        flux = flux[gdf]
 
         # Endpoints of original pixels
         npix = len(self.wavelength)
@@ -595,14 +817,18 @@ or QtAgg backends to enable all interactive plotting commands.
         dwv[0] = 2 * (wvh[0] - self.wavelength[0])
         med_dwv = np.median(dwv.value)
 
+        wvh = wvh[gdf]
+        dwv = dwv[gdf]
+
         # Error
         if do_sig:
-            var = self.sig**2
+            var = self.sig.value**2
+            var = var[gdf]
         else:
-            var = np.ones_like(self.flux)
+            var = np.ones_like(flux)
 
         # Cumulative Sum
-        cumsum = np.cumsum(self.flux * dwv)
+        cumsum = np.cumsum(flux * dwv)
         cumvar = np.cumsum(var * dwv)
 
         # Interpolate (loses the units)
@@ -663,8 +889,9 @@ or QtAgg backends to enable all interactive plotting commands.
         else:
             new_co = None
 
-        newspec = XSpectrum1D.from_tuple((new_wv, new_fx, new_sig, new_co),
-                                         meta=self.meta.copy())
+        newspec = XSpectrum1D.from_tuple((new_wv, new_fx*funit,
+                                          new_sig, new_co),
+                                         meta=self.meta.copy(), **kwargs)
         # Return
         return newspec
 
@@ -690,7 +917,7 @@ or QtAgg backends to enable all interactive plotting commands.
         return ((self.wavelength - wv_obs) * const.c / wv_obs).to('km/s')
 
     #  Box car smooth
-    def box_smooth(self, nbox, preserve=False):
+    def box_smooth(self, nbox, preserve=False, **kwargs):
         """ Box car smooth the spectrum
 
         Parameters
@@ -700,6 +927,9 @@ or QtAgg backends to enable all interactive plotting commands.
         preserve: bool (False)
           If True, perform a convolution to ensure the new spectrum
           has the same number of pixels as the original.
+        **kwargs: dict
+          If preserve=True, these keywords are passed on to
+          astropy.convoution.convolve
 
         Returns
         -------
@@ -707,8 +937,11 @@ or QtAgg backends to enable all interactive plotting commands.
         """
         if preserve:
             from astropy.convolution import convolve, Box1DKernel
-            new_fx = convolve(self.flux, Box1DKernel(nbox))
-            new_sig = convolve(self.sig, Box1DKernel(nbox))
+            new_fx = convolve(self.flux, Box1DKernel(nbox), **kwargs)
+            if self.sig_is_set:
+                new_sig = convolve(self.sig, Box1DKernel(nbox), **kwargs)
+            else:
+                new_sig = None
             new_wv = self.wavelength
         else:
             # Truncate arrays as need be
@@ -732,7 +965,6 @@ or QtAgg backends to enable all interactive plotting commands.
         return XSpectrum1D.from_tuple(
             (new_wv, new_fx, new_sig), meta=self.meta.copy())
 
-    # Splice two spectra together
     def gauss_smooth(self, fwhm, **kwargs):
         """ Smooth a spectrum with a Gaussian
 
@@ -764,57 +996,121 @@ or QtAgg backends to enable all interactive plotting commands.
         return XSpectrum1D.from_tuple(
             (self.wavelength, new_fx, new_sig), meta=self.meta.copy())
 
-    # Splice two spectra together
-    def splice(self, spec2, wvmx=None, scale=1.):
-        """ Combine two overlapping spectra.
+    def ivar_smooth(self, window):
+        """ Inverse variance smoothing -- port of ivarsmooth from IDL
 
         Parameters
         ----------
-        spec2 : Spectrum1D
-          The overlapping spectrum. It should cover wavelengths
-          *longer* than the original spectrum.
-        wvmx : Quantity, optional
-          Wavelength to begin splicing *after*
-        scale : float, optional
-          Scale factor for flux and error array.
-          Mainly for convenience of plotting
+        window -- int
+          smoothing length in pixels (turned into odd number if even)
 
         Returns
         -------
-        spec3 : XSpectrum1D
-          A copy of the spliced spectrum.
+        spec -- XSpectrum1D
+          New, smoothed spectrum
+
         """
-        # Begin splicing after the end of the internal spectrum
-        if wvmx is None:
-            wvmx = np.max(self.wavelength)
+        if not isinstance(window,int):
+            raise IOError("Input window must be int")
         #
-        gdp = np.where(spec2.wavelength > wvmx)[0]
-        # Concatenate
-        new_wv = np.concatenate((self.wavelength.value,
-                                 spec2.wavelength.value[gdp]))
-        uwave = u.Quantity(new_wv, unit=self.units['wave'])
-        new_fx = np.concatenate((self.flux.value,
-                                 spec2.flux.value[gdp] * scale))
-        # Error
-        if self.sig_is_set:
-            new_sig = np.concatenate((self.sig, spec2.sig[gdp] * scale))
-        else:
-            new_sig = None
+        halfwindow = np.floor((window-1)/2).astype(int)
+        ivar = 1./self.sig**2
 
-        # Continuum
-        if self.co_is_set:
-            new_co = np.concatenate((self.co, spec2.co[gdp] * scale))
-        else:
-            new_co = None
+        shiftarr = np.zeros((self.npix, 2*halfwindow+1))
+        shiftivar = shiftarr.copy()
+        shiftindex = shiftarr.copy()
+        indexarr = np.arange(self.npix)
+        indnorm = np.outer(indexarr, (np.zeros(2*halfwindow+1)+1))
 
-        # Generate
-        spec3 = XSpectrum1D.from_tuple(
-            (uwave, u.Quantity(new_fx), new_sig, new_co), meta=self.meta.copy())
+        for i in range(-halfwindow, halfwindow+1):
+            shiftarr[:, i+halfwindow] = np.roll(self.flux, i)
+            shiftivar[:, i+halfwindow] = np.roll(ivar, i)
+            shiftindex[:, i+halfwindow] = np.roll(indexarr, i)
+
+        wh = np.abs(shiftindex-indnorm) > (halfwindow+1)
+        shiftivar[wh] = 0.
+
+        outivar = np.sum(shiftivar, axis=1)
+        nzero =  np.where(outivar > 0)[0]
+        smoothflux = np.sum(shiftarr*shiftivar, axis=1)
+        if len(nzero)>0:
+            smoothflux[nzero] = smoothflux[nzero]/outivar[nzero]
+        else:
+            from astropy.convolution import convolve, Box1DKernel
+            smoothflux = convolve(self.flux, Box1DKernel(2*halfwindow+1))
+            #smoothflux = boxcar(self.flux,(2*halfwindow+1,))#kill off NAN's
+        # Return new spectrum
+        newsig = np.sqrt(1./outivar)
+        return XSpectrum1D.from_tuple(
+                (self.wavelength, smoothflux, newsig), meta=self.meta.copy())
+
+
+    def stitch(self, idx=None, scale=1.):
+        """ Combine two or more spectra within the .data array
+        Simple logic is used to order them by wavelength if the
+          order is not specified
+
+        Parameters
+        ----------
+        idx : list or ndarray
+          indices of spectra to stitch and the order to do so
+          if None, all of the spectra in the .data array will be combined
+            with simple logic using the wavelengths
+        scale : float, optional
+          Scale factor for flux and error array.
+
+        Returns
+        -------
+        spec : XSpectrum1D
+          The stitched spectrum.
+        """
+        from linetools.spectra import utils as ltsu
+        if idx is None:
+            wvmx = []
+            for ii in range(self.nspec):
+                wvmx.append(np.max(self.data['wave'][ii]))
+            # Sort
+            idx = np.argsort(np.array(wvmx))
+        # Splice the first two
+        spec = ltsu.splice_two(self.copy(select=idx[0]),
+                               self.copy(select=idx[1]))
+        # Loop using the rest
+        for kk in range(2,len(idx)):
+            spec = ltsu.splice_two(spec.copy(), self.copy(select=idx[kk]))
         # Return
-        return spec3
+        return spec
 
-    # Write to fits
-    def write_to_ascii(self, outfil, format='ascii.ecsv'):
+    def write(self, outfil, FITS_TABLE=False, **kwargs):
+        """  Wrapper for writing
+        Parses the extension to choose the file format
+
+        Parameters
+        ----------
+        outfil : str
+          Allowed extensions are
+          .fit, .fits -- FITS file; set FITS_TABLE=True to format as a binary FITS Table
+          .hdf5 -- HDF5 file
+          .ascii -- ASCII
+        kwargs
+
+        Returns
+        -------
+
+        """
+        ext = outfil[outfil.rfind('.')+1:]
+        if ext in ['fit','fits']:
+            if FITS_TABLE:
+                self.write_to_binary_fits_table(outfil, **kwargs)
+            else:
+                self.write_to_fits(outfil, **kwargs)
+        elif ext in ['hdf5']:
+            self.write_to_hdf5(outfil, **kwargs)
+        elif ext in ['ascii']:
+            self.write_to_ascii(outfil, **kwargs)
+        else:
+            raise IOError("Bad file extension: {:s}".format(ext))
+
+    def write_to_ascii(self, outfil, format='ascii.ecsv', **kwargs):
         """ Write to a text file.
 
         Parameters
@@ -835,7 +1131,7 @@ or QtAgg backends to enable all interactive plotting commands.
         # Write
         table.write(outfil, format=format)
 
-    def write_to_fits(self, outfil, select=False, clobber=True):
+    def write_to_fits(self, outfil, select=False, clobber=True, fill_val=0.):
         """ Write to a multi-extension FITS file.
 
         Writes 2D images for multiple spectra data arrays,
@@ -855,69 +1151,72 @@ or QtAgg backends to enable all interactive plotting commands.
         add_wave : bool (False)
           Force writing of wavelengths as array, instead of using FITS
           header keywords to specify a wcs.
+        fill_val : float, optional
+          Fill value for masked pixels
         """
         if self.nspec == 1:
             select = True
 
         # Flux
         if select:
-            prihdu = fits.PrimaryHDU(self.data[self.select]['flux'])
+            prihdu = fits.PrimaryHDU(self.data['flux'][self.select].filled(fill_val))
+            #prihdu = fits.PrimaryHDU(self.data[self.select]['flux'])
         else:
-            prihdu = fits.PrimaryHDU(self.data['flux'])
+            prihdu = fits.PrimaryHDU(self.data['flux'].filled(fill_val))
         hdu = fits.HDUList([prihdu])
         prihdu.name = 'FLUX'
 
         # Wavelength
         if select:
-            wvhdu = fits.ImageHDU(self.data[self.select]['wave'])
+            wvhdu = fits.ImageHDU(self.data['wave'][self.select].filled(fill_val))
         else:
-            wvhdu = fits.ImageHDU(self.data['wave'])
+            wvhdu = fits.ImageHDU(self.data['wave'].filled(fill_val))
         wvhdu.name = 'WAVELENGTH'
         hdu.append(wvhdu)
 
         if self.sig_is_set:
             if select:
-                sighdu = fits.ImageHDU(self.data[self.select]['sig'])
+                sighdu = fits.ImageHDU(self.data['sig'][self.select].filled(fill_val))
             else:
-                sighdu = fits.ImageHDU(self.data['sig'])
+                sighdu = fits.ImageHDU(self.data['sig'].filled(fill_val))
             sighdu.name = 'ERROR'
             hdu.append(sighdu)
 
         if self.co_is_set:
             if select:
-                cohdu = fits.ImageHDU(self.data[self.select]['co'])
+                cohdu = fits.ImageHDU(self.data['co'][self.select].filled(fill_val))
             else:
-                cohdu = fits.ImageHDU(self.data['co'])
+                cohdu = fits.ImageHDU(self.data['co'].filled(fill_val))
             cohdu.name = 'CONTINUUM'
             hdu.append(cohdu)
 
-        # Deal with header
-        if hasattr(self, 'head'):
+        # Use the header of the selected spectrum
+        if self.header is not None:
             hdukeys = list(prihdu.header.keys())
             # Append ones to avoid
             hdukeys = hdukeys + ['BUNIT', 'COMMENT', '', 'NAXIS1', 'NAXIS2', 'HISTORY']
-            for key in self.head.keys():
+            for key in self.header.keys():
                 # Use new ones
                 if key in hdukeys:
                     continue
                 # Update unused ones
                 try:
-                    prihdu.header[key] = self.head[key]
+                    prihdu.header[key] = self.header[key]
                 except ValueError:
                     raise ValueError('l.spectra.utils: Bad header key card')
             # History
-            if 'HISTORY' in self.head.keys():
+            if 'HISTORY' in self.header.keys():
                 # Strip \n
-                tmp = str(self.head['HISTORY']).replace('\n', ' ')
+                tmp = str(self.header['HISTORY']).replace('\n', ' ')
                 try:
                     prihdu.header.add_history(str(tmp))
                 except ValueError:
                     import pdb
                     pdb.set_trace()
 
+        #
         if self.meta is not None and len(self.meta) > 0:
-            d = liu.jsonify(self.meta)
-            prihdu.header['METADATA'] = json.dumps(d)
+            prihdu.header['METADATA'] = meta_to_disk(self.meta)
 
         # Units, etc.
         prihdu.header['NSPEC'] = self.nspec
@@ -929,6 +1228,74 @@ or QtAgg backends to enable all interactive plotting commands.
 
         hdu.writeto(outfil, clobber=clobber)
         print('Wrote spectrum to {:s}'.format(outfil))
+
+    def add_to_hdf5(self, hdf5, path='/', fill_val=0.):
+        """ Write the full data array to an already open hdf5 file
+
+        Parameters
+        ----------
+        hdf5 : h5py.File
+          If input, outfil is ignored
+        path : str, optional
+          Path to the location for writing (useful for using Groups)
+        fill_val : float, optional
+          Fill value for masked pixels
+        """
+        # Meta
+        if self.meta is not None and len(self.meta) > 0:
+            hdf5[path]['meta'] = meta_to_disk(self.meta)
+        # Units
+        units = self.units.copy()
+        d = liu.jsonify(units)
+        hdf5[path]['units'] = json.dumps(d)
+        # Data with compression
+        hdf5.create_dataset(path+'data', data=self.data.filled(fill_val),
+                                       chunks=True, compression='gzip')
+
+    def write_to_hdf5(self, outfil, hdf5=None, clobber=True, fill_val=0.):
+        """ Write the full data array to an hdf5 file.
+
+        Parameters
+        ----------
+        outfil : str
+          Name of the hdf5
+        clobber : bool (True)
+          Clobber existing file?
+        fill_val : float, optional
+          Fill value for masked pixels
+        hdf5 : h5py.File, optional
+          If input, outfil is ignored
+        """
+        # Check for h5py
+        try:
+            import h5py
+        except ImportError:
+            raise ImportError("You must install h5py to use this method")
+        import os
+        # Check for file
+        if clobber is False:
+            if os.path.exists(outfil):
+                raise IOError("File exists.  Will only over-write if you set clobber=True")
+        # Begin the file
+        if hdf5 is None:
+            hdf5 = h5py.File(outfil, 'w')
+            close = True
+        else:
+            close = False
+        # Meta
+        if self.meta is not None and len(self.meta) > 0:
+            hdf5['meta'] = meta_to_disk(self.meta)
+        # Units
+        units = self.units.copy()
+        d = liu.jsonify(units)
+        hdf5['units'] = json.dumps(d)
+        # Data with compression
+        hdf5.create_dataset('data', data=self.data.filled(fill_val),
+                                       chunks=True, compression='gzip')
+        # Finish
+        if close:
+            hdf5.close()
+            print('Wrote spectrum to {:s}'.format(outfil))
 
 
     def write_to_binary_fits_table(self, outfil, clobber=True):
@@ -965,13 +1332,13 @@ or QtAgg backends to enable all interactive plotting commands.
             # Append ones to avoid
             hdukeys = hdukeys + ['BUNIT', 'COMMENT', '', 'NAXIS1',
                                  'NAXIS2', 'HISTORY', 'NAXIS', 'END']
-            for key in self.head.keys():
+            for key in self.header.keys():
                 # Use new ones
                 if key in hdukeys:
                     continue
                 # Update unused ones
                 try:
-                    prihdu.header[key] = self.head[key]
+                    prihdu.header[key] = self.header[key]
                 except ValueError:
                     raise ValueError('l.spectra.utils: Bad header key card')
             # History
@@ -986,8 +1353,7 @@ or QtAgg backends to enable all interactive plotting commands.
 
         # META
         if self.meta is not None and len(self.meta) > 0:
-            d = liu.jsonify(self.meta)
-            prihdu.header['METADATA'] = json.dumps(d)
+            prihdu.header['METADATA'] = meta_to_disk(self.meta)
 
         # Units
         units = self.units.copy()
@@ -997,7 +1363,6 @@ or QtAgg backends to enable all interactive plotting commands.
         # Write
         hdulist.writeto(outfil, clobber=clobber)
         print('Wrote spectrum to {:s}'.format(outfil))
-
 
     def fit_continuum(self, knots=None, edges=None, wlim=None, dw=10.,
                       kind=None, **kwargs):
@@ -1012,18 +1377,20 @@ or QtAgg backends to enable all interactive plotting commands.
 
         Parameters
         ----------
-        spec : XSpectrum1D
-        wlim : (float, float), optional
-          Start and end wavelengths for fitting the continuum. Default is
-          None, which fits the entire spectrum.
+
         knots: list of (x, y) pairs, optional
           A list of spline knots to use for the continuum.
         edges: list of floats, optional
           A list of edges defining wavelength chunks. Spline knots
-          will be placed at the centre of these chunks.
+          will be placed at the centre of these chunks. Default
+          is None, which means it will place equally spaced chunks of
+          width `dw` (see below).
+        wlim : (float, float), optional
+          Start and end wavelengths for fitting the continuum. Default is
+          None, which fits the entire spectrum.
         dw : float, optional
           The approximate distance between spline knots in
-          Angstroms.
+          Angstroms. Default is 10.
         kind : {'QSO', None}, optional
           If not None, generate spline knots using
           linetools.analysis.continuum.find_continuum.
@@ -1037,12 +1404,14 @@ or QtAgg backends to enable all interactive plotting commands.
         import matplotlib.pyplot as plt
         if plt.get_backend() == 'MacOSX':
             warnings.warn("""\
-Looks like you're using the MacOSX matplotlib backend. Switch to the TkAgg
-or QtAgg backends to enable all interactive plotting commands.
-""")
+            Looks like you're using the MacOSX matplotlib backend. Switch to the TkAgg
+            or QtAgg backends to enable all interactive plotting commands.
+            """)
             return
 
         wa = self.wavelength.value
+        flux = self.flux.value
+        sig = self.sig.value
 
         anchor = False
         if wlim is None:
@@ -1064,12 +1433,12 @@ or QtAgg backends to enable all interactive plotting commands.
 
         if knots is None:
             knots, indices, masked = prepare_knots(
-                wa, self.flux.value, self.sig.value, edges)
+                wa, flux, sig, edges)
         else:
             knots = [list(k) for k in knots]
 
         if not len(knots) > 0:
-            raise RuntimeError('Problem generating continuum spline knots')
+            raise RuntimeError('Problem generating continuum spline knots.')
 
         # set the initial continuum for the fitter
         if self.co_is_set:
@@ -1086,16 +1455,15 @@ or QtAgg backends to enable all interactive plotting commands.
         import matplotlib.pyplot as plt
         fig = plt.figure(figsize=(11, 7))
         fig.subplots_adjust(left=0.05, right=0.95, bottom=0.1, top=0.95)
-        wrapper = InteractiveCoFit(wa, self.flux.value, self.sig.value,
+        wrapper = InteractiveCoFit(wa, flux, sig,
                                    contpoints, co=co_init, fig=fig, anchor=anchor)
 
         # wait until the interactive fitting has finished
         while not wrapper.finished:
             plt.waitforbuttonpress()
 
-        print('Updating continuum')
-        self.data['co'] = wrapper.continuum
-        #self.co = wrapper.continuum
+        print('Updating continuum.')
+        self.co = wrapper.continuum  # this should work with the assignment, even is self.co_is_set is False
         if 'contpoints' not in self.meta:
             self.meta['contpoints'] = []
         self.meta['contpoints'].extend(
@@ -1241,7 +1609,9 @@ or QtAgg backends to enable all interactive plotting commands.
             txt = txt + 'file={:s},'.format(self.filename)
         except:
             pass
-
+        # nspec, select
+        txt = txt + ' nspec={:d},'.format(self.nspec)
+        txt = txt + ' select={:d},'.format(self.select)
         # wrest
         txt = txt + ' wvmin={:g}, wvmax={:g}'.format(
             self.wvmin, self.wvmax)

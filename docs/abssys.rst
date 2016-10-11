@@ -46,12 +46,10 @@ More commonly, one will instantiate with one or more AbsComponent objects::
 
     # HI Lya, Lyb
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
-    lya = AbsLine(1215.670*u.AA)
-    lya.analy['vlim'] = [-300.,300.]*u.km/u.s
-    lya.attrib['z'] = 2.92939
-    lyb = AbsLine(1025.7222*u.AA)
-    lyb.analy['vlim'] = [-300.,300.]*u.km/u.s
-    lyb.attrib['z'] = lya.attrib['z']
+    lya = AbsLine(1215.670*u.AA, z=2.92939)
+    lya.limits.set([-300.,300.]*u.km/u.s)  # vlim
+    lyb = AbsLine(1025.7222*u.AA, z=lya.attrib['z'])
+    lyb.limits.set([-300.,300.]*u.km/u.s)  # vlim
     abscomp = AbsComponent.from_abslines([lya,lyb])
     abscomp.coord = radec
     # Finish
@@ -99,6 +97,18 @@ or rest-wavelength of a transition, e.g. ::
    # or
    lyb = abssys.get_absline(1025.72*u.AA)  # Nearest 0.01 A is required
 
+
+Components
+----------
+
+`~linetools.igsm.abssystem.get_component`
+grabs components matching an input where the input is either
+a tuple of (Z, ion) or an AbsLine::
+
+   spec = io.readspec(data_path('UM184_nF.fits'))
+
+`~linetools.igsm.abssystem.update_component_colm` synthesizes
+and updates the column densities for the components.
 
 ionN
 ----

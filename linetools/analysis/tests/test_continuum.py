@@ -5,10 +5,11 @@ from ...spectra.io import readspec
 from ..continuum import find_continuum
 import imp
 import numpy as np
+import pytest
 
 def test_find_continuum():
     d = imp.find_module('linetools')[1]
-    spec = readspec(d + '/spectra/tests/files/q0002m422.txt.gz')
+    spec = readspec(d + '/spectra/tests/files/q0002m422.txt.gz', masking='none')
     co, pts = find_continuum(spec, redshift=2.76, divmult=3.5,
                        forest_divmult=3, kind='QSO')
     assert np.allclose(co[:3],

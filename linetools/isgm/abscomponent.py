@@ -14,11 +14,11 @@ import warnings
 
 from astropy import constants as const
 from astropy import units as u
+from astropy.units import Quantity
 from astropy.coordinates import SkyCoord
 from astropy.table import QTable, Column
 
-from specutils import Spectrum1D
-
+from linetools.spectra.xspectrum1d import XSpectrum1D
 from linetools.analysis import absline as ltaa
 from linetools.analysis import plots as ltap
 from linetools.spectralline import AbsLine, SpectralLine
@@ -28,6 +28,9 @@ from linetools import utils as ltu
 #import xastropy.atomic as xatom
 #from xastropy.stats import basic as xsb
 #from xastropy.xutils import xdebug as xdb
+
+# Global import for speed
+c_kms = const.c.to('km/s').value
 
 # Class for Components
 class AbsComponent(object):
@@ -74,8 +77,9 @@ class AbsComponent(object):
 
         # Instantiate with the first line
         init_line = abslines[0]
+        #init_line.attrib['z'], init_line.analy['vlim'],
         slf = cls( init_line.attrib['coord'], (init_line.data['Z'],init_line.data['ion']),
-                   init_line.attrib['z'], init_line.analy['vlim'],
+                   init_line.attrib['z'], init_line.limits.vlim,
                    Ej=init_line.data['Ej'], stars=stars)
         slf._abslines.append(init_line)
         # Append with component checking
@@ -108,7 +112,7 @@ class AbsComponent(object):
                    A=component.A, name=component.name, **kwargs)
 
     @classmethod
-    def from_dict(cls, idict, **kwargs):
+    def from_dict(cls, idict, coord=None, **kwargs):
         """ Instantiate from a dict
 
         Parameters
@@ -119,19 +123,24 @@ class AbsComponent(object):
         -------
 
         """
-        slf = cls(SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg),
-                  tuple(idict['Zion']), idict['zcomp'], idict['vlim']*u.km/u.s,
+        if coord is not None:
+            radec = coord
+        else:
+            radec = SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg)
+        # Init
+        #slf = cls(radec, tuple(idict['Zion']), idict['zcomp'], Quantity(idict['vlim'], unit='km/s'),
+        slf = cls(radec, tuple(idict['Zion']), idict['zcomp'], idict['vlim']*u.km/u.s,
                   Ej=idict['Ej']/u.cm, A=idict['A'],
                   Ntup = tuple([idict[key] for key in ['flag_N', 'logN', 'sig_logN']]),
                   comment=idict['comment'], name=idict['Name'])
         # Add lines
         for key in idict['lines'].keys():
-            iline = SpectralLine.from_dict(idict['lines'][key])
+            iline = SpectralLine.from_dict(idict['lines'][key], coord=coord, **kwargs)
             slf.add_absline(iline, **kwargs)
         # Return
         return slf
 
-    def __init__(self, radec, Zion, z, vlim, Ej=0./u.cm, A=None,
+    def __init__(self, radec, Zion, zcomp, vlim, Ej=0./u.cm, A=None,
                  Ntup=None, comment='', name=None, stars=None):
         """  Initiator
 
@@ -142,7 +151,7 @@ class AbsComponent(object):
         Zion : tuple 
             Atomic number, ion -- (int,int)
             e.g. (8,1) for OI
-        z : float
+        zcomp : float
             Absorption component redshift
         vlim : Quantity array
             Velocity limits of the component w/r to `z`
@@ -170,7 +179,7 @@ class AbsComponent(object):
         elif isinstance(radec, SkyCoord):
             self.coord = radec
         self.Zion = Zion
-        self.zcomp = z
+        self.zcomp = zcomp
         self.vlim = vlim
 
         # Optional
@@ -198,10 +207,15 @@ class AbsComponent(object):
             self.name = '{:s}_z{:0.5f}'.format(iname, self.zcomp)
         else:
             self.name = name
+
+        # Potential for attributes
+        self.attrib = dict()
+
         # Other
         self._abslines = []
 
-    def add_absline(self, absline, tol=0.1*u.arcsec, skip_vel=False):
+    def add_absline(self, absline, tol=0.1*u.arcsec, chk_vel=True,
+                    chk_sep=True, vtoler=1., **kwargs):
         """Add an AbsLine object to the component if it satisfies
         all of the rules.
 
@@ -212,34 +226,51 @@ class AbsComponent(object):
         ----------
         absline : AbsLine
         tol : Angle, optional
-          Tolerance on matching coordinates
-        skip_vel : bool, optional
-          Skip velocity test?  Not recommended
+          Tolerance on matching coordinates.  Only used if chk_sep=True
+        chk_vel : bool, optional
+          Perform velocity test (can often be skipped)
+          Insist the bounds of the AbsLine are within 1km/s of the Component
+             (allows for round-off error)
+        chk_sep : bool, optional
+          Perform coordinate check (expensive)
+        vtoler : float
+          Tolerance for velocity in km/s (must be positive)
         """
+        if vtoler < 0:
+            raise ValueError('vtoler must be positive!')
+
         # Perform easy checks
-        testc = bool(self.coord.separation(absline.attrib['coord']) < tol)
+        if chk_sep:
+            testc = bool(self.coord.separation(absline.attrib['coord']) < tol)
+        else:
+            testc = True
         testZ = self.Zion[0] == absline.data['Z']
         testi = self.Zion[1] == absline.data['ion']
         testE = bool(self.Ej == absline.data['Ej'])
         # Now redshift/velocity
-        if not skip_vel:
-            zlim_line = (1+absline.attrib['z'])*absline.analy['vlim']/const.c.to('km/s')
-            zlim_comp = (1+self.zcomp)*self.vlim/const.c.to('km/s')
-            testv = (zlim_line[0] >= zlim_comp[0]) & (
-                zlim_line[1] <= zlim_comp[1])
+        if chk_vel:
+            dz_toler = (1 + self.zcomp) * vtoler / c_kms  # Avoid Quantity for speed
+            zlim_line = (1 + absline.attrib['z']) * absline.limits.vlim.to('km/s').value / c_kms
+            zlim_comp = (1+self.zcomp) * self.vlim.to('km/s').value / c_kms
+            testv = (zlim_line[0] >= (zlim_comp[0] - dz_toler)) & (
+                zlim_line[1] <= (zlim_comp[1] + dz_toler))
         else:
             testv = True
         # Combine
         test = testc & testZ & testi & testE & testv
         # Isotope
         if self.A is not None:
-            raise ValueError('Not ready for this yet')
+            raise ValueError('Not ready for this yet.')
         # Append?
         if test:
             self._abslines.append(absline)
         else:
-            warnings.warn('Input absline with wrest={:g} does not match component rules. Not appending'.format(absline.wrest))
-            pdb.set_trace()
+            warnings.warn("Failed add_absline test")
+            print('Input absline with wrest={:g} does not match component rules. Not appending'.format(absline.wrest))
+            if not testv:
+                print("Absline velocities lie beyond component\n Set chk_vel=False to skip this test.")
+            if not testc:
+                print("Absline coordinates do not match.  Best to set them")
 
     def build_table(self):
         """Generate an astropy QTable out of the component.
@@ -308,7 +339,7 @@ class AbsComponent(object):
         # Check for spec
         gdiline = []
         for iline in self._abslines:
-            if isinstance(iline.analy['spec'], Spectrum1D):
+            if isinstance(iline.analy['spec'], XSpectrum1D):
                 gdiline.append(iline)
         nplt = len(gdiline)
         if nplt == 0:
@@ -368,7 +399,6 @@ class AbsComponent(object):
                     print('Resetting vlim1 from {}'.format(aline))
                 self.vlim[1] = aline.analy['vlim'][1]
 
-
     def synthesize_colm(self, overwrite=False, redo_aodm=False, **kwargs):
         """Synthesize column density measurements of the component.
         Default is to use the current AbsLine values, but the user can
@@ -388,7 +418,7 @@ class AbsComponent(object):
         """
         # Check
         if (self.flag_N != 0) and (not overwrite):
-            raise IOError("Column densities already set.  Use clobber=True to redo.")
+            raise IOError("Column densities already set.  Use overwrite=True to redo.")
         # Redo?
         if redo_aodm:
             for aline in self._abslines:
@@ -396,6 +426,10 @@ class AbsComponent(object):
         # Collate
         self.flag_N = 0
         for aline in self._abslines:
+            if aline.attrib['flag_N'] == 0:  # No value
+                warnings.warn("Absline {} has flag=0.  Hopefully you expected that".format(str(aline)))
+                continue
+            # Check N is filled
             if np.allclose(aline.attrib['N'].value, 0.):
                 raise ValueError("Need to set N in attrib.  \n Consider linear_clm in linetools.analysis.absline")
             if aline.attrib['flag_N'] == 1:  # Good value?
@@ -414,11 +448,12 @@ class AbsComponent(object):
             elif aline.attrib['flag_N'] == 2:  # Lower limit
                 if self.flag_N in [0, 3]:
                     self.N = aline.attrib['N']
-                    self.sig_N = 99. / u.cm**2
+                    self.sig_N = aline.attrib['sig_N']
                     self.flag_N = 2
                 elif self.flag_N == 2:
-                    self.N = max(self.N, aline.attrib['N'])
-                    self.sig_N = 99. / u.cm**2
+                    if aline.attrib['N'] > self.N:
+                        self.N = aline.attrib['N']
+                        self.sig_N = aline.attrib['sig_N']
                 elif self.flag_N == 1:
                     pass
             elif aline.attrib['flag_N'] == 3:  # Upper limit
@@ -432,10 +467,13 @@ class AbsComponent(object):
                     if aline.attrib['N'] < self.N:
                         self.N = aline.attrib['N']
                         self.sig_N = aline.attrib['sig_N']
+            elif aline.attrib['flag_N'] == 0:  # No value
+                warnings.warn("Absline {} has flag=0.  Hopefully you expected that")
             else:
                 raise ValueError("Bad flag_N value")
         # Log values
-        self.logN, self.sig_logN = ltaa.log_clm(self)
+        if self.flag_N > 0:
+            self.logN, self.sig_logN = ltaa.log_clm(self)
 
     def repr_vpfit(self, b=10.*u.km/u.s, tie_strs=('', '', ''), fix_strs=('', '', '')):
         """
@@ -560,6 +598,49 @@ class AbsComponent(object):
         s += '\n'
         return s
 
+    def repr_joebvp(self, specfile, flags=(2,2,2), b_default=10*u.km/u.s):
+        """
+        String representation for JOEBVP (line fitting software).
+
+        Parameters
+        ----------
+        specfile : str
+            Name of the spectrum file
+        flags : tuple of ints, optional
+            Flags (nflag, bflag, vflag). See JOEBVP input for details
+            about these flags.
+        b_default : Quantity, optional
+            Doppler parameter value adopted in case an absorption
+            line within the component has not set this attribute
+            Default is 10 km/s.
+
+        Returns
+        -------
+        repr_joebvp : str
+            May contain multiple "\n" (1 per absline within component)
+
+        """
+        # Reference:
+        # specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|trans
+        s = ''
+        for aline in self._abslines:
+            s += '{:s}|{:.5f}|'.format(specfile, aline.wrest.to('AA').value)
+            logN = aline.attrib['logN']
+            b_val = aline.attrib['b'].to('km/s').value
+            if b_val == 0:  # set the default
+                b_val = b_default.to('km/s').value
+            s += '{:.8f}|{:.4f}|{:.4f}|0.|'.format(self.zcomp, logN, b_val)  # `vel` is set to 0. because z is zcomp
+            s += '{}|{}|{}|'.format(int(flags[0]), int(flags[1]), int(flags[2]))
+            vlim = aline.limits.vlim.to('km/s').value
+            wvlim = aline.limits.wvlim.to('AA').value
+            s += '{:.4f}|{:.4f}|{:.5f}|{:.5f}|'.format(vlim[0], vlim[1], wvlim[0], wvlim[1])
+            s += '{:s}'.format(aline.data['ion_name'])
+
+            if len(self.comment) > 0:
+                s += '# {:s}'.format(self.comment)
+            s += '\n'
+        return s
+
     def stack_plot(self, **kwargs):
         """Show a stack plot of the component, if spec are loaded
         Assumes the data are normalized.
@@ -588,6 +669,26 @@ class AbsComponent(object):
         cdict = ltu.jsonify(cdict)
         # Return
         return cdict
+
+    def copy(self):
+        """ Generate a copy of itself
+        Returns
+        -------
+        abscomp : AbsComponent
+
+        """
+        # Instantiate with required attributes
+        abscomp = AbsComponent(self.coord, self.Zion, self.zcomp, self.vlim)
+        # Add in the rest
+        attrs = vars(self).keys()
+        for attr in attrs:
+            if attr == '_abslines':
+                for iline in self._abslines:
+                    abscomp._abslines.append(iline.copy())
+            else:
+                setattr(abscomp, attr, getattr(self, attr))
+        # Return
+        return abscomp
 
     def __getitem__(self, attrib):
         """Passback attribute, if it exists

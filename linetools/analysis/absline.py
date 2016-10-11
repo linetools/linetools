@@ -78,7 +78,6 @@ def aodm(spec, idata):
 
 def log_clm(obj):
     """Return logN and sig_logN given linear N, sig_N
-
     Also fills the attributes
 
     Parameters

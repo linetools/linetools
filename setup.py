@@ -21,8 +21,12 @@ from astropy_helpers.git_helpers import get_git_devstr
 from astropy_helpers.version_helpers import generate_version_py
 
 # Get some values from the setup.cfg
-from distutils import config
-conf = config.ConfigParser()
+try:
+    from ConfigParser import ConfigParser
+except ImportError:
+    from configparser import ConfigParser
+
+conf = ConfigParser()
 conf.read(['setup.cfg'])
 metadata = dict(conf.items('metadata'))
 
@@ -95,9 +99,12 @@ package_info['package_data'][PACKAGENAME] += data_files
 entry_points = {}
 entry_points['console_scripts'] = [
     'lt_absline = linetools.scripts.lt_absline:main',
+    'lt_line = linetools.scripts.lt_line:main',
+    'lt_xabssys = linetools.scripts.lt_xabssys:main',
     'lt_xspec = linetools.scripts.lt_xspec:main',
     'lt_continuumfit = linetools.scripts.lt_continuumfit:main',
     'lt_plot = linetools.scripts.lt_plot:main',
+    'lt_radec = linetools.scripts.lt_radec:main',
 #    'astropy-package-template-example = packagename.example_mod:main',
 ]
 

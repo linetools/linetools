@@ -17,10 +17,10 @@ class XSpecGui(QtGui.QMainWindow):
     """ GUI to replace XIDL x_specplot (which simulated a GUI by T. Barlow)
     """
     def __init__(self, ispec, parent=None, zsys=None, norm=None, exten=None,
-                 rsp_kwargs=None):
+                 rsp_kwargs={}, unit_test=False, **kwargs):
         QtGui.QMainWindow.__init__(self, parent)
         """
-        ispec = str, Spectrum1D or tuple of arrays
+        ispec = str, XSpectrum1D or tuple of arrays
           Input spectrum or spectrum filename.  If tuple then (wave,
           fx), (wave, fx, sig) or (wave, fx, sig, co)
         parent : Widget parent, optional
@@ -54,9 +54,10 @@ class XSpecGui(QtGui.QMainWindow):
 
         # Hook the spec widget to Plot Line
         self.spec_widg = ltgsp.ExamineSpecWidget(ispec,status=self.statusBar,
+                                                 parent=self,
                                                 llist=self.pltline_widg.llist,
                                                 zsys=zsys, norm=norm, exten=exten,
-                                                 rsp_kwargs=rsp_kwargs)
+                                                 rsp_kwargs=rsp_kwargs, **kwargs)
         self.pltline_widg.spec_widg = self.spec_widg
 
         self.spec_widg.canvas.mpl_connect('button_press_event', self.on_click)
@@ -78,6 +79,8 @@ class XSpecGui(QtGui.QMainWindow):
 
         # Point MainWindow
         self.setCentralWidget(self.main_widget)
+        if unit_test:
+            self.quit()
 
     def create_status_bar(self):
         """ Status bar for the GUI

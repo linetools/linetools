@@ -103,13 +103,17 @@ def navigate(psdict, event, init=False, wave=None, flux=None):
 
 def set_doublet(iself, event):
     """ Set z and plot doublet
+    Returns
+    -------
+    obs_wave
+    name
     """
     wv_dict = {'C': (1548.195, 1550.770, 'CIV'),
                'M': (2796.352, 2803.531, 'MgII'),
                '4': (1393.755, 1402.770, 'SiIV'),
                'X': (1031.9261, 1037.6167, 'OVI'),
                '8': (770.409, 780.324, 'NeVIII'),
-               'B': (1025.4433, 1215.6701, 'Lyba')}
+               'B': (1025.4433, 1215.6701, 'HI Ly')}
     wrest = wv_dict[event.key]
 
     # Set z
@@ -120,16 +124,18 @@ def set_doublet(iself, event):
     except AttributeError:
         print('z = {:g} for {:s}'.format(iself.zabs, wrest[2]))
 
-    return np.array(wrest[0:2])*(1.+iself.zabs)
+    return np.array(wrest[0:2])*(1.+iself.zabs), wv_dict[event.key][2]
 
 
-def set_llist(llist, in_dict=None, sort=True):
+def set_llist(llist, in_dict=None, sort_by='wrest'):
     """ Method to set a line list dict for the Widgets
 
     Parameters
     ----------
-    sort : bool, optional
-      Sort lines by rest wavelength
+    sort_by : str or list of str, optional
+        Key(s)to sort the lines by. Default is 'wrest'.
+        If sort_by='as_given', it preserves the order
+        as given by llist.
     """
     from linetools.lists.linelist import LineList
     from astropy.units.quantity import Quantity
@@ -150,14 +156,12 @@ def set_llist(llist, in_dict=None, sort=True):
                 if llist == 'OVI':
                     gdlines = u.AA*[629.730, 702.332, 770.409, 780.324, 787.711, 832.927, 972.5367, 977.0201,
                         1025.7222, 1031.9261, 1037.6167, 1206.5, 1215.6700, 1260.4221]
-                    llist_cls = LineList('Strong')
-                    llist_cls = llist_cls.subset_lines(gdlines)
+                    llist_cls = LineList('Strong', sort_by=sort_by)
+                    llist_cls = llist_cls.subset_lines(gdlines, sort_by='as_given')
 
                     in_dict[llist] = llist_cls
                 else:
-                    llist_cls = LineList(llist)
-                    # Sort
-                    llist_cls._data.sort('wrest')
+                    llist_cls = LineList(llist, sort_by=sort_by)
                     # Load
                     in_dict[llist] = llist_cls
     elif isinstance(llist, (Quantity, list)): # Set from a list of wrest
@@ -165,10 +169,8 @@ def set_llist(llist, in_dict=None, sort=True):
         in_dict['Lists'].append('input.lst')
         in_dict['Plot'] = True
         # Fill
-        if sort:
-            llist.sort()
-        llist_cls = LineList('ISM')
-        llist_cls = llist_cls.subset_lines(llist)
+        llist_cls = LineList('ISM', sort_by=sort_by)
+        llist_cls = llist_cls.subset_lines(llist, sort_by=sort_by)
         in_dict['input.lst'] = llist_cls
     else:
         raise IOError('Not ready for this type of input')
@@ -185,7 +187,7 @@ def read_spec(ispec, exten=None, norm=True, **kwargs):
 
     Parameters
     ----------
-    ispec : Spectrum1D, str, list of files (ordered blue to red),
+    ispec : XSpectrum1D, str, list of files (ordered blue to red),
        or tuple of arrays
     exten : int, optional
       FITS extension
@@ -196,6 +198,8 @@ def read_spec(ispec, exten=None, norm=True, **kwargs):
     spec_file : str
     """
     from linetools.spectra import xspectrum1d as lsx
+    from linetools.spectra import utils as ltsu
+    from astropy.utils.misc import isiterable
     #
     if isinstance(ispec,basestring):
         spec_fil = ispec
@@ -203,10 +207,6 @@ def read_spec(ispec, exten=None, norm=True, **kwargs):
             spec = lsx.XSpectrum1D.from_file(spec_fil, exten=exten, **kwargs['rsp_kwargs'])
         else:
             spec = lsx.XSpectrum1D.from_file(spec_fil, exten=exten)
-        #from PyQt4 import QtCore
-        #QtCore.pyqtRemoveInputHook()
-        #pdb.set_trace()
-        #QtCore.pyqtRestoreInputHook()
     elif isinstance(ispec, lsx.XSpectrum1D):
         spec = ispec
         spec_fil = spec.filename  # Grab from Spectrum1D
@@ -216,26 +216,43 @@ def read_spec(ispec, exten=None, norm=True, **kwargs):
     elif isinstance(ispec,list): # Multiple file names
         # Loop on the files
         for kk,ispecf in enumerate(ispec):
-            jspec = lsx.XSpectrum1D.from_file(ispecf, exten=exten)
+            if isiterable(exten):
+                iexten = exten[kk]
+            else:
+                iexten = exten
+            jspec = lsx.XSpectrum1D.from_file(ispecf, exten=iexten)
             if kk == 0:
                 spec = jspec
                 _, xper1 = ltsp.get_flux_plotrange(spec.flux, perc=0.9)
             else:
                 # Scale flux for convenience of plotting (sig is not scaled)
                 _, xper2 = ltsp.get_flux_plotrange(jspec.flux, perc=0.9)
-                scl = xper1[1]/xper2[1]
+                scl = xper1/xper2
                 # Splice
-                spec = spec.splice(jspec, scale=scl)
+                #from PyQt4 import QtCore
+                #QtCore.pyqtRemoveInputHook()
+                #pdb.set_trace()
+                #QtCore.pyqtRestoreInputHook()
+                spec = ltsu.splice_two(spec, jspec)#, scale=scl)
             # Filename
             spec_fil = ispec[0]
             spec.filename=spec_fil
     else:
-        raise ValueError('Bad input to read_spec: {:s}'.format(type(ispec)))
+        raise ValueError('Bad input to read_spec: {}'.format(type(ispec)))
 
     # Normalize?
     if norm:
         if spec.co_is_set:
             spec.normed=True
+
+    # Demand AA for wavelength unit (unless over-ridden)
+    if spec.wavelength.unit != u.AA:
+        wvAA = spec.wavelength.to('AA')
+        spec.wavelength = wvAA
+    #from PyQt4 import QtCore
+    #QtCore.pyqtRemoveInputHook()
+    #pdb.set_trace()
+    #QtCore.pyqtRestoreInputHook()
 
     # Return
     return spec, spec_fil
