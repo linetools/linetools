@@ -1166,14 +1166,7 @@ class XSpectrum1D(object):
         hdu = fits.HDUList([prihdu])
         prihdu.name = 'FLUX'
 
-        # Wavelength
-        if select:
-            wvhdu = fits.ImageHDU(self.data['wave'][self.select].filled(fill_val))
-        else:
-            wvhdu = fits.ImageHDU(self.data['wave'].filled(fill_val))
-        wvhdu.name = 'WAVELENGTH'
-        hdu.append(wvhdu)
-
+        # Error  (packing LowRedux style)
         if self.sig_is_set:
             if select:
                 sighdu = fits.ImageHDU(self.data['sig'][self.select].filled(fill_val))
@@ -1181,6 +1174,14 @@ class XSpectrum1D(object):
                 sighdu = fits.ImageHDU(self.data['sig'].filled(fill_val))
             sighdu.name = 'ERROR'
             hdu.append(sighdu)
+
+        # Wavelength
+        if select:
+            wvhdu = fits.ImageHDU(self.data['wave'][self.select].filled(fill_val))
+        else:
+            wvhdu = fits.ImageHDU(self.data['wave'].filled(fill_val))
+        wvhdu.name = 'WAVELENGTH'
+        hdu.append(wvhdu)
 
         if self.co_is_set:
             if select:
