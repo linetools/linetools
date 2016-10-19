@@ -614,7 +614,7 @@ def parse_linetools_spectrum_format(hdulist):
 
     if 'METADATA' in hdulist[0].header:
         # import pdb; pdb.set_trace()
-        # patch for reading continuum metadata properly; todo: should be fixed properly!!!
+        # patch for reading continuum metadata; todo: should be fixed properly!!!
         if "contpoints" in hdulist[0].header['METADATA']:
             aux_s = hdulist[0].header['METADATA']
             if aux_s.endswith("}\' /"):
