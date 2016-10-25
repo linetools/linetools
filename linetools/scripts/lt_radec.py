@@ -36,13 +36,12 @@ def main(args=None):
         return
     # Setup
     from linetools import utils as ltu
+    from .utils import coord_arg_to_coord
     from astropy import units as u
-    # RA, DEC?
-    if ',' in pargs.inp:
-        ra,dec = [float(ii) for ii in pargs.inp.split(',')]
-        coord = ltu.radec_to_coord((ra,dec))
-    else:
-        coord = ltu.radec_to_coord(pargs.inp)
+
+    # RA, DEC
+    icoord = coord_arg_to_coord(pargs.inp)
+    coord = ltu.radec_to_coord(icoord)
 
     # Time to print
     print('J{:s}{:s}'.format(coord.ra.to_string(unit=u.hour,sep='',pad=True),
