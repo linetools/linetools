@@ -26,4 +26,5 @@ def test_lt_line():
 def test_lt_radec():
     lt_radec.main(['152.25900,7.22885'])
     lt_radec.main(['J100902.16+071343.8'])
+    lt_radec.main(['10:09:02.16,+07:13:43.8'])
 
