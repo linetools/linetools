@@ -207,6 +207,57 @@ class SpectralLine(object):
         else:
             raise ValueError('Not ready to set limits for this type')
 
+    def fill_data(self, trans, linelist=None, closest=False, verbose=True):
+        """ Fill atomic data and setup analy.
+
+        Parameters
+        ----------
+        trans : Quantity or str
+          Either a rest wavelength (e.g. 1215.6700*u.AA) or the name
+          of a transition (e.g. 'CIV 1548'). For an unknown transition
+          use string 'unknown'.
+        linelist : LineList, optional
+          Class of linelist or str setting LineList
+        closest : bool, optional
+          Take the closest line to input wavelength? [False]
+        """
+
+        # Deal with LineList
+        if linelist is None:
+            if self.ltype == 'Abs':
+                llist = LineList('ISM')
+            elif self.ltype == 'Emiss':
+                llist = LineList('Galaxy')
+            else:
+                raise ValueError("Not ready for ltype = {:s}".format(self.ltype))
+        elif isinstance(linelist,basestring):
+            llist = LineList(linelist)
+        elif isinstance(linelist,LineList):
+            llist = linelist
+        else:
+            raise ValueError('Bad input for linelist')
+
+        # Closest?
+        llist.closest = closest
+
+        # Data
+        newline = llist[trans]
+        if newline is None:
+            raise ValueError("Transition {} not found in LineList {:s}".format(trans, llist.list))
+        try:
+            self.data.update(newline)  # Expected to be a LineList dict object
+        except TypeError:
+            raise TypeError("Probably should not be here")
+
+
+        # Update
+        self.wrest = self.data['wrest']
+        self.name = self.data['name']
+
+        #
+        self.update()
+
+
     def setz(self, z):
         """ Set redshift wherever it is needed/expected
         Parameters
@@ -521,53 +572,15 @@ class AbsLine(SpectralLine):
         """ Return a string representing the type of vehicle this is."""
         return 'AbsLine'
 
-    def fill_data(self, trans, linelist=None, closest=False, verbose=True):
-        """ Fill atomic data and setup analy.
-
-        Parameters
-        ----------
-        trans : Quantity or str
-          Either a rest wavelength (e.g. 1215.6700*u.AA) or the name
-          of a transition (e.g. 'CIV 1548'). For an unknown transition
-          use string 'unknown'.
-        linelist : LineList, optional
-          Class of linelist or str setting LineList
-        closest : bool, optional
-          Take the closest line to input wavelength? [False]
+    def update(self):
+        """ Fill in a few additional dicts
         """
-
-        # Deal with LineList
-        if linelist is None:
-            llist = LineList('ISM')
-        elif isinstance(linelist,basestring):
-            llist = LineList(linelist)
-        elif isinstance(linelist,LineList):
-            llist = linelist
-        else:
-            raise ValueError('Bad input for linelist')
-
-        # Closest?
-        llist.closest = closest
-
-        # Data
-        newline = llist[trans]
-        try:
-            self.data.update(newline)  # Expected to be a LineList dict object
-        except TypeError:
-            pdb.set_trace()
-
-
-        # Update
-        self.wrest = self.data['wrest']
-        self.name = self.data['name']
-
-        #
         self.analy.update( {
             'flg_eye': 0,
             'flg_limit': 0, # No limit
-            'datafile': '', 
+            'datafile': '',
             'name': self.data['name']
-            })
+        })
 
         # Additional fundamental attributes for Absorption Line
         self.attrib.update(abs_attrib.copy())
@@ -679,46 +692,9 @@ class EmissLine(SpectralLine):
         # Generate with type
         super(EmissLine, self).__init__('Emiss', trans, **kwargs)
 
-    def fill_data(self, trans, linelist=None, closest=False, verbose=True):
-        """ Fill atomic data and setup analy.
-
-        Parameters
-        ----------
-        trans : Quantity or str
-          Either a rest wavelength (e.g. 1215.6700*u.AA) or the name
-          of a transition (e.g. 'CIV 1548'). For an unknown transition
-          use string 'unknown'.
-        linelist : LineList, optional
-          Class of linelist or str setting LineList
-        closest : bool, optional
-          Take the closest line to input wavelength? [False]
+    def update(self):
+        """ Fill in a few additional dicts
         """
-
-        # Deal with LineList
-        if linelist is None:
-            llist = LineList('Galaxy')
-        elif isinstance(linelist,basestring):
-            llist = LineList(linelist)
-        elif isinstance(linelist,LineList):
-            llist = linelist
-        else:
-            raise ValueError('Bad input for linelist')
-
-        # Closest?
-        llist.closest = closest
-
-        # Data
-        newline = llist[trans]
-        try:
-            self.data.update(newline)  # Expected to be a LineList dict object
-        except TypeError:
-            pdb.set_trace()
-
-
-        # Update
-        self.wrest = self.data['wrest']
-        self.name = self.data['name']
-
         #
         self.analy.update( {
             'datafile': '',
