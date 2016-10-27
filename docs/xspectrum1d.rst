@@ -92,7 +92,7 @@ One can collate a list of XSpectrum1D objects into one with collate::
     >>> sp1 = XSpectrum1D.from_file('PH957_f.fits')
     >>> sp2 = XSpectrum1D.from_file('q0002m422.txt.gz')
     >>> sp = linetools.spectra.utils.coolate([sp1,sp2])
-    
+
 
 Plotting
 --------
