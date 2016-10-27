@@ -76,57 +76,10 @@ class XSpectrum1D(object):
         slf = cls.from_tuple((spec1d.dispersion, spec1d.flux))
         return slf
 
+    """ DEPRECATED -- Use spectra.utils.collate
     @classmethod
     def from_list(cls, xspecs, **kwargs):
-        """ Generate a single XSpectrum1D instance containing an array of
-        spectra from a list of individual XSpectrum1D spectra.
-        Each spectrum is padded with extra pixels so that the
-        wavelength ranges of all spectra are covered.
-        Padded pixels are masked.
-
-        Also note that masked pixels in the original data are ignored!
-
-        Uses meta to store headers
-
-        Parameters
-        ----------
-        xspecs : list
-
-        """
-        nspec = len(xspecs)
-        # Find max npix
-        max_npix = 0
-        unit0 = xspecs[0].units
-        for xspec in xspecs:
-            max_npix = max(max_npix, xspec.npix)
-            # Check units
-            for key in unit0.keys():
-                assert unit0[key] == xspec.units[key]
-        # Generate dummy arrays
-        wave = np.zeros([nspec, max_npix], dtype='float64')
-        flux = np.zeros([nspec, max_npix], dtype='float32')
-        if xspec.sig_is_set:
-            sig = np.zeros_like(flux)
-        else:
-            sig = None
-        if xspec.co_is_set:
-            co = np.zeros_like(flux)
-        else:
-            co = None
-        # Fill
-        meta = dict(headers=[])
-        for jj,xspec in enumerate(xspecs):
-            wave[jj,0:xspec.npix] = xspec.wavelength.value
-            flux[jj,0:xspec.npix] = xspec.flux.value
-            if xspec.sig_is_set:
-                sig[jj,0:xspec.npix] = xspec.sig.value
-            if xspec.co_is_set:
-                co[jj,0:xspec.npix] = xspec.co.value
-            # Meta
-            meta['headers'].append(xspec.header)
-        # Finish
-        return cls(wave,flux,sig=sig,co=co, units=unit0, masking='edges',
-                   meta=meta)
+    """
 
     @classmethod
     def from_tuple(cls, ituple, sort=True, **kwargs):
@@ -772,7 +725,7 @@ class XSpectrum1D(object):
                 plt.show()
 
     #  Rebin
-    def rebin(self, new_wv, do_sig=False, **kwargs):
+    def rebin(self, new_wv, all=False, **kwargs):
         """ Rebin to a new wavelength array
 
         Uses simple linear interpolation.  The default (and only)
@@ -791,109 +744,25 @@ class XSpectrum1D(object):
           Rebin error too (if it exists).
           S/N is only crudely conserved.
           Rejected pixels are propagated.
+        all : bool, optional
+          Rebin all spectra in the XSpectrum1D object?
 
         Returns
         -------
         XSpectrum1D of the rebinned spectrum
         """
-        from scipy.interpolate import interp1d
-        # Save flux info to avoid unit issues
-        funit = self.flux.unit
-        flux = self.flux.value
-
-        # Deal with nan
-        badf = np.isnan(flux)
-        if np.sum(badf) > 0:
-            warnings.warn("Ignoring NAN in flux")
-        gdf = ~badf
-        flux = flux[gdf]
-
-        # Endpoints of original pixels
-        npix = len(self.wavelength)
-        wvh = (self.wavelength + np.roll(self.wavelength, -1)) / 2.
-        wvh[npix - 1] = self.wavelength[npix - 1] + \
-                        (self.wavelength[npix - 1] - self.wavelength[npix - 2]) / 2.
-        dwv = wvh - np.roll(wvh, 1)
-        dwv[0] = 2 * (wvh[0] - self.wavelength[0])
-        med_dwv = np.median(dwv.value)
-
-        wvh = wvh[gdf]
-        dwv = dwv[gdf]
-
-        # Error
-        if do_sig:
-            var = self.sig.value**2
-            var = var[gdf]
+        from .utils import rebin, collate
+        if not all:
+            new_spec = rebin(self, new_wv, **kwargs)
         else:
-            var = np.ones_like(flux)
-
-        # Cumulative Sum
-        cumsum = np.cumsum(flux * dwv)
-        cumvar = np.cumsum(var * dwv)
-
-        # Interpolate (loses the units)
-        fcum = interp1d(wvh, cumsum, fill_value=0., bounds_error=False)
-        fvar = interp1d(wvh, cumvar, fill_value=0., bounds_error=False)
-
-        # Endpoints of new pixels
-        nnew = len(new_wv)
-        nwvh = (new_wv + np.roll(new_wv, -1)) / 2.
-        nwvh[nnew - 1] = new_wv[nnew - 1] + \
-                         (new_wv[nnew - 1] - new_wv[nnew - 2]) / 2.
-        # Pad starting point
-        bwv = np.zeros(nnew + 1) * new_wv.unit
-        bwv[0] = new_wv[0] - (new_wv[1] - new_wv[0]) / 2.
-        bwv[1:] = nwvh
-
-        # Evaluate and put unit back
-        newcum = fcum(bwv) * dwv.unit
-        newvar = fvar(bwv) * dwv.unit
-
-        # Endpoint
-        if (bwv[-1] > wvh[-1]):
-            newcum[-1] = cumsum[-1]
-            newvar[-1] = cumvar[-1]
-
-        # Rebinned flux, var
-        new_fx = (np.roll(newcum, -1) - newcum)[:-1]
-        new_var = (np.roll(newvar, -1) - newvar)[:-1]
-
-        # Normalize (preserve counts and flambda)
-        new_dwv = bwv - np.roll(bwv, 1)
-        #import pdb
-        # pdb.set_trace()
-        new_fx = new_fx / new_dwv[1:]
-        # Preserve S/N (crudely)
-        med_newdwv = np.median(new_dwv.value)
-        new_var = new_var / (med_newdwv/med_dwv) / new_dwv[1:]
-
-        # Return new spectrum
-        if do_sig:
-            # Create new_sig
-            new_sig = np.zeros_like(new_var)
-            gd = new_var > 0.
-            new_sig[gd] = np.sqrt(new_var[gd].value)
-            # Deal with bad pixels
-            bad = np.where(var <= 0.)[0]
-            for ibad in bad:
-                bad_new = np.where(np.abs(new_wv-self.wavelength[ibad]) <
-                                   (new_dwv[1:]+dwv[ibad])/2)[0]
-                new_sig[bad_new] = 0.
-        else:
-            new_sig = None
-
-        # update continuum
-        if self.co_is_set:
-            x, y = self._get_contpoints()
-            new_co = self._interp_continuum(x, y, new_wv)
-        else:
-            new_co = None
-
-        newspec = XSpectrum1D.from_tuple((new_wv, new_fx*funit,
-                                          new_sig, new_co),
-                                         meta=self.meta.copy(), **kwargs)
+            spec_list = []
+            for ii in range(self.nspec):
+                self.select = ii
+                spec_list.append(rebin(self, new_wv, **kwargs))
+            # Collate
+            new_spec = collate(spec_list)
         # Return
-        return newspec
+        return new_spec
 
     # Velo array
     def relative_vel(self, wv_obs):
