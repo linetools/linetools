@@ -90,7 +90,7 @@ def test_rebin(spec, specm):
     np.testing.assert_allclose(newspec.flux[1000], 0.9999280967617779)
     # All
     spec2 = specm.rebin(new_wv, all=True)
-    pytest.set_trace()
+    np.testing.assert_allclose(spec2.wvmax.value, 8995.0)
 
 
 def test_addnoise(spec):
