@@ -26,16 +26,16 @@ class LineLimits(object):
       velocity limits for the line in km/s
     """
     @classmethod
-    def from_absline(cls, aline, zlim):
-        """ From AbsLine
+    def from_specline(cls, aline, zlim):
+        """ From AbsLine or Emissline
 
         Parameters
         ----------
         aline : AbsLine
         """
-        from ..spectralline import AbsLine
-        if not isinstance(aline, AbsLine):
-            raise IOError("Input aline must be AbsLine")
+        from ..spectralline import AbsLine, EmissLine
+        if not isinstance(aline, (AbsLine, EmissLine)):
+            raise IOError("Input aline must be AbsLine or EmissLine")
         #
         slf = cls(aline.wrest, aline.attrib['z'], zlim)
         return slf
