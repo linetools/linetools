@@ -226,6 +226,24 @@ def loadjson(filename):
     return obj
 
 
+def rel_vel(wavelength, wv_obs):
+    """ Simple relative velocity method
+
+    Parameters
+    ----------
+    wavelength : Quantity array
+    wv_obs : Quantity
+
+    Returns
+    -------
+
+    """
+    if not isinstance(wavelength, Quantity):
+        raise ValueError('Input wavelength array needs to be a Quantity array')
+    if not isinstance(wv_obs, Quantity):
+        raise ValueError('Input wv_obs needs to be a Quantity')
+    return ((wavelength - wv_obs) * const.c / wv_obs).to('km/s')
+
 def v_from_z(z1, z2):
     """ Find the relativistic velocity between 2 redshifts.
 

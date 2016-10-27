@@ -912,9 +912,8 @@ class XSpectrum1D(object):
         -------
         velo : Quantity array (km/s)
         """
-        if not isinstance(wv_obs, Quantity):
-            raise ValueError('Input wavelength needs to be a Quantity')
-        return ((self.wavelength - wv_obs) * const.c / wv_obs).to('km/s')
+        velo = liu.rel_vel(self.wavelength, wv_obs)
+        return velo
 
     #  Box car smooth
     def box_smooth(self, nbox, preserve=False, **kwargs):
