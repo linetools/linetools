@@ -69,7 +69,6 @@ Here are a series of example calls to generate the class::
     >>> sp = XSpectrum1D.from_file('PH957_f.fits')      # From a FITS file
     >>> sp = XSpectrum1D.from_file('q0002m422.txt.gz')  # From an ASCII table
     >>> sp = xspec1.copy()                              # From an XSpectrum1D object
-    >>> sp = XSpectrum1D.from_list(xspec1, xspec2)      # From a list of XSpectrum1D objects
     >>> sp = XSpectrum1D.from_tuple((wa, fl, sig), verbose=False)
 
 There are a number of methods to write a file, e.g.
