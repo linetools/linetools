@@ -20,7 +20,8 @@ def spec2():
 
 @pytest.fixture
 def specm(spec,spec2):
-    return XSpectrum1D.from_list([spec,spec2])
+    specm = ltsu.collate([spec,spec2])
+    return specm
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')

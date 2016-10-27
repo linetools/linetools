@@ -69,7 +69,6 @@ Here are a series of example calls to generate the class::
     >>> sp = XSpectrum1D.from_file('PH957_f.fits')      # From a FITS file
     >>> sp = XSpectrum1D.from_file('q0002m422.txt.gz')  # From an ASCII table
     >>> sp = xspec1.copy()                              # From an XSpectrum1D object
-    >>> sp = XSpectrum1D.from_list(xspec1, xspec2)      # From a list of XSpectrum1D objects
     >>> sp = XSpectrum1D.from_tuple((wa, fl, sig), verbose=False)
 
 There are a number of methods to write a file, e.g.
@@ -86,6 +85,13 @@ data format of XSpectrum1D.  Here are some examples::
     >>> sp.write('QSO.hdf5')                    # Same
     >>> sp.write_to_ascii('QSO.ascii')          # ASCII (heaven forbid)
     >>> sp.write('QSO.ascii')                   # Same
+
+
+One can collate a list of XSpectrum1D objects into one with collate::
+
+    >>> sp1 = XSpectrum1D.from_file('PH957_f.fits')
+    >>> sp2 = XSpectrum1D.from_file('q0002m422.txt.gz')
+    >>> sp = linetools.spectra.utils.coolate([sp1,sp2])
 
 
 Plotting
@@ -108,6 +114,11 @@ is made to conserve S/N.  Generally, neighboring pixels will be
 correlated::
 
     >>> newspec = sp.rebin(new_wv, do_sig=True) # doctest: +SKIP
+
+If the XSpectrum1D object containts multiple spectra, you can rebin
+all of them to the new wavelength array as well::
+
+    >>> newspec = sp.rebin(new_wv, do_sig=True, all=True) # doctest: +SKIP
 
 
 Continuum fitting
