@@ -64,7 +64,7 @@ class SpectralLine(object):
     Attributes
     ----------
     ltype : str
-        Type of line, either 'Abs' or 'Em' (not currently implemented though)
+        Type of line, either 'Abs' or 'Em'
     wrest : Quantity
         Rest wavelength
     z : float
@@ -672,6 +672,7 @@ class AbsLine(SpectralLine):
             pass
         txt = txt + '>'
         return (txt)
+
 
 class EmLine(SpectralLine):
     """Class representing a spectral emission line.
