@@ -167,6 +167,7 @@ def collate(spectra):
     # Return
     return new_spec
 
+
 def rebin(spec, new_wv, do_sig=False, all=False, **kwargs):
     """ Rebin a single spectrum in an XSpectrum1D object to a new wavelength array
 

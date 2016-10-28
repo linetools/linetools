@@ -352,11 +352,24 @@ class XSpectrum1D(object):
 
     @sig.setter
     def sig(self, value):
-        """ Assumes units are the same as the flux
+        """ Set the error array to a float or same sized array
         """
         gdp = ~self.data['sig'][self.select].mask
         self.data['sig'][self.select][gdp] = value
 
+    @property
+    def ivar(self):
+        """ Return the inverse variance.  Bad pixels have 0 value
+        """
+        if not self.sig_is_set:
+            warnings.warn("This spectrum does not contain an input error array")
+            return np.nan
+        #
+        sig = self.sig
+        ivar = np.zeros_like(sig)
+        gdp = sig > 0.
+        ivar[gdp] = 1. / sig[gdp]**2
+        return ivar
 
     @property
     def co_is_set(self):
@@ -746,6 +759,8 @@ class XSpectrum1D(object):
           Rejected pixels are propagated.
         all : bool, optional
           Rebin all spectra in the XSpectrum1D object?
+          Set masking='none' to have the resultant spectra all be regsitered, but note
+             that there will still be masking
 
         Returns
         -------
