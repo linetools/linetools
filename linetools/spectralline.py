@@ -43,16 +43,16 @@ abs_attrib = {'N': 0./u.cm**2, 'sig_N': 0./u.cm**2, 'flag_N': 0, # Column    ## 
                     'b': 0.*u.km/u.s, 'sig_b': 0.*u.km/u.s  # Doppler
                     }
 
-# Class for Spectral line
+emiss_attrib = {'flux': 0.*u.erg/u.s, 'sig_flux': 0.*u.erg/u.s, 'flag_flux': 0,
+                }
+
 class SpectralLine(object):
-    """
-    Class for a spectral line. Emission or absorption.
+    """ Class for a spectral line. Emission or absorption.
 
     Parameters
     ----------
     ltype : str
-        Type of Spectral line. Just `Abs` implemented for now but
-        we expect to include `Emiss` in future.
+        Type of Spectral line. `Abs` and `Em` implemented
     trans : Quantity, str
         Either the rest wavelength (e.g. 1215.6700*u.AA) or the
         transition name (e.g. 'CIV 1548')
@@ -64,7 +64,7 @@ class SpectralLine(object):
     Attributes
     ----------
     ltype : str
-        Type of line, either 'Abs' or 'Emiss' (not currently implemented though)
+        Type of line, either 'Abs' or 'Em'
     wrest : Quantity
         Rest wavelength
     z : float
@@ -75,7 +75,7 @@ class SpectralLine(object):
         Analysis inputs (e.g. a spectrum, wavelength limits)
     data : dict
         Line atomic/molecular data (e.g. f-value, A coefficient, Elow)
-    limits : LineLimit
+    limits : LineLimits
         Limits including zlim, vlim, wvlim.
     """
 
@@ -106,6 +106,8 @@ class SpectralLine(object):
                 sline = AbsLine(idict['name'], **kwargs)
             except KeyError: #  This is to be compatible JSON files already written with old notation (e.g. DLA H100)
                 sline = AbsLine(idict['trans'], **kwargs)
+        elif idict['ltype'] == 'Em':
+            sline = EmLine(idict['name'], **kwargs)
         else:
             raise ValueError("Not prepared for type {:s}.".format(idict['ltype']))
         # Check data
@@ -175,7 +177,7 @@ class SpectralLine(object):
 
         # Required
         self.ltype = ltype
-        if ltype not in ['Abs']:
+        if ltype not in ['Abs', 'Em']:
             raise ValueError('spec/lines: Not ready for type {:s}'.format(ltype))
 
         # Init
@@ -195,7 +197,61 @@ class SpectralLine(object):
             zlim = kwargs['zlim']
         except KeyError:
             zlim = [z,z]
-        self.limits = LineLimits.from_absline(self, zlim)
+        if ltype in ['Abs', 'Em']:
+            self.limits = LineLimits.from_specline(self, zlim)
+        else:
+            raise ValueError('Not ready to set limits for this type')
+
+    def fill_data(self, trans, linelist=None, closest=False, verbose=True):
+        """ Fill atomic data and setup analy.
+
+        Parameters
+        ----------
+        trans : Quantity or str
+          Either a rest wavelength (e.g. 1215.6700*u.AA) or the name
+          of a transition (e.g. 'CIV 1548'). For an unknown transition
+          use string 'unknown'.
+        linelist : LineList, optional
+          Class of linelist or str setting LineList
+        closest : bool, optional
+          Take the closest line to input wavelength? [False]
+        """
+
+        # Deal with LineList
+        if linelist is None:
+            if self.ltype == 'Abs':
+                llist = LineList('ISM')
+            elif self.ltype == 'Em':
+                llist = LineList('Galaxy')
+            else:
+                raise ValueError("Not ready for ltype = {:s}".format(self.ltype))
+        elif isinstance(linelist,basestring):
+            llist = LineList(linelist)
+        elif isinstance(linelist,LineList):
+            llist = linelist
+        else:
+            raise ValueError('Bad input for linelist')
+
+        # Closest?
+        llist.closest = closest
+
+        # Data
+        newline = llist[trans]
+        if newline is None:
+            raise ValueError("Transition {} not found in LineList {:s}".format(trans, llist.list))
+        try:
+            self.data.update(newline)  # Expected to be a LineList dict object
+        except TypeError:
+            raise TypeError("Probably should not be here")
+
+
+        # Update
+        self.wrest = self.data['wrest']
+        self.name = self.data['name']
+
+        #
+        self.update()
+
 
     def setz(self, z):
         """ Set redshift wherever it is needed/expected
@@ -485,6 +541,9 @@ class SpectralLine(object):
             txt = txt+' {:s},'.format(self.data['name'])
         except KeyError:
             pass
+        # z
+        txt = txt + ' z={:.4f}'.format(self.attrib['z'])
+        #
         txt = txt + ' wrest={:g}'.format(self.wrest)
         txt = txt + '>'
         return (txt)
@@ -500,7 +559,6 @@ class AbsLine(SpectralLine):
         str -- Name of transition (e.g. 'CIV 1548'). For an
         unknown transition use string 'unknown'.
     """
-    # Initialize with a .dat file
     def __init__(self, trans, **kwargs):
         # Generate with type
 
@@ -512,53 +570,15 @@ class AbsLine(SpectralLine):
         """ Return a string representing the type of vehicle this is."""
         return 'AbsLine'
 
-    def fill_data(self, trans, linelist=None, closest=False, verbose=True):
-        """ Fill atomic data and setup analy.
-
-        Parameters
-        ----------
-        trans : Quantity or str
-          Either a rest wavelength (e.g. 1215.6700*u.AA) or the name
-          of a transition (e.g. 'CIV 1548'). For an unknown transition
-          use string 'unknown'.
-        linelist : LineList, optional
-          Class of linelist or str setting LineList
-        closest : bool, optional
-          Take the closest line to input wavelength? [False]
+    def update(self):
+        """ Fill in a few additional dicts
         """
-
-        # Deal with LineList
-        if linelist is None:
-            llist = LineList('ISM')
-        elif isinstance(linelist,basestring):
-            llist = LineList(linelist)
-        elif isinstance(linelist,LineList):
-            llist = linelist
-        else:
-            raise ValueError('Bad input for linelist')
-
-        # Closest?
-        llist.closest = closest
-
-        # Data
-        newline = llist[trans]
-        try:
-            self.data.update(newline)  # Expected to be a LineList dict object
-        except TypeError:
-            pdb.set_trace()
-
-
-        # Update
-        self.wrest = self.data['wrest']
-        self.name = self.data['name']
-
-        #
         self.analy.update( {
             'flg_eye': 0,
             'flg_limit': 0, # No limit
-            'datafile': '', 
+            'datafile': '',
             'name': self.data['name']
-            })
+        })
 
         # Additional fundamental attributes for Absorption Line
         self.attrib.update(abs_attrib.copy())
@@ -655,6 +675,33 @@ class AbsLine(SpectralLine):
             pass
         txt = txt + '>'
         return (txt)
+
+
+class EmLine(SpectralLine):
+    """Class representing a spectral emission line.
+
+    Parameters
+    ----------
+    trans : Quantity or str
+        Quantity -- Rest wavelength (e.g. 1215.6700*u.AA)
+        str -- Name of transition (e.g. 'CIV 1548'). For an
+        unknown transition use string 'unknown'.
+    """
+    def __init__(self, trans, **kwargs):
+        # Generate with type
+        super(EmLine, self).__init__('Em', trans, **kwargs)
+
+    def update(self):
+        """ Fill in a few additional dicts
+        """
+        #
+        self.analy.update( {
+            'datafile': '',
+            'name': self.data['name']
+            })
+
+        # Additional fundamental attributes for Emission Line
+        self.attrib.update(emiss_attrib.copy())
 
 
 def many_abslines(all_wrest, llist):
