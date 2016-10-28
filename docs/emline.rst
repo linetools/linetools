@@ -22,7 +22,7 @@ This Class is a child of the abstract
 :ref:`SpectralLine` Class.  See that
 documentation for the base methods.
 
-EmLine is designed to organize and analyze an absorption line.
+EmLine is designed to organize and analyze an emission line.
 In addition to the attributes defaulted to SpectralLine,
 this class has:
 

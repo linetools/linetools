@@ -541,6 +541,9 @@ class SpectralLine(object):
             txt = txt+' {:s},'.format(self.data['name'])
         except KeyError:
             pass
+        # z
+        txt = txt + ' z={:.4f}'.format(self.attrib['z'])
+        #
         txt = txt + ' wrest={:g}'.format(self.wrest)
         txt = txt + '>'
         return (txt)
