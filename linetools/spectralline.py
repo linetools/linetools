@@ -46,18 +46,13 @@ abs_attrib = {'N': 0./u.cm**2, 'sig_N': 0./u.cm**2, 'flag_N': 0, # Column    ## 
 emiss_attrib = {'flux': 0.*u.erg/u.s, 'sig_flux': 0.*u.erg/u.s, 'flag_flux': 0,
                 }
 
-
-
-# Class for Spectral line
 class SpectralLine(object):
-    """
-    Class for a spectral line. Emission or absorption.
+    """ Class for a spectral line. Emission or absorption.
 
     Parameters
     ----------
     ltype : str
-        Type of Spectral line. Just `Abs` implemented for now but
-        we expect to include `Emiss` in future.
+        Type of Spectral line. `Abs` and `Em` implemented
     trans : Quantity, str
         Either the rest wavelength (e.g. 1215.6700*u.AA) or the
         transition name (e.g. 'CIV 1548')
