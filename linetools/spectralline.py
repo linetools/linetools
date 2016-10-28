@@ -69,7 +69,7 @@ class SpectralLine(object):
     Attributes
     ----------
     ltype : str
-        Type of line, either 'Abs' or 'Emiss' (not currently implemented though)
+        Type of line, either 'Abs' or 'Em' (not currently implemented though)
     wrest : Quantity
         Rest wavelength
     z : float
@@ -111,8 +111,8 @@ class SpectralLine(object):
                 sline = AbsLine(idict['name'], **kwargs)
             except KeyError: #  This is to be compatible JSON files already written with old notation (e.g. DLA H100)
                 sline = AbsLine(idict['trans'], **kwargs)
-        elif idict['ltype'] == 'Emiss':
-            sline = EmissLine(idict['name'], **kwargs)
+        elif idict['ltype'] == 'Em':
+            sline = EmLine(idict['name'], **kwargs)
         else:
             raise ValueError("Not prepared for type {:s}.".format(idict['ltype']))
         # Check data
@@ -182,7 +182,7 @@ class SpectralLine(object):
 
         # Required
         self.ltype = ltype
-        if ltype not in ['Abs', 'Emiss']:
+        if ltype not in ['Abs', 'Em']:
             raise ValueError('spec/lines: Not ready for type {:s}'.format(ltype))
 
         # Init
@@ -202,7 +202,7 @@ class SpectralLine(object):
             zlim = kwargs['zlim']
         except KeyError:
             zlim = [z,z]
-        if ltype in ['Abs', 'Emiss']:
+        if ltype in ['Abs', 'Em']:
             self.limits = LineLimits.from_specline(self, zlim)
         else:
             raise ValueError('Not ready to set limits for this type')
@@ -226,7 +226,7 @@ class SpectralLine(object):
         if linelist is None:
             if self.ltype == 'Abs':
                 llist = LineList('ISM')
-            elif self.ltype == 'Emiss':
+            elif self.ltype == 'Em':
                 llist = LineList('Galaxy')
             else:
                 raise ValueError("Not ready for ltype = {:s}".format(self.ltype))
@@ -678,7 +678,7 @@ class AbsLine(SpectralLine):
         txt = txt + '>'
         return (txt)
 
-class EmissLine(SpectralLine):
+class EmLine(SpectralLine):
     """Class representing a spectral emission line.
 
     Parameters
@@ -690,7 +690,7 @@ class EmissLine(SpectralLine):
     """
     def __init__(self, trans, **kwargs):
         # Generate with type
-        super(EmissLine, self).__init__('Emiss', trans, **kwargs)
+        super(EmLine, self).__init__('Em', trans, **kwargs)
 
     def update(self):
         """ Fill in a few additional dicts

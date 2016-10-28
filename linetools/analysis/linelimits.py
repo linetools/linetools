@@ -27,15 +27,15 @@ class LineLimits(object):
     """
     @classmethod
     def from_specline(cls, aline, zlim):
-        """ From AbsLine or Emissline
+        """ From AbsLine or Emline
 
         Parameters
         ----------
         aline : AbsLine
         """
-        from ..spectralline import AbsLine, EmissLine
-        if not isinstance(aline, (AbsLine, EmissLine)):
-            raise IOError("Input aline must be AbsLine or EmissLine")
+        from ..spectralline import AbsLine, EmLine
+        if not isinstance(aline, (AbsLine, EmLine)):
+            raise IOError("Input aline must be AbsLine or EmLine")
         #
         slf = cls(aline.wrest, aline.attrib['z'], zlim)
         return slf

@@ -8,7 +8,7 @@ import numpy as np
 from astropy.table import Table
 from astropy.units import Quantity
 
-from linetools.spectralline import AbsLine, EmissLine
+from linetools.spectralline import AbsLine, EmLine
 
 def parse_speclines(speclines, key, mk_array=False):
     """ Generate a list or array of items from a list of SpectralLines
@@ -70,7 +70,7 @@ def transtable_from_speclines(speclines, add_keys=None):
     keys = ['wrest','name','Z', 'ion', 'Ej', 'z', 'EW', 'sig_EW']
     if speclines[0].ltype == 'Abs':
         keys += ['flag_N', 'logN', 'sig_logN']
-    if speclines[0].ltype == 'Emiss':
+    if speclines[0].ltype == 'Em':
         keys += ['flag_flux', 'flux', 'sig_flux']
     if add_keys is not None:
         keys += add_keys
