@@ -20,7 +20,8 @@ def spec2():
 
 @pytest.fixture
 def specm(spec,spec2):
-    return XSpectrum1D.from_list([spec,spec2])
+    specm = ltsu.collate([spec,spec2])
+    return specm
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
@@ -40,7 +41,7 @@ def test_rebin_to_rest(spec,spec2):
     rest_spec = ltsu.rebin_to_rest(coll_spec, zarr, 100*u.km/u.s, debug=False)
     # Test
     assert rest_spec.totpix == 3716
-    np.testing.assert_allclose(rest_spec.wvmin.value, 986.021738877745, rtol=1e-5)
+    np.testing.assert_allclose(rest_spec.wvmin.value, 986.3506403, rtol=1e-5)
 
 
 def test_smash_spectra(spec,spec2):
@@ -54,7 +55,7 @@ def test_smash_spectra(spec,spec2):
     stack = ltsu.smash_spectra(rest_spec, method='average')
     # Test
     assert stack.totpix == 3716
-    np.testing.assert_allclose(stack.flux[0].value, -1.19753563, rtol=1e-5)
+    np.testing.assert_allclose(stack.flux[1].value, -3.3213510, rtol=1e-5)
 
 
 def test_airtovac_andback(spec):
@@ -72,7 +73,7 @@ def test_airtovac_andback(spec):
     assert spec.meta['airvac'] == 'air'
 
 
-def test_rebin(spec):
+def test_rebin(spec, specm):
     # Rebin
     new_wv = np.arange(3000., 9000., 5) * u.AA
     newspec = spec.rebin(new_wv)
@@ -81,18 +82,15 @@ def test_rebin(spec):
     assert newspec.flux.unit is u.dimensionless_unscaled
     # With sigma
     newspec = spec.rebin(new_wv, do_sig=True)
-    """
-    i1 = np.argmin(np.abs(spec.wavelength-5000.*u.AA))
-    s2n_1 = spec.flux[i1] / spec.sig[i1]
-    i2 = np.argmin(np.abs(newspec.wavelength-5000.*u.AA))
-    s2n_2 = newspec.flux[i2] / newspec.sig[i2]
-    """
     imn = np.argmin(np.abs(newspec.wavelength-8055*u.AA))
     np.testing.assert_allclose(newspec.sig[imn].value, 0.0169634, rtol=1e-5)
     # With NANs
     spec.data['flux'][spec.select][100:110] = np.nan
     newspec = spec.rebin(new_wv)
     np.testing.assert_allclose(newspec.flux[1000], 0.9999280967617779)
+    # All
+    spec2 = specm.rebin(new_wv, all=True)
+    np.testing.assert_allclose(spec2.wvmax.value, 8995.0)
 
 
 def test_addnoise(spec):
