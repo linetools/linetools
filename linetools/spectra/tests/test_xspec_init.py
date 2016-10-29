@@ -68,12 +68,6 @@ def test_attrib():
     assert spec.npix == 15024
 
 
-def test_const_sig():
-    spec = io.readspec(data_path('UM184_nF.fits'))
-    spec.constant_sig(sigv=0.1)
-    np.testing.assert_allclose(spec.sig[0], 0.1)
-
-
 def test_masking():
     wave = 3000. + np.arange(1000)
     flux = np.ones_like(wave)
@@ -88,7 +82,6 @@ def test_masking():
     assert len(spec2.wavelength) == 875
     spec3 = XSpectrum1D.from_tuple((wave,flux,sig), masking='none')
     assert len(spec3.wavelength) == len(wave)
-
 
 def test_co_kludges():
     spec = XSpectrum1D.from_file(data_path('SDSSJ220248.31+123656.3.fits'))

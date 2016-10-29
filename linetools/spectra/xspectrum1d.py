@@ -32,8 +32,8 @@ class XSpectrum1D(object):
 
     Parameters
     ----------
-    data : `~numpy.ndarray`
-        Structured array containing all of the data
+    data : `~numpy.ma.ndarray`
+        Structured, masked array containing all of the data
         This can be a set of 1D spectra
 
     meta : `dict`-like object, optional
@@ -1462,11 +1462,32 @@ class XSpectrum1D(object):
         """
 
         x, y = self._get_contpoints()
-
-        #update continuum
         co = self._interp_continuum(x, y, self.wavelength.value)
         self.normalize(co=co)
-        #self.co = co
+
+    def add_to_mask(self, add_mask):
+        """ Add to the mask of the current exposure
+        Useful for removing bad pixels
+
+        Parameters
+        ----------
+        add_mask : bool ndarray
+
+        Returns
+        -------
+
+        """
+        if add_mask.dtype.name != 'bool':
+            raise IOError("Input mask must be bool")
+        for key in self.data.dtype.names:
+            self.data[key][self.select].mask += add_mask
+
+    def unmask(self):
+        """ Set all mask values to False
+         Useful for some applications (e.g. coadding) but dangerous
+        """
+        warnings.warn("Setting entire mask to False. Be careful..")
+        self.data.mask = False
 
     def __dir__(self):
         """ Does something more sensible than what Spectrum1D provides
