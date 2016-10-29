@@ -4,7 +4,6 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import os, pdb
 import pytest
 from astropy import units as u
 
@@ -16,6 +15,7 @@ def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
 '''
+
 
 def test_mk_absline():
     # Init HI Lya
@@ -29,6 +29,13 @@ def test_mk_absline():
     # Init CII 1334 by name
     abslin3 = AbsLine('CII 1334')
     np.testing.assert_allclose(abslin3.data['wrest'], 1334.5323*u.AA)
+
+
+def test_failed_init():
+    with pytest.raises(ValueError):
+        abslin = AbsLine(1215.700*u.AA)
+    with pytest.raises(ValueError):
+        abslin = AbsLine('HI Ly99')
 
 
 def test_dicts():

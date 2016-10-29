@@ -8,7 +8,7 @@ import numpy as np
 from astropy.table import Table
 from astropy.units import Quantity
 
-from .spectralline import AbsLine
+from linetools.spectralline import AbsLine, EmLine
 
 def parse_speclines(speclines, key, mk_array=False):
     """ Generate a list or array of items from a list of SpectralLines
@@ -55,6 +55,7 @@ def parse_speclines(speclines, key, mk_array=False):
 
 def transtable_from_speclines(speclines, add_keys=None):
     """Generate a Table summarizing the transitions from a list of SpectralLines
+
     Parameters
     ----------
     speclines : list of SpectralLine objects
@@ -67,8 +68,10 @@ def transtable_from_speclines(speclines, add_keys=None):
 
     """
     keys = ['wrest','name','Z', 'ion', 'Ej', 'z', 'EW', 'sig_EW']
-    if isinstance(speclines[0], AbsLine):
+    if speclines[0].ltype == 'Abs':
         keys += ['flag_N', 'logN', 'sig_logN']
+    if speclines[0].ltype == 'Em':
+        keys += ['flag_flux', 'flux', 'sig_flux']
     if add_keys is not None:
         keys += add_keys
 
