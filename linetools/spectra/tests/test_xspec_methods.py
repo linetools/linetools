@@ -39,4 +39,8 @@ def test_addmask():
     mask[100:110] = True
     spec.add_to_mask(mask)
     assert spec.data['flux'][0].mask[100]
+    # Compressed
+    badp = spec.flux < 0.1
+    spec.add_to_mask(badp, compressed=True)
+    assert np.sum(spec.data['flux'][0].mask) > 3000
 

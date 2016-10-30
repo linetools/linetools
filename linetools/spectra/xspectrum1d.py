@@ -1465,22 +1465,24 @@ class XSpectrum1D(object):
         co = self._interp_continuum(x, y, self.wavelength.value)
         self.normalize(co=co)
 
-    def add_to_mask(self, add_mask):
+    def add_to_mask(self, add_mask, compressed=False):
         """ Add to the mask of the current exposure
         Useful for removing bad pixels
 
         Parameters
         ----------
         add_mask : bool ndarray
-
-        Returns
-        -------
-
+        compressed : bool, optional
+          Input mask only relates to previously unmasked pixels
         """
         if add_mask.dtype.name != 'bool':
             raise IOError("Input mask must be bool")
+        if compressed:
+            gdp = np.where(~self.data['wave'][self.select].mask)[0]
+        else:
+            gdp = np.arange(self.totpix)
         for key in self.data.dtype.names:
-            self.data[key][self.select].mask += add_mask
+            self.data[key][self.select].mask[gdp] += add_mask
 
     def unmask(self):
         """ Set all mask values to False
