@@ -577,7 +577,6 @@ class LineList(object):
                     ie = row['ion']  # ionization estate
                     Ej = row['Ej']  # Energy of lower level
                     break
-            cond = []
             if Z is not None:
                 tbl = self.__getitem__((Z, ie))
                 # Make sure the lower energy level is the same too
