@@ -139,7 +139,7 @@ def test_rebintwo(spec):
     new_wv = np.arange(3000., 9000., 5) * u.AA
     newspec = spec.rebin(new_wv, do_sig=True)
     # Test
-    np.testing.assert_allclose(newspec.flux[1000].value, 1.0192499, rtol=1e-5)
+    np.testing.assert_allclose(newspec.flux[1000].value, 0.992559,  rtol=1e-5)
     assert newspec.flux.unit == funit
     # Without sig
     spec_nosig = XSpectrum1D.from_tuple((spec.wavelength, spec.flux))

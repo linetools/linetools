@@ -167,6 +167,7 @@ def collate(spectra):
     # Return
     return new_spec
 
+
 def rebin(spec, new_wv, do_sig=False, all=False, **kwargs):
     """ Rebin a single spectrum in an XSpectrum1D object to a new wavelength array
 
@@ -249,9 +250,9 @@ def rebin(spec, new_wv, do_sig=False, all=False, **kwargs):
     newvar = fvar(bwv) * dwv.unit
 
     # Endpoint
-    if (bwv[-1] > wvh[-1]):
-        newcum[-1] = cumsum[-1]
-        newvar[-1] = cumvar[-1]
+    #if (bwv[-1] > wvh[-1]):
+    #    newcum[-1] = cumsum[-1]
+    #    newvar[-1] = cumvar[-1]
 
     # Rebinned flux, var
     new_fx = (np.roll(newcum, -1) - newcum)[:-1]
@@ -279,8 +280,9 @@ def rebin(spec, new_wv, do_sig=False, all=False, **kwargs):
                                (new_dwv[1:]+dwv[ibad])/2)[0]
             new_sig[bad_new] = 0.
         # Zero out edge pixels -- not to be trusted
-        new_sig[0] = 0.
-        new_sig[-1] = 0.
+        igd = np.where(gd)[0]
+        new_sig[igd[0]] = 0.
+        new_sig[igd[-1]] = 0.
     else:
         new_sig = None
 

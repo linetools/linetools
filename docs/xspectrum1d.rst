@@ -15,6 +15,8 @@ array.  For absorption-line analysis, it also often contains a
 continuum array.  The data are held in a masked numpy array which
 may contain multiple spectra.  By default pixels on the edges of the
 spectrum with an input error array having values <=0 are masked.
+It is important to appreciate this masking.  It does mean that
+you will not view, print, analyze, etc. pixels that have been masked.
 
 Attributes
 ==========
@@ -51,11 +53,11 @@ All of the values are stored in the masked spec.data numpy array
 with columns `wave`, `flux`, `sig`, and `co` (the latter is
 for a continuum).
 
-Methods
-=======
+Init
+====
 
-Reading and Writing
--------------------
+Reading
+-------
 
 Read spectra from a file using ``XSpectrum1D.from_file``, which uses the same
 syntax as `~linetools.spectra.io.readspec`.  See
@@ -70,6 +72,28 @@ Here are a series of example calls to generate the class::
     >>> sp = XSpectrum1D.from_file('q0002m422.txt.gz')  # From an ASCII table
     >>> sp = xspec1.copy()                              # From an XSpectrum1D object
     >>> sp = XSpectrum1D.from_tuple((wa, fl, sig), verbose=False)
+
+
+
+Masking
+-------
+
+The guts of XSpectrum1D is a ndarray array named data
+which contains the wave, flux, sig, etc. values.  This
+is a masked array which is convenient for many applications.
+If you wish to view/analyze all pixels in your spectrum including
+those with 0 or NAN sig values, then disable the mask when
+creating the object or by using the unnmask() method::
+
+    >>> sp = XSpectrum1D.from_tuple((wa, fl, sig), masking='none')
+    >>> sp = XSpectrum1D.from_file('PH957_f.fits')      # From a FITS file
+    >>> sp.unmask()
+
+Methods
+=======
+
+Writing
+-------
 
 There are a number of methods to write a file, e.g.
 `sp.write_to_fits`. FITS files are preferable because they are

@@ -32,8 +32,8 @@ class XSpectrum1D(object):
 
     Parameters
     ----------
-    data : `~numpy.ndarray`
-        Structured array containing all of the data
+    data : `~numpy.ma.ndarray`
+        Structured, masked array containing all of the data
         This can be a set of 1D spectra
 
     meta : `dict`-like object, optional
@@ -352,11 +352,24 @@ class XSpectrum1D(object):
 
     @sig.setter
     def sig(self, value):
-        """ Assumes units are the same as the flux
+        """ Set the error array to a float or same sized array
         """
         gdp = ~self.data['sig'][self.select].mask
         self.data['sig'][self.select][gdp] = value
 
+    @property
+    def ivar(self):
+        """ Return the inverse variance.  Bad pixels have 0 value
+        """
+        if not self.sig_is_set:
+            warnings.warn("This spectrum does not contain an input error array")
+            return np.nan
+        #
+        sig = self.sig
+        ivar = np.zeros_like(sig)
+        gdp = sig > 0.
+        ivar[gdp] = 1. / sig[gdp]**2
+        return ivar
 
     @property
     def co_is_set(self):
@@ -746,6 +759,8 @@ class XSpectrum1D(object):
           Rejected pixels are propagated.
         all : bool, optional
           Rebin all spectra in the XSpectrum1D object?
+          Set masking='none' to have the resultant spectra all be regsitered, but note
+             that there will still be masking
 
         Returns
         -------
@@ -1447,11 +1462,34 @@ class XSpectrum1D(object):
         """
 
         x, y = self._get_contpoints()
-
-        #update continuum
         co = self._interp_continuum(x, y, self.wavelength.value)
         self.normalize(co=co)
-        #self.co = co
+
+    def add_to_mask(self, add_mask, compressed=False):
+        """ Add to the mask of the current exposure
+        Useful for removing bad pixels
+
+        Parameters
+        ----------
+        add_mask : bool ndarray
+        compressed : bool, optional
+          Input mask only relates to previously unmasked pixels
+        """
+        if add_mask.dtype.name != 'bool':
+            raise IOError("Input mask must be bool")
+        if compressed:
+            gdp = np.where(~self.data['wave'][self.select].mask)[0]
+        else:
+            gdp = np.arange(self.totpix)
+        for key in self.data.dtype.names:
+            self.data[key][self.select].mask[gdp] += add_mask
+
+    def unmask(self):
+        """ Set all mask values to False
+         Useful for some applications (e.g. coadding) but dangerous
+        """
+        warnings.warn("Setting entire mask to False. Be careful..")
+        self.data.mask = False
 
     def __dir__(self):
         """ Does something more sensible than what Spectrum1D provides
