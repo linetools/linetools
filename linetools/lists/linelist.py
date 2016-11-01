@@ -587,10 +587,10 @@ class LineList(object):
                 tbl.sort(['Ej','wrest'])
                 # For hydrogen/deuterium this contains deuterium/hydrogen;
                 # so let's get rid of them
-                if (line == 'HI') or (line == 'DI'):
-                    names = np.array(tbl['name'])
-                    cond = np.array([l.startswith(line) for l in names])
-                    tbl = tbl[cond]
+                #if (line == 'HI') or (line == 'DI'):
+                #    names = np.array(tbl['name'])
+                #    cond = np.array([l.startswith(line) for l in names])
+                #    tbl = tbl[cond]
                 if len(tbl) > 1:
                     return tbl
                 else:  # this should be always len(tbl)==1 because Z is not None
