@@ -86,7 +86,7 @@ those with 0 or NAN sig values, then disable the mask when
 creating the object or by using the unnmask() method::
 
     >>> sp = XSpectrum1D.from_tuple((wa, fl, sig), masking='none')
-    >>> sp = XSpectrum1D.from_file('PH957_f.fits')     # doctest: +SKIP  # From a FITS file
+    >>> sp = XSpectrum1D.from_file('PH957_f.fits')     # doctest: +SKIP
     >>> sp.unmask()
 
 Methods
