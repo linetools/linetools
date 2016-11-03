@@ -10,6 +10,12 @@ Updates
 - Enable hdf5 I/O  [requires h5py]
 - Added .header property to XSpectrum1D (reads from .meta)
 - Added XSpectrum1D.write, a generic write wrapper
+- Added xabssysgui GUI
+- Added new linelists (e.g. Galaxy)
+- Added EmissLine child to SpectralLine
+- Added LineLimits class
+- Added SolarAbund class
+- Added lt_radec and lt_line scripts
 
 Bug fixes
 .........
