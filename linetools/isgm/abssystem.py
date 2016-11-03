@@ -526,15 +526,12 @@ class AbsSystem(object):
         -------
 
         """
-        import io, json
         # Generate the dict
         odict = self.to_dict()
         # Write
         if outfil is None:
             outfil = self.name+'.json'
-        with io.open(outfil, 'w', encoding='utf-8') as f:
-            f.write(json.dumps(odict, sort_keys=True, indent=4,
-                               separators=(',', ': ')))
+        ltu.savejson(outfil, odict, overwrite=True, easy_to_read=True)
         # Finish
         print("Wrote {:s} system to {:s} file".format(self.name, outfil))
 
