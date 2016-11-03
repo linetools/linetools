@@ -64,3 +64,6 @@ def test_get_local_s2n():
     spec = XSpectrum1D.from_tuple((spec.wavelength, spec.flux))
     with pytest.raises(ValueError):
         spec.get_local_s2n(wv0, 20)
+    # bad shape for flux_th
+    with pytest.raises(ValueError):
+        spec.get_local_s2n(wv0, 20, flux_th=np.array([1,2,3,4,5]))
