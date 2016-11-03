@@ -963,6 +963,97 @@ class XSpectrum1D(object):
         # Return
         return spec
 
+    def get_local_s2n(self, wv0, npix=50, flux_th=0., debug=False):
+        """It computes the local average or median S/N over npix pixels around wv0.
+        If `flux_th` is given, pixels with fluxes below `flux_th` are masked out.
+
+        Parameters
+        ----------
+        wv0 : Quantity
+            Observed wavelength where to perform the calculation
+        npix : float or int, optional
+            Number of pixels to perform the calculation (does not
+            take into account those pixel masked when fl_th is given).
+            Forced to be an odd int.
+        flux_th : float or array of same dimension as self.flux, optional
+            Minimum flux threshold for the S/N estimation. In other words,
+            pixels with self.flux < flux_th are masked out. This is useful
+            to exclude strong absorption features that may be present.
+            If flux_th is float then two things can happen:
+                a. If continuum is defined, we mask self.flux < self.co * flux_th
+                b. If continuum is not defined, we approximate the continuum by smoothing
+                   the spectrum convolving it with a Gaussian kernel of FWHM (in pixels) given
+                   by the maximum between 10*npix and 100.
+
+        Returns
+        -------
+        s2n : float
+            Local average signal-to-noise
+        s2n_sig : float
+            Standard deviation of the s2n measurement
+        """
+
+        # Do some checks
+        if (wv0 < self.wvmin) or (wv0 > self.wvmax):
+            raise ValueError("`wv0` is outside spectral range.")
+        if not self.sig_is_set:
+            raise ValueError("Spectrum has not defined an error array; cannot compute signal-to-noise.")
+        npix = int(npix)
+
+        # renaming
+        wa = self.wavelength
+        fl = self.flux
+        er = self.sig
+
+        # if flux_th is float, then check whether continuum exists
+        # otherwise we estimate it.
+        if isinstance(flux_th, float):
+            if self.co_is_set:
+                flux_th = self.co * flux_th
+            else:
+                n_smooth = np.max(10*npix, 100)
+                smooth_spec = self.gauss_smooth(n_smooth)
+                co = smooth_spec.flux
+                flux_th = co * flux_th
+        # if it is not float, it should be array like self.flux
+        elif len(flux_th) != len(self.flux):
+            raise ValueError('`flux_th` must be either float or array of same shape as self.flux.')
+
+        #find pixel index for wv0
+        cond = np.fabs(wv0 - wa) == np.min(np.fabs(wv0 - wa))
+        ind = np.where(cond)[0][0]
+
+        # define the wa window with at least npix pixels
+        i = 0
+        while True:
+            imin = int(ind - 0.5 * npix - i)
+            imax = int(ind + 0.5 * npix + i)
+            # deal with edges
+            if imax > len(wa) - 1:
+                imax = len(wa)-1
+            if imin < 0:
+                imin = 0
+            if debug:
+                print(imin,imax)
+            # find the good pixels
+            cond = (wa >= wa[imin]) & (wa < wa[imax]) & (fl > flux_th)
+            if np.sum(cond) >= npix:
+                if debug:
+                    print(np.sum(cond))
+                break
+            else:
+                i += 1
+            # raise error in case the npix are never found
+            if i > len(wa):
+                raise ValueError("The spectrum does not satisfy the conditions, try different input parameters.")
+
+        #define the chunk of spectra to look at
+        fl_aux = fl[cond]
+        er_aux = er[cond]
+        s2n = fl_aux / er_aux
+        # import pdb; pdb.set_trace()
+        return np.nanmean(s2n.value), np.nanstd(s2n.value)
+
     def write(self, outfil, FITS_TABLE=False, **kwargs):
         """  Wrapper for writing
         Parses the extension to choose the file format

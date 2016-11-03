@@ -14,14 +14,17 @@ from linetools.spectra import utils as ltsu
 def spec():
     return io.readspec(data_path('UM184_nF.fits'))
 
+
 @pytest.fixture
 def spec2():
     return io.readspec(data_path('PH957_f.fits'))
+
 
 @pytest.fixture
 def specm(spec,spec2):
     specm = ltsu.collate([spec,spec2])
     return specm
+
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
@@ -102,5 +105,3 @@ def test_readwrite_metadata(spec):
     np.testing.assert_allclose(spec2.meta['c'], d['c'])
     np.testing.assert_allclose(spec2.meta['d'], d['d'])
     assert spec2.meta['e'] == d['e']
-
-
