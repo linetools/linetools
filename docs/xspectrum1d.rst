@@ -182,8 +182,12 @@ spectrum using `~linetools.spectra.xspectrum1d.XSpectrum1D.splice`.
 `~linetools.spectra.xspectrum1d.XSpectrum1D.pix_minmax` finds the
 pixel indices corresponding to a wavelength or velocity range, and
 `~linetools.spectra.xspectrum1d.XSpectrum1D.add_noise` adds noise to
-the spectrum. For a complete list of all the available methods, see
-the API: `~linetools.spectra.xspectrum1d.XSpectrum1D`.
+the spectrum. We have also implemented a method that estimates a local
+average signal-to-noise ratio at a given observed wavelength
+(`~linetools.spectra.xspectrum1d.XSpectrum1D.get_local_s2n`), which is capable
+of masking out pixels that are below a flux threshold (useful for excluding
+strong absorption features from the calculation). For a complete list of
+all the available methods, see the API: `~linetools.spectra.xspectrum1d.XSpectrum1D`.
 
 Multi-spec methods
 ------------------

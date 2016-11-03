@@ -963,7 +963,7 @@ class XSpectrum1D(object):
         # Return
         return spec
 
-    def get_local_s2n(self, wv0, npix=51, flux_th=0., debug=False):
+    def get_local_s2n(self, wv0, npix=50, flux_th=0., debug=False):
         """It computes the local average signal-to-noise (s2n) over npix pixels around wv0.
         If `flux_th` is given, pixels with fluxes below spec.flux*flux_th are masked out, and
         the range is increased until having npix pixels for doing the calculation.
@@ -1020,7 +1020,7 @@ class XSpectrum1D(object):
         ind = np.argmin(np.fabs(wv0 - self.wavelength))
 
         # define the wavelength window with at least npix pixels
-        cond_gd_flux = self.flux > flux_limit
+        cond_gd_flux = (self.flux > flux_limit) & (self.sig > 0.)
         if np.sum(cond_gd_flux) < npix:
             raise ValueError("The spectrum does not satisfy the conditions, try different input parameters.")
         gd_idx = np.where(cond_gd_flux)[0]  # indices of good pixels
@@ -1032,7 +1032,7 @@ class XSpectrum1D(object):
         fl_aux = self.flux[gd_idx]  # note that the gd_idx are not sorted, but this is fine for this calculation
         er_aux = self.sig[gd_idx]
         s2n = fl_aux / er_aux
-        return np.nanmean(s2n.value), np.nanstd(s2n.value)
+        return np.mean(s2n.value), np.std(s2n.value)
 
     def write(self, outfil, FITS_TABLE=False, **kwargs):
         """  Wrapper for writing
