@@ -983,7 +983,7 @@ class XSpectrum1D(object):
                 a. If continuum is defined, we mask self.flux < self.co * flux_th
                 b. If continuum is not defined, we approximate the continuum by smoothing
                    the spectrum convolving it with a Gaussian kernel of FWHM (in pixels) given
-                   by the maximum between 10*npix and 100.
+                   by the maximum between 10*npix and 500.
 
         Returns
         -------
@@ -1011,7 +1011,7 @@ class XSpectrum1D(object):
             if self.co_is_set:
                 flux_th = self.co * flux_th
             else:
-                n_smooth = np.max(10*npix, 100)
+                n_smooth = np.max([10*npix, 500])
                 smooth_spec = self.gauss_smooth(n_smooth)
                 co = smooth_spec.flux
                 flux_th = co * flux_th

@@ -45,17 +45,22 @@ def test_addmask():
     assert np.sum(spec.data['flux'][0].mask) > 3000
 
 
-# def test_get_local_s2n():
-if 1:
+def test_get_local_s2n():
     spec = XSpectrum1D.from_file(data_path('UM184_nF.fits'))
     wv0 = 4000 * u.AA
     s2n, sig_s2n = spec.get_local_s2n(wv0, 20, flux_th=0.9)
-    np.testing.assert_allclose(s2n, 6.2053003)
-    np.testing.assert_allclose(sig_s2n, 3.2064826)
+    np.testing.assert_allclose(s2n, 9.30119800567627)
+    np.testing.assert_allclose(sig_s2n, 1.0349911451339722)
     # test with continuum
-    smooth_spec = spec.gauss_smooth(len(spec.wa)/20.)
-
+    spec.co = np.ones_like(spec.flux)
+    s2n, sig_s2n = spec.get_local_s2n(wv0, 20, flux_th=0.9)
+    np.testing.assert_allclose(s2n, 10.330545425415039)
+    np.testing.assert_allclose(sig_s2n, 0.4250050187110901)
     # test errors
-    wv0 = 1200 * u.AA
+    # out of range
     with pytest.raises(ValueError):
         spec.get_local_s2n(1215*u.AA, 20)
+    # sig not defined
+    spec = XSpectrum1D.from_tuple((spec.wavelength, spec.flux))
+    with pytest.raises(ValueError):
+        spec.get_local_s2n(wv0, 20)
