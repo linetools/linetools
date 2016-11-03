@@ -963,18 +963,18 @@ class XSpectrum1D(object):
         # Return
         return spec
 
-    def get_local_s2n(self, wv0, npix=50, flux_th=0., debug=False):
-        """It computes the local average or median S/N over npix pixels around wv0.
-        If `flux_th` is given, pixels with fluxes below `flux_th` are masked out.
+    def get_local_s2n(self, wv0, npix=51, flux_th=0., debug=False):
+        """It computes the local average signal-to-noise (s2n) over npix pixels around wv0.
+        If `flux_th` is given, pixels with fluxes below spec.flux*flux_th are masked out.
 
         Parameters
         ----------
         wv0 : Quantity
-            Observed wavelength where to perform the calculation
+            Observed wavelength where to perform the calculation.
         npix : float or int, optional
             Number of pixels to perform the calculation (does not
             take into account those pixel masked when fl_th is given).
-            Forced to be an odd int.
+            Forced to be an odd int. Default is 51.
         flux_th : float or array of same dimension as self.flux, optional
             Minimum flux threshold for the S/N estimation. In other words,
             pixels with self.flux < flux_th are masked out. This is useful
