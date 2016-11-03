@@ -44,3 +44,29 @@ def test_addmask():
     spec.add_to_mask(badp, compressed=True)
     assert np.sum(spec.data['flux'][0].mask) > 3000
 
+
+def test_get_local_s2n():
+    spec = XSpectrum1D.from_file(data_path('UM184_nF.fits'))
+    wv0 = 4000 * u.AA
+    s2n, sig_s2n = spec.get_local_s2n(wv0, 20, flux_th=0.9)
+    np.testing.assert_allclose(s2n, 9.30119800567627, rtol=1e-5)
+    np.testing.assert_allclose(sig_s2n, 1.0349911451339722, rtol=1e-5)
+    # test with continuum
+    spec.co = np.ones_like(spec.flux)
+    s2n, sig_s2n = spec.get_local_s2n(wv0, 20, flux_th=0.9)
+    np.testing.assert_allclose(s2n, 10.330545425415039, rtol=1e-5)
+    np.testing.assert_allclose(sig_s2n, 0.4250050187110901, rtol=1e-5)
+    # test errors
+    # out of range
+    with pytest.raises(IOError):
+        spec.get_local_s2n(1215*u.AA, 20)
+    # sig not defined
+    spec = XSpectrum1D.from_tuple((spec.wavelength, spec.flux))
+    with pytest.raises(ValueError):
+        spec.get_local_s2n(wv0, 20)
+    # bad shape for flux_th
+    with pytest.raises(ValueError):
+        spec.get_local_s2n(wv0, 20, flux_th=np.array([1,2,3,4,5]))
+    # npix too big
+    with pytest.raises(ValueError):
+        spec.get_local_s2n(wv0, 1 + len(spec.wavelength))

@@ -18,6 +18,7 @@ def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
 
+
 @pytest.fixture
 def dummy_spec(wave=None, npix=2000, s2n=10., seed=None):
     """
@@ -54,4 +55,3 @@ def test_ivar():
     dspec = dummy_spec(s2n=10.)
     ivar = dspec.ivar
     np.testing.assert_allclose(ivar[0].value, 100)
-

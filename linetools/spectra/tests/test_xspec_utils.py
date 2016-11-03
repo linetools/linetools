@@ -10,18 +10,22 @@ from linetools.spectra import io
 from linetools.spectra.xspectrum1d import XSpectrum1D
 from linetools.spectra import utils as ltsu
 
+
 @pytest.fixture
 def spec():
     return io.readspec(data_path('UM184_nF.fits'))
+
 
 @pytest.fixture
 def spec2():
     return io.readspec(data_path('PH957_f.fits'))
 
+
 @pytest.fixture
 def specm(spec,spec2):
     specm = ltsu.collate([spec,spec2])
     return specm
+
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
@@ -159,6 +163,7 @@ def test_relvel(spec):
 def test_splice_two(spec, spec2):
     spec3 = ltsu.splice_two(spec, spec2)
     assert spec3.npix == 18390
+
 
 def test_stitch(specm):
     spec = specm.stitch()
