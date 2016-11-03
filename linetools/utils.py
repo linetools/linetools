@@ -203,7 +203,7 @@ def jsonify(obj, debug=False):
 
 def savejson(filename, obj, overwrite=False, indent=None, easy_to_read=False,
              **kwargs):
-    """ Save a python object to filename using using the JSON encoder.
+    """ Save a python object to filename using the JSON encoder.
 
     Parameters
     ----------
