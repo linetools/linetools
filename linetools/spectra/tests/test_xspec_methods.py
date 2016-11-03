@@ -67,3 +67,6 @@ def test_get_local_s2n():
     # bad shape for flux_th
     with pytest.raises(ValueError):
         spec.get_local_s2n(wv0, 20, flux_th=np.array([1,2,3,4,5]))
+    # npix too big
+    with pytest.raises(ValueError):
+        spec.get_local_s2n(wv0, 1 + len(spec.wavelength))
