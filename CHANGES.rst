@@ -17,6 +17,7 @@ Updates
 - Added LineLimits class
 - Added SolarAbund class
 - Added lt_radec and lt_line scripts
+- Added LSF class to handle line-spread-functions. Currently implemented for HST/COS and some HST/STIS configurations.
 
 Bug fixes
 .........
