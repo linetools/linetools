@@ -1013,8 +1013,10 @@ class XSpectrum1D(object):
                 co = smooth_spec.flux
                 flux_limit = co * flux_th
         # if it is not float, it should be array like self.flux
-        elif len(flux_limit) != len(self.flux):
-            raise ValueError('`flux_th` must be either float or array of same shape as self.flux.')
+        else:
+            flux_limit = flux_th
+            if len(flux_limit) != len(self.flux):
+                raise ValueError('`flux_th` must be either float or array of same shape as self.flux.')
 
         # find pixel index for wv0
         ind = np.argmin(np.fabs(wv0 - self.wavelength))
