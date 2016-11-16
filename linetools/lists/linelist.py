@@ -330,12 +330,15 @@ class LineList(object):
         """Sets new convenient columns to the self._data QTable. These will be useful
         for sorting the underlying data table in convenient ways, e.g. by expected
         relative strength.
-        These new column include:
+        For atomic transitions these new column include:
             - `ion_name` : HI, CIII, CIV, etc
             - `log(w*f)` : np.log10(wrest * fosc)  # in np.log10(AA)
             - `abundance` : either [`none`, `solar`]
             - `ion_correction` : [`none`]
             - `rel_strength` : log(w*f) + abundance + ion_correction
+
+        For molecules a different approach is done [todo: write docs]:
+            For H2 : Jj={0,1} Jk={0,1}
 
         Parameters
         ----------
@@ -349,7 +352,7 @@ class LineList(object):
             Ionization correction. Options are:
                 'none' : No correction applied, so this column will
                          be filled with zeros. (Default)
-         redo : bool, optional
+        redo : bool, optional
             Remake the extra columns
 
         Note: This function is only implemented for the following
@@ -360,12 +363,21 @@ class LineList(object):
         if ('ion_name' in self._data.keys()) and (not redo):
             return
 
-        if self.list not in ['HI', 'ISM', 'EUV', 'Strong']:
+        if self.list not in ['HI', 'ISM', 'EUV', 'Strong', 'H2']:
             warnings.warn('Not implemented: will not set relative strength for LineList: {}.'.format(self.list))
             return
+        if self.list in ['H2']:
+            # we want Jj and Jk to be 1 or 0 first
+            cond = (self._data['Jj'] <= 1) & (self._data['Jk'] <= 1)
+            base_level = np.where(cond, 100, 1)
+            self._data['rel_strength'] = base_level +
+
 
         # Set ion_name column
-        ion_name = [name.split(' ')[0] for name in self.name]
+        ion_name = [name.split(' ')[0] for name in self.name]  # valid for atomic transitions
+        if self.list in ['H2']:
+            ion_name = [name.split('(')[0] for name in self.name]
+            return
         self._data['ion_name'] = ion_name
 
         # Set QM strength as MaskedColumn (self._data['f'] is MaskedColumn)
