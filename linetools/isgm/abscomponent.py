@@ -161,7 +161,7 @@ class AbsComponent(object):
         Ntup : tuple
             (int,float,float)
             (flag_N,logN,sig_N)
-            flag_N : Flag describing N measurement
+            flag_N : Flag describing N measurement  (0: no info; 1: detection; 2: saturated; 3: non-detection)
             logN : log10 N column density
             sig_logN : Error in log10 N
         Ej : Quantity, optional
@@ -174,10 +174,7 @@ class AbsComponent(object):
         """
 
         # Required
-        if isinstance(radec, (tuple)):
-            self.coord = SkyCoord(ra=radec[0], dec=radec[1])
-        elif isinstance(radec, SkyCoord):
-            self.coord = radec
+        self.coord = ltu.radec_to_coord(radec)
         self.Zion = Zion
         self.zcomp = zcomp
         self.vlim = vlim
