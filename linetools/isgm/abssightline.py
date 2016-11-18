@@ -110,34 +110,6 @@ class AbsSightline(object):
         return cls(component.coord, component.Zion, component.zcomp, component.vlim, Ej=component.Ej,
                    A=component.A, name=component.name, **kwargs)
 
-    @classmethod
-    def from_dict(cls, idict, coord=None, **kwargs):
-        """ Instantiate from a dict
-
-        Parameters
-        ----------
-        idict : dict
-
-        Returns
-        -------
-
-        """
-        if coord is not None:
-            radec = coord
-        else:
-            radec = SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg)
-        # Init
-        #slf = cls(radec, tuple(idict['Zion']), idict['zcomp'], Quantity(idict['vlim'], unit='km/s'),
-        slf = cls(radec, tuple(idict['Zion']), idict['zcomp'], idict['vlim']*u.km/u.s,
-                  Ej=idict['Ej']/u.cm, A=idict['A'],
-                  Ntup = tuple([idict[key] for key in ['flag_N', 'logN', 'sig_logN']]),
-                  comment=idict['comment'], name=idict['Name'])
-        # Add lines
-        for key in idict['lines'].keys():
-            iline = SpectralLine.from_dict(idict['lines'][key], coord=coord, **kwargs)
-            slf.add_absline(iline, **kwargs)
-        # Return
-        return slf
 
     def __init__(self, radec, sl_type=None, em_type=None, comment=None, name=None):
         """  Initiator
@@ -171,8 +143,8 @@ class AbsSightline(object):
         self.em_type = em_type
         self.sl_type = sl_type
 
-    def add_absline(self, absline, tol=0.1*u.arcsec, chk_vel=True,
-                    chk_sep=True, vtoler=1., **kwargs):
+    def add_component(self, abscomp, tol=0.2*u.arcsec,
+                      chk_sep=True, debug=False, **kwargs):
         """Add an AbsLine object to the component if it satisfies
         all of the rules.
 
@@ -181,53 +153,29 @@ class AbsSightline(object):
 
         Parameters
         ----------
-        absline : AbsLine
+        abscomp : AbsComp
         tol : Angle, optional
-          Tolerance on matching coordinates.  Only used if chk_sep=True
-        chk_vel : bool, optional
-          Perform velocity test (can often be skipped)
-          Insist the bounds of the AbsLine are within 1km/s of the Component
-             (allows for round-off error)
+          Tolerance on matching coordinates
+          Only used if chk_sep=True
         chk_sep : bool, optional
           Perform coordinate check (expensive)
-        vtoler : float
-          Tolerance for velocity in km/s (must be positive)
         """
-        if vtoler < 0:
-            raise ValueError('vtoler must be positive!')
-
-        # Perform easy checks
+        # Coordinates
         if chk_sep:
-            testc = bool(self.coord.separation(absline.attrib['coord']) < tol)
+            testcoord = bool(self.coord.separation(abscomp.coord) < tol)
         else:
-            testc = True
-        testZ = self.Zion[0] == absline.data['Z']
-        testi = self.Zion[1] == absline.data['ion']
-        testE = bool(self.Ej == absline.data['Ej'])
-        # Now redshift/velocity
-        if chk_vel:
-            dz_toler = (1 + self.zcomp) * vtoler / c_kms  # Avoid Quantity for speed
-            zlim_line = (1 + absline.attrib['z']) * absline.limits.vlim.to('km/s').value / c_kms
-            zlim_comp = (1+self.zcomp) * self.vlim.to('km/s').value / c_kms
-            testv = (zlim_line[0] >= (zlim_comp[0] - dz_toler)) & (
-                zlim_line[1] <= (zlim_comp[1] + dz_toler))
-        else:
-            testv = True
+            testcoord = True
+
         # Combine
-        test = testc & testZ & testi & testE & testv
-        # Isotope
-        if self.A is not None:
-            raise ValueError('Not ready for this yet.')
+        test = testcoord
         # Append?
         if test:
-            self._abslines.append(absline)
+            self._components.append(abscomp)
         else:
-            warnings.warn("Failed add_absline test")
+            warnings.warn("Failed add_component test")
             print('Input absline with wrest={:g} does not match component rules. Not appending'.format(absline.wrest))
-            if not testv:
-                print("Absline velocities lie beyond component\n Set chk_vel=False to skip this test.")
-            if not testc:
-                print("Absline coordinates do not match.  Best to set them")
+            if not testcoord:
+                print("AbsComp coordinates do not match.  Best to set them")
 
     def build_table(self):
         """Generate an astropy QTable out of the component.
