@@ -19,13 +19,9 @@ from astropy.units import Quantity
 from astropy.coordinates import SkyCoord
 from astropy.table import QTable, Column
 
-from linetools.analysis import absline as ltaa
 from linetools.spectralline import AbsLine, SpectralLine
 from linetools import utils as ltu
-
-#import xastropy.atomic as xatom
-#from xastropy.stats import basic as xsb
-#from xastropy.xutils import xdebug as xdb
+from linetools.isgm.abscomponent import AbsComponent
 
 # Global import for speed
 c_kms = const.c.to('km/s').value
@@ -68,47 +64,45 @@ class AbsSightline(object):
         stars : str, optional
           Asterisks to append to the ion name (e.g. fine-structure, CII*)
         """
+        from .utils import build_components_from_abslines
         # Check
         if not isinstance(abslines, list):
             raise IOError("Need a list of AbsLine objects")
         if not all(isinstance(x, AbsLine) for x in abslines):
             raise IOError("List needs to contain only AbsLine objects")
 
-        # Instantiate with the first line
-        init_line = abslines[0]
-        #init_line.attrib['z'], init_line.analy['vlim'],
-        slf = cls( init_line.attrib['coord'], (init_line.data['Z'],init_line.data['ion']),
-                   init_line.attrib['z'], init_line.limits.vlim,
-                   Ej=init_line.data['Ej'], stars=stars)
-        slf._abslines.append(init_line)
-        # Append with component checking
-        if len(abslines) > 1:
-            for absline in abslines[1:]:
-                slf.add_absline(absline, **kwargs)
+        # Generate components
+        comps = build_components_from_abslines(abslines)
+
+        slf = cls.from_components(comps)
+
         # Return
         return slf
 
     @classmethod
-    def from_component(cls, component, **kwargs):
-        """ Instantiate from an AbsComponent object
+    def from_components(cls, components, **kwargs):
+        """ Instantiate from a list of AbsComponent objects
 
         Uses RA/DEC, Zion, Ej, A, z, vlim
 
         Parameters
         ----------
-        component : AbsComponent
-           An AbsComponent object
+        components : list
+           list of AbsComponent objects
 
         Returns
         -------
-        AbsComponent
         """
         # Check
-        if not isinstance(component, AbsComponent):
+        if not isinstance(components[0], AbsComponent):
             raise IOError('Need an AbsComponent object')
+
+        # Instantiate with the first component
+        slf = cls( components[0].coord)
+        for comp in components:
+            slf.add_component(comp, **kwargs)
         # Return
-        return cls(component.coord, component.Zion, component.zcomp, component.vlim, Ej=component.Ej,
-                   A=component.A, name=component.name, **kwargs)
+        return slf
 
 
     def __init__(self, radec, sl_type=None, em_type=None, comment=None, name=None):
@@ -128,7 +122,7 @@ class AbsSightline(object):
         # Required
         self.coord = ltu.radec_to_coord(radec)
 
-        # Other
+        # Lists
         self._components = []
 
         # Name
@@ -232,7 +226,7 @@ class AbsSightline(object):
         return (txt)
 
 
-class GenericSightline(AbsSightline):
+class GenericAbsSightline(AbsSightline):
     """Class for Generic Absorption Sightline
     """
     def __init__(self, radec, **kwargs):

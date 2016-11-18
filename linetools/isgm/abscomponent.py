@@ -25,10 +25,6 @@ from linetools.spectralline import AbsLine, SpectralLine
 from linetools.abund import ions
 from linetools import utils as ltu
 
-#import xastropy.atomic as xatom
-#from xastropy.stats import basic as xsb
-#from xastropy.xutils import xdebug as xdb
-
 # Global import for speed
 c_kms = const.c.to('km/s').value
 
