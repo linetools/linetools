@@ -173,21 +173,25 @@ def build_components_from_dict(idict, coord=None, **kwargs):
     return components
 
 
-def build_systems_from_components(comps, **kwargs):
+def build_systems_from_components(comps, systype=None, **kwargs):
     """ Build a list of AbsSystems from a list of AbsComponents
     Current default implementation allows for overlapping components, i.e.
-      only_overalp=True in add_component
+      only_overlap=True in add_component
 
     Parameters
     ----------
     comps : list
+    systype : AbsSystem, optional
+      Defaults to GenericAbsSystem
 
     Returns
     -------
     abs_systems : list
 
     """
-    from linetools.isgm.abssystem import GenericAbsSystem
+    if systype is None:
+        from linetools.isgm.abssystem import GenericAbsSystem
+        systype = GenericAbsSystem
     if 'overlap_only' not in kwargs.keys():
         kwargs['overlap_only'] = True
     # Add
@@ -197,7 +201,7 @@ def build_systems_from_components(comps, **kwargs):
     while len(cpy_comps) > 0:
         # Use the first one
         comp = cpy_comps.pop(0)
-        abssys = GenericAbsSystem.from_components([comp])
+        abssys = systype.from_components([comp])
         abs_systems.append(abssys)
         # Try the rest
         comps_left = []
