@@ -267,7 +267,7 @@ class AbsComponent(object):
         else:
             warnings.warn("Failed add_absline test")
             print('Input absline with wrest={:g} at z={:.3f} does not match component rules. Not appending'.format(absline.wrest,
-                                                                                                                   absline.absline.attrib['z']))
+                                                                                                                   absline.attrib['z']))
             if not testv:
                 print("Absline velocities lie beyond component\n Set chk_vel=False to skip this test.")
             if not testc:
