@@ -17,7 +17,7 @@ from astropy import constants as const
 from astropy import units as u
 from astropy.units import Quantity
 from astropy.coordinates import SkyCoord
-from astropy.table import QTable, Column
+from astropy.table import Table, Column
 
 from linetools.spectralline import AbsLine, SpectralLine
 from linetools import utils as ltu
@@ -172,17 +172,25 @@ class AbsSightline(object):
                 print("AbsComp coordinates do not match.  Best to set them")
 
     def build_table(self):
-        """Generate an astropy QTable out of the component.
+        """Generate an astropy QTable out of the components.
+        Default columns are z, Ion, flag_N, logN, sig_logN
+
         Returns
         -------
-        comp_tbl : QTable
+        comp_tbl : Table
         """
-        if len(self._abslines) == 0:
-            return
-        comp_tbl = QTable()
-        comp_tbl.add_column(Column([iline.wrest.to(u.AA).value for iline in self._abslines]*u.AA, name='wrest'))
-        for attrib in ['z', 'flag_N', 'logN', 'sig_logN']:
-            comp_tbl.add_column(Column([iline.attrib[attrib] for iline in self._abslines], name=attrib))
+        from linetools.abund.ions import ion_name
+        comp_tbl = Table()
+        if len(self._components) == 0:
+            return comp_tbl
+        # z
+        comp_tbl.add_column(Column([icomp.zcomp for icomp in self._components], name='z'))
+        # Ion
+        comp_tbl.add_column(Column([ion_name(icomp.Zion) for icomp in self._components], name='Ion'))
+        # Rest
+        for attrib in ['flag_N', 'logN', 'sig_logN']:
+            comp_tbl.add_column(Column([getattr(icomp, attrib)
+                                       for icomp in self._components], name=attrib))
         # Return
         return comp_tbl
 
@@ -196,6 +204,7 @@ class AbsSightline(object):
         # Generate the dict
         outdict = dict(RA=self.coord.ra.value, DEC=self.coord.dec.value,
                        CreationDate=date, user=user)
+        outdict['class'] = self.__class__.__name__
         # Add other attributes
         all_attr = self.__dict__
         for key in all_attr:

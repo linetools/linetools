@@ -510,6 +510,7 @@ class AbsSystem(object):
                        ZH=self.ZH, sig_ZH=self.sig_ZH,
                        user=user
                        )
+        outdict['class'] = self.__class__.__name__
         # Components
         outdict['components'] = {}
         for component in self._components:

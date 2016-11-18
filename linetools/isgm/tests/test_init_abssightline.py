@@ -1,4 +1,4 @@
-# Module to run tests on generating AbsSystem
+# Module to run tests on generating AbsSightline
 
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -13,10 +13,7 @@ from astropy.coordinates import SkyCoord
 
 from linetools.isgm.abssightline import GenericAbsSightline
 from linetools.isgm.abscomponent import AbsComponent
-from linetools.isgm.abssystem import GenericAbsSystem
 from linetools.spectralline import AbsLine
-
-import pdb
 
 
 def data_path(filename):

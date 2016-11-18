@@ -654,6 +654,7 @@ class AbsComponent(object):
                      RA=self.coord.ra.value, DEC=self.coord.dec.value,
                      A=self.A, Ej=self.Ej.to('1/cm').value, comment=self.comment,
                      flag_N=self.flag_N, logN=self.logN, sig_logN=self.sig_logN)
+        cdict['class'] = self.__class__.__name__
         # AbsLines
         cdict['lines'] = {}
         for iline in self._abslines:
