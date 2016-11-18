@@ -580,14 +580,16 @@ class LineList(object):
             if Z is not None:
                 tbl = self.__getitem__((Z, ie))
                 # Make sure the lower energy level is the same too
-                cond = tbl['Ej'] == Ej
+                #cond = tbl['Ej'] == Ej
+                cond = np.array([name1.split(' ')[0] == line for name1 in tbl['name']])
                 tbl = tbl[cond]
+                tbl.sort(['Ej','wrest'])
                 # For hydrogen/deuterium this contains deuterium/hydrogen;
                 # so let's get rid of them
-                if (line == 'HI') or (line == 'DI'):
-                    names = np.array(tbl['name'])
-                    cond = np.array([l.startswith(line) for l in names])
-                    tbl = tbl[cond]
+                #if (line == 'HI') or (line == 'DI'):
+                #    names = np.array(tbl['name'])
+                #    cond = np.array([l.startswith(line) for l in names])
+                #    tbl = tbl[cond]
                 if len(tbl) > 1:
                     return tbl
                 else:  # this should be always len(tbl)==1 because Z is not None

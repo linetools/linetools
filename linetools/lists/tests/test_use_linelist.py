@@ -62,9 +62,14 @@ def test_all_transitions():
     line = 'CIII'
     out = ism.all_transitions(line)
     assert type(out) == dict, error_msg
+    #check case of transitions from excited levels
+    line='FeII*'
+    out = ism.all_transitions(line)
+    assert len(out) == 27, "wrong line counts"
+    print(out)
     # wrest
     out = ism.all_transitions(1215.6700*u.AA)
-    assert len(out) == 30 # 30 Lyman series transitions
+    assert len(out) == 30,"wrong line counts" # 30 Lyman series transitions
     #print('test_all_transitions() passed')
 
 def test_strongest_transitions():

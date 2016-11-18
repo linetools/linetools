@@ -21,7 +21,6 @@ def parser(options=None):
         description='Print coordinates in several formats from input one.')
     parser.add_argument("inp", nargs='?', default=None, help="RA,DEC (e.g. 152.25900,7.22885), JXX (e.g. J100902.16+071343.8)")
     parser.add_argument("--epoch", default=2000., type=float, help="Epoch [Not functional]")
-    #parser.add_argument("wave", type=str, default=None, help="Rest wavelength in Angstroms")
 
     if options is None:
         args = parser.parse_args()
@@ -47,7 +46,8 @@ def main(args=None):
     print('J{:s}{:s}'.format(coord.ra.to_string(unit=u.hour,sep='',pad=True),
                              coord.dec.to_string(sep='',pad=True,alwayssign=True)))
     print('   RA={:f} deg, DEC={:f} deg'.format(coord.ra.deg, coord.dec.deg))
-
+    print('   radec = ({:f},{:f}) deg'.format(coord.ra.deg, coord.dec.deg))
+    print('SDSS finding chart: https://skyserver.sdss.org/dr12/en/tools/chart/navi.aspx?ra={:f}&dec={:f}&opt='.format(coord.ra.deg, coord.dec.deg))
 
 if __name__ == '__main__':
     main()

@@ -68,10 +68,10 @@ a new spectrum from a set of data arrays for a single
 spectrum is to use ``sp.from_tuple`` as shown above.
 Here are a series of example calls to generate the class::
 
-    >>> sp = XSpectrum1D.from_file('PH957_f.fits')      # From a FITS file
-    >>> sp = XSpectrum1D.from_file('q0002m422.txt.gz')  # From an ASCII table
-    >>> sp = xspec1.copy()                              # From an XSpectrum1D object
-    >>> sp = XSpectrum1D.from_tuple((wa, fl, sig), verbose=False)
+    sp = XSpectrum1D.from_file('PH957_f.fits')      # From a FITS file
+    sp = XSpectrum1D.from_file('q0002m422.txt.gz')  # From an ASCII table
+    sp = xspec1.copy()                              # From an XSpectrum1D object
+    sp = XSpectrum1D.from_tuple((wa, fl, sig), verbose=False)
 
 
 
@@ -85,9 +85,9 @@ If you wish to view/analyze all pixels in your spectrum including
 those with 0 or NAN sig values, then disable the mask when
 creating the object or by using the unnmask() method::
 
-    >>> sp = XSpectrum1D.from_tuple((wa, fl, sig), masking='none')
-    >>> sp = XSpectrum1D.from_file('PH957_f.fits')      # From a FITS file
-    >>> sp.unmask()
+    sp = XSpectrum1D.from_tuple((wa, fl, sig), masking='none')
+    sp = XSpectrum1D.from_file('PH957_f.fits')
+    sp.unmask()
 
 Methods
 =======
@@ -102,20 +102,20 @@ are generally easier for other software to read.
 Another option is an HDF5 file which better preserves the
 data format of XSpectrum1D.  Here are some examples::
 
-    >>> sp.write_to_fits('QSO.fits')            # Standard FITS file
-    >>> sp.write('QSO.fits')                    # Same
-    >>> sp.write('QSO.fits', FITS_TABLE=True)   # Binary FITS table
-    >>> sp.write_to_hdf5('QSO.hdf5')            # HDF5 file
-    >>> sp.write('QSO.hdf5')                    # Same
-    >>> sp.write_to_ascii('QSO.ascii')          # ASCII (heaven forbid)
-    >>> sp.write('QSO.ascii')                   # Same
+    sp.write_to_fits('QSO.fits')            # Standard FITS file
+    sp.write('QSO.fits')                    # Same
+    sp.write('QSO.fits', FITS_TABLE=True)   # Binary FITS table
+    sp.write_to_hdf5('QSO.hdf5')            # HDF5 file
+    sp.write('QSO.hdf5')                    # Same
+    sp.write_to_ascii('QSO.ascii')          # ASCII (heaven forbid)
+    sp.write('QSO.ascii')                   # Same
 
 
 One can collate a list of XSpectrum1D objects into one with collate::
 
-    >>> sp1 = XSpectrum1D.from_file('PH957_f.fits')
-    >>> sp2 = XSpectrum1D.from_file('q0002m422.txt.gz')
-    >>> sp = linetools.spectra.utils.collate([sp1,sp2])
+    sp1 = XSpectrum1D.from_file('PH957_f.fits')
+    sp2 = XSpectrum1D.from_file('q0002m422.txt.gz')
+    sp = linetools.spectra.utils.collate([sp1,sp2])
 
 
 Plotting
@@ -137,12 +137,12 @@ to an arbitrary input wavelength array.  Flux is conserved.  If
 is made to conserve S/N.  Generally, neighboring pixels will be
 correlated::
 
-    >>> newspec = sp.rebin(new_wv, do_sig=True) # doctest: +SKIP
+    newspec = sp.rebin(new_wv, do_sig=True)
 
 If the XSpectrum1D object containts multiple spectra, you can rebin
 all of them to the new wavelength array as well::
 
-    >>> newspec = sp.rebin(new_wv, do_sig=True, all=True) # doctest: +SKIP
+    newspec = sp.rebin(new_wv, do_sig=True, all=True)
 
 
 Continuum fitting
@@ -182,8 +182,12 @@ spectrum using `~linetools.spectra.xspectrum1d.XSpectrum1D.splice`.
 `~linetools.spectra.xspectrum1d.XSpectrum1D.pix_minmax` finds the
 pixel indices corresponding to a wavelength or velocity range, and
 `~linetools.spectra.xspectrum1d.XSpectrum1D.add_noise` adds noise to
-the spectrum. For a complete list of all the available methods, see
-the API: `~linetools.spectra.xspectrum1d.XSpectrum1D`.
+the spectrum. We have also implemented a method that estimates a local
+average signal-to-noise ratio at a given observed wavelength
+(`~linetools.spectra.xspectrum1d.XSpectrum1D.get_local_s2n`), which is capable
+of masking out pixels that are below a flux threshold (useful for excluding
+strong absorption features from the calculation). For a complete list of
+all the available methods, see the API: `~linetools.spectra.xspectrum1d.XSpectrum1D`.
 
 Multi-spec methods
 ------------------

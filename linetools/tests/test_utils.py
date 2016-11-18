@@ -46,7 +46,10 @@ def test_save_load_json():
     # Load
     new_dict = loadjson('tmp.json.gz')
     assert new_dict['a'] == 1
-
+    # Write with easy to read
+    savejson('tmp2.json', tmp_dict, overwrite=True, easy_to_read=True)
+    new_dict2 = loadjson('tmp2.json')
+    assert new_dict2['a'] == 1
 
 def test_radeccoord():
     for radec in ['J124511+144523', '124511+144523',
