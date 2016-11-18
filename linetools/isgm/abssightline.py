@@ -139,7 +139,7 @@ class AbsSightline(object):
         # Return
         return slf
 
-    def __init__(self, radec, sl_type=None, em_type=None, comment=None):
+    def __init__(self, radec, sl_type=None, em_type=None, comment=None, name=None):
         """  Initiator
 
         Parameters
@@ -158,6 +158,14 @@ class AbsSightline(object):
 
         # Other
         self._components = []
+
+        # Name
+        if name is None:
+            self.name = 'J{:s}{:s}'.format(
+                    self.coord.ra.to_string(unit=u.hour,sep='',pad=True),
+                    self.coord.dec.to_string(sep='',pad=True,alwayssign=True))
+        else:
+            self.name=name
 
         # Others
         self.em_type = em_type
@@ -237,24 +245,30 @@ class AbsSightline(object):
         return comp_tbl
 
     def to_dict(self):
-        """ Convert component data to a dict
-        Returns
-        -------
-        cdict : dict
+        """ Write AbsSightline data to a dict that can be written with JSON
         """
-        cdict = dict(Zion=self.Zion, zcomp=self.zcomp, vlim=self.vlim.to('km/s').value,
-                     Name=self.name,
-                     RA=self.coord.ra.value, DEC=self.coord.dec.value,
-                     A=self.A, Ej=self.Ej.to('1/cm').value, comment=self.comment,
-                     flag_N=self.flag_N, logN=self.logN, sig_logN=self.sig_logN)
-        # AbsLines
-        cdict['lines'] = {}
-        for iline in self._abslines:
-            cdict['lines'][iline.wrest.value] = iline.to_dict()
+        import datetime
+        import getpass
+        date = str(datetime.date.today().strftime('%Y-%b-%d'))
+        user = getpass.getuser()
+        # Generate the dict
+        outdict = dict(RA=self.coord.ra.value, DEC=self.coord.dec.value,
+                       CreationDate=date, user=user)
+        # Add other attributes
+        all_attr = self.__dict__
+        for key in all_attr:
+            if key in ['coord', '_components']:
+                continue
+            else:
+                outdict[key] = getattr(self, key)
+        # Components
+        outdict['components'] = {}
+        for component in self._components:
+            outdict['components'][component.name] = ltu.jsonify(component.to_dict())
         # Polish
-        cdict = ltu.jsonify(cdict)
+        outdict = ltu.jsonify(outdict)
         # Return
-        return cdict
+        return outdict
 
     def __repr__(self):
         txt = '<{:s}: {:s} {:s}'.format(
