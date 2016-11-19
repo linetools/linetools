@@ -4,7 +4,6 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 # TEST_UNICODE_LITERALS
 
-import numpy as np
 import os
 
 import pytest
@@ -53,6 +52,7 @@ def si2_comp(radec):
     #
     return SiII_comp
 
+
 def make_gensl():
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
     # HI
@@ -61,6 +61,7 @@ def make_gensl():
     SiII_comp = si2_comp(radec)
     gensl = GenericAbsSightline.from_components([abscomp, SiII_comp])
     return gensl
+
 
 def test_build_table():
     # Init
