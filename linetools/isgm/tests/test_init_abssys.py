@@ -29,12 +29,14 @@ def lyman_comp(radec):
     lya = AbsLine(1215.670*u.AA)
     lya.analy['vlim'] = [-300.,300.]*u.km/u.s
     lya.attrib['z'] = 2.92939
+    lya.attrib['flag_N'] = 1
     lya.attrib['N'] = 1e17 /  u.cm**2
     lyb = AbsLine(1025.7222*u.AA)
     lyb.analy['vlim'] = [-300.,300.]*u.km/u.s
     lyb.attrib['z'] = lya.attrib['z']
     abscomp = AbsComponent.from_abslines([lya,lyb])
     abscomp.coord = radec
+    abscomp.synthesize_colm()
     return abscomp
 
 def si2_comp(radec):
@@ -51,7 +53,6 @@ def si2_comp(radec):
     SiII_comp.coord = radec
     #
     return SiII_comp
-
 
 
 def test_from_json():
