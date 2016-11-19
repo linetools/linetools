@@ -173,7 +173,7 @@ def build_components_from_dict(idict, coord=None, **kwargs):
     return components
 
 
-def build_systems_from_components(comps, systype=None, **kwargs):
+def build_systems_from_components(comps, systype=None, vsys=None, **kwargs):
     """ Build a list of AbsSystems from a list of AbsComponents
     Current default implementation allows for overlapping components, i.e.
       only_overlap=True in add_component
@@ -183,6 +183,11 @@ def build_systems_from_components(comps, systype=None, **kwargs):
     comps : list
     systype : AbsSystem, optional
       Defaults to GenericAbsSystem
+    vsys : Quantity, optional
+      'Velocity width' of a system, used when adding components
+      Passed as vtoler to add_component
+      The first component will define the system redshift and all others will
+      need to lie within vsys of it
 
     Returns
     -------
@@ -192,8 +197,11 @@ def build_systems_from_components(comps, systype=None, **kwargs):
     if systype is None:
         from linetools.isgm.abssystem import GenericAbsSystem
         systype = GenericAbsSystem
-    if 'overlap_only' not in kwargs.keys():
-        kwargs['overlap_only'] = True
+    if vsys is None:
+        if 'overlap_only' not in kwargs.keys():
+            kwargs['overlap_only'] = True
+    else:
+        kwargs['vtoler'] = vsys.to('km/s').value
     # Add
     abs_systems = []
     cpy_comps = [comp.copy() for comp in comps]
