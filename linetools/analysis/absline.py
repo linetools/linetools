@@ -14,6 +14,9 @@ from astropy.io import ascii
 atom_cst = (const.m_e.cgs*const.c.cgs / (np.pi * 
     (const.e.esu**2).cgs)).to(u.AA*u.s/(u.km*u.cm**2))
 
+# e2/(me*c) in CGS
+e2_me_c_cgs = (const.e.esu**2 / (const.c.to('cm/s') * const.m_e.to('g'))).value
+
 # Perform AODM on the line
 def aodm(spec, idata):
     """ AODM calculation on an absorption line
@@ -284,3 +287,36 @@ def sum_logN(obj1, obj2):
             pass # Take sums
     # Return
     return flag_N, logN, sig_logN
+
+
+def get_tau0(wa0, fosc, logN, b):
+    """Get the value of the optical depth at the line center,
+    tau0. Taken from Draine 2011 (see Chapter 9). It neglects stimulated
+    emission which is fine for IGM or ISM except for radio-frequency
+    transitions.
+
+    Parameters
+    ----------
+    wa0 : Quantity
+        Rest-frame wavelength of the transition
+    fosc : float
+        Oscillator strength of the transition
+    logN : float
+        log10 of the column density in cm^{-2}
+    b : Quantity
+        Doppler parameter
+
+    Returns
+    -------
+    tau0: float
+        Optical depth at the line center
+    """
+
+    # convert units to CGS
+    b_cgs = b.to('cm/s').value
+    wa0_cgs = wa0.to('cm').value
+    N_cgs = 10**logN  # assumed to be in cm^2
+
+    # tau0
+    tau0 = np.sqrt(np.pi) * e2_me_c_cgs * N_cgs * fosc * wa0_cgs  / b_cgs  # eq. 9.8 Draine 2011
+    return tau0

@@ -5,7 +5,8 @@ import pytest
 import pdb
 from astropy import units as u
 
-from ..absline import aodm, log_clm, linear_clm, photo_cross, sum_logN
+from linetools.analysis.absline import aodm, log_clm, linear_clm, photo_cross, sum_logN, get_tau0
+from linetools.lists.linelist import LineList
 
 def test_aodm():
     # Make fake spectrum
@@ -64,3 +65,10 @@ def test_sumlogn_limit():
     assert flag_N == 1
     np.testing.assert_allclose((logN, sig_logN), (obj2['logN'], obj2['sig_logN']))
 
+def test_get_tau0():
+    hi_list = LineList('HI')
+    lya = hi_list['HI 1215']
+    logN = 13.0
+    b = 10*u.km/u.s
+    tau0 = get_tau0(lya['wrest'], lya['f'], logN, b)
+    np.testing.assert_allclose(tau0, 0.75797320235476873, rtol=1e-5)
