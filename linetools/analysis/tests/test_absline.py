@@ -88,8 +88,7 @@ def test_get_tau0():
     with pytest.raises(IOError):
         tau0 = get_tau0(lya['wrest'], lya['f']*u.AA, N[0], b[0])  # wrong input units, (fosc has units)
 
-# def test_Wr_from_N_b():
-if 1:
+def test_Wr_from_N_b():
     hi_list = LineList('HI')
     lya = hi_list['HI 1215']
     N = 10**np.linspace(12.0, 22.0, 4) / (u.cm*u.cm)
