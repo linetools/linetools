@@ -327,10 +327,6 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
                        flag_N=NHI_obj.flag_NHI,sig_logN=np.mean(NHI_obj.sig_NHI))
             iontbl.add_row(row)
 
-    # Add zlim to metadata
-    meta = OrderedDict()
-    meta['zcomp'] = ztbl
-
     # Return
     return iontbl
 

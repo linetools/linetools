@@ -1,11 +1,26 @@
+# Tests of linetools.utils
+
 from __future__ import print_function, absolute_import, division, unicode_literals
 
+# TEST_UNICODE_LITERALS
+
+import pytest
 from ..utils import between, v_from_z, savejson, loadjson, z_from_v
 from ..utils import radec_to_coord, convert_quantity_in_dict
+from ..utils import name_from_coord
 import numpy as np
 from astropy import units as u
+from astropy.coordinates import SkyCoord
 import linetools.utils as ltu
-import pdb
+
+def test_name_from_coord():
+    coord = SkyCoord(ra=15.4, dec=-23.1, unit='deg')
+    name = name_from_coord(coord)
+    assert name == 'J010136.00-230600.0'
+    # Name 2
+    name2 = name_from_coord(coord, precision=(0,0))
+    assert name2 == 'J010136-230600'
+
 
 def test_convert_qdict():
     vlim = dict(unit='km/s', value=50.)

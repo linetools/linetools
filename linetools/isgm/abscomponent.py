@@ -1,4 +1,4 @@
-""" Classes for absorption line component
+""" Class for absorption line component
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -143,8 +143,8 @@ class AbsComponent(object):
         Parameters
         ----------
         radec : tuple or SkyCoord
-            (RA,DEC) in deg or astropy.coordinate
-        Zion : tuple 
+            (RA,DEC) in deg or astropy.coordinate.SkyCoord
+        Zion : tuple
             Atomic number, ion -- (int,int)
             e.g. (8,1) for OI
         zcomp : float
@@ -267,7 +267,7 @@ class AbsComponent(object):
                 print("Absline coordinates do not match.  Best to set them")
 
     def build_table(self):
-        """Generate an astropy QTable out of the component.
+        """Generate an astropy QTable out of the abs lines
         Returns
         -------
         comp_tbl : QTable

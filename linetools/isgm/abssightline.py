@@ -1,4 +1,4 @@
-""" Classes for absorption line component
+""" Class for an absorption sightline
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -32,29 +32,21 @@ class AbsSightline(object):
 
     Attributes
     ----------
-    name : str
-        Name of the component, e.g. `Si II`
-    coord : SkyCoord
-        Sky coordinate
-    Zion : tuple 
-        Atomic number, ion -- (int,int)
-        e.g. (8,1) for OI
-    zcomp : float
-        Component redshift
-    vlim : Quantity array
-        Velocity limits of the component
-        e.g.  [-300,300]*u.km/u.s
-    A : int
-        Atomic mass -- used to distinguish isotopes
-    Ej : Quantity
-        Energy of lower level (1/cm)
-    comment : str
+    radec : SkyCoord or ra/dec tuple
+        Coordinates
+    sl_type : str, optional
+        Description of type of sightline (e.g. IGM)
+    em_type : str, optional
+        Description of type of emission source (e.g. QSO, GRB)
+    comment : str, optional
         A comment, default is ``
+    name : str, optional
+        Name of the sightline, e.g. '3C273'
     """
     __metaclass__ = ABCMeta
 
     @classmethod
-    def from_abslines(cls, abslines, stars=None, **kwargs):
+    def from_abslines(cls, abslines, **kwargs):
         """Instantiate from a list of AbsLine objects
 
         Parameters
@@ -72,9 +64,9 @@ class AbsSightline(object):
             raise IOError("List needs to contain only AbsLine objects")
 
         # Generate components
-        comps = build_components_from_abslines(abslines)
-
-        slf = cls.from_components(comps)
+        comps = build_components_from_abslines(abslines, **kwargs)
+        # Generate the sightline
+        slf = cls.from_components(comps, **kwargs)
 
         # Return
         return slf
@@ -83,7 +75,7 @@ class AbsSightline(object):
     def from_components(cls, components, **kwargs):
         """ Instantiate from a list of AbsComponent objects
 
-        Uses RA/DEC, Zion, Ej, A, z, vlim
+        Uses RA/DEC
 
         Parameters
         ----------
@@ -94,6 +86,8 @@ class AbsSightline(object):
         -------
         """
         # Check
+        if not isinstance(components, list):
+            raise IOError("Need a list of AbsComponent objects")
         if not isinstance(components[0], AbsComponent):
             raise IOError('Need an AbsComponent object')
 
@@ -110,11 +104,11 @@ class AbsSightline(object):
         Parameters
         ----------
         radec : tuple or SkyCoord
-            (RA,DEC) in deg or astropy.coordinate
+            (RA,DEC) in deg or astropy.coordinate.SkyCoord
         sl_type : str, optional
           Sightline type, e.g. IGM
-        emtype : str, optional
-          Type of emission source for absorption sightline
+        em_type : str, optional
+          Type of emission source for absorption sightline, e.g. QSO
         comment : str, optional
           A comment, default is ``
         """
@@ -126,27 +120,24 @@ class AbsSightline(object):
 
         # Name
         if name is None:
-            self.name = 'J{:s}{:s}'.format(
-                    self.coord.ra.to_string(unit=u.hour,sep='',pad=True),
-                    self.coord.dec.to_string(sep='',pad=True,alwayssign=True))
+            self.name = ltu.name_from_coord(self.coord)
         else:
-            self.name=name
+            self.name = name
 
         # Others
         self.em_type = em_type
         self.sl_type = sl_type
+        self._abssystems = None
 
     def add_component(self, abscomp, tol=0.2*u.arcsec,
                       chk_sep=True, debug=False, **kwargs):
-        """Add an AbsLine object to the component if it satisfies
-        all of the rules.
+        """Add a component to AbsSightline if it satisfies all of the rules.
 
-        For velocities, we demand that the new line has a velocity
-        range that is fully encompassed by the component.
+        Presently, the only constraint is on RA/DEC
 
         Parameters
         ----------
-        abscomp : AbsComp
+        abscomp : AbsComponent
         tol : Angle, optional
           Tolerance on matching coordinates
           Only used if chk_sep=True
@@ -159,14 +150,14 @@ class AbsSightline(object):
         else:
             testcoord = True
 
-        # Combine
+        # Combine (with other tests, if they exist)
         test = testcoord
         # Append?
         if test:
             self._components.append(abscomp)
         else:
             warnings.warn("Failed add_component test")
-            print('Input absline with wrest={:g} does not match component rules. Not appending'.format(absline.wrest))
+            #print('Input absline with wrest={:g} does not match component rules. Not appending'.format(absline.wrest))
             if not testcoord:
                 print("AbsComp coordinates do not match.  Best to set them")
 
@@ -178,18 +169,12 @@ class AbsSightline(object):
         -------
         comp_tbl : Table
         """
-        from linetools.abund.ions import ion_name
+        from linetools.isgm.utils import iontable_from_components
         comp_tbl = Table()
         if len(self._components) == 0:
             return comp_tbl
-        # z
-        comp_tbl.add_column(Column([icomp.zcomp for icomp in self._components], name='z'))
-        # Ion
-        comp_tbl.add_column(Column([ion_name(icomp.Zion) for icomp in self._components], name='Ion'))
-        # Rest
-        for attrib in ['flag_N', 'logN', 'sig_logN']:
-            comp_tbl.add_column(Column([getattr(icomp, attrib)
-                                       for icomp in self._components], name=attrib))
+        comp_tbl = iontable_from_components(self._components)
+
         # Return
         return comp_tbl
 
@@ -225,6 +210,9 @@ class AbsSightline(object):
             self.__class__.__name__, self.coord.ra.to_string(unit=u.hour,sep=':', pad=True),
                 self.coord.dec.to_string(sep=':',pad=True,alwayssign=True))
 
+        # Name
+        if self.name is not None:
+            txt = txt + ', name={:s}'.format(self.name)
         # Type?
         if self.em_type is not None:
             txt = txt + ', emtype={:s}'.format(self.em_type)
