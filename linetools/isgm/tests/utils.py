@@ -3,6 +3,7 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import os
+import pdb
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord
@@ -22,6 +23,7 @@ def lyman_comp(radec):
     lya = AbsLine(1215.670*u.AA)
     lya.analy['vlim'] = [-300.,300.]*u.km/u.s
     lya.attrib['z'] = 2.92939
+    lya.attrib['flag_N'] = 1
     lya.attrib['N'] = 1e17 /  u.cm**2
     lya.attrib['coord'] = radec
     lyb = AbsLine(1025.7222*u.AA)
@@ -29,6 +31,8 @@ def lyman_comp(radec):
     lyb.attrib['z'] = lya.attrib['z']
     lyb.attrib['coord'] = radec
     abscomp = AbsComponent.from_abslines([lya,lyb])
+    abscomp.synthesize_colm()
+
     return abscomp
 
 
