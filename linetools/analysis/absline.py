@@ -9,13 +9,15 @@ import warnings
 from astropy import units as u
 from astropy import constants as const
 from astropy.io import ascii
+from astropy.utils import isiterable
 
 # Atomic constant
 atom_cst = (const.m_e.cgs*const.c.cgs / (np.pi * 
     (const.e.esu**2).cgs)).to(u.AA*u.s/(u.km*u.cm**2))
 
 # e2/(me*c) in CGS
-e2_me_c_cgs = (const.e.esu**2 / (const.c.to('cm/s') * const.m_e.to('g'))).value
+e2_me_c_cgs = (const.e.esu**2 / (const.c.to('cm/s') * const.m_e.to('g')))
+
 
 # Perform AODM on the line
 def aodm(spec, idata):
@@ -289,7 +291,7 @@ def sum_logN(obj1, obj2):
     return flag_N, logN, sig_logN
 
 
-def get_tau0(wa0, fosc, logN, b):
+def get_tau0(wa0, fosc, N, b):
     """Get the value of the optical depth at the line center,
     tau0. Taken from Draine 2011 (see Chapter 9). It neglects stimulated
     emission which is fine for IGM or ISM except for radio-frequency
@@ -301,9 +303,9 @@ def get_tau0(wa0, fosc, logN, b):
         Rest-frame wavelength of the transition
     fosc : float
         Oscillator strength of the transition
-    logN : float, or np.array
-        log10 of the column density in cm^{-2}
-    b : Quantity, or Quantity array (same shape as logN)
+    N : Quantity or Quantity array
+        Column density
+    b : Quantity or Quantity array of same shape as logN
         Doppler parameter
 
     Returns
@@ -312,40 +314,37 @@ def get_tau0(wa0, fosc, logN, b):
         Optical depth at the line center. If logN and b are
         arrays they must be of same shape.
     """
-    # check format for logN and b
-    try:
-        n = len(logN)
-        if n != len(b):
-            raise IOError('If logN is array, b must be array of same shape.')
-    except TypeError:  # assuming float for logN
-        if not isinstance(logN, (float, int)):
-            raise IOError('If logN is not array, it must be float.')
-    # force to numpy array
-    logN = np.array(logN)
+    # check format for N and b
+    if isiterable(N):
+        if np.shape(N) != np.shape(b):
+            raise IOError('If N is array, b must be array of same shape.')
 
-    # convert units to CGS
-    b_cgs = b.to('cm/s').value
-    wa0_cgs = wa0.to('cm').value
-    N_cgs = 10**logN  # assumed to be in cm^2
+    # convert to CGS
+    b_cgs = b.to('cm/s')
+    wa0_cgs = wa0.to('cm')
+    N_cgs = N.to('1/cm2')
 
     # tau0
     tau0 = np.sqrt(np.pi) * e2_me_c_cgs * N_cgs * fosc * wa0_cgs  / b_cgs  # eq. 9.8 Draine 2011
-    return tau0
+    # check dimensionless
+    tau0 = tau0.decompose()
+    if tau0.unit != u.dimensionless_unscaled:
+        raise IOError('Something went wrong with the units, check input units.')
+    return tau0.value
 
-
-def Wr_from_logN_b(logN, b, wa0, fosc, gamma):
+def Wr_from_N_b(N, b, wa0, fosc, gamma):
     """ For a given transition with fosc and gamma, it
     returns the rest-frame equivalent width for a given
-    logN and b. It uses the approximation given by Draine 2011 book
+    N and b. It uses the approximation given by Draine 2011 book
     (eq. 9.27), which comes from atomic physics considerations
     See also Rodgers & Williams 1974 (NT: could not find the reference
     given by Draine)
 
     Parameters
     ----------
-    logN : float
-        log10 of the column density in cm^{-2}
-    b : Quantity
+    N : Quantity or Quantity array
+        Column density
+    b : Quantity or Quantity array of same shape as N
         Doppler parameter
     wa0 : Quantity
         Rest-frame wavelength of the transition
@@ -362,26 +361,31 @@ def Wr_from_logN_b(logN, b, wa0, fosc, gamma):
     """
 
     # first calculate tau0
-    tau0 = get_tau0(wa0, fosc, logN, b)  # logN is only usd in tau0
+    tau0 = get_tau0(wa0, fosc, N, b)  # N is only used in tau0
 
     # convert units to CGS
-    b_cgs = b.to('cm/s').value
-    wa0_cgs = wa0.to('cm').value
-    c_cgs = const.c.to('cm/s').value
-    gamma_cgs = gamma.to('1/s').value
+    b_cgs = b.to('cm/s')
+    wa0_cgs = wa0.to('cm')
+    c_cgs = const.c.to('cm/s')
+    gamma_cgs = gamma.to('1/s')
 
-    # two main regimes
+    # two main regimes (eq. 9.27 of Draine 2011)
+    # optically thin:
     W_thin = np.sqrt(np.pi) * (b_cgs/c_cgs) * tau0 / (1 + tau0 / (2 * np.sqrt(2))) # dimensionless
-    W2_satu = (2 * b_cgs/c_cgs)**2 * np.log(tau0 / np.log(2)) \
-            + (b_cgs/c_cgs) * (wa0_cgs * gamma_cgs / c_cgs) * (tau0 - 1.25393) / np.sqrt(np.pi)  # dimensionless
-    W_satu = np.sqrt(W2_satu)  # dimensionless
-    W = np.where(tau0 <= 1.25393, W_thin, W_satu)
+    W_thin = W_thin.decompose()
 
-    # if tau0 <= 1.25393:
-    #     W = np.sqrt(np.pi) * (b_cgs/c_cgs) * tau0 / (1 + tau0 / (2 * np.sqrt(2))) # dimensionless
-    # else:
-    #     W2 = (2 * b_cgs/c_cgs)**2 * np.log(tau0 / np.log(2)) \
-    #         + (b_cgs/c_cgs) * (wa0_cgs * gamma_cgs / c_cgs) * (tau0 - 1.25393) / np.sqrt(np.pi)  # dimenonless
-    #     W = np.sqrt(W2)  # dimensionless
+    # optically thick:
+    W2_thick = (2 * b_cgs/c_cgs)**2 * np.log(tau0 / np.log(2)) \
+            + (b_cgs/c_cgs) * (wa0_cgs * gamma_cgs / c_cgs) * (tau0 - 1.25393) / np.sqrt(np.pi)  # dimensionless
+    W_thick = np.sqrt(W2_thick)  # dimensionless
+    W_thick = W_thick.decompose()
+
+    # Check dimensionless
+    if (W_thin.unit != u.dimensionless_unscaled) or (W_thick.unit != u.dimensionless_unscaled):
+        raise IOError('Something went wrong with the units, check input units.')
+
+    # combined
+    W = np.where(tau0 <= 1.25393, W_thin.value, W_thick.value) # dimensionless
+
     Wr = W * wa0  # in wavelength units (see equation 9.4 of Draine)
     return Wr
