@@ -653,7 +653,11 @@ def parse_hdf5(inp, **kwargs):
         meta = json.loads(hdf5[path+'meta'].value)
         # Headers
         for jj,heads in enumerate(meta['headers']):
-            meta['headers'][jj] = fits.Header.fromstring(meta['headers'][jj])
+            try:
+                meta['headers'][jj] = fits.Header.fromstring(meta['headers'][jj])
+            except TypeError:  # dict
+                if not isinstance(meta['headers'][jj], dict):
+                    raise IOError("Bad meta type")
     else:
         meta = None
     # Units
