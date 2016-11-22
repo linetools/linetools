@@ -86,7 +86,7 @@ def test_get_tau0():
     with pytest.raises(IOError):
         tau0 = get_tau0(lya['wrest'], lya['f'], N, b[:2])  # wrong shape for b
     with pytest.raises(IOError):
-        tau0 = get_tau0(lya['wrest'], lya['f']*u.AA, N[0], b[0])  # wrong input units, (fosc has units)
+        tau0 = get_tau0(lya['wrest'], lya['f']*u.AA, N[0], b[0])  # wrong input units (i.e. fosc has units)
 
 def test_Wr_from_N_b():
     hi_list = LineList('HI')
