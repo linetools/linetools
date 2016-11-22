@@ -698,15 +698,18 @@ def parse_DESI_brick(hdulist, select=0):
     """
     fx = hdulist[0].data
     # Sig
-    ivar = hdulist[1].data
-    sig = np.zeros_like(ivar)
-    gdi = ivar > 0.
-    sig[gdi] = np.sqrt(1./ivar[gdi])
+    if hdulist[1].name in ['ERROR', 'SIG']:
+        sig = hdulist[1].data
+    else:
+        ivar = hdulist[1].data
+        sig = np.zeros_like(ivar)
+        gdi = ivar > 0.
+        sig[gdi] = np.sqrt(1./ivar[gdi])
     # Wave
     wave = hdulist[2].data
     wave = give_wv_units(wave)
-    #wave = np.outer(np.ones(fx.shape[0]), wave)
-    wave = np.tile(wave, (fx.shape[0],1))
+    if wave.shape != fx.shape:
+        wave = np.tile(wave, (fx.shape[0],1))
     # Finish
     xspec1d = XSpectrum1D(wave, fx, sig, select=select)
     return xspec1d
