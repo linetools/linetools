@@ -111,6 +111,8 @@ class AbsSightline(object):
           Type of emission source for absorption sightline, e.g. QSO
         comment : str, optional
           A comment, default is ``
+        name : str, optional
+            Name of the sightline, e.g. '3C273'
         """
         # Required
         self.coord = ltu.radec_to_coord(radec)
@@ -127,13 +129,15 @@ class AbsSightline(object):
         # Others
         self.em_type = em_type
         self.sl_type = sl_type
-        self._abssystems = None
+        self._abssystems = None  # Saving the namespace for future usage
 
     def add_component(self, abscomp, tol=0.2*u.arcsec,
                       chk_sep=True, debug=False, **kwargs):
         """Add a component to AbsSightline if it satisfies all of the rules.
 
         Presently, the only constraint is on RA/DEC
+        Note: It is likely that this method will be over-rode by the
+        sub-class, e.g. to include source redshift in the criteria.
 
         Parameters
         ----------
