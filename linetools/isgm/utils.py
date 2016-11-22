@@ -463,53 +463,65 @@ def group_coincident_compoments(comp_list, output_type='list'):
     if output_type not in ['list', 'dict', 'dictionary']:
         raise ValueError("`output_type` must be either 'list' or 'dict'.")
 
-    # the first extreme case is that all components are independent
-    # of each other, in which case we have the following output shape
-    out = [[] for kk in range(len(comp_list))]
+    ### We first want to identify and group all blended lines
+    ### Sort them by observed wavelength to do this
+    lst=[]
+    compnos=[]
+    for ii,comp in enumerate(comp_list):
+        lst.extend(comp._abslines)
+        compnos.extend([ii]*len(comp._abslines))
+    lst=np.array(lst)
+    compnos=np.array(compnos)
+    wv1s=np.array([line.limits.wvlim[0].value for line in lst])
+    sortidxs=np.argsort(wv1s)
+    sort_lst=lst[sortidxs]
+    sort_compnos=compnos[sortidxs] # This will store indices of the lines' parent comps.
 
-    for ii in range(len(comp_list)):
-        comp_ii = comp_list[ii]
-        # only append if ii does not belong to a previous round
-        switch = 0
-        for kk in range(len(out[:ii])):
-            if ii in out[kk]:
-                switch = 1
-                break
-        if switch == 1:
-            pass
+    ### Identify the blends
+    blends = []
+    for i in range(len(sortidxs)-1):
+        if i == 0:
+            thisblend = [i]
+        if sort_lst[i].coincident_line(sort_lst[i+1]):
+            thisblend.append(i+1)
+            if i==(len(sortidxs)-2):
+            	blends.append(thisblend)
         else:
-            out[ii].append(ii)
+            blends.append(thisblend)
+            thisblend = [i+1]
+            if i==(len(sortidxs)-2):
+            	blends.append(thisblend)
 
-        for jj in range(ii+1, len(comp_list)):
-            # print(ii,jj)
-            comp_jj = comp_list[jj]
-            if coincident_components(comp_ii, comp_jj):  # There is overlap between comp_ii and comp_jj
-                # check in the previous ones where does jj belongs to
-                switch = 0
-                for kk in range(len(out[:ii])):
-                    if ii in out[kk]:  # this means ii already belongs to out[kk]
-                        # so jj should also go there...(if not there already)
-                        if jj in out[kk]:
-                            pass
-                        else:
-                            out[kk].append(jj)
-                        switch = 1  # for not appending jj again
-                        break
-                if switch == 1:
-                    pass  # this jj was appended already
-                else:
-                    # but check is not already there...
-                    if jj in out[ii]:
-                        pass
-                    else:
-                        out[ii].append(jj)
-                # print(out)
-            else:
-                pass
+    ### Associate the lines to their parent components
+    blendnos=[]
+    for blist in blends:
+        blendnos.append(sort_compnos[blist])
 
-    # Now we have out as a list of lists with indices, or empty lists
-    # let's get rid of the empty lists
-    out = [x for x in out if x != []]
+    ### Main algorithm to group together all components with blended lines
+    compfound=[]
+    grblends=[]
+    newgroups=[]
+    for i,bn in enumerate(blendnos):
+        if i in grblends: continue
+        grblends.append(i)
+        newgroups.append(bn.tolist())
+        newtotry=bn
+        while (len(newtotry)>0):
+            newnewtotry=[]
+            for no in newtotry:
+                if no not in compfound:
+
+                    compfound.append(no)
+                    blgrs=wherein(blendnos,no)
+                    for bg in blgrs:
+                        if bg not in grblends:
+                            grblends.append(bg)
+                            newgroups[-1].extend(blendnos[bg].tolist())
+                            newnewtotry.extend(np.unique(blendnos[bg]).tolist())
+            newtotry=newnewtotry
+            newgroups[-1]=np.unique(np.array(newgroups[-1])).tolist()
+
+    out = newgroups
 
     # Now lets produce the final output from it
     output_list = []
@@ -526,6 +538,15 @@ def group_coincident_compoments(comp_list, output_type='list'):
         return output_list
     elif output_type in ['dict', 'dictionary']:
         return output_dict
+
+def wherein(groups,member):
+    ''' Once blends have been identified, find which blend a given line index belongs to.
+    '''
+    matches=[]
+    for i,gr in enumerate(groups):
+        if member in gr:
+            matches.append(i)
+    return matches
 
 
 def joebvp_from_components(comp_list, specfile, outfile):
