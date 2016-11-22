@@ -301,16 +301,27 @@ def get_tau0(wa0, fosc, logN, b):
         Rest-frame wavelength of the transition
     fosc : float
         Oscillator strength of the transition
-    logN : float
+    logN : float, or np.array
         log10 of the column density in cm^{-2}
-    b : Quantity
+    b : Quantity, or Quantity array (same shape as logN)
         Doppler parameter
 
     Returns
     -------
-    tau0: float
-        Optical depth at the line center
+    tau0: float or array
+        Optical depth at the line center. If logN and b are
+        arrays they must be of same shape.
     """
+    # check format for logN and b
+    try:
+        n = len(logN)
+        if n != len(b):
+            raise IOError('If logN is array, b must be array of same shape.')
+    except TypeError:  # assuming float for logN
+        if not isinstance(logN, (float, int)):
+            raise IOError('If logN is not array, it must be float.')
+    # force to numpy array
+    logN = np.array(logN)
 
     # convert units to CGS
     b_cgs = b.to('cm/s').value
@@ -320,3 +331,57 @@ def get_tau0(wa0, fosc, logN, b):
     # tau0
     tau0 = np.sqrt(np.pi) * e2_me_c_cgs * N_cgs * fosc * wa0_cgs  / b_cgs  # eq. 9.8 Draine 2011
     return tau0
+
+
+def Wr_from_logN_b(logN, b, wa0, fosc, gamma):
+    """ For a given transition with fosc and gamma, it
+    returns the rest-frame equivalent width for a given
+    logN and b. It uses the approximation given by Draine 2011 book
+    (eq. 9.27), which comes from atomic physics considerations
+    See also Rodgers & Williams 1974 (NT: could not find the reference
+    given by Draine)
+
+    Parameters
+    ----------
+    logN : float
+        log10 of the column density in cm^{-2}
+    b : Quantity
+        Doppler parameter
+    wa0 : Quantity
+        Rest-frame wavelength of the transition
+    fosc:  float
+        Oscillator strength of the transition
+    gamma: Quantity
+        Gamma parameter of the transition (usually in s^-1).
+
+    Returns
+    -------
+    Wr : Quantity
+        Rest-frame equivalent width
+
+    """
+
+    # first calculate tau0
+    tau0 = get_tau0(wa0, fosc, logN, b)  # logN is only usd in tau0
+
+    # convert units to CGS
+    b_cgs = b.to('cm/s').value
+    wa0_cgs = wa0.to('cm').value
+    c_cgs = const.c.to('cm/s').value
+    gamma_cgs = gamma.to('1/s').value
+
+    # two main regimes
+    W_thin = np.sqrt(np.pi) * (b_cgs/c_cgs) * tau0 / (1 + tau0 / (2 * np.sqrt(2))) # dimensionless
+    W2_satu = (2 * b_cgs/c_cgs)**2 * np.log(tau0 / np.log(2)) \
+            + (b_cgs/c_cgs) * (wa0_cgs * gamma_cgs / c_cgs) * (tau0 - 1.25393) / np.sqrt(np.pi)  # dimensionless
+    W_satu = np.sqrt(W2_satu)  # dimensionless
+    W = np.where(tau0 <= 1.25393, W_thin, W_satu)
+
+    # if tau0 <= 1.25393:
+    #     W = np.sqrt(np.pi) * (b_cgs/c_cgs) * tau0 / (1 + tau0 / (2 * np.sqrt(2))) # dimensionless
+    # else:
+    #     W2 = (2 * b_cgs/c_cgs)**2 * np.log(tau0 / np.log(2)) \
+    #         + (b_cgs/c_cgs) * (wa0_cgs * gamma_cgs / c_cgs) * (tau0 - 1.25393) / np.sqrt(np.pi)  # dimenonless
+    #     W = np.sqrt(W2)  # dimensionless
+    Wr = W * wa0  # in wavelength units (see equation 9.4 of Draine)
+    return Wr

@@ -5,7 +5,8 @@ import pytest
 import pdb
 from astropy import units as u
 
-from linetools.analysis.absline import aodm, log_clm, linear_clm, photo_cross, sum_logN, get_tau0
+from linetools.analysis.absline import aodm, log_clm, linear_clm, photo_cross,\
+    sum_logN, get_tau0, Wr_from_logN_b
 from linetools.lists.linelist import LineList
 
 def test_aodm():
@@ -65,10 +66,36 @@ def test_sumlogn_limit():
     assert flag_N == 1
     np.testing.assert_allclose((logN, sig_logN), (obj2['logN'], obj2['sig_logN']))
 
+
 def test_get_tau0():
     hi_list = LineList('HI')
     lya = hi_list['HI 1215']
+    # test float format
     logN = 13.0
     b = 10*u.km/u.s
     tau0 = get_tau0(lya['wrest'], lya['f'], logN, b)
     np.testing.assert_allclose(tau0, 0.75797320235476873, rtol=1e-5)
+    # test array format
+    logN = [13.0, 13.0, 13.0]
+    b = [10., 10, 10]*u.km/u.s
+    tau0 = get_tau0(lya['wrest'], lya['f'], logN, b)
+    assert len(tau0) == len(logN)
+    np.testing.assert_allclose(tau0, 0.75797320235476873, rtol=1e-5)
+    # test errors
+    with pytest.raises(IOError):
+        tau0 = get_tau0(lya['wrest'], lya['f'], logN, b[:2])  # wrong shape for b
+    with pytest.raises(IOError):
+        tau0 = get_tau0(lya['wrest'], lya['f'], logN[0]*u.km, b[0])  # wrong input for logN (i.e. has units)
+
+def test_Wr_from_logN_b():
+    hi_list = LineList('HI')
+    lya = hi_list['HI 1215']
+    logN = np.linspace(12.0, 22.0, 4)
+    b = np.ones_like(logN) * 10 * u.km/u.s
+    # test array like
+    Wr = Wr_from_logN_b(logN, b, lya['wrest'], lya['f'], lya['gamma'])
+    Wr_test = [5.30565005e-03,  1.92538448e-01,  1.60381902e+00, 7.31826938e+01] * u.AA
+    np.testing.assert_allclose(Wr, Wr_test, rtol=1e-5)
+    # test float like input for logN
+    Wr = Wr_from_logN_b(logN[0], b[0], lya['wrest'], lya['f'], lya['gamma'])
+    np.testing.assert_allclose(Wr, Wr_test[0], rtol=1e-5)
