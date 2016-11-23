@@ -10,6 +10,7 @@ from astropy import units as u
 from astropy import constants as const
 from astropy.io import ascii
 from astropy.utils import isiterable
+from linetools.lists.linelist import LineList
 
 # Atomic constant
 atom_cst = (const.m_e.cgs*const.c.cgs / (np.pi * 
@@ -291,7 +292,7 @@ def sum_logN(obj1, obj2):
     return flag_N, logN, sig_logN
 
 
-def get_tau0(wa0, fosc, N, b):
+def get_tau0(wrest, fosc, N, b):
     """Get the value of the optical depth at the line center,
     tau0. Taken from Draine 2011 (see Chapter 9). It neglects stimulated
     emission which is fine for IGM or ISM except for radio-frequency
@@ -299,7 +300,7 @@ def get_tau0(wa0, fosc, N, b):
 
     Parameters
     ----------
-    wa0 : Quantity
+    wrest : Quantity
         Rest-frame wavelength of the transition
     fosc : float
         Oscillator strength of the transition
@@ -321,19 +322,20 @@ def get_tau0(wa0, fosc, N, b):
 
     # convert to CGS
     b_cgs = b.to('cm/s')
-    wa0_cgs = wa0.to('cm')
+    wrest_cgs = wrest.to('cm')
     N_cgs = N.to('1/cm2')
 
     # tau0
-    tau0 = np.sqrt(np.pi) * e2_me_c_cgs * N_cgs * fosc * wa0_cgs  / b_cgs  # eq. 9.8 Draine 2011
+    tau0 = np.sqrt(np.pi) * e2_me_c_cgs * N_cgs * fosc * wrest_cgs  / b_cgs  # eq. 9.8 Draine 2011
     # check dimensionless
     tau0 = tau0.decompose()
     if tau0.unit != u.dimensionless_unscaled:
         raise IOError('Something went wrong with the units, check input units.')
     return tau0.value
 
-def Wr_from_N_b(N, b, wa0, fosc, gamma):
-    """ For a given transition with fosc and gamma, it
+
+def Wr_from_N_b(N, b, wrest, fosc, gamma):
+    """ For a given transition with wrest, fosc and gamma, it
     returns the rest-frame equivalent width for a given
     N and b. It uses the approximation given by Draine 2011 book
     (eq. 9.27), which comes from atomic physics considerations
@@ -346,7 +348,7 @@ def Wr_from_N_b(N, b, wa0, fosc, gamma):
         Column density
     b : Quantity or Quantity array of same shape as N
         Doppler parameter
-    wa0 : Quantity
+    wrest : Quantity
         Rest-frame wavelength of the transition
     fosc:  float
         Oscillator strength of the transition
@@ -358,14 +360,18 @@ def Wr_from_N_b(N, b, wa0, fosc, gamma):
     Wr : Quantity
         Rest-frame equivalent width
 
+    Notes
+    -----
+    See also Wr_from_N_b_transition()
+
     """
 
     # first calculate tau0
-    tau0 = get_tau0(wa0, fosc, N, b)  # N is only used in tau0
+    tau0 = get_tau0(wrest, fosc, N, b)  # N is only used in tau0
 
     # convert units to CGS
     b_cgs = b.to('cm/s')
-    wa0_cgs = wa0.to('cm')
+    wrest_cgs = wrest.to('cm')
     c_cgs = const.c.to('cm/s')
     gamma_cgs = gamma.to('1/s')
 
@@ -376,7 +382,7 @@ def Wr_from_N_b(N, b, wa0, fosc, gamma):
 
     # optically thick:
     W2_thick = (2 * b_cgs/c_cgs)**2 * np.log(tau0 / np.log(2)) \
-            + (b_cgs/c_cgs) * (wa0_cgs * gamma_cgs / c_cgs) * (tau0 - 1.25393) / np.sqrt(np.pi)  # dimensionless
+            + (b_cgs/c_cgs) * (wrest_cgs * gamma_cgs / c_cgs) * (tau0 - 1.25393) / np.sqrt(np.pi)  # dimensionless
     W_thick = np.sqrt(W2_thick)  # dimensionless
     W_thick = W_thick.decompose()
 
@@ -387,5 +393,52 @@ def Wr_from_N_b(N, b, wa0, fosc, gamma):
     # combined
     W = np.where(tau0 <= 1.25393, W_thin.value, W_thick.value) # dimensionless
 
-    Wr = W * wa0  # in wavelength units (see equation 9.4 of Draine)
+    Wr = W * wrest  # in wavelength units (see equation 9.4 of Draine)
     return Wr
+
+
+def Wr_from_N_b_transition(N, b, transition, llist='ISM'):
+    """ For a given transition this function looks
+    for the atomic parameters (wa0, fosc, gamma) and returns the
+    rest-frame equivalent width for a given N and b. It uses the approximation given by
+    Draine 2011 book (eq. 9.27), which comes from atomic physics considerations
+    See also Rodgers & Williams 1974 (NT: could not find the reference
+    given by Draine)
+
+    Parameters
+    ----------
+    N : Quantity or Quantity array
+        Column density
+    b : Quantity or Quantity array of same shape as N
+        Doppler parameter
+    transition : str
+        Name of the transition using linetools' naming
+        convention, e.g. 'HI 1215'.
+    llist : str
+        Name of the linetools.lists.linelist.LineList
+        object where to look for the transition name.
+        Default is 'ISM', which means the function looks
+        within `list = LineList('ISM')`.
+
+    Returns
+    -------
+    Wr : Quantity
+        Rest-frame equivalent width
+
+    Notes
+    -----
+    See also Wr_from_N_b()
+
+    """
+    linelist = LineList(llist)
+    transition_dict = linelist[transition]
+    if transition_dict is None:
+        raise ValueError('Transition {:s} not found within LineList {:s}'.format(transition, linelist.list))
+    else:
+        # get atomic parameters
+        wrest = transition_dict['wrest']
+        fosc = transition_dict['f']
+        gamma = transition_dict['gamma']
+
+    # return
+    return Wr_from_N_b(N, b, wrest, fosc, gamma)

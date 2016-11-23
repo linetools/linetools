@@ -6,7 +6,7 @@ import pdb
 from astropy import units as u
 
 from linetools.analysis.absline import aodm, log_clm, linear_clm, photo_cross,\
-    sum_logN, get_tau0, Wr_from_N_b
+    sum_logN, get_tau0, Wr_from_N_b, Wr_from_N_b_transition
 from linetools.lists.linelist import LineList
 
 def test_aodm():
@@ -88,6 +88,7 @@ def test_get_tau0():
     with pytest.raises(IOError):
         tau0 = get_tau0(lya['wrest'], lya['f']*u.AA, N[0], b[0])  # wrong input units (i.e. fosc has units)
 
+
 def test_Wr_from_N_b():
     hi_list = LineList('HI')
     lya = hi_list['HI 1215']
@@ -99,4 +100,16 @@ def test_Wr_from_N_b():
     np.testing.assert_allclose(Wr, Wr_test, rtol=1e-5)
     # test float like input for logN
     Wr = Wr_from_N_b(N[0], b[0], lya['wrest'], lya['f'], lya['gamma'])
+    np.testing.assert_allclose(Wr, Wr_test[0], rtol=1e-5)
+
+
+def test_Wr_from_N_b_transition():
+    N = 10**np.linspace(12.0, 22.0, 4) / (u.cm*u.cm)
+    b = np.ones_like(N.value) * 10 * u.km/u.s
+    # test array like
+    Wr = Wr_from_N_b_transition(N, b, transition='HI 1215')
+    Wr_test = [5.30565005e-03,  1.92538448e-01,  1.60381902e+00, 7.31826938e+01] * u.AA
+    np.testing.assert_allclose(Wr, Wr_test, rtol=1e-5)
+    # test float like input for logN
+    Wr = Wr_from_N_b_transition(N[0], b[0], transition='HI 1215')
     np.testing.assert_allclose(Wr, Wr_test[0], rtol=1e-5)
