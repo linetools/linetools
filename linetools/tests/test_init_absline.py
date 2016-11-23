@@ -51,3 +51,11 @@ def test_dicts():
     newdict = ltu.loadjson('tmp.json')
     newlin = SpectralLine.from_dict(newdict)
     assert newlin.name == 'HI 1215'
+
+
+def test_redshift():
+    abslin = AbsLine(1215.6700*u.AA)
+    abslin.setz(1.)
+    np.testing.assert_allclose(abslin.z, 1.)
+    np.testing.assert_allclose(abslin.limits.z, 1.)
+    np.testing.assert_allclose(abslin.limits._z, 1.)

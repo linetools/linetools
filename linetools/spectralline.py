@@ -33,8 +33,6 @@ init_analy = {
             }
 init_attrib = {
             'coord': zero_coord,                           # Coords
-            'z': 0., 'sig_z': 0.,                           # Redshift
-            'v': 0.*u.km/u.s, 'sig_v': 0.*u.km/u.s,        # rest-frame velocity relative to z
             'EW': 0.*u.AA, 'sig_EW': 0.*u.AA, 'flag_EW': 0 # EW
             }
 
@@ -45,6 +43,7 @@ abs_attrib = {'N': 0./u.cm**2, 'sig_N': 0./u.cm**2, 'flag_N': 0, # Column    ## 
 
 emiss_attrib = {'flux': 0.*u.erg/u.s, 'sig_flux': 0.*u.erg/u.s, 'flag_flux': 0,
                 }
+
 
 class SpectralLine(object):
     """ Class for a spectral line. Emission or absorption.
@@ -151,8 +150,12 @@ class SpectralLine(object):
             else:
                 sline.attrib[key] = idict['attrib'][key]
 
-        # Set limits
-        sline.limits._z = sline.attrib['z']
+        # Set z and limits
+        if 'z' in sline.attrib.keys():
+            z = sline.attrib.pop('z')
+        else:
+            z = 0.
+        sline.setz(z)
         try:  # this try is for compatibility with previous versions w/o limits
             for key in idict['limits']:
                 if isinstance(idict['limits'][key], dict):
@@ -188,7 +191,6 @@ class SpectralLine(object):
         self.data = {} # Atomic/Molecular Data (e.g. f-value, A coefficient, Elow)
         self.analy = init_analy.copy()
         self.attrib = init_attrib.copy()
-        self.attrib['z'] = z
 
         # Fill data
         self.fill_data(trans, linelist=linelist, closest=closest, verbose=verbose)
@@ -198,9 +200,15 @@ class SpectralLine(object):
         except KeyError:
             zlim = [z,z]
         if ltype in ['Abs', 'Em']:
-            self.limits = LineLimits.from_specline(self, zlim)
+            self.limits = LineLimits.from_specline(self, z, zlim)
         else:
             raise ValueError('Not ready to set limits for this type')
+
+    @property
+    def z(self):
+        """ Return z
+        """
+        return self.limits.z
 
     def fill_data(self, trans, linelist=None, closest=False, verbose=True):
         """ Fill atomic data and setup analy.
@@ -266,7 +274,6 @@ class SpectralLine(object):
         if not isinstance(z,float):
             raise IOError("Input redshift needs to be a float")
         # Set
-        self.attrib['z'] = z
         self.limits._z = z
         # Warning?
         if self.limits.is_set():
@@ -295,7 +302,7 @@ class SpectralLine(object):
         coord = None
         if isinstance(inp, SpectralLine):
             wrest = inp.wrest
-            z = inp.attrib['z']
+            z = inp.z
             if Zion is None:
                 Zion = (inp.data['Z'], inp.data['ion'])
             if RADec is None:
@@ -309,7 +316,7 @@ class SpectralLine(object):
         # Queries
         answer = ( np.allclose(self.wrest.to(u.AA).value,
                                wrest.to(u.AA).value) &
-            np.allclose(self.attrib['z'], z, rtol=1e-6))
+            np.allclose(self.z, z, rtol=1e-6))
         if Zion is not None:
             answer = answer & (self.data['Z'] == Zion[0]) & (self.data['ion'] == Zion[1])
         if (coord is not None) or (RADec is not None):
@@ -333,7 +340,7 @@ class SpectralLine(object):
         -------
         fx, sig, dict(wave, velo, pix)
             Arrays (numpy or Quantity) of flux, error, and wavelength/velocity
-            The velocity is calculated relative to self.attrib['z']
+            The velocity is calculated relative to self.z
         """
 
         # Checks
@@ -361,7 +368,7 @@ class SpectralLine(object):
 
         # Velocity array created within the XSpectrum1D class and cut afterwards
         self.analy['spec'].velo = self.analy['spec'].relative_vel(
-            self.wrest*(1 + self.attrib['z']))
+            self.wrest*(1 + self.z))
         velo = self.analy['spec'].velo[pix]
 
         # Set it back
@@ -425,8 +432,8 @@ class SpectralLine(object):
         self.measure_ew(**kwargs)
 
         # Push to rest-frame
-        self.attrib['EW'] = self.attrib['EW'] / (self.attrib['z']+1)
-        self.attrib['sig_EW'] = self.attrib['sig_EW'] / (self.attrib['z']+1)
+        self.attrib['EW'] = self.attrib['EW'] / (self.z+1)
+        self.attrib['sig_EW'] = self.attrib['sig_EW'] / (self.z+1)
 
     def measure_kin(self, **kwargs):
         """  Measure Kinematics
@@ -542,7 +549,7 @@ class SpectralLine(object):
         except KeyError:
             pass
         # z
-        txt = txt + ' z={:.4f}'.format(self.attrib['z'])
+        txt = txt + ' z={:.4f}'.format(self.z)
         #
         txt = txt + ' wrest={:g}'.format(self.wrest)
         txt = txt + '>'
@@ -665,7 +672,7 @@ class AbsLine(SpectralLine):
         except KeyError:
             pass
         # z
-        txt = txt + ' z={:.4f}'.format(self.attrib['z'])
+        txt = txt + ' z={:.4f}'.format(self.z)
         # wrest
         txt = txt + ' wrest={:.4f}'.format(self.wrest)
         # fval

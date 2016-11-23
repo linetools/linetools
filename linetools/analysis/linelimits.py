@@ -3,6 +3,7 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
+import warnings
 
 from astropy import units as u
 from astropy.units import Quantity, UnitConversionError
@@ -17,6 +18,8 @@ class LineLimits(object):
 
     Properties
     ----------
+    z : float
+      Redshift
     zlim : tuple of floats
       Redshift limits for a line
       Defined as wave/wrest - 1.
@@ -26,7 +29,7 @@ class LineLimits(object):
       velocity limits for the line in km/s
     """
     @classmethod
-    def from_specline(cls, aline, zlim):
+    def from_specline(cls, aline, z, zlim):
         """ From AbsLine or Emline
 
         Parameters
@@ -37,7 +40,7 @@ class LineLimits(object):
         if not isinstance(aline, (AbsLine, EmLine)):
             raise IOError("Input aline must be AbsLine or EmLine")
         #
-        slf = cls(aline.wrest, aline.attrib['z'], zlim)
+        slf = cls(aline.wrest, z, zlim)
         return slf
 
     def __init__(self, wrest, z, zlim, **kwargs):
@@ -66,6 +69,12 @@ class LineLimits(object):
         self._z = z
         self._wrest = wrest
         self.set(zlim, **kwargs)
+
+    @property
+    def z(self):
+        """ Return z
+        """
+        return self._z
 
     @property
     def zlim(self):
@@ -126,6 +135,8 @@ class LineLimits(object):
         # Checks
         if not isinstance(inp, (tuple, list, Quantity)):
             raise IOError("Input must be tuple, list or Quantity.")
+        if np.isclose(self._z, 0.):
+            warnings.warn("Redshift=0.  If this is unexpected, set _z and reset limits")
 
         if isinstance(inp[0], float):  # assume zlim
             self._zlim = inp
