@@ -113,3 +113,5 @@ def test_Wr_from_N_b_transition():
     # test float like input for logN
     Wr = Wr_from_N_b_transition(N[0], b[0], transition='HI 1215')
     np.testing.assert_allclose(Wr, Wr_test[0], rtol=1e-5)
+    with pytest.raises(ValueError):
+        Wr = Wr_from_N_b_transition(N[0], b[0], transition='Wrong name jojo')
