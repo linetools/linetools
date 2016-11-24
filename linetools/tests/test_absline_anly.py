@@ -44,6 +44,7 @@ def test_aodm_absline():
     np.testing.assert_allclose(N.value, 80369217498895.17)
     return
 
+
 def test_boxew_absline():
     # Text boxcar EW evaluation
         # Init CIV 1548
@@ -63,6 +64,7 @@ def test_boxew_absline():
     restew = abslin.attrib['EW']
     np.testing.assert_allclose(restew.value, 0.9935021012055584/(1+abslin.attrib['z']))
 
+
 def test_gaussew_absline():
     # Text Gaussian EW evaluation
     # Init CIV 1548
@@ -79,6 +81,7 @@ def test_gaussew_absline():
     assert ew.unit == u.AA
 
     abslin.measure_ew(flg=2,initial_guesses=(0.5,6081,1))
+
 
 def test_measurekin_absline():
     # Test Simple kinematics
@@ -106,6 +109,20 @@ def test_ismatch():
     # Tuple too
     answer2 = abslin1.ismatch((1., abslin1.wrest))
     assert answer2
+
+
+def test_get_tau0():
+    abslin1 = AbsLine('HI 1215')
+    N = [10**13.0, 10**14.0, 10**20] / (u.cm*u.cm)
+    b = [20, 20, 20] * u.km / u.s
+    tau0 = abslin1.get_tau0(N, b)
+
+
+def test_get_Wr_from_N_b():
+    abslin1 = AbsLine('HI 1215')
+    N = [10**13.0, 10**14.0, 10**20] / (u.cm*u.cm)
+    b = [20, 20, 20] * u.km / u.s
+    Wr = abslin1.get_Wr_from_N_b(N, b)
 
 
 def test_repr():
