@@ -1,4 +1,4 @@
-""" Classes for absorption line component
+""" Class for absorption line component
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -24,10 +24,6 @@ from linetools.analysis import plots as ltap
 from linetools.spectralline import AbsLine, SpectralLine
 from linetools.abund import ions
 from linetools import utils as ltu
-
-#import xastropy.atomic as xatom
-#from xastropy.stats import basic as xsb
-#from xastropy.xutils import xdebug as xdb
 
 # Global import for speed
 c_kms = const.c.to('km/s').value
@@ -147,8 +143,8 @@ class AbsComponent(object):
         Parameters
         ----------
         radec : tuple or SkyCoord
-            (RA,DEC) in deg or astropy.coordinate
-        Zion : tuple 
+            (RA,DEC) in deg or astropy.coordinate.SkyCoord
+        Zion : tuple
             Atomic number, ion -- (int,int)
             e.g. (8,1) for OI
         zcomp : float
@@ -161,7 +157,7 @@ class AbsComponent(object):
         Ntup : tuple
             (int,float,float)
             (flag_N,logN,sig_N)
-            flag_N : Flag describing N measurement
+            flag_N : Flag describing N measurement  (0: no info; 1: detection; 2: saturated; 3: non-detection)
             logN : log10 N column density
             sig_logN : Error in log10 N
         Ej : Quantity, optional
@@ -174,10 +170,7 @@ class AbsComponent(object):
         """
 
         # Required
-        if isinstance(radec, (tuple)):
-            self.coord = SkyCoord(ra=radec[0], dec=radec[1])
-        elif isinstance(radec, SkyCoord):
-            self.coord = radec
+        self.coord = ltu.radec_to_coord(radec)
         self.Zion = Zion
         self.zcomp = zcomp
         self.vlim = vlim
@@ -274,7 +267,7 @@ class AbsComponent(object):
                 print("Absline coordinates do not match.  Best to set them")
 
     def build_table(self):
-        """Generate an astropy QTable out of the component.
+        """Generate an astropy QTable out of the abs lines
         Returns
         -------
         comp_tbl : QTable
@@ -662,6 +655,7 @@ class AbsComponent(object):
                      RA=self.coord.ra.value, DEC=self.coord.dec.value,
                      A=self.A, Ej=self.Ej.to('1/cm').value, comment=self.comment,
                      flag_N=self.flag_N, logN=self.logN, sig_logN=self.sig_logN)
+        cdict['class'] = self.__class__.__name__
         # AbsLines
         cdict['lines'] = {}
         for iline in self._abslines:

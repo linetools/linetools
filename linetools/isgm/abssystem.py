@@ -117,8 +117,9 @@ class AbsSystem(object):
         HI_comps = [comp for comp in components if comp.Zion == (1,1)]
         if NHI is None:
             NHI = 0.
-            for HI_comp in HI_comps:  # Takes only the first line in each list
-                NHI += HI_comp._abslines[0].attrib['N'].value
+            for HI_comp in HI_comps:
+                NHI += 10**HI_comp.logN
+                #NHI += HI_comp._abslines[0].attrib['N'].value
             if NHI > 0.:
                 NHI = np.log10(NHI)
         #
@@ -510,6 +511,7 @@ class AbsSystem(object):
                        ZH=self.ZH, sig_ZH=self.sig_ZH,
                        user=user
                        )
+        outdict['class'] = self.__class__.__name__
         # Components
         outdict['components'] = {}
         for component in self._components:

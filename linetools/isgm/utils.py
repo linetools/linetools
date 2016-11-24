@@ -173,23 +173,35 @@ def build_components_from_dict(idict, coord=None, **kwargs):
     return components
 
 
-def build_systems_from_components(comps, **kwargs):
+def build_systems_from_components(comps, systype=None, vsys=None, **kwargs):
     """ Build a list of AbsSystems from a list of AbsComponents
     Current default implementation allows for overlapping components, i.e.
-      only_overalp=True in add_component
+      only_overlap=True in add_component
 
     Parameters
     ----------
     comps : list
+    systype : AbsSystem, optional
+      Defaults to GenericAbsSystem
+    vsys : Quantity, optional
+      'Velocity width' of a system, used when adding components
+      Passed as vtoler to add_component
+      The first component will define the system redshift and all others will
+      need to lie within vsys of it
 
     Returns
     -------
     abs_systems : list
 
     """
-    from linetools.isgm.abssystem import GenericAbsSystem
-    if 'overlap_only' not in kwargs.keys():
-        kwargs['overlap_only'] = True
+    if systype is None:
+        from linetools.isgm.abssystem import GenericAbsSystem
+        systype = GenericAbsSystem
+    if vsys is None:
+        if 'overlap_only' not in kwargs.keys():
+            kwargs['overlap_only'] = True
+    else:
+        kwargs['vtoler'] = vsys.to('km/s').value
     # Add
     abs_systems = []
     cpy_comps = [comp.copy() for comp in comps]
@@ -197,7 +209,7 @@ def build_systems_from_components(comps, **kwargs):
     while len(cpy_comps) > 0:
         # Use the first one
         comp = cpy_comps.pop(0)
-        abssys = GenericAbsSystem.from_components([comp])
+        abssys = systype.from_components([comp])
         abs_systems.append(abssys)
         # Try the rest
         comps_left = []
@@ -314,10 +326,6 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
                        Ej=0./u.cm,vmin=vmin, vmax=vmax, logN=NHI_obj.NHI,
                        flag_N=NHI_obj.flag_NHI,sig_logN=np.mean(NHI_obj.sig_NHI))
             iontbl.add_row(row)
-
-    # Add zlim to metadata
-    meta = OrderedDict()
-    meta['zcomp'] = ztbl
 
     # Return
     return iontbl
