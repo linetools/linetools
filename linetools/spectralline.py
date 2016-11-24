@@ -681,12 +681,11 @@ class AbsLine(SpectralLine):
         -----
         This is a wrapper to linetools.analysis.absline.get_tau0()
         """
-        from linetools.analysis import absline as ltaa
         try:
             fosc = self.data['f']
         except KeyError:
             raise NotImplementedError('AbsLine {} has not set its oscillator strength.'.format(self.__repr__))
-        return ltaa.get_tau0(self.wrest, self.data['f'], fosc, N, b)
+        return laa.get_tau0(self.wrest, fosc, N, b)
 
 
     def __repr__(self):

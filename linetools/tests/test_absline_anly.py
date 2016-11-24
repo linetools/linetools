@@ -107,6 +107,11 @@ def test_ismatch():
     answer2 = abslin1.ismatch((1., abslin1.wrest))
     assert answer2
 
+def test_get_tau0():
+    abslin1 = AbsLine('HI 1215')
+    N = [10**13.0, 10**14.0, 10**20] / (u.cm*u.cm)
+    b = [20, 20, 20] * u.km / u.s
+    tau0 = abslin1.get_tau0(N, b)
 
 def test_repr():
     abslin = AbsLine('NiII 1741')
