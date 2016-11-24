@@ -33,10 +33,9 @@ def test_aodm_absline():
     np.testing.assert_allclose(N.value, 76330670518067.16)
     assert N.unit == 1/u.cm**2
     assert flgN == 1
-    # Now velocity limits
 
-    abslin.attrib['z'] = 2.92929
-    abslin.limits._z = abslin.attrib['z']
+    # Now velocity limits
+    abslin.setz(2.92929)
     abslin.limits.set((-150., 150.)*u.km/u.s)
     #
     abslin.measure_aodm()
@@ -62,7 +61,7 @@ def test_boxew_absline():
 
     abslin.measure_restew()
     restew = abslin.attrib['EW']
-    np.testing.assert_allclose(restew.value, 0.9935021012055584/(1+abslin.attrib['z']))
+    np.testing.assert_allclose(restew.value, 0.9935021012055584/(1+abslin.z))
 
 
 def test_gaussew_absline():
@@ -99,10 +98,8 @@ def test_measurekin_absline():
 
 def test_ismatch():
     # Test Simple kinematics
-    abslin1 = AbsLine('NiII 1741')
-    abslin1.attrib['z'] = 1.
-    abslin2 = AbsLine('NiII 1741')
-    abslin2.attrib['z'] = 1.
+    abslin1 = AbsLine('NiII 1741', z=1.)
+    abslin2 = AbsLine('NiII 1741', z=1.)
     # Run
     answer = abslin1.ismatch(abslin2)
     assert answer

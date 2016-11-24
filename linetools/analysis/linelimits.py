@@ -3,6 +3,7 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
+import warnings
 
 from astropy import units as u
 from astropy.units import Quantity, UnitConversionError
@@ -17,16 +18,19 @@ class LineLimits(object):
 
     Properties
     ----------
+    z : float
+      Redshift
     zlim : tuple of floats
       Redshift limits for a line
       Defined as wave/wrest - 1.
     wvlim : Quantity array
-      wavelength limits for the line
+      wavelength limits for the line in observer frame
     vlim : Quantity array
-      velocity limits for the line in km/s
+      velocity limits for the line
     """
+
     @classmethod
-    def from_specline(cls, aline, zlim):
+    def from_specline(cls, aline, z, zlim):
         """ From AbsLine or Emline
 
         Parameters
@@ -37,7 +41,25 @@ class LineLimits(object):
         if not isinstance(aline, (AbsLine, EmLine)):
             raise IOError("Input aline must be AbsLine or EmLine")
         #
-        slf = cls(aline.wrest, aline.attrib['z'], zlim)
+        slf = cls(aline.wrest, z, zlim)
+        return slf
+
+    @classmethod
+    def from_dict(cls, idict):
+        """ Generate a LineLimits class from an input dict
+        keys -- wrest, z, zlim -- are required
+
+        Parameters
+        ----------
+        idict
+
+        Returns
+        -------
+
+        """
+        wrest = ltu.convert_quantity_in_dict(idict['wrest'])
+        slf = cls(wrest, idict['z'], idict['zlim'])
+        # Return
         return slf
 
     def __init__(self, wrest, z, zlim, **kwargs):
@@ -45,9 +67,9 @@ class LineLimits(object):
         Parameters
         ----------
         wrest : Quantity
-          Rest wavelength of the line.  Should match line.wrest
+          Rest wavelength of the line.
         z : float
-          Redshift of the line.  Should match line.attrib['z']
+          Redshift of the line.
         zlim : tuple or list
           Redshift limits for a line
           Defined as wave/wrest - 1.
@@ -68,29 +90,41 @@ class LineLimits(object):
         self.set(zlim, **kwargs)
 
     @property
+    def z(self):
+        """ Return z
+        """
+        return self._z
+
+    @property
+    def wrest(self):
+        """ Return wrest
+        """
+        return self._wrest
+
+    @property
     def zlim(self):
         """ Return zlim
         """
-        return self._data['zlim']
+        return self._zlim
 
     @property
     def wvlim(self):
         """ Return wvlim
         """
-        return self._data['wvlim']
+        return self._wvlim
 
     @property
     def vlim(self):
         """ Return vlim
         """
-        return self._data['vlim']
+        return self._vlim
 
     def reset(self):
         """ Update all the values
         """
-        self._data['zlim'] = self._zlim
-        self._data['wvlim'] = self._wrest*(1+np.array(self._zlim))
-        self._data['vlim'] = ltu.give_dv(self._zlim, self._z)
+        #self._data['zlim'] = self._zlim
+        self._wvlim = self._wrest*(1+np.array(self._zlim))
+        self._vlim = ltu.give_dv(self._zlim, self._z)
 
     def is_set(self):
         """ Query if the limits are set to sensible values
@@ -126,6 +160,8 @@ class LineLimits(object):
         # Checks
         if not isinstance(inp, (tuple, list, Quantity)):
             raise IOError("Input must be tuple, list or Quantity.")
+        if np.isclose(self._z, 0.):
+            warnings.warn("Redshift=0.  If this is unexpected, set _z and reset limits")
 
         if isinstance(inp[0], float):  # assume zlim
             self._zlim = inp
@@ -148,11 +184,29 @@ class LineLimits(object):
         # Reset
         self.reset()
 
+    def to_dict(self):
+        """ Generate a simple dict of the data
+
+        Returns
+        -------
+        ldict : dict
+
+        """
+        ldict = {}
+        ldict['z'] = self.z
+        ldict['zlim'] = self.zlim
+        for key in ['wvlim', 'vlim', 'wrest']:
+            obj = getattr(self, key)
+            ldict[key] = dict(value=obj.value,
+                              unit=obj.unit.to_string())
+        # Return
+        return ldict
+
     def __repr__(self):
         txt = '<{:s}'.format(self.__class__.__name__)
         # wrest
-        txt = txt + ' wrest={:g}'.format(self._wrest)
-        txt = txt + ' z={:g}'.format(self._z)
+        txt = txt + ' wrest={:g}'.format(self.wrest)
+        txt = txt + ' z={:g}'.format(self.z)
         txt = txt + ' zlim={}'.format(self.zlim)
         txt = txt + ' wvlim={}'.format(self.wvlim)
         txt = txt + ' vlim={}'.format(self.vlim)
