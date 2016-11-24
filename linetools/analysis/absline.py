@@ -335,7 +335,7 @@ def get_tau0(wrest, fosc, N, b):
 
 
 def Wr_from_N_b(N, b, wrest, fosc, gamma):
-    """ For a given transition with wrest, fosc and gamma, it
+    """For a given transition with wrest, fosc and gamma, it
     returns the rest-frame equivalent width for a given
     N and b. It uses the approximation given by Draine 2011 book
     (eq. 9.27), which comes from atomic physics considerations
