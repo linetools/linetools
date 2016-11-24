@@ -6,7 +6,7 @@ import pdb
 from astropy import units as u
 
 from linetools.spectralline import AbsLine
-from linetools.analysis.voigt import voigt_from_abslines, voigtking
+from linetools.analysis import voigt as lav
 
 
 def test_voigt_sngl_line():
@@ -38,17 +38,17 @@ def test_voigt_multi_line():
     abslin2.attrib['b'] = 15.*u.km/u.s
     abslin2.attrib['z'] = 2.0
     # Voigt
-    vmodel3 = voigt_from_abslines(wave,[abslin,abslin2])
+    vmodel3 = lav.voigt_from_abslines(wave,[abslin,abslin2])
     np.testing.assert_allclose(vmodel3.flux[imn].value,0.5715512949324375)
 
 
 def test_voigt_fail():
     #
     wave = np.linspace(3644, 3650, 100)
-    pytest.raises(ValueError, voigt_from_abslines, wave, [None, None])
+    pytest.raises(ValueError, lav.voigt_from_abslines, wave, [None, None])
     #
     wave = np.linspace(3644, 3650, 100)*u.AA
-    pytest.raises(IOError, voigt_from_abslines, wave, [None, None],
+    pytest.raises(IOError, lav.voigt_from_abslines, wave, [None, None],
                   skip_wveval=True)
 
 def test_voigt_sngl_tau():
@@ -61,13 +61,22 @@ def test_voigt_sngl_tau():
     abslin.attrib['b'] = 25.*u.km/u.s
     abslin.attrib['z'] = 2.0
     # Tau
-    tau = voigt_from_abslines(wave,abslin,ret='tau')
+    tau = lav.voigt_from_abslines(wave,abslin,ret='tau')
     np.testing.assert_allclose(tau[imn], 2.9681283001576779)
 
 
 def test_voigt_king():
     vin = np.linspace(0., 1., num=1000)
     a = 0.1
-    voigt = voigtking(vin, a)
+    voigt = lav.voigtking(vin, a)
     # Test
     np.testing.assert_allclose(voigt[50], 0.89440482758173867)
+
+
+def test_voigt_from_components():
+    from linetools.isgm.tests.test_use_abscomp import mk_comp
+    wv_array = np.arange(1200, 1400) * u.AA
+    comp1, HIlines = mk_comp('HI', zcomp=0.01, vlim=[-10,10]*u.km/u.s)
+    comp2, HIlines = mk_comp('HI', zcomp=0.02, vlim=[-10,10]*u.km/u.s)
+
+    model = lav.voigt_from_components(wv_array, [comp1,comp2])

@@ -120,6 +120,7 @@ def voigt_tau(wave, par):
     #
     return tau
 
+
 # The primary call
 def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'],
                         skip_wveval=False, debug=False):
@@ -248,6 +249,43 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'],
     if len(ret_val) == 1: ret_val = ret_val[0]
     # Return
     return ret_val
+
+
+def voigt_from_components(wv_array, complist, fwhm=None):
+    """Generates a Voigt absorption model from a list
+    of AbsComponents.
+
+    Parameters
+    ----------
+    wv_array : Quantity array
+        Observed wavelength array defining the
+        model domain
+    complist : list of AbsComponents
+        A list of AbsComponents
+    fwhm : float, optional
+        FWHM of a Gaussian smoothing in pixels
+
+    Returns
+    -------
+    model : XSpectrum1D
+        A spectrum model from the given components
+
+    Notes
+    -----
+    This is a wrapper to linetools.analysis.voigt.voigt_from_abslines()
+    """
+
+    # Identify the goodlines within the domain
+    wvmin = np.min(wv_array)
+    wvmax = np.max(wv_array)
+    gdlin = []
+    for comp in complist:
+        for line in comp._abslines:
+            wvobs = (1 + line.z) * line.wrest
+            if (wvobs > wvmin) & (wvobs < wvmax):
+                gdlin.append(line)
+    # return the model
+    return voigt_from_abslines(wv_array, gdlin, fwhm=fwhm, ret=['vmodel'])
 
 
 class single_voigt_model(FittableModel):
