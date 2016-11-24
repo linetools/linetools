@@ -24,9 +24,9 @@ class LineLimits(object):
       Redshift limits for a line
       Defined as wave/wrest - 1.
     wvlim : Quantity array
-      wavelength limits for the line
+      wavelength limits for the line in observer frame
     vlim : Quantity array
-      velocity limits for the line in km/s
+      velocity limits for the line
     """
 
     @classmethod
@@ -67,9 +67,9 @@ class LineLimits(object):
         Parameters
         ----------
         wrest : Quantity
-          Rest wavelength of the line.  Should match line.wrest
+          Rest wavelength of the line.
         z : float
-          Redshift of the line.  Should match line.attrib['z']
+          Redshift of the line.
         zlim : tuple or list
           Redshift limits for a line
           Defined as wave/wrest - 1.

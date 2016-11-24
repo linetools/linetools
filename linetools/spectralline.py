@@ -151,7 +151,7 @@ class SpectralLine(object):
                 sline.attrib[key] = idict['attrib'][key]
 
         # Set z and limits
-        if 'z' in sline.attrib.keys():
+        if 'z' in sline.attrib.keys():  # Backwards compatability
             z = sline.attrib.pop('z')
         else:
             z = 0.
