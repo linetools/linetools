@@ -71,8 +71,7 @@ def test_voigt_king():
 
 def test_voigt_from_components():
     from linetools.isgm.tests.test_use_abscomp import mk_comp
-    wv_array = np.arange(1200, 1400) * u.AA
+    wv_array = np.arange(900, 1250, 0.01) * u.AA
     comp1, HIlines = mk_comp('HI', zcomp=0.01, vlim=[-10,10]*u.km/u.s)
-    comp2, HIlines = mk_comp('HI', zcomp=0.02, vlim=[-10,10]*u.km/u.s)
-
+    comp2, HIlines = mk_comp('HI', zcomp=0.05, vlim=[-10,10]*u.km/u.s)
     model = lav.voigt_from_components(wv_array, [comp1,comp2])
