@@ -38,10 +38,9 @@ The default sets the properties listed above::
 More commonly, one will instantiate with one
 a set of components::
 
-   lya = AbsLine('HI 1215')
+   lya = AbsLine('HI 1215', z=2.3)
     lya.limits.set([-300.,300.]*u.km/u.s)  # vlim
-    lya.attrib['z'] = 2.3
-    lyb = AbsLine(1025.7222*u.AA, z=lya.attrib['z'])
+    lyb = AbsLine(1025.7222*u.AA, z=2.3)
     lyb.limits.set([-300.,300.]*u.km/u.s)  # vlim
     abscomp = AbsComponent.from_abslines([lya,lyb])
     abscomp.coord = ltu.radec_to_coord((10.*u.deg, 45*u.deg))
