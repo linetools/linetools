@@ -306,13 +306,13 @@ def get_tau0(wrest, fosc, N, b):
         Oscillator strength of the transition
     N : Quantity or Quantity array
         Column density
-    b : Quantity or Quantity array of same shape as logN
+    b : Quantity or Quantity array of same shape as N
         Doppler parameter
 
     Returns
     -------
     tau0: float or array
-        Optical depth at the line center. If logN and b are
+        Optical depth at the line center. If N and b are
         arrays they must be of same shape.
     """
     # check format for N and b
