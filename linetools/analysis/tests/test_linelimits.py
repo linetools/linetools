@@ -19,8 +19,8 @@ def test_init():
         llim.zlim=3
     # AbsLine
     lya = AbsLine('HI 1215')
-    lya.attrib['z'] = 1.
-    llim = LineLimits.from_specline(lya, zlim)
+    z=1.
+    llim = LineLimits.from_specline(lya, z, zlim)
     # Bad zlim
     with pytest.raises(IOError):
         llim = LineLimits(1215.67*u.AA, 1., (1.1,1.2), chk_z=True)
@@ -49,3 +49,10 @@ def test_use():
     assert llim.vlim.unit == u.km/u.s
     # Print
     print(llim)
+
+def test_to_dict():
+    # Init
+    llim = LineLimits(1215.67*u.AA, 1., (0.999, 1.001))
+    ldict = llim.to_dict()
+    for key in ['vlim', 'wrest', 'wvlim', 'z', 'zlim']:
+        assert key in ldict.keys()

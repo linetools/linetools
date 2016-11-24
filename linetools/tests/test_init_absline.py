@@ -51,6 +51,12 @@ def test_dicts():
     newdict = ltu.loadjson('tmp.json')
     newlin = SpectralLine.from_dict(newdict)
     assert newlin.name == 'HI 1215'
+    # Old dict for compatability
+    newdict.pop('limits')
+    newdict['analy']['vlim'] = [-150,150]*u.km/u.s
+    newdict['attrib']['z'] = 0.5
+    tmp3 = SpectralLine.from_dict(newdict)
+    assert newlin.name == 'HI 1215'
 
 
 def test_redshift():

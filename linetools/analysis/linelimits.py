@@ -28,6 +28,7 @@ class LineLimits(object):
     vlim : Quantity array
       velocity limits for the line in km/s
     """
+
     @classmethod
     def from_specline(cls, aline, z, zlim):
         """ From AbsLine or Emline
@@ -41,6 +42,24 @@ class LineLimits(object):
             raise IOError("Input aline must be AbsLine or EmLine")
         #
         slf = cls(aline.wrest, z, zlim)
+        return slf
+
+    @classmethod
+    def from_dict(cls, idict):
+        """ Generate a LineLimits class from an input dict
+        keys -- wrest, z, zlim -- are required
+
+        Parameters
+        ----------
+        idict
+
+        Returns
+        -------
+
+        """
+        wrest = ltu.convert_quantity_in_dict(idict['wrest'])
+        slf = cls(wrest, idict['z'], idict['zlim'])
+        # Return
         return slf
 
     def __init__(self, wrest, z, zlim, **kwargs):
@@ -77,29 +96,35 @@ class LineLimits(object):
         return self._z
 
     @property
+    def wrest(self):
+        """ Return wrest
+        """
+        return self._wrest
+
+    @property
     def zlim(self):
         """ Return zlim
         """
-        return self._data['zlim']
+        return self._zlim
 
     @property
     def wvlim(self):
         """ Return wvlim
         """
-        return self._data['wvlim']
+        return self._wvlim
 
     @property
     def vlim(self):
         """ Return vlim
         """
-        return self._data['vlim']
+        return self._vlim
 
     def reset(self):
         """ Update all the values
         """
-        self._data['zlim'] = self._zlim
-        self._data['wvlim'] = self._wrest*(1+np.array(self._zlim))
-        self._data['vlim'] = ltu.give_dv(self._zlim, self._z)
+        #self._data['zlim'] = self._zlim
+        self._wvlim = self._wrest*(1+np.array(self._zlim))
+        self._vlim = ltu.give_dv(self._zlim, self._z)
 
     def is_set(self):
         """ Query if the limits are set to sensible values
@@ -159,11 +184,29 @@ class LineLimits(object):
         # Reset
         self.reset()
 
+    def to_dict(self):
+        """ Generate a simple dict of the data
+
+        Returns
+        -------
+        ldict : dict
+
+        """
+        ldict = {}
+        ldict['z'] = self.z
+        ldict['zlim'] = self.zlim
+        for key in ['wvlim', 'vlim', 'wrest']:
+            obj = getattr(self, key)
+            ldict[key] = dict(value=obj.value,
+                              unit=obj.unit.to_string())
+        # Return
+        return ldict
+
     def __repr__(self):
         txt = '<{:s}'.format(self.__class__.__name__)
         # wrest
-        txt = txt + ' wrest={:g}'.format(self._wrest)
-        txt = txt + ' z={:g}'.format(self._z)
+        txt = txt + ' wrest={:g}'.format(self.wrest)
+        txt = txt + ' z={:g}'.format(self.z)
         txt = txt + ' zlim={}'.format(self.zlim)
         txt = txt + ' wvlim={}'.format(self.wvlim)
         txt = txt + ' vlim={}'.format(self.vlim)

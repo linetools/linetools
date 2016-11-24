@@ -155,17 +155,10 @@ class SpectralLine(object):
             z = sline.attrib.pop('z')
         else:
             z = 0.
-        sline.setz(z)
-        try:  # this try is for compatibility with previous versions w/o limits
-            for key in idict['limits']:
-                if isinstance(idict['limits'][key], dict):
-                    qlim = ltu.convert_quantity_in_dict(idict['limits'][key])
-                    sline.limits.set(qlim)
-                    break  # only one limit is needed to define them all
-                else:
-                    sline.limits.set(idict['limits'][key])  # this is zlim
-                    break  # only one limit is needed to define them all
-        except KeyError:
+        if 'limits' in idict.keys():
+            sline.limits = LineLimits.from_dict(idict['limits'])
+        else:
+            sline.limits = LineLimits(sline.wrest, z, [z,z])
             if 'vlim' in sline.analy.keys():  # Backwards compatability
                 if sline.analy['vlim'][1] > sline.analy['vlim'][0]:
                     sline.limits.set(sline.analy['vlim'])
@@ -497,13 +490,7 @@ class SpectralLine(object):
                 adict['analy'][key] = self.analy[key]
 
         # Limits
-        for key in self.limits._data.keys():
-            if isinstance(self.limits._data[key], Quantity):
-                adict['limits'][key] = dict(value=self.limits._data[key].value,
-                                            unit=self.limits._data[key].unit.to_string())
-            else:
-                adict['limits'][key] = self.limits._data[key]
-
+        adict['limits'] = self.limits.to_dict()
 
         # Polish for JSON
         adict = ltu.jsonify(adict)
