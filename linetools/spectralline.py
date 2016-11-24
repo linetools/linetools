@@ -657,6 +657,70 @@ class AbsLine(SpectralLine):
         # Log
         laa.log_clm(self.attrib)
 
+    def get_tau0(self, N, b):
+        """It returns the optical depth at the line center, tau0,
+        for a given column density and Doppler parameter. It uses
+        approximation given in Draine 2011 (see Chapter 9).
+        It neglects stimulated emission which is fine for IGM or ISM
+        except for radio-frequency transitions.
+
+        Parameters
+        ----------
+        N : Quantity or Quantity array
+            Column density
+        b : Quantity or Quantity array of same shape as N
+            Doppler parameter
+
+        Returns
+        -------
+        tau0: float or array
+            Optical depth at the line center. If N and b are
+            arrays they must be of same shape.
+
+        Notes
+        -----
+        This is a wrapper to linetools.analysis.absline.get_tau0()
+        """
+        try:
+            fosc = self.data['f']
+        except KeyError:
+            raise NotImplementedError('AbsLine {} has not set its oscillator strength.'.format(self.__repr__))
+        return laa.get_tau0(self.wrest, fosc, N, b)
+
+    def get_Wr_from_N_b(self, N, b):
+        """It returns the rest-frame equivalent width for a given
+        N and b. It uses the approximation given by Draine 2011 book
+        (eq. 9.27), which comes from atomic physics considerations
+        See also Rodgers & Williams 1974 (NT: could not find the reference
+        given by Draine)
+
+        Parameters
+        ----------
+        N : Quantity or Quantity array
+            Column density
+        b : Quantity or Quantity array of same shape as N
+            Doppler parameter
+
+        Returns
+        -------
+        Wr : Quantity
+            Rest-frame equivalent width
+
+        Notes
+        -----
+        This is a wrapper to linetools.analysis.absline.Wr_from_N_b().
+        See also linetools.analysis.absline.Wr_from_N_b_transition().
+        """
+        try:
+            fosc = self.data['f']
+        except KeyError:
+            raise NotImplementedError('AbsLine {} has not set its oscillator strength.'.format(self.__repr__))
+        try:
+            gamma = self.data['gamma']
+        except KeyError:
+            raise NotImplementedError('AbsLine {} has not set its gamma value.'.format(self.__repr__))
+        return laa.Wr_from_N_b(N, b, self.wrest, fosc, gamma)
+
     def __repr__(self):
         txt = '<{:s}:'.format(self.__class__.__name__)
         # Name
@@ -670,7 +734,7 @@ class AbsLine(SpectralLine):
         txt = txt + ' wrest={:.4f}'.format(self.wrest)
         # fval
         try:
-            txt = txt+', f={:g}'.format(self.data['fval'])
+            txt = txt+', f={:g}'.format(self.data['f'])
         except KeyError:
             pass
         txt = txt + '>'
