@@ -53,7 +53,7 @@ More commonly, one will instantiate with one
 
 or multiple::
 
-    lyb = AbsLine(1025.7222*u.AA, z=lya.attrib['z'])
+    lyb = AbsLine(1025.7222*u.AA, z=lya.z)
     lyb.limits.set([-300.,300.]*u.km/u.s)  # vlim
     abscomp = AbsComponent.from_abslines([lya,lyb])
 

@@ -73,9 +73,8 @@ class AbsComponent(object):
 
         # Instantiate with the first line
         init_line = abslines[0]
-        #init_line.attrib['z'], init_line.analy['vlim'],
         slf = cls( init_line.attrib['coord'], (init_line.data['Z'],init_line.data['ion']),
-                   init_line.attrib['z'], init_line.limits.vlim,
+                   init_line.z, init_line.limits.vlim,
                    Ej=init_line.data['Ej'], stars=stars)
         slf._abslines.append(init_line)
         # Append with component checking
@@ -243,7 +242,7 @@ class AbsComponent(object):
         # Now redshift/velocity
         if chk_vel:
             dz_toler = (1 + self.zcomp) * vtoler / c_kms  # Avoid Quantity for speed
-            zlim_line = (1 + absline.attrib['z']) * absline.limits.vlim.to('km/s').value / c_kms
+            zlim_line = (1 + absline.z) * absline.limits.vlim.to('km/s').value / c_kms
             zlim_comp = (1+self.zcomp) * self.vlim.to('km/s').value / c_kms
             testv = (zlim_line[0] >= (zlim_comp[0] - dz_toler)) & (
                 zlim_line[1] <= (zlim_comp[1] + dz_toler))
@@ -260,7 +259,7 @@ class AbsComponent(object):
         else:
             warnings.warn("Failed add_absline test")
             print('Input absline with wrest={:g} at z={:.3f} does not match component rules. Not appending'.format(absline.wrest,
-                                                                                                                   absline.attrib['z']))
+                                                                                                                   absline.z))
             if not testv:
                 print("Absline velocities lie beyond component\n Set chk_vel=False to skip this test.")
             if not testc:
@@ -276,7 +275,8 @@ class AbsComponent(object):
             return
         comp_tbl = QTable()
         comp_tbl.add_column(Column([iline.wrest.to(u.AA).value for iline in self._abslines]*u.AA, name='wrest'))
-        for attrib in ['z', 'flag_N', 'logN', 'sig_logN']:
+        comp_tbl.add_column(Column([iline.z for iline in self._abslines], name='z'))
+        for attrib in ['flag_N', 'logN', 'sig_logN']:
             comp_tbl.add_column(Column([iline.attrib[attrib] for iline in self._abslines], name=attrib))
         # Return
         return comp_tbl
@@ -348,7 +348,7 @@ class AbsComponent(object):
         ymax = 0.
         for qq, iline in enumerate(gdiline):
             # Calculate
-            velo = iline.analy['spec'].relative_vel((1+iline.attrib['z'])*iline.wrest)
+            velo = iline.analy['spec'].relative_vel((1+iline.z)*iline.wrest)
             cst = atom_cst/(iline.data['f']*iline.wrest)  # / (u.km/u.s) / u.cm * (u.AA/u.cm)
             Na = np.log(1./np.maximum(iline.analy['spec'].flux, iline.analy['spec'].sig)) * cst
 
