@@ -156,6 +156,10 @@ class SpectralLine(object):
         else:
             z = 0.
         if 'limits' in idict.keys():
+            if 'wrest' not in idict['limits'].keys(): # compatibility with IGMGuesses
+                # import pdb; pdb.set_trace()
+                idict['limits']['wrest'] = ltu.jsonify(sline.wrest)
+                idict['limits']['z'] = z
             sline.limits = LineLimits.from_dict(idict['limits'])
         else:
             sline.limits = LineLimits(sline.wrest, z, [z,z])
