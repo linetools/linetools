@@ -549,12 +549,112 @@ def group_coincident_compoments(comp_list, output_type='list'):
 
 def wherein(groups,member):
     ''' Once blends have been identified, find which blend a given line index belongs to.
+    Parameters
+    ----------
+    groups : list of lists
+        Input list of groups within which you want to find a member
+        Here, this is used for groups of blended line indices
+    member : value
+        Value for which to search within groups.
+        Here, this corresponds to a specific line index
+
+    Returns
+    -------
+    matches : list
+        Indices of groups within with 'member' was found
     '''
     matches=[]
     for i,gr in enumerate(groups):
         if member in gr:
             matches.append(i)
     return matches
+
+def group_coincident_compoments_old(comp_list, output_type='list'):
+    """For a given input list of components, this function
+    groups together components that are coincident to each other
+    (including by transitivity), and returns them as a list (default)
+    or dictionary of component lists.
+
+    Parameters
+    ----------
+    comp_list : list of AbsComponent
+        Input list of components to group
+    output_type : str, optional
+        Type of the output, choose either
+        'list' for list or 'dict' for dictionary.
+
+    Returns
+    -------
+    output : list (or dictionary) of lists of AbsComponent
+        The grouped components as individual lists
+        in the output.
+    """
+    if output_type not in ['list', 'dict', 'dictionary']:
+        raise ValueError("`output_type` must be either 'list' or 'dict'.")
+
+    # the first extreme case is that all components are independent
+    # of each other, in which case we have the following output shape
+    out = [[] for kk in range(len(comp_list))]
+
+    for ii in range(len(comp_list)):
+        comp_ii = comp_list[ii]
+        # only append if ii does not belong to a previous round
+        switch = 0
+        for kk in range(len(out[:ii])):
+            if ii in out[kk]:
+                switch = 1
+                break
+        if switch == 1:
+            pass
+        else:
+            out[ii].append(ii)
+
+        for jj in range(ii+1, len(comp_list)):
+            # print(ii,jj)
+            comp_jj = comp_list[jj]
+            if coincident_components(comp_ii, comp_jj):  # There is overlap between comp_ii and comp_jj
+                # check in the previous ones where does jj belongs to
+                switch = 0
+                for kk in range(len(out[:ii])):
+                    if ii in out[kk]:  # this means ii already belongs to out[kk]
+                        # so jj should also go there...(if not there already)
+                        if jj in out[kk]:
+                            pass
+                        else:
+                            out[kk].append(jj)
+                        switch = 1  # for not appending jj again
+                        break
+                if switch == 1:
+                    pass  # this jj was appended already
+                else:
+                    # but check is not already there...
+                    if jj in out[ii]:
+                        pass
+                    else:
+                        out[ii].append(jj)
+                # print(out)
+            else:
+                pass
+
+    # Now we have out as a list of lists with indices, or empty lists
+    # let's get rid of the empty lists
+    out = [x for x in out if x != []]
+
+    # Now lets produce the final output from it
+    output_list = []
+    output_dict = {}
+    for ii in range(len(out)):
+        aux_list = []
+        for jj in out[ii]:
+            aux_list += [comp_list[jj]]
+        output_dict['{}'.format(ii)] = aux_list
+        output_list += [aux_list]
+
+    # choose between dict of list
+    if output_type == 'list':
+        return output_list
+    elif output_type in ['dict', 'dictionary']:
+        return output_dict
 
 
 def joebvp_from_components(comp_list, specfile, outfile):
