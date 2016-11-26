@@ -251,7 +251,7 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'],
     return ret_val
 
 
-def voigt_from_components(wv_array, complist, fwhm=None):
+def voigt_from_components(wv_array, complist, **kwargs):
     """Generates a Voigt absorption model from a list
     of AbsComponents.
 
@@ -262,8 +262,6 @@ def voigt_from_components(wv_array, complist, fwhm=None):
         model domain
     complist : list of AbsComponents
         A list of AbsComponents
-    fwhm : float, optional
-        FWHM of a Gaussian smoothing in pixels
 
     Returns
     -------
@@ -273,6 +271,7 @@ def voigt_from_components(wv_array, complist, fwhm=None):
     Notes
     -----
     This is a wrapper to linetools.analysis.voigt.voigt_from_abslines()
+    and **kwargs are passed to it.
     """
 
     # Identify the goodlines within the domain
@@ -285,7 +284,7 @@ def voigt_from_components(wv_array, complist, fwhm=None):
             if (wvobs > wvmin) & (wvobs < wvmax):
                 gdlin.append(line)
     # return the model
-    return voigt_from_abslines(wv_array, gdlin, fwhm=fwhm, ret=['vmodel'])
+    return voigt_from_abslines(wv_array, gdlin, ret=['vmodel'], **kwargs)
 
 
 class single_voigt_model(FittableModel):
