@@ -37,12 +37,11 @@ def test_failed_init():
     with pytest.raises(ValueError):
         abslin = AbsLine('HI Ly99')
     with pytest.raises(ValueError):
-        sline = SpectralLine.from_dict(dict(ltype='wrong type'))
+        sline = SpectralLine.from_dict(dict(ltype='wrong ltype'))
     with pytest.raises(ValueError):
-        sline = SpectralLine('wrong type')
+        sline = SpectralLine('wrong ltype', 1215.67*u.AA)
     with pytest.raises(ValueError):
-        sline = SpectralLine('Abs', 'wrong trans')
-
+        sline = SpectralLine('Abs', dict(bad_trans='because I am dict, right?'))
 
 
 def test_dicts():
