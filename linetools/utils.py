@@ -290,6 +290,7 @@ def rel_vel(wavelength, wv_obs):
         raise ValueError('Input wv_obs needs to be a Quantity')
     return ((wavelength - wv_obs) * const.c / wv_obs).to('km/s')
 
+
 def v_from_z(z1, z2):
     """ Find the relativistic velocity between 2 redshifts.
 
@@ -308,12 +309,15 @@ def v_from_z(z1, z2):
     Notes
     -----
     """
+
+    """
     R = (1+z1) / (1+z2)
     v = const.c * (R**2 - 1)/(1+R**2)
 
-    return v.to('km/s')
+    return v.to('km/s')"""
+    raise DeprecationWarning("This function is deprecated, please use dv_from_z() instead.")
 
-# #####
+
 def z_from_v(z, v):
     """ Find the redshift given z and v
 
@@ -332,6 +336,8 @@ def z_from_v(z, v):
     Notes
     -----
     """
+
+    """
     # Check for unit
     if not isinstance(v, u.quantity.Quantity):
         # Assume km/s
@@ -346,22 +352,38 @@ def z_from_v(z, v):
     znew = (1+z)/R - 1
 
     return znew.value
+    """
+    raise DeprecationWarning("This function is deprecated, instead please use either z_from_dv() or dz_from_dv()"
+                             "depending on your needs.")
+
 
 # Slightly different functions for passing from dv to dz, and viceversa (that NT prefers).
 # May need to agree on one kind of conversion in the future
-def give_dv(z, zmean, rel=True):
-    """Gives velocity difference between z and zmean,
-    at zmean.
+def give_dz(dv, zref, rel=True):
+    """Same as dz_from_dv. This function will be deprecated."""
+    DeprecationWarning("This function will be deprecated. Please use instead dz_from_dv().")
+    return dz_from_dv(dv, zref, rel=rel)
+
+
+def give_dv(z, zref, rel=True):
+    """Same as dv_from_dz. This function will be deprecated."""
+    warnings.warn("This function will be deprecated. Please use instead dv_from_z().")
+    return dv_from_z(z, zref, rel=rel)
+
+
+def dv_from_z(z, zref, rel=True):
+    """Gives the rest-frame velocity difference dv
+    between z and zref. dv=0 at zref by definition.
 
     Parameters
     ---------
     z : float or np.array
         Redshifts to calculate dv on
-    zmean : float or np.array
-        Rest-frame redshift to perform the calculation.
-        If shape of zmean is equal than shape of z,
-        each dv is calculated at each zmean, otherwise zmean
-        is expected to be float
+    zref : float or np.array
+        Reference redshift where dv=0 by definition.
+        If shape of zref is equal than shape of z,
+        each dv is calculated at each zref, otherwise zref
+        es expected to be float.
     rel : bool, optional
         Whether to apply relativistic correction for
         a locally flat space-time. Default is True.
@@ -369,59 +391,93 @@ def give_dv(z, zmean, rel=True):
     Returns
     -------
     dv : Quantity or Quantity array
-        Rest frame velocity difference between z and zmean, at
-        zmean. It has same shape as z.
+        Rest-frame velocity difference between z and zref (dv=0 at zref by definition).
+        It has same shape as z.
         """
     z = np.array(z)
-    zmean = np.array(zmean)
+    zref = np.array(zref)
 
     if rel:
-        dv = ((1 + z)**2 - (1 + zmean)**2) / ((1 + z)**2 + (1 + zmean)**2)
+        dv = ((1 + z)**2 - (1 + zref)**2) / ((1 + z)**2 + (1 + zref)**2)
     else:
-        dv = (z - zmean) / (1. + zmean)
+        dv = (z - zref) / (1. + zref)
 
     return dv * const.c.to('km/s')
 
-def give_dz(dv, zmean, rel=True):
+
+def dz_from_dv(dv, zref, rel=True):
     """Gives redshift difference for a given
-    velocity difference(s) at zmean.
+    velocity difference(s) with respect to zref.
 
     Parameters
     ---------
     dv : Quantity or Quantity array
-        Rest-frame velocity at zmean to calculate
-        the corresponding redshift difference, dz
-    zmean : float or np.array
-        Redshift to perform the calculation.
-        If shape of zmean is equal than shape of dv,
-        each dv is calculated at each zmean, otherwise zmean
+        Rest-frame velocity difference with respect to zref
+    zref : float or np.array
+        Reference redshift to perform the calculation.
+        If shape of zref is equal than shape of dv,
+        each dz is calculated at each zref, otherwise zref
         is expected to be float
     rel : bool, optional
         Whether to apply relativistic correction for
         a locally flat space-time. Default is True.
 
     Returns
+    -------
     dz : np.array
-        Redshift difference between dv and zmean, at zmean.
+        Redshift difference for a given dv with respect to zref.
         Same shape as dv.
-        """
+
+    Notes
+    -----
+    See also linetools.utils.z_from_dv()
+    """
     if not isinstance(dv, u.quantity.Quantity):
-        raise ValueError('dv must be Quantity or Quantity array!')
+        raise ValueError('dv must be Quantity or Quantity array.')
     try:
         dv = dv.to('km/s') # dv in km/s
         dv = np.array(dv.value)
     except UnitConversionError:
-        raise ValueError('dv must have velocity units!')
+        raise ValueError('dv must have velocity units.')
 
-    zmean = np.array(zmean)
+    zref = np.array(zref)
 
     if rel:
         beta = dv / const.c.to('km/s').value
-        aux = np.sqrt((1.+ beta)/(1.- beta))
-        dz = (1. + zmean) * (aux - 1.)
+        aux = np.sqrt((1. + beta)/(1. - beta))
+        dz = (1. + zref) * (aux - 1.)
     else:
-        dz = dv * (1. + zmean) / const.c.to('km/s').value
+        dz = dv * (1. + zref) / const.c.to('km/s').value
     return dz
+
+
+def z_from_dv(dv, zref, rel=True):
+    """Gives the redshift for a given
+    velocity difference(s) with respect to zref.
+
+    Parameters
+    ---------
+    dv : Quantity or Quantity array
+        Rest-frame velocity difference with respect to zref
+    zref : float or np.array
+        Reference redshift to perform the calculation.
+        If shape of zref is equal than shape of dv,
+        each dz is calculated at each zref, otherwise zref
+        is expected to be float
+    rel : bool, optional
+        Whether to apply relativistic correction for
+        a locally flat space-time. Default is True.
+
+    Returns
+    z : np.array
+        Absolute redshift for a given dv with respect to zref.
+        Same shape as dv.
+
+    Notes
+    -----
+    See also linetools.utils.dz_from_dv()
+    """
+    return dz_from_dv(dv, zref, rel=rel) + zref
 
 
 def overlapping_chunks(chunk1, chunk2):
