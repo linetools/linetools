@@ -376,7 +376,7 @@ def dv_from_z(z, zref, rel=True):
     between z and zref. dv=0 at zref by definition.
 
     Parameters
-    ---------
+    ----------
     z : float or np.array
         Redshifts to calculate dv on
     zref : float or np.array
@@ -410,7 +410,7 @@ def dz_from_dv(dv, zref, rel=True):
     velocity difference(s) with respect to zref.
 
     Parameters
-    ---------
+    ----------
     dv : Quantity or Quantity array
         Rest-frame velocity difference with respect to zref
     zref : float or np.array
@@ -456,7 +456,7 @@ def z_from_dv(dv, zref, rel=True):
     velocity difference(s) with respect to zref.
 
     Parameters
-    ---------
+    ----------
     dv : Quantity or Quantity array
         Rest-frame velocity difference with respect to zref
     zref : float or np.array
@@ -493,7 +493,7 @@ def overlapping_chunks(chunk1, chunk2):
         A given chunk, assumed to represent a contiguous region
         so only its minimum and maximum values matter. Still,
         chunk must be sorted.
-    chunk2 : tuple, list, 1-d np.array
+    chunk2 : tuple, list, 1-d np.array, Quantity, Quantity array
         Ditto.
 
     Returns
