@@ -354,7 +354,7 @@ def z_from_v(z, v):
     return znew.value
     """
     raise DeprecationWarning("This function is deprecated, instead please use either z_from_dv() or dz_from_dv()"
-                             "depending on your needs.")
+                             " depending on your needs.")
 
 
 # Slightly different functions for passing from dv to dz, and viceversa (that NT prefers).
@@ -414,7 +414,7 @@ def dz_from_dv(dv, zref, rel=True):
     dv : Quantity or Quantity array
         Rest-frame velocity difference with respect to zref
     zref : float or np.array
-        Reference redshift to perform the calculation.
+        Reference redshift where dv=0.
         If shape of zref is equal than shape of dv,
         each dz is calculated at each zref, otherwise zref
         is expected to be float
@@ -460,7 +460,7 @@ def z_from_dv(dv, zref, rel=True):
     dv : Quantity or Quantity array
         Rest-frame velocity difference with respect to zref
     zref : float or np.array
-        Reference redshift to perform the calculation.
+        Reference redshift where dv=0.
         If shape of zref is equal than shape of dv,
         each dz is calculated at each zref, otherwise zref
         is expected to be float
