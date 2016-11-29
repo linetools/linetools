@@ -173,7 +173,7 @@ def collate(spectra):
     return new_spec
 
 
-def rebin(spec, new_wv, do_sig=False, all=False, **kwargs):
+def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
     """ Rebin a single spectrum in an XSpectrum1D object to a new wavelength array
 
     Uses simple linear interpolation.  The default (and only)
@@ -193,6 +193,9 @@ def rebin(spec, new_wv, do_sig=False, all=False, **kwargs):
       Rebin error too (if it exists).
       S/N is only crudely conserved.
       Rejected pixels are propagated.
+    do_co : bool, optional
+      Rebin continuum if present
+      Current implementation works on continuum points from lt_continuum_fit
     all : bool, optional
       Rebin all spectra in the XSpectrum1D object?
 
@@ -292,11 +295,11 @@ def rebin(spec, new_wv, do_sig=False, all=False, **kwargs):
         new_sig = None
 
     # update continuum
-    if spec.co_is_set:
-        x, y = spec._get_contpoints()
-        new_co = spec._interp_continuum(x, y, new_wv)
-    else:
-        new_co = None
+    new_co = None
+    if do_co:
+        if spec.co_is_set:
+            x, y = spec._get_contpoints()
+            new_co = spec._interp_continuum(x, y, new_wv)
 
     # Finish
     newspec = XSpectrum1D.from_tuple((new_wv, new_fx*funit,

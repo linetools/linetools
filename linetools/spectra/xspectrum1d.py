@@ -927,6 +927,26 @@ class XSpectrum1D(object):
         return XSpectrum1D.from_tuple(
                 (self.wavelength, smoothflux, newsig), meta=self.meta.copy())
 
+    def slice(self, indices):
+        """ Slice the XSpectrum1D object using a set of input indices
+        Repetition is allowed
+        Headers are passed along without slicing
+
+        Parameters
+        ----------
+        indices : int or ndarray
+
+        Returns
+        -------
+        XSpectrum1D
+          sliced as desired
+
+        """
+        # Slice
+        newdata = self.data[indices]
+        # Create
+        return XSpectrum1D(newdata['wave'], newdata['flux'], newdata['sig'], newdata['co'],
+                           units=self.units, meta=self.meta)
 
     def stitch(self, idx=None, scale=1.):
         """ Combine two or more spectra within the .data array

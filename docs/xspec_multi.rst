@@ -36,6 +36,16 @@ Alternatively, one can generate from a list of
     mspec = ltsu.collate([spec1,spec2])
 
 
+Slice
+=====
+
+Return a sliced portion of the XSpectrum1D object.  Indices
+can be repeated.  A couple of examples::
+
+    two_spec = mspec.slice(np.array([0,1]))
+    one_spec = mspec.slice(1)
+
+
 Rebin to Rest
 =============
 

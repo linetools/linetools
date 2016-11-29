@@ -11,12 +11,27 @@ from astropy import units as u
 import astropy.table
 
 from linetools.spectra import io
+from linetools.spectra import utils as lsu
 from linetools.spectra.xspectrum1d import XSpectrum1D
 
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
+
+def test_slice():
+    spec = io.readspec(data_path('UM184_nF.fits'))
+    spec2 = io.readspec(data_path('PH957_f.fits'))
+    spec3 = spec2.copy()
+    # Collate to make a multispec spectrum
+    mspec = lsu.collate([spec,spec2,spec3])
+    newspec = mspec.slice(np.array([0,1]))
+    # Test
+    assert newspec.nspec == 2
+    assert not newspec.co_is_set
+    #
+    newspec2 = mspec.slice(1)
+    assert newspec2.nspec == 1
 
 
 def test_const_sig():
@@ -70,3 +85,4 @@ def test_get_local_s2n():
     # npix too big
     with pytest.raises(ValueError):
         spec.get_local_s2n(wv0, 1 + len(spec.wavelength))
+

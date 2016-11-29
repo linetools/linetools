@@ -192,7 +192,7 @@ all the available methods, see the API: `~linetools.spectra.xspectrum1d.XSpectru
 Multi-spec methods
 ------------------
 
-See :ref:`xspec_multi` for more.
+See :doc:`xspec_multi` for more.
 
 File Formats Read
 =================
