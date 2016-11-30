@@ -377,13 +377,13 @@ def dv_from_z(z, zref, rel=True):
 
     Parameters
     ----------
-    z : float or np.array
+    z : float or np.ndarray
         Redshifts to calculate dv on
-    zref : float or np.array
+    zref : float or np.ndarray
         Reference redshift where dv=0 by definition.
-        If shape of zref is equal than shape of z,
+        If the shape of zref is equal to the shape of z,
         each dv is calculated at each zref, otherwise zref
-        es expected to be float.
+        is expected to be float.
     rel : bool, optional
         Whether to apply relativistic correction for
         a locally flat space-time. Default is True.
@@ -392,10 +392,15 @@ def dv_from_z(z, zref, rel=True):
     -------
     dv : Quantity or Quantity array
         Rest-frame velocity difference between z and zref (dv=0 at zref by definition).
-        It has same shape as z.
+        It has the same shape as z.
         """
-    z = np.array(z)
-    zref = np.array(zref)
+    # check format
+    if not isinstance(z, (float, np.ndarray)):
+        raise IOError('z must be float or np.ndarray.')
+    if not isinstance(zref, (float, np.ndarray)):
+        raise IOError('zref must be float or np.ndarray.')
+    if (type(zref) is np.ndarray) and (np.shape(zref) is not np.shape(z)):
+        raise IOError('If zref is np.ndarray, it must be of same shape as z.')
 
     if rel:
         dv = ((1 + z)**2 - (1 + zref)**2) / ((1 + z)**2 + (1 + zref)**2)
@@ -413,7 +418,7 @@ def dz_from_dv(dv, zref, rel=True):
     ----------
     dv : Quantity or Quantity array
         Rest-frame velocity difference with respect to zref
-    zref : float or np.array
+    zref : float or np.ndarray
         Reference redshift where dv=0.
         If shape of zref is equal than shape of dv,
         each dz is calculated at each zref, otherwise zref
@@ -434,20 +439,22 @@ def dz_from_dv(dv, zref, rel=True):
     """
     if not isinstance(dv, u.quantity.Quantity):
         raise ValueError('dv must be Quantity or Quantity array.')
-    try:
-        dv = dv.to('km/s') # dv in km/s
-        dv = np.array(dv.value)
-    except UnitConversionError:
-        raise ValueError('dv must have velocity units.')
+    if not isinstance(zref, (float, np.ndarray)):
+        raise IOError('zref must be float or np.ndarray.')
+    if (type(zref) is np.ndarray) and (np.shape(zref) is not np.shape(dv)):
+        raise IOError('If zref is np.ndarray, it must be of same shape as dv.')
 
-    zref = np.array(zref)
+    beta = dv / const.c
+    beta = beta.decompose()
+    # check dimensionless
+    if beta.unit != u.dimensionless_unscaled:
+        raise IOError('dv must have velocity units.')
 
     if rel:
-        beta = dv / const.c.to('km/s').value
-        aux = np.sqrt((1. + beta)/(1. - beta))
+        aux = np.sqrt((1. + beta) / (1. - beta))
         dz = (1. + zref) * (aux - 1.)
     else:
-        dz = dv * (1. + zref) / const.c.to('km/s').value
+        dz = beta * (1. + zref)
     return dz
 
 
@@ -459,7 +466,7 @@ def z_from_dv(dv, zref, rel=True):
     ----------
     dv : Quantity or Quantity array
         Rest-frame velocity difference with respect to zref
-    zref : float or np.array
+    zref : float or np.ndarray
         Reference redshift where dv=0.
         If shape of zref is equal than shape of dv,
         each dz is calculated at each zref, otherwise zref
