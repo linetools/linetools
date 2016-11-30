@@ -362,14 +362,14 @@ def z_from_v(z, v):
 def give_dz(dv, zref, rel=True):
     """Same as dz_from_dv. This function will be deprecated."""
     DeprecationWarning("This function will be deprecated. Please use instead dz_from_dv().")
-    raise ValueError(':P')
+    # raise ValueError(':P')
     return dz_from_dv(dv, zref, rel=rel)
 
 
 def give_dv(z, zref, rel=True):
     """Same as dv_from_dz. This function will be deprecated."""
     warnings.warn("This function will be deprecated. Please use instead dv_from_z().")
-    raise ValueError(':P')
+    # raise ValueError(':P')
     return dv_from_z(z, zref, rel=rel)
 
 
@@ -449,13 +449,14 @@ def dz_from_dv(dv, zref, rel=True):
     if (not isinstance(zref, float)) and (np.shape(zref) != np.shape(dv)):
         raise IOError('If zref is not float, it must be of same shape as dv.')
 
+    zref = np.array(zref)
+
     beta = dv / const.c
     beta = beta.decompose()
     # check dimensionless
     if beta.unit != u.dimensionless_unscaled:
         raise IOError('dv must have velocity units.')
-
-    zref = np.array(zref)
+    beta = beta.value  # beta is dimensionless
 
     if rel:
         aux = np.sqrt((1. + beta) / (1. - beta))

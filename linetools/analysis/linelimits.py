@@ -82,6 +82,7 @@ class LineLimits(object):
             raise IOError("Input zlim must be a tuple or list")
         if not isinstance(wrest, Quantity):
             raise IOError("Input wrest must be a quantity")
+
         # Data
         self._data = {}
         # Set
