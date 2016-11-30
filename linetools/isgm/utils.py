@@ -523,7 +523,7 @@ def group_coincident_compoments(comp_list, output_type='list'):
             for no in newtotry:
                 if no not in compfound:  # Move on if a component's lines have been checked
                     compfound.append(no)  # So that we don't group this component twice
-                    blgrs=wherein(blendnos,no)  # Find which sublists contain abslines for this comp
+                    blgrs=_whichgroupscontainmember(blendnos,no)  # Find which sublists contain abslines for this comp
                     for bg in blgrs:  # Go through these sublists
                         if bg not in grblends:  # If this sublist hasn't been checked, save it
                             grblends.append(bg)
@@ -551,14 +551,14 @@ def group_coincident_compoments(comp_list, output_type='list'):
     elif output_type in ['dict', 'dictionary']:
         return output_dict
 
-def wherein(groups,member):
+def _whichgroupscontainmember(groups,member):
     ''' Once blends have been identified, find which blend a given line index belongs to.
     Parameters
     ----------
     groups : list of lists
         Input list of groups within which you want to find a member
         Here, this is used for groups of blended line indices
-    member : value
+    member : object with same type as those in 'groups'
         Value for which to search within groups.
         Here, this corresponds to a specific line index
 
