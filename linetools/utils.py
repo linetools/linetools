@@ -362,12 +362,14 @@ def z_from_v(z, v):
 def give_dz(dv, zref, rel=True):
     """Same as dz_from_dv. This function will be deprecated."""
     DeprecationWarning("This function will be deprecated. Please use instead dz_from_dv().")
+    raise ValueError(':P')
     return dz_from_dv(dv, zref, rel=rel)
 
 
 def give_dv(z, zref, rel=True):
     """Same as dv_from_dz. This function will be deprecated."""
     warnings.warn("This function will be deprecated. Please use instead dv_from_z().")
+    raise ValueError(':P')
     return dv_from_z(z, zref, rel=rel)
 
 
@@ -377,9 +379,9 @@ def dv_from_z(z, zref, rel=True):
 
     Parameters
     ----------
-    z : float or np.ndarray or list
+    z : float or np.ndarray or list or tuple
         Redshifts to calculate dv on
-    zref : float or np.ndarray or list
+    zref : float or np.ndarray or list or tuple
         Reference redshift where dv=0 by definition.
         If the shape of zref is equal to the shape of z,
         each dv is calculated at each zref, otherwise zref
@@ -395,12 +397,12 @@ def dv_from_z(z, zref, rel=True):
         It has the same shape as z.
         """
     # check format
-    if not isinstance(z, (float, np.ndarray, list)):
-        raise IOError('z must be float or np.ndarray or list.')
-    if not isinstance(zref, (float, np.ndarray)):
-        raise IOError('zref must be float or np.ndarray.')
-    if (type(zref) is np.ndarray) and (np.shape(zref) != np.shape(z)):
-        raise IOError('If zref is np.ndarray, it must be of same shape as z.')
+    if not isinstance(z, (float, np.ndarray, list, tuple)):
+        raise IOError('z must be float or np.ndarray or list or tuple.')
+    if not isinstance(zref, (float, np.ndarray, list, tuple)):
+        raise IOError('zref must be float or np.ndarray or list or tuple.')
+    if (not isinstance(zref, float)) and (np.shape(zref) != np.shape(z)):
+        raise IOError('If zref is not float, it must be of same shape as z.')
 
     z = np.array(z)
     zref = np.array(zref)
@@ -421,7 +423,7 @@ def dz_from_dv(dv, zref, rel=True):
     ----------
     dv : Quantity or Quantity array
         Rest-frame velocity difference with respect to zref
-    zref : float or np.ndarray or list
+    zref : float or np.ndarray or list or tuple
         Reference redshift where dv=0.
         If shape of zref is equal than shape of dv,
         each dz is calculated at each zref, otherwise zref
@@ -442,10 +444,10 @@ def dz_from_dv(dv, zref, rel=True):
     """
     if not isinstance(dv, u.quantity.Quantity):
         raise IOError('dv must be Quantity or Quantity array.')
-    if not isinstance(zref, (float, np.ndarray, list)):
-        raise IOError('zref must be float or np.ndarray or list.')
-    if (type(zref) is np.ndarray) and (np.shape(zref) != np.shape(dv)):
-        raise IOError('If zref is np.ndarray, it must be of same shape as dv.')
+    if not isinstance(zref, (float, np.ndarray, list, tuple)):
+        raise IOError('zref must be float or np.ndarray or list or tuple.')
+    if (not isinstance(zref, float)) and (np.shape(zref) != np.shape(dv)):
+        raise IOError('If zref is not float, it must be of same shape as dv.')
 
     beta = dv / const.c
     beta = beta.decompose()
@@ -471,10 +473,10 @@ def z_from_dv(dv, zref, rel=True):
     ----------
     dv : Quantity or Quantity array
         Rest-frame velocity difference with respect to zref
-    zref : float or np.ndarray
+    zref : float or np.ndarray or list or tuple
         Reference redshift where dv=0.
         If shape of zref is equal than shape of dv,
-        each dz is calculated at each zref, otherwise zref
+        each z is calculated at each zref, otherwise zref
         is expected to be float
     rel : bool, optional
         Whether to apply relativistic correction for
