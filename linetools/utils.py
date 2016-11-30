@@ -377,9 +377,9 @@ def dv_from_z(z, zref, rel=True):
 
     Parameters
     ----------
-    z : float or np.ndarray
+    z : float or np.ndarray or list
         Redshifts to calculate dv on
-    zref : float or np.ndarray
+    zref : float or np.ndarray or list
         Reference redshift where dv=0 by definition.
         If the shape of zref is equal to the shape of z,
         each dv is calculated at each zref, otherwise zref
@@ -395,12 +395,15 @@ def dv_from_z(z, zref, rel=True):
         It has the same shape as z.
         """
     # check format
-    if not isinstance(z, (float, np.ndarray)):
-        raise IOError('z must be float or np.ndarray.')
+    if not isinstance(z, (float, np.ndarray, list)):
+        raise IOError('z must be float or np.ndarray or list.')
     if not isinstance(zref, (float, np.ndarray)):
         raise IOError('zref must be float or np.ndarray.')
     if (type(zref) is np.ndarray) and (np.shape(zref) != np.shape(z)):
         raise IOError('If zref is np.ndarray, it must be of same shape as z.')
+
+    z = np.array(z)
+    zref = np.array(zref)
 
     if rel:
         dv = ((1 + z)**2 - (1 + zref)**2) / ((1 + z)**2 + (1 + zref)**2)
@@ -418,7 +421,7 @@ def dz_from_dv(dv, zref, rel=True):
     ----------
     dv : Quantity or Quantity array
         Rest-frame velocity difference with respect to zref
-    zref : float or np.ndarray
+    zref : float or np.ndarray or list
         Reference redshift where dv=0.
         If shape of zref is equal than shape of dv,
         each dz is calculated at each zref, otherwise zref
@@ -439,8 +442,8 @@ def dz_from_dv(dv, zref, rel=True):
     """
     if not isinstance(dv, u.quantity.Quantity):
         raise IOError('dv must be Quantity or Quantity array.')
-    if not isinstance(zref, (float, np.ndarray)):
-        raise IOError('zref must be float or np.ndarray.')
+    if not isinstance(zref, (float, np.ndarray, list)):
+        raise IOError('zref must be float or np.ndarray or list.')
     if (type(zref) is np.ndarray) and (np.shape(zref) != np.shape(dv)):
         raise IOError('If zref is np.ndarray, it must be of same shape as dv.')
 
@@ -449,6 +452,8 @@ def dz_from_dv(dv, zref, rel=True):
     # check dimensionless
     if beta.unit != u.dimensionless_unscaled:
         raise IOError('dv must have velocity units.')
+
+    zref = np.array(zref)
 
     if rel:
         aux = np.sqrt((1. + beta) / (1. - beta))
