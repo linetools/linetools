@@ -40,20 +40,47 @@ def test_between():
 def test_dz_from_dv():
     dz = ltu.dz_from_dv(1000.*u.km/u.s, 2.)
     np.testing.assert_allclose(dz, 0.0100236684175417)
+    dz1 = ltu.dz_from_dv([1000., 1000., 1000.]*u.km/u.s, np.array([2., 2., 2.]))
+    dz2 = ltu.dz_from_dv([1000., 1000., 1000.]*u.km/u.s, 2.)
+    np.testing.assert_allclose(dz1, [0.0100236684175417]*3)
+    np.testing.assert_allclose(dz2, [0.0100236684175417]*3)
+
+    # non-relativistic
+    dz = ltu.dz_from_dv(1000.*u.km/u.s, 2., rel=False)
+    np.testing.assert_allclose(dz, 0.010006922855944561)
+
+    # test expected errors
+    with pytest.raises(IOError):
+        ltu.dz_from_dv('dv_not_a_quantity', 2.)
+    with pytest.raises(IOError):
+        ltu.dz_from_dv(1000.*u.km/u.s, 'zref_not_a_float_nor_array')
+    with pytest.raises(IOError):
+        ltu.dz_from_dv([1000., 1000., 1000.]*u.km/u.s, np.array([2., 2.]))  # wrong shape for zref
+    with pytest.raises(IOError):
+        ltu.dz_from_dv([1000., 1000., 1000.]*u.km, 1.)  # wrong dv units
 
 
 def test_z_from_dv():
     z = ltu.z_from_dv(1000.*u.km/u.s, 2.)
-    #
     np.testing.assert_allclose(z, 2.0100236684175417)
-
-
 
 def test_dv_from_z():
     dv = ltu.dv_from_z(2.1, 2.)
-    #
     assert dv.unit == u.km/u.s
     np.testing.assert_allclose(dv.value, 9826.620063406788, rtol=1e-6)
+    dv = ltu.dv_from_z(np.array([2.1, 2.1, 2.1]), 2.)
+    np.testing.assert_allclose(dv.value, [9826.620063406788]*3, rtol=1e-6)
+    # non-relativistic
+    dv = ltu.dv_from_z(2.1, 2., rel=False)
+    np.testing.assert_allclose(dv.value, 9993.08193333334, rtol=1e-6)
+
+    # test expected errors
+    with pytest.raises(IOError):
+        ltu.dv_from_z('z_not_a_float_or_array', 1.)
+    with pytest.raises(IOError):
+        ltu.dv_from_z(2.1, 'zref_not_a_float_nor_array')
+    with pytest.raises(IOError):
+        ltu.dv_from_z(np.array([2.1,2.1,2.1]), np.array([2., 2.]))  # wrong shape for zref
 
 
 def test_save_load_json():

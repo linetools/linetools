@@ -399,7 +399,7 @@ def dv_from_z(z, zref, rel=True):
         raise IOError('z must be float or np.ndarray.')
     if not isinstance(zref, (float, np.ndarray)):
         raise IOError('zref must be float or np.ndarray.')
-    if (type(zref) is np.ndarray) and (np.shape(zref) is not np.shape(z)):
+    if (type(zref) is np.ndarray) and (np.shape(zref) != np.shape(z)):
         raise IOError('If zref is np.ndarray, it must be of same shape as z.')
 
     if rel:
@@ -438,10 +438,10 @@ def dz_from_dv(dv, zref, rel=True):
     See also linetools.utils.z_from_dv()
     """
     if not isinstance(dv, u.quantity.Quantity):
-        raise ValueError('dv must be Quantity or Quantity array.')
+        raise IOError('dv must be Quantity or Quantity array.')
     if not isinstance(zref, (float, np.ndarray)):
         raise IOError('zref must be float or np.ndarray.')
-    if (type(zref) is np.ndarray) and (np.shape(zref) is not np.shape(dv)):
+    if (type(zref) is np.ndarray) and (np.shape(zref) != np.shape(dv)):
         raise IOError('If zref is np.ndarray, it must be of same shape as dv.')
 
     beta = dv / const.c
