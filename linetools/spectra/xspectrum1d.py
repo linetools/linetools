@@ -1203,7 +1203,7 @@ class XSpectrum1D(object):
             hdf5[path]['meta'] = meta_to_disk(self.meta)
         # Units
         units = self.units.copy()
-        d = lu.jsonify(units)
+        d = ltu.jsonify(units)
         hdf5[path]['units'] = json.dumps(d)
         # Data with compression
         hdf5.create_dataset(path+'data', data=self.data.filled(fill_val),
