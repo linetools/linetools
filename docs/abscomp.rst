@@ -53,7 +53,7 @@ More commonly, one will instantiate with one
 
 or multiple::
 
-    lyb = AbsLine(1025.7222*u.AA, z=lya.attrib['z'])
+    lyb = AbsLine(1025.7222*u.AA, z=lya.z)
     lyb.limits.set([-300.,300.]*u.km/u.s)  # vlim
     abscomp = AbsComponent.from_abslines([lya,lyb])
 
@@ -172,4 +172,23 @@ This method generates multiple components from a list of
 AbsLines.::
 
    comps = ltiu.build_components_from_abslines([lya,lyb,SiIIlines[0],SiIIlines[1]])
+
+
+
+Use Components to create a spectrum model
++++++++++++++++++++++++++++++++++++++++++
+
+You can create a spectrum model using a list of AbsComponents, e.g.::
+
+   from linetools.analysis import voigt as lav
+   wv_array = np.array(1100,1500, 0.1)*u.AA
+   model = lav.voigt_from_components(wv_array, comps)
+
+In this manner, model is a XSpectrum1D object with the the AbsComponents contained in the `comps` list.
+You may also add a convolution with a given kernel to compare with observations from different spectrographs,
+in which case you can use::
+
+   model = lav.voigt_from_components(wv_array, comps, fwhm=3)
+
+This is same as before but the model is convolved with a Gaussian kernel of FWHM of 3 pixels.
 

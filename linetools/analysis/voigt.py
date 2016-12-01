@@ -120,6 +120,7 @@ def voigt_tau(wave, par):
     #
     return tau
 
+
 # The primary call
 def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'],
                         skip_wveval=False, debug=False):
@@ -205,7 +206,7 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'],
         if debug:
             print(iline, iline.attrib['N'])
         par = [np.log10(iline.attrib['N'].value),
-               iline.attrib['z'], iline.attrib['b'].to('cm/s').value,
+               iline.z, iline.attrib['b'].to('cm/s').value,
                iline.wrest.to('cm').value, iline.data['f'],
                iline.data['gamma'].value]
         tau += voigt_tau(wavecm, par) 
@@ -248,6 +249,42 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'],
     if len(ret_val) == 1: ret_val = ret_val[0]
     # Return
     return ret_val
+
+
+def voigt_from_components(wv_array, complist, **kwargs):
+    """Generates a Voigt absorption model from a list
+    of AbsComponents.
+
+    Parameters
+    ----------
+    wv_array : Quantity array
+        Observed wavelength array defining the
+        model domain
+    complist : list of AbsComponents
+        A list of AbsComponents
+
+    Returns
+    -------
+    model : XSpectrum1D
+        A spectrum model from the given components
+
+    Notes
+    -----
+    This is a wrapper to linetools.analysis.voigt.voigt_from_abslines()
+    and **kwargs are passed to it.
+    """
+
+    # Identify the goodlines within the domain
+    wvmin = np.min(wv_array)
+    wvmax = np.max(wv_array)
+    gdlin = []
+    for comp in complist:
+        for line in comp._abslines:
+            wvobs = (1 + line.z) * line.wrest
+            if (wvobs > wvmin) & (wvobs < wvmax):
+                gdlin.append(line)
+    # return the model
+    return voigt_from_abslines(wv_array, gdlin, ret=['vmodel'], **kwargs)
 
 
 class single_voigt_model(FittableModel):

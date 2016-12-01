@@ -35,9 +35,8 @@ def test_init_failures():
 
 def test_init_single_absline():
     # Single AbsLine
-    lya = AbsLine(1215.670*u.AA)
-    lya.analy['vlim'] = [-300.,300.]*u.km/u.s
-    lya.attrib['z'] = 2.92939
+    lya = AbsLine(1215.670*u.AA,z=2.92939)
+    lya.limits.set([-300.,300.]*u.km/u.s)
     abscomp = AbsComponent.from_abslines([lya])
     # Test
     assert abscomp.Zion[0] == 1
@@ -47,9 +46,8 @@ def test_init_single_absline():
 
 def test_copy():
     # Single AbsLine
-    lya = AbsLine(1215.670*u.AA)
+    lya = AbsLine(1215.670*u.AA, z=2.92939)
     lya.analy['vlim'] = [-300.,300.]*u.km/u.s
-    lya.attrib['z'] = 2.92939
     abscomp = AbsComponent.from_abslines([lya])
     # Copy
     abscomp2 = abscomp.copy()
@@ -58,18 +56,17 @@ def test_copy():
     attrs2 = vars(abscomp2).keys()
     for attr in attrs:
         assert attr in attrs2
-    np.testing.assert_allclose(abscomp._abslines[0].attrib['z'],
-                               abscomp2._abslines[0].attrib['z'])
+    np.testing.assert_allclose(abscomp._abslines[0].z,
+                               abscomp2._abslines[0].z)
 
 
 def test_init_multi_absline():
     # AbsLine(s)
-    lya = AbsLine(1215.670*u.AA)
+    lya = AbsLine(1215.670*u.AA, z=2.92939)
     lya.analy['vlim'] = [-300.,300.]*u.km/u.s
-    lya.attrib['z'] = 2.92939
     lyb = AbsLine(1025.7222*u.AA)
     lyb.analy['vlim'] = [-300.,300.]*u.km/u.s
-    lyb.attrib['z'] = lya.attrib['z']
+    lyb.setz(lya.z)
     # Instantiate
     abscomp = AbsComponent.from_abslines([lya,lyb])
     # Test

@@ -67,6 +67,25 @@ def convert_quantity_in_dict(idict):
         return idict
 
 
+def name_from_coord(coord, precision=(2,1)):
+    """ Generate a standard JXXXXXX.XX+XXXXXX.X name from a SkyCoord object
+
+    Parameters
+    ----------
+    coord : SkyCoord
+    precision : tuple, optional
+      Number of decimal places to include in name
+
+    Returns
+    -------
+    name : str
+      In JXX format
+    """
+    name = 'J{:s}{:s}'.format(coord.ra.to_string(unit=u.hour,sep='',pad=True,precision=precision[0]),
+            coord.dec.to_string(sep='',pad=True,alwayssign=True,precision=precision[1]))
+    # Return
+    return name
+
 def radec_to_coord(radec):
     """ Converts one of many of Celestial Coordinates
     `radec` formats to an astropy SkyCoord object. Assumes
@@ -271,6 +290,7 @@ def rel_vel(wavelength, wv_obs):
         raise ValueError('Input wv_obs needs to be a Quantity')
     return ((wavelength - wv_obs) * const.c / wv_obs).to('km/s')
 
+
 def v_from_z(z1, z2):
     """ Find the relativistic velocity between 2 redshifts.
 
@@ -289,12 +309,15 @@ def v_from_z(z1, z2):
     Notes
     -----
     """
+
+    """
     R = (1+z1) / (1+z2)
     v = const.c * (R**2 - 1)/(1+R**2)
 
-    return v.to('km/s')
+    return v.to('km/s')"""
+    raise DeprecationWarning("This function is deprecated, please use dv_from_z() instead.")
 
-# #####
+
 def z_from_v(z, v):
     """ Find the redshift given z and v
 
@@ -313,6 +336,8 @@ def z_from_v(z, v):
     Notes
     -----
     """
+
+    """
     # Check for unit
     if not isinstance(v, u.quantity.Quantity):
         # Assume km/s
@@ -327,22 +352,40 @@ def z_from_v(z, v):
     znew = (1+z)/R - 1
 
     return znew.value
+    """
+    raise DeprecationWarning("This function is deprecated, instead please use either z_from_dv() or dz_from_dv()"
+                             " depending on your needs.")
+
 
 # Slightly different functions for passing from dv to dz, and viceversa (that NT prefers).
 # May need to agree on one kind of conversion in the future
-def give_dv(z, zmean, rel=True):
-    """Gives velocity difference between z and zmean,
-    at zmean.
+def give_dz(dv, zref, rel=True):
+    """Same as dz_from_dv. This function will be deprecated."""
+    DeprecationWarning("This function will be deprecated. Please use instead dz_from_dv().")
+    # raise ValueError(':P')
+    return dz_from_dv(dv, zref, rel=rel)
+
+
+def give_dv(z, zref, rel=True):
+    """Same as dv_from_dz. This function will be deprecated."""
+    warnings.warn("This function will be deprecated. Please use instead dv_from_z().")
+    # raise ValueError(':P')
+    return dv_from_z(z, zref, rel=rel)
+
+
+def dv_from_z(z, zref, rel=True):
+    """Gives the rest-frame velocity difference dv
+    between z and zref. dv=0 at zref by definition.
 
     Parameters
-    ---------
-    z : float or np.array
+    ----------
+    z : float or np.ndarray or list or tuple
         Redshifts to calculate dv on
-    zmean : float or np.array
-        Rest-frame redshift to perform the calculation.
-        If shape of zmean is equal than shape of z,
-        each dv is calculated at each zmean, otherwise zmean
-        is expected to be float
+    zref : float or np.ndarray or list or tuple
+        Reference redshift where dv=0 by definition.
+        If the shape of zref is equal to the shape of z,
+        each dv is calculated at each zref, otherwise zref
+        is expected to be float.
     rel : bool, optional
         Whether to apply relativistic correction for
         a locally flat space-time. Default is True.
@@ -350,59 +393,106 @@ def give_dv(z, zmean, rel=True):
     Returns
     -------
     dv : Quantity or Quantity array
-        Rest frame velocity difference between z and zmean, at
-        zmean. It has same shape as z.
+        Rest-frame velocity difference between z and zref (dv=0 at zref by definition).
+        It has the same shape as z.
         """
+    # check format
+    if not isinstance(z, (float, np.ndarray, list, tuple)):
+        raise IOError('z must be float or np.ndarray or list or tuple.')
+    if not isinstance(zref, (float, np.ndarray, list, tuple)):
+        raise IOError('zref must be float or np.ndarray or list or tuple.')
+    if (not isinstance(zref, float)) and (np.shape(zref) != np.shape(z)):
+        raise IOError('If zref is not float, it must be of same shape as z.')
+
     z = np.array(z)
-    zmean = np.array(zmean)
+    zref = np.array(zref)
 
     if rel:
-        dv = ((1 + z)**2 - (1 + zmean)**2) / ((1 + z)**2 + (1 + zmean)**2)
+        dv = ((1 + z)**2 - (1 + zref)**2) / ((1 + z)**2 + (1 + zref)**2)
     else:
-        dv = (z - zmean) / (1. + zmean)
+        dv = (z - zref) / (1. + zref)
 
     return dv * const.c.to('km/s')
 
-def give_dz(dv, zmean, rel=True):
+
+def dz_from_dv(dv, zref, rel=True):
     """Gives redshift difference for a given
-    velocity difference(s) at zmean.
+    velocity difference(s) with respect to zref.
 
     Parameters
-    ---------
+    ----------
     dv : Quantity or Quantity array
-        Rest-frame velocity at zmean to calculate
-        the corresponding redshift difference, dz
-    zmean : float or np.array
-        Redshift to perform the calculation.
-        If shape of zmean is equal than shape of dv,
-        each dv is calculated at each zmean, otherwise zmean
+        Rest-frame velocity difference with respect to zref
+    zref : float or np.ndarray or list or tuple
+        Reference redshift where dv=0.
+        If shape of zref is equal than shape of dv,
+        each dz is calculated at each zref, otherwise zref
         is expected to be float
     rel : bool, optional
         Whether to apply relativistic correction for
         a locally flat space-time. Default is True.
 
     Returns
+    -------
     dz : np.array
-        Redshift difference between dv and zmean, at zmean.
+        Redshift difference for a given dv with respect to zref.
         Same shape as dv.
-        """
-    if not isinstance(dv, u.quantity.Quantity):
-        raise ValueError('dv must be Quantity or Quantity array!')
-    try:
-        dv = dv.to('km/s') # dv in km/s
-        dv = np.array(dv.value)
-    except UnitConversionError:
-        raise ValueError('dv must have velocity units!')
 
-    zmean = np.array(zmean)
+    Notes
+    -----
+    See also linetools.utils.z_from_dv()
+    """
+    if not isinstance(dv, u.quantity.Quantity):
+        raise IOError('dv must be Quantity or Quantity array.')
+    if not isinstance(zref, (float, np.ndarray, list, tuple)):
+        raise IOError('zref must be float or np.ndarray or list or tuple.')
+    if (not isinstance(zref, float)) and (np.shape(zref) != np.shape(dv)):
+        raise IOError('If zref is not float, it must be of same shape as dv.')
+
+    zref = np.array(zref)
+
+    beta = dv / const.c
+    beta = beta.decompose()
+    # check dimensionless
+    if beta.unit != u.dimensionless_unscaled:
+        raise IOError('dv must have velocity units.')
+    beta = beta.value  # beta is dimensionless
 
     if rel:
-        beta = dv / const.c.to('km/s').value
-        aux = np.sqrt((1.+ beta)/(1.- beta))
-        dz = (1. + zmean) * (aux - 1.)
+        aux = np.sqrt((1. + beta) / (1. - beta))
+        dz = (1. + zref) * (aux - 1.)
     else:
-        dz = dv * (1. + zmean) / const.c.to('km/s').value
+        dz = beta * (1. + zref)
     return dz
+
+
+def z_from_dv(dv, zref, rel=True):
+    """Gives the redshift for a given
+    velocity difference(s) with respect to zref.
+
+    Parameters
+    ----------
+    dv : Quantity or Quantity array
+        Rest-frame velocity difference with respect to zref
+    zref : float or np.ndarray or list or tuple
+        Reference redshift where dv=0.
+        If shape of zref is equal than shape of dv,
+        each z is calculated at each zref, otherwise zref
+        is expected to be float
+    rel : bool, optional
+        Whether to apply relativistic correction for
+        a locally flat space-time. Default is True.
+
+    Returns
+    z : np.array
+        Absolute redshift for a given dv with respect to zref.
+        Same shape as dv.
+
+    Notes
+    -----
+    See also linetools.utils.dz_from_dv()
+    """
+    return dz_from_dv(dv, zref, rel=rel) + zref
 
 
 def overlapping_chunks(chunk1, chunk2):
@@ -418,7 +508,7 @@ def overlapping_chunks(chunk1, chunk2):
         A given chunk, assumed to represent a contiguous region
         so only its minimum and maximum values matter. Still,
         chunk must be sorted.
-    chunk2 : tuple, list, 1-d np.array
+    chunk2 : tuple, list, 1-d np.array, Quantity, Quantity array
         Ditto.
 
     Returns

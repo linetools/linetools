@@ -355,9 +355,9 @@ def test_group_coincident_compoments():
     for ii in range(len(out)):
         for comp in out[ii]:
             out_names[ii] += [comp.name]
-    assert out_names == [['HI', 'HI', 'HI', 'HI'], ['SiII_1', 'SiII_1'], ['SiII_2', 'SiII_2']]
+    assert out_names == [['HI', 'HI', 'HI', 'HI'], ['SiII_2', 'SiII_2'], ['SiII_1', 'SiII_1']]
     # now a case where are all different
-    comp_list = [abscomp, SiIIcomp1, SiIIcomp2]
+    comp_list = [abscomp, SiIIcomp2 ,SiIIcomp1]
     out = ltiu.group_coincident_compoments(comp_list)
     for a,b in zip(comp_list, out):
         assert len(b) == 1

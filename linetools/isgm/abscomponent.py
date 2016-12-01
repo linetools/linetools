@@ -1,4 +1,4 @@
-""" Classes for absorption line component
+""" Class for absorption line component
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -24,10 +24,6 @@ from linetools.analysis import plots as ltap
 from linetools.spectralline import AbsLine, SpectralLine
 from linetools.abund import ions
 from linetools import utils as ltu
-
-#import xastropy.atomic as xatom
-#from xastropy.stats import basic as xsb
-#from xastropy.xutils import xdebug as xdb
 
 # Global import for speed
 c_kms = const.c.to('km/s').value
@@ -77,9 +73,8 @@ class AbsComponent(object):
 
         # Instantiate with the first line
         init_line = abslines[0]
-        #init_line.attrib['z'], init_line.analy['vlim'],
         slf = cls( init_line.attrib['coord'], (init_line.data['Z'],init_line.data['ion']),
-                   init_line.attrib['z'], init_line.limits.vlim,
+                   init_line.z, init_line.limits.vlim,
                    Ej=init_line.data['Ej'], stars=stars)
         slf._abslines.append(init_line)
         # Append with component checking
@@ -147,8 +142,8 @@ class AbsComponent(object):
         Parameters
         ----------
         radec : tuple or SkyCoord
-            (RA,DEC) in deg or astropy.coordinate
-        Zion : tuple 
+            (RA,DEC) in deg or astropy.coordinate.SkyCoord
+        Zion : tuple
             Atomic number, ion -- (int,int)
             e.g. (8,1) for OI
         zcomp : float
@@ -161,7 +156,7 @@ class AbsComponent(object):
         Ntup : tuple
             (int,float,float)
             (flag_N,logN,sig_N)
-            flag_N : Flag describing N measurement
+            flag_N : Flag describing N measurement  (0: no info; 1: detection; 2: saturated; 3: non-detection)
             logN : log10 N column density
             sig_logN : Error in log10 N
         Ej : Quantity, optional
@@ -174,10 +169,7 @@ class AbsComponent(object):
         """
 
         # Required
-        if isinstance(radec, (tuple)):
-            self.coord = SkyCoord(ra=radec[0], dec=radec[1])
-        elif isinstance(radec, SkyCoord):
-            self.coord = radec
+        self.coord = ltu.radec_to_coord(radec)
         self.Zion = Zion
         self.zcomp = zcomp
         self.vlim = vlim
@@ -250,7 +242,7 @@ class AbsComponent(object):
         # Now redshift/velocity
         if chk_vel:
             dz_toler = (1 + self.zcomp) * vtoler / c_kms  # Avoid Quantity for speed
-            zlim_line = (1 + absline.attrib['z']) * absline.limits.vlim.to('km/s').value / c_kms
+            zlim_line = (1 + absline.z) * absline.limits.vlim.to('km/s').value / c_kms
             zlim_comp = (1+self.zcomp) * self.vlim.to('km/s').value / c_kms
             testv = (zlim_line[0] >= (zlim_comp[0] - dz_toler)) & (
                 zlim_line[1] <= (zlim_comp[1] + dz_toler))
@@ -266,14 +258,15 @@ class AbsComponent(object):
             self._abslines.append(absline)
         else:
             warnings.warn("Failed add_absline test")
-            print('Input absline with wrest={:g} does not match component rules. Not appending'.format(absline.wrest))
+            print('Input absline with wrest={:g} at z={:.3f} does not match component rules. Not appending'.format(absline.wrest,
+                                                                                                                   absline.z))
             if not testv:
                 print("Absline velocities lie beyond component\n Set chk_vel=False to skip this test.")
             if not testc:
                 print("Absline coordinates do not match.  Best to set them")
 
     def build_table(self):
-        """Generate an astropy QTable out of the component.
+        """Generate an astropy QTable out of the abs lines
         Returns
         -------
         comp_tbl : QTable
@@ -282,7 +275,8 @@ class AbsComponent(object):
             return
         comp_tbl = QTable()
         comp_tbl.add_column(Column([iline.wrest.to(u.AA).value for iline in self._abslines]*u.AA, name='wrest'))
-        for attrib in ['z', 'flag_N', 'logN', 'sig_logN']:
+        comp_tbl.add_column(Column([iline.z for iline in self._abslines], name='z'))
+        for attrib in ['flag_N', 'logN', 'sig_logN']:
             comp_tbl.add_column(Column([iline.attrib[attrib] for iline in self._abslines], name=attrib))
         # Return
         return comp_tbl
@@ -354,7 +348,7 @@ class AbsComponent(object):
         ymax = 0.
         for qq, iline in enumerate(gdiline):
             # Calculate
-            velo = iline.analy['spec'].relative_vel((1+iline.attrib['z'])*iline.wrest)
+            velo = iline.analy['spec'].relative_vel((1+iline.z)*iline.wrest)
             cst = atom_cst/(iline.data['f']*iline.wrest)  # / (u.km/u.s) / u.cm * (u.AA/u.cm)
             Na = np.log(1./np.maximum(iline.analy['spec'].flux, iline.analy['spec'].sig)) * cst
 
@@ -661,6 +655,7 @@ class AbsComponent(object):
                      RA=self.coord.ra.value, DEC=self.coord.dec.value,
                      A=self.A, Ej=self.Ej.to('1/cm').value, comment=self.comment,
                      flag_N=self.flag_N, logN=self.logN, sig_logN=self.sig_logN)
+        cdict['class'] = self.__class__.__name__
         # AbsLines
         cdict['lines'] = {}
         for iline in self._abslines:

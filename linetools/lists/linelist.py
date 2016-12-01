@@ -174,7 +174,7 @@ class LineList(object):
             # import pdb
             # pdb.set_trace()
             raise ValueError(
-                'load_data: Not ready for this: {:s}'.format(self.list))
+                'LineList: load_data: Not ready for this LineList name: {:s}'.format(self.list))
 
         full_table = None
         all_func = []

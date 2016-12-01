@@ -173,23 +173,35 @@ def build_components_from_dict(idict, coord=None, **kwargs):
     return components
 
 
-def build_systems_from_components(comps, **kwargs):
+def build_systems_from_components(comps, systype=None, vsys=None, **kwargs):
     """ Build a list of AbsSystems from a list of AbsComponents
     Current default implementation allows for overlapping components, i.e.
-      only_overalp=True in add_component
+      only_overlap=True in add_component
 
     Parameters
     ----------
     comps : list
+    systype : AbsSystem, optional
+      Defaults to GenericAbsSystem
+    vsys : Quantity, optional
+      'Velocity width' of a system, used when adding components
+      Passed as vtoler to add_component
+      The first component will define the system redshift and all others will
+      need to lie within vsys of it
 
     Returns
     -------
     abs_systems : list
 
     """
-    from linetools.isgm.abssystem import GenericAbsSystem
-    if 'overlap_only' not in kwargs.keys():
-        kwargs['overlap_only'] = True
+    if systype is None:
+        from linetools.isgm.abssystem import GenericAbsSystem
+        systype = GenericAbsSystem
+    if vsys is None:
+        if 'overlap_only' not in kwargs.keys():
+            kwargs['overlap_only'] = True
+    else:
+        kwargs['vtoler'] = vsys.to('km/s').value
     # Add
     abs_systems = []
     cpy_comps = [comp.copy() for comp in comps]
@@ -197,7 +209,7 @@ def build_systems_from_components(comps, **kwargs):
     while len(cpy_comps) > 0:
         # Use the first one
         comp = cpy_comps.pop(0)
-        abssys = GenericAbsSystem.from_components([comp])
+        abssys = systype.from_components([comp])
         abs_systems.append(abssys)
         # Try the rest
         comps_left = []
@@ -314,10 +326,6 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
                        Ej=0./u.cm,vmin=vmin, vmax=vmax, logN=NHI_obj.NHI,
                        flag_N=NHI_obj.flag_NHI,sig_logN=np.mean(NHI_obj.sig_NHI))
             iontbl.add_row(row)
-
-    # Add zlim to metadata
-    meta = OrderedDict()
-    meta['zcomp'] = ztbl
 
     # Return
     return iontbl
@@ -441,6 +449,131 @@ def coincident_components(comp1, comp2, tol=0.2*u.arcsec):
 
 
 def group_coincident_compoments(comp_list, output_type='list'):
+    """For a given input list of components, this function
+    groups together components that are coincident to each other
+    (including by transitivity), and returns them as a list (default)
+    or dictionary of component lists.
+
+    Parameters
+    ----------
+    comp_list : list of AbsComponent
+        Input list of components to group
+    output_type : str, optional
+        Type of the output, choose either
+        'list' for list or 'dict' for dictionary.
+
+    Returns
+    -------
+    output : list (or dictionary) of lists of AbsComponent
+        The grouped components as individual lists
+        in the output.
+    """
+    if output_type not in ['list', 'dict', 'dictionary']:
+        raise ValueError("`output_type` must be either 'list' or 'dict'.")
+
+    ### We first want to identify and group all blended lines
+    ### Sort them by observed wavelength to do this
+    lst=[]
+    compnos=[]
+    for ii,comp in enumerate(comp_list):
+        lst.extend(comp._abslines)
+        compnos.extend([ii]*len(comp._abslines))
+    lst=np.array(lst)
+    compnos=np.array(compnos)
+    wv1s=np.array([line.limits.wvlim[0].value for line in lst])
+    sortidxs=np.argsort(wv1s)
+    sort_lst=lst[sortidxs]
+    sort_compnos=compnos[sortidxs] # This will store indices of the lines' parent comps.
+
+    ### Identify the blended 'absline' objects
+    blends = []
+    ### 'blends' is a list of lists
+    ### each sublist will contain the indices of consecutive blended abslines in wobs space
+    for i in range(len(sortidxs)-1):
+        if i == 0:
+            thisblend = [i]
+        if sort_lst[i].coincident_line(sort_lst[i+1]):
+            thisblend.append(i+1)
+        else:
+            blends.append(thisblend)
+            thisblend = [i+1]
+        if i == (len(sortidxs) - 2):
+            blends.append(thisblend)
+
+    ### Associate the lines to their parent components
+    blendnos=[]
+    for blist in blends:
+        blendnos.append(sort_compnos[blist])
+
+    ### Main algorithm to group together all components with blended lines
+    ## Each sublist in 'blends' will be checked to see if the parent components
+    ## of the abslines have abslines in other blend sublists. These sublists
+    ## that share parent components will be grouped together.   Then,
+    compfound=[]  # will hold components that have been grouped
+    grblends=[]  # will hold indices of blends that have been grouped
+    newgroups=[]  # will hold the newly grouped abslines
+    for i,bn in enumerate(blendnos):  # bn is list of indices of parent comps of blended abslines
+        if i in grblends: continue  # move on if blend has already been grouped
+        grblends.append(i)  # so that we don't try to group this sublist twice
+        newgroups.append(bn.tolist()) # start group with parent components of this blend
+        newtotry=bn  # a list of components, which have assoc. abslines, which may be in other blends
+        ## check all of these components' abslines for inclusion in blend groups
+        while (len(newtotry)>0):  # stop when all potential lines in grouped components have been checked
+            newnewtotry=[]
+            for no in newtotry:
+                if no not in compfound:  # Move on if a component's lines have been checked
+                    compfound.append(no)  # So that we don't group this component twice
+                    blgrs=_whichgroupscontainmember(blendnos,no)  # Find which sublists contain abslines for this comp
+                    for bg in blgrs:  # Go through these sublists
+                        if bg not in grblends:  # If this sublist hasn't been checked, save it
+                            grblends.append(bg)
+                            newgroups[-1].extend(blendnos[bg].tolist())  # Add comp numbers to this group
+                            # Now need to check parent comps of abslines in newly added blend sublist
+                            newnewtotry.extend(np.unique(blendnos[bg]).tolist())
+            newtotry=newnewtotry  # Get ready for next round of checking
+            newgroups[-1]=np.unique(np.array(newgroups[-1])).tolist()  # Clean up duplicated comp indices
+
+    out = newgroups
+
+    # Now lets produce the final output from it
+    output_list = []
+    output_dict = {}
+    for ii in range(len(out)):
+        aux_list = []
+        for jj in out[ii]:
+            aux_list += [comp_list[jj]]
+        output_dict['{}'.format(ii)] = aux_list
+        output_list += [aux_list]
+
+    # choose between dict of list
+    if output_type == 'list':
+        return output_list
+    elif output_type in ['dict', 'dictionary']:
+        return output_dict
+
+def _whichgroupscontainmember(groups,member):
+    ''' Once blends have been identified, find which blend a given line index belongs to.
+    Parameters
+    ----------
+    groups : list of lists
+        Input list of groups within which you want to find a member
+        Here, this is used for groups of blended line indices
+    member : object with same type as those in 'groups'
+        Value for which to search within groups.
+        Here, this corresponds to a specific line index
+
+    Returns
+    -------
+    matches : list
+        Indices of groups within with 'member' was found
+    '''
+    matches=[]
+    for i,gr in enumerate(groups):
+        if member in gr:
+            matches.append(i)
+    return matches
+
+def group_coincident_compoments_old(comp_list, output_type='list'):
     """For a given input list of components, this function
     groups together components that are coincident to each other
     (including by transitivity), and returns them as a list (default)

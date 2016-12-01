@@ -33,16 +33,16 @@ def test_aodm_absline():
     np.testing.assert_allclose(N.value, 76330670518067.16)
     assert N.unit == 1/u.cm**2
     assert flgN == 1
-    # Now velocity limits
 
-    abslin.attrib['z'] = 2.92929
-    abslin.limits._z = abslin.attrib['z']
+    # Now velocity limits
+    abslin.setz(2.92929)
     abslin.limits.set((-150., 150.)*u.km/u.s)
     #
     abslin.measure_aodm()
     N, sig_N, flgN = [abslin.attrib[key] for key in ['N','sig_N','flag_N']]
     np.testing.assert_allclose(N.value, 80369217498895.17)
     return
+
 
 def test_boxew_absline():
     # Text boxcar EW evaluation
@@ -61,7 +61,8 @@ def test_boxew_absline():
 
     abslin.measure_restew()
     restew = abslin.attrib['EW']
-    np.testing.assert_allclose(restew.value, 0.9935021012055584/(1+abslin.attrib['z']))
+    np.testing.assert_allclose(restew.value, 0.9935021012055584/(1+abslin.z))
+
 
 def test_gaussew_absline():
     # Text Gaussian EW evaluation
@@ -80,6 +81,7 @@ def test_gaussew_absline():
 
     abslin.measure_ew(flg=2,initial_guesses=(0.5,6081,1))
 
+
 def test_measurekin_absline():
     # Test Simple kinematics
     abslin = AbsLine('NiII 1741',z=2.307922)
@@ -96,16 +98,28 @@ def test_measurekin_absline():
 
 def test_ismatch():
     # Test Simple kinematics
-    abslin1 = AbsLine('NiII 1741')
-    abslin1.attrib['z'] = 1.
-    abslin2 = AbsLine('NiII 1741')
-    abslin2.attrib['z'] = 1.
+    abslin1 = AbsLine('NiII 1741', z=1.)
+    abslin2 = AbsLine('NiII 1741', z=1.)
     # Run
     answer = abslin1.ismatch(abslin2)
     assert answer
     # Tuple too
     answer2 = abslin1.ismatch((1., abslin1.wrest))
     assert answer2
+
+
+def test_get_tau0():
+    abslin1 = AbsLine('HI 1215')
+    N = [10**13.0, 10**14.0, 10**20] / (u.cm*u.cm)
+    b = [20, 20, 20] * u.km / u.s
+    tau0 = abslin1.get_tau0(N, b)
+
+
+def test_get_Wr_from_N_b():
+    abslin1 = AbsLine('HI 1215')
+    N = [10**13.0, 10**14.0, 10**20] / (u.cm*u.cm)
+    b = [20, 20, 20] * u.km / u.s
+    Wr = abslin1.get_Wr_from_N_b(N, b)
 
 
 def test_repr():
