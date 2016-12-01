@@ -33,8 +33,6 @@ init_analy = {
             }
 init_attrib = {
             'coord': zero_coord,                           # Coords
-            'z': 0., 'sig_z': 0.,                           # Redshift
-            'v': 0.*u.km/u.s, 'sig_v': 0.*u.km/u.s,        # rest-frame velocity relative to z
             'EW': 0.*u.AA, 'sig_EW': 0.*u.AA, 'flag_EW': 0 # EW
             }
 
@@ -45,6 +43,7 @@ abs_attrib = {'N': 0./u.cm**2, 'sig_N': 0./u.cm**2, 'flag_N': 0, # Column    ## 
 
 emiss_attrib = {'flux': 0.*u.erg/u.s, 'sig_flux': 0.*u.erg/u.s, 'flag_flux': 0,
                 }
+
 
 class SpectralLine(object):
     """ Class for a spectral line. Emission or absorption.
@@ -151,18 +150,19 @@ class SpectralLine(object):
             else:
                 sline.attrib[key] = idict['attrib'][key]
 
-        # Set limits
-        sline.limits._z = sline.attrib['z']
-        try:  # this try is for compatibility with previous versions w/o limits
-            for key in idict['limits']:
-                if isinstance(idict['limits'][key], dict):
-                    qlim = ltu.convert_quantity_in_dict(idict['limits'][key])
-                    sline.limits.set(qlim)
-                    break  # only one limit is needed to define them all
-                else:
-                    sline.limits.set(idict['limits'][key])  # this is zlim
-                    break  # only one limit is needed to define them all
-        except KeyError:
+        # Set z and limits
+        if 'z' in sline.attrib.keys():  # Backwards compatability
+            z = sline.attrib.pop('z')
+        else:
+            z = 0.
+        if 'limits' in idict.keys():
+            if 'wrest' not in idict['limits'].keys(): # compatibility with IGMGuesses
+                # import pdb; pdb.set_trace()
+                idict['limits']['wrest'] = ltu.jsonify(sline.wrest)
+                idict['limits']['z'] = z
+            sline.limits = LineLimits.from_dict(idict['limits'])
+        else:
+            sline.limits = LineLimits(sline.wrest, z, [z,z])
             if 'vlim' in sline.analy.keys():  # Backwards compatability
                 if sline.analy['vlim'][1] > sline.analy['vlim'][0]:
                     sline.limits.set(sline.analy['vlim'])
@@ -188,7 +188,6 @@ class SpectralLine(object):
         self.data = {} # Atomic/Molecular Data (e.g. f-value, A coefficient, Elow)
         self.analy = init_analy.copy()
         self.attrib = init_attrib.copy()
-        self.attrib['z'] = z
 
         # Fill data
         self.fill_data(trans, linelist=linelist, closest=closest, verbose=verbose)
@@ -198,9 +197,15 @@ class SpectralLine(object):
         except KeyError:
             zlim = [z,z]
         if ltype in ['Abs', 'Em']:
-            self.limits = LineLimits.from_specline(self, zlim)
+            self.limits = LineLimits.from_specline(self, z, zlim)
         else:
             raise ValueError('Not ready to set limits for this type')
+
+    @property
+    def z(self):
+        """ Return z
+        """
+        return self.limits.z
 
     def fill_data(self, trans, linelist=None, closest=False, verbose=True):
         """ Fill atomic data and setup analy.
@@ -266,7 +271,6 @@ class SpectralLine(object):
         if not isinstance(z,float):
             raise IOError("Input redshift needs to be a float")
         # Set
-        self.attrib['z'] = z
         self.limits._z = z
         # Warning?
         if self.limits.is_set():
@@ -295,7 +299,7 @@ class SpectralLine(object):
         coord = None
         if isinstance(inp, SpectralLine):
             wrest = inp.wrest
-            z = inp.attrib['z']
+            z = inp.z
             if Zion is None:
                 Zion = (inp.data['Z'], inp.data['ion'])
             if RADec is None:
@@ -309,7 +313,7 @@ class SpectralLine(object):
         # Queries
         answer = ( np.allclose(self.wrest.to(u.AA).value,
                                wrest.to(u.AA).value) &
-            np.allclose(self.attrib['z'], z, rtol=1e-6))
+            np.allclose(self.z, z, rtol=1e-6))
         if Zion is not None:
             answer = answer & (self.data['Z'] == Zion[0]) & (self.data['ion'] == Zion[1])
         if (coord is not None) or (RADec is not None):
@@ -333,7 +337,7 @@ class SpectralLine(object):
         -------
         fx, sig, dict(wave, velo, pix)
             Arrays (numpy or Quantity) of flux, error, and wavelength/velocity
-            The velocity is calculated relative to self.attrib['z']
+            The velocity is calculated relative to self.z
         """
 
         # Checks
@@ -361,7 +365,7 @@ class SpectralLine(object):
 
         # Velocity array created within the XSpectrum1D class and cut afterwards
         self.analy['spec'].velo = self.analy['spec'].relative_vel(
-            self.wrest*(1 + self.attrib['z']))
+            self.wrest*(1 + self.z))
         velo = self.analy['spec'].velo[pix]
 
         # Set it back
@@ -425,8 +429,8 @@ class SpectralLine(object):
         self.measure_ew(**kwargs)
 
         # Push to rest-frame
-        self.attrib['EW'] = self.attrib['EW'] / (self.attrib['z']+1)
-        self.attrib['sig_EW'] = self.attrib['sig_EW'] / (self.attrib['z']+1)
+        self.attrib['EW'] = self.attrib['EW'] / (self.z+1)
+        self.attrib['sig_EW'] = self.attrib['sig_EW'] / (self.z+1)
 
     def measure_kin(self, **kwargs):
         """  Measure Kinematics
@@ -490,13 +494,7 @@ class SpectralLine(object):
                 adict['analy'][key] = self.analy[key]
 
         # Limits
-        for key in self.limits._data.keys():
-            if isinstance(self.limits._data[key], Quantity):
-                adict['limits'][key] = dict(value=self.limits._data[key].value,
-                                            unit=self.limits._data[key].unit.to_string())
-            else:
-                adict['limits'][key] = self.limits._data[key]
-
+        adict['limits'] = self.limits.to_dict()
 
         # Polish for JSON
         adict = ltu.jsonify(adict)
@@ -542,7 +540,7 @@ class SpectralLine(object):
         except KeyError:
             pass
         # z
-        txt = txt + ' z={:.4f}'.format(self.attrib['z'])
+        txt = txt + ' z={:.4f}'.format(self.z)
         #
         txt = txt + ' wrest={:g}'.format(self.wrest)
         txt = txt + '>'
@@ -657,6 +655,70 @@ class AbsLine(SpectralLine):
         # Log
         laa.log_clm(self.attrib)
 
+    def get_tau0(self, N, b):
+        """It returns the optical depth at the line center, tau0,
+        for a given column density and Doppler parameter. It uses
+        approximation given in Draine 2011 (see Chapter 9).
+        It neglects stimulated emission which is fine for IGM or ISM
+        except for radio-frequency transitions.
+
+        Parameters
+        ----------
+        N : Quantity or Quantity array
+            Column density
+        b : Quantity or Quantity array of same shape as N
+            Doppler parameter
+
+        Returns
+        -------
+        tau0: float or array
+            Optical depth at the line center. If N and b are
+            arrays they must be of same shape.
+
+        Notes
+        -----
+        This is a wrapper to linetools.analysis.absline.get_tau0()
+        """
+        try:
+            fosc = self.data['f']
+        except KeyError:
+            raise NotImplementedError('AbsLine {} has not set its oscillator strength.'.format(self.__repr__))
+        return laa.get_tau0(self.wrest, fosc, N, b)
+
+    def get_Wr_from_N_b(self, N, b):
+        """It returns the rest-frame equivalent width for a given
+        N and b. It uses the approximation given by Draine 2011 book
+        (eq. 9.27), which comes from atomic physics considerations
+        See also Rodgers & Williams 1974 (NT: could not find the reference
+        given by Draine)
+
+        Parameters
+        ----------
+        N : Quantity or Quantity array
+            Column density
+        b : Quantity or Quantity array of same shape as N
+            Doppler parameter
+
+        Returns
+        -------
+        Wr : Quantity
+            Rest-frame equivalent width
+
+        Notes
+        -----
+        This is a wrapper to linetools.analysis.absline.Wr_from_N_b().
+        See also linetools.analysis.absline.Wr_from_N_b_transition().
+        """
+        try:
+            fosc = self.data['f']
+        except KeyError:
+            raise NotImplementedError('AbsLine {} has not set its oscillator strength.'.format(self.__repr__))
+        try:
+            gamma = self.data['gamma']
+        except KeyError:
+            raise NotImplementedError('AbsLine {} has not set its gamma value.'.format(self.__repr__))
+        return laa.Wr_from_N_b(N, b, self.wrest, fosc, gamma)
+
     def __repr__(self):
         txt = '<{:s}:'.format(self.__class__.__name__)
         # Name
@@ -665,12 +727,12 @@ class AbsLine(SpectralLine):
         except KeyError:
             pass
         # z
-        txt = txt + ' z={:.4f}'.format(self.attrib['z'])
+        txt = txt + ' z={:.4f}'.format(self.z)
         # wrest
         txt = txt + ' wrest={:.4f}'.format(self.wrest)
         # fval
         try:
-            txt = txt+', f={:g}'.format(self.data['fval'])
+            txt = txt+', f={:g}'.format(self.data['f'])
         except KeyError:
             pass
         txt = txt + '>'

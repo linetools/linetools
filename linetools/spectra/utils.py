@@ -20,6 +20,8 @@ def meta_to_disk(in_meta):
     Parameters
     ----------
     in_meta : dict
+      list in 'headers' needs to be a series of Header objects
+      or a series of dict objects
 
     Returns
     -------
@@ -32,12 +34,15 @@ def meta_to_disk(in_meta):
         if header is None:
             meta['headers'][kk] = str('none')
         else:
-            try:
-                meta['headers'][kk] = header.tostring()
-            except AttributeError:
-                if not isinstance(header, basestring):
-                    raise ValueError("Bad format in header")
-                meta['headers'][kk] = header
+            if isinstance(header, dict):
+                meta['headers'][kk] = header.copy()
+            else:
+                try:
+                    meta['headers'][kk] = header.tostring()
+                except AttributeError:
+                    if not isinstance(header, basestring):
+                        raise ValueError("Bad format in header")
+                    meta['headers'][kk] = header
     # Clean up the dict
     d = liu.jsonify(meta)
     return json.dumps(d)

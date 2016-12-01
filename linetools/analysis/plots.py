@@ -66,7 +66,7 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True,
         norm_sig = iline.analy['spec'].sig/co
         #
         # Plot
-        velo = iline.analy['spec'].relative_vel((1+iline.attrib['z'])*iline.wrest)
+        velo = iline.analy['spec'].relative_vel((1+iline.z)*iline.wrest)
         ax.plot(velo, norm_flux,  'k-', linestyle='steps-mid')
         ax.plot(velo, norm_sig,  'r:')
         # Lines
