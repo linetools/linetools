@@ -82,6 +82,7 @@ class LineLimits(object):
             raise IOError("Input zlim must be a tuple or list")
         if not isinstance(wrest, Quantity):
             raise IOError("Input wrest must be a quantity")
+
         # Data
         self._data = {}
         # Set
@@ -124,7 +125,7 @@ class LineLimits(object):
         """
         #self._data['zlim'] = self._zlim
         self._wvlim = self._wrest*(1+np.array(self._zlim))
-        self._vlim = ltu.give_dv(self._zlim, self._z)
+        self._vlim = ltu.dv_from_z(self._zlim, self._z)
 
     def is_set(self):
         """ Query if the limits are set to sensible values
@@ -171,7 +172,7 @@ class LineLimits(object):
                         u.dimensionless_unscaled).value - 1.
             except UnitConversionError:
                 try:  # assume vlim
-                    self._zlim = ltu.give_dz(inp, self._z) + self._z
+                    self._zlim = ltu.z_from_dv(inp, self._z)
                 except ValueError:
                     raise IOError("Quantity must be length or speed.")
         else:
