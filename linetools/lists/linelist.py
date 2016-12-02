@@ -378,7 +378,7 @@ class LineList(object):
         if self.list in ['HI', 'ISM', 'EUV', 'Strong']:
             ion_name = [name.split(' ')[0] for name in self.name]  # valid for atomic transitions
         elif self.list in ['H2']:
-            ion_name = [name.split('(')[0] for name in self.name]  # valid fot H2
+            ion_name = [name.split('(')[0] for name in self.name]  # valid for H2
         self._data['ion_name'] = ion_name
 
         if self.list in ['H2']:
