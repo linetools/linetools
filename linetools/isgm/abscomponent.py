@@ -155,7 +155,7 @@ class AbsComponent(object):
             Atomic mass -- used to distinguish isotopes
         Ntup : tuple
             (int,float,float)
-            (flag_N,logN,sig_N)
+            (flag_N,logN,sig_logN)
             flag_N : Flag describing N measurement  (0: no info; 1: detection; 2: saturated; 3: non-detection)
             logN : log10 N column density
             sig_logN : Error in log10 N

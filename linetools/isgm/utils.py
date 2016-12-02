@@ -20,8 +20,9 @@ from astropy.units import Quantity
 
 from linetools.analysis import absline as ltaa
 from linetools.isgm.abscomponent import AbsComponent
-from linetools.utils import give_dz
 from linetools.spectralline import init_analy
+from linetools.abund.ions import name_ion
+
 
 def chk_components(components, chk_match=False, chk_A_none=False, tol=0.2*u.arcsec):
     """ Performs checks on a list of components
@@ -238,6 +239,73 @@ def xhtbl_from_components(components, ztbl=None, NHI_obj=None):
     # Get started
     tbl = Table()
     #
+
+def complist_from_table(table):
+    """
+    Returns a list of AbsComponents from an input table.
+
+    Parameters
+    ----------
+    table : Table or QTable
+        Table with component information (each row must correspond
+        to a component)
+
+    Returns
+    -------
+    complist : list
+        List of AbsComponents defined from the input table.
+
+    Notes
+    -----
+    Mandatory column names: 'RA_deg', 'DEC_deg', 'ion_name', 'z_comp', 'vmin_kms', 'vmax_kms'
+        These column are required
+    Special column names: 'name', 'comment', 'logN', 'sig_logN', 'flag_logN'
+        These columns will fill internal attributes when corresponding
+    Other columns: 'any_column_name'
+        These will be added as attributes within the AbsComponent.attrib dictionary.
+
+    """
+    # mandatory and optional columns
+    min_columns = ['RA_deg', 'DEC_deg', 'ion_name', 'z_comp', 'vmin_kms', 'vmax_kms']
+    special_columns = ['name', 'comment', 'logN', 'sig_logN', 'flag_logN']
+    for colname in min_columns:
+        if colname not in table.keys():
+            raise IOError('{} is a mandatory column. Please make sure your input table has it.'.format(colname))
+
+    #loop over rows
+    complist = []
+    for row in table:
+        # mandatory
+        coord = SkyCoord(row['RA_deg'], row['DEC_deg'], unit='degree')
+        Zion = name_ion(row['ion_name'])
+        zcomp = row['z_comp']
+        vlim =[row['vmin_kms'], row['vmin_kms']] * u.km/u.s
+
+        # special columns
+        try:
+            Ntuple = (row['flag_logN'], row['logN'], row['sig_logN'])
+        except KeyError:
+            Ntuple = None
+        try:
+            comment = row['comment']
+        except KeyError:
+            comment = ''
+        try:
+            name = row['name']
+        except KeyError:
+            name = None
+
+        # define the component
+        comp = AbsComponent(coord, Zion, zcomp, vlim, Ntup=Ntuple, comment=comment, name=name)
+
+        # other columns will be filled in comp.attrib dict
+        for colname in table.keys():
+            if (colname not in special_columns) and (colname not in min_columns):
+                comp.attrib[colname] = row[colname]
+
+        # append
+        complist += [comp]
+    return complist
 
 
 def iontable_from_components(components, ztbl=None, NHI_obj=None):
