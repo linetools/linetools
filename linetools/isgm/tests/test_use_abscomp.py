@@ -62,6 +62,15 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
     abscomp = AbsComponent.from_abslines(abslines)
     return abscomp, abslines
 
+def mk_comptable():
+    tab = Table()
+    tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
+    tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
+    tab['RA_deg'] = 100.0
+    tab['DEC_deg'] = -0.8
+    tab['vmin_kms'] = -50.
+    tab['vmax_kms'] = 100.
+    return tab
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
@@ -173,11 +182,10 @@ def test_iontable_from_components():
     tbl = ltiu.iontable_from_components(comps)
     assert len(tbl) == 2
 
-# def test_complist_from_table():
-if 1:
+def test_complist_from_table():
     tab = Table()
     tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
-    tab['z_comp'] = [0.05, 0.9999, 0.1, 0.1001, 0.6]
+    tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
     tab['RA_deg'] = 100.0
     tab['DEC_deg'] = -0.8
     tab['vmin_kms'] = -50.
@@ -210,9 +218,16 @@ if 1:
     # test errors
     tab = Table()
     tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
-    tab['z_comp'] = [0.05, 0.9999, 0.1, 0.1001, 0.6]
+    tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
     with pytest.raises(IOError):
         complist = ltiu.complist_from_table(tab)
+
+
+def test_get_components_at_z():
+    tab = mk_comptable()
+    complist = ltiu.complist_from_table(tab)
+    z01_comps = ltiu.get_components_at_z(complist, 0.1, [-1000,1000]*u.km/u.s)
+    assert len(z01_comps) == 3
 
 
 def test_cog():

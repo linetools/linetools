@@ -23,7 +23,7 @@ from linetools.analysis import absline as ltaa
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.spectralline import init_analy
 from linetools.abund.ions import name_ion
-
+from linetools import utils as ltu
 
 def chk_components(components, chk_match=False, chk_A_none=False, tol=0.2*u.arcsec):
     """ Performs checks on a list of components
