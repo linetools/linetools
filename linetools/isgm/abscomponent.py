@@ -704,7 +704,7 @@ class AbsComponent(object):
         # Column?
         if self.flag_N > 0:
             txt = txt + ', logN={:g}'.format(self.logN)
-            txt = txt + ', sig_N={:g}'.format(self.sig_logN)
+            txt = txt + ', sig_logN={:g}'.format(self.sig_logN)
             txt = txt + ', flag_N={:d}'.format(self.flag_N)
 
         # Finish
