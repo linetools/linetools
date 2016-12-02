@@ -86,6 +86,7 @@ def name_from_coord(coord, precision=(2,1)):
     # Return
     return name
 
+
 def radec_to_coord(radec):
     """ Converts one of many of Celestial Coordinates
     `radec` formats to an astropy SkyCoord object. Assumes
@@ -362,14 +363,14 @@ def z_from_v(z, v):
 def give_dz(dv, zref, rel=True):
     """Same as dz_from_dv. This function will be deprecated."""
     DeprecationWarning("This function will be deprecated. Please use instead dz_from_dv().")
-    # raise ValueError(':P')
+    raise DeprecationWarning('Gone :P')
     return dz_from_dv(dv, zref, rel=rel)
 
 
 def give_dv(z, zref, rel=True):
     """Same as dv_from_dz. This function will be deprecated."""
     warnings.warn("This function will be deprecated. Please use instead dv_from_z().")
-    # raise ValueError(':P')
+    raise DeprecationWarning('Gone :P')
     return dv_from_z(z, zref, rel=rel)
 
 
