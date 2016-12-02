@@ -17,6 +17,7 @@ from astropy import constants as const
 from astropy import units as u
 from astropy.table import Table
 from astropy.units import Quantity
+from astropy.coordinates import SkyCoord
 
 from linetools.analysis import absline as ltaa
 from linetools.isgm.abscomponent import AbsComponent
@@ -279,7 +280,7 @@ def complist_from_table(table):
         coord = SkyCoord(row['RA_deg'], row['DEC_deg'], unit='degree')
         Zion = name_ion(row['ion_name'])
         zcomp = row['z_comp']
-        vlim =[row['vmin_kms'], row['vmin_kms']] * u.km/u.s
+        vlim =[row['vmin_kms'], row['vmax_kms']] * u.km/u.s
 
         # special columns
         try:

@@ -6,7 +6,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import pytest
 from astropy import units as u
-from astropy.table import QTable
+from astropy.table import QTable, Table
 from astropy.coordinates import SkyCoord
 import numpy as np
 import pdb
@@ -172,6 +172,47 @@ def test_iontable_from_components():
     comps = ltiu.build_components_from_abslines([HIlines[0],HIlines[1],SiIIlines[0],SiIIlines[1]])
     tbl = ltiu.iontable_from_components(comps)
     assert len(tbl) == 2
+
+# def test_complist_from_table():
+if 1:
+    tab = Table()
+    tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
+    tab['z_comp'] = [0.05, 0.9999, 0.1, 0.1001, 0.6]
+    tab['RA_deg'] = 100.0
+    tab['DEC_deg'] = -0.8
+    tab['vmin_kms'] = -50.
+    tab['vmax_kms'] = 100.
+    complist = ltiu.complist_from_table(tab)
+    assert np.sum(complist[0].vlim == [ -50., 100.] * u.km / u.s) == 2
+
+    # test other columns
+    tab['logN'] = 13.7
+    tab['sig_logN'] = 0.1
+    tab['flag_logN'] = 1
+    complist = ltiu.complist_from_table(tab)
+    comp = complist[0]
+    # comment now
+    tab['comment'] = ['good', 'good', 'bad', 'bad', 'This is a longer comment with symbols &*^%$']
+    complist = ltiu.complist_from_table(tab)
+    comp = complist[-1]
+    assert comp.comment == 'This is a longer comment with symbols &*^%$'
+    # other naming
+    tab['name'] = tab['ion_name']
+    complist = ltiu.complist_from_table(tab)
+    comp = complist[-1]
+    assert comp.name == 'OVI'
+    # other attributes
+    tab['b'] = [10, 10, 20, 10, 60]
+    complist = ltiu.complist_from_table(tab)
+    comp = complist[-1]
+    assert comp.attrib['b'] == 60
+
+    # test errors
+    tab = Table()
+    tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
+    tab['z_comp'] = [0.05, 0.9999, 0.1, 0.1001, 0.6]
+    with pytest.raises(IOError):
+        complist = ltiu.complist_from_table(tab)
 
 
 def test_cog():
