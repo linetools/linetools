@@ -444,6 +444,34 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
     return synth_comp
 
 
+def get_components_at_z(complist, z, dvlims):
+    """In a given list of components, it finds
+    the ones that are within dvlims from a given redshift
+    and returns a list of those components
+
+    Parameters
+    ----------
+    complist : list
+        List of AbsComponents
+    z : float
+        Redshift there to look for components
+    dvlims : Quantity array
+        Rest-frame velocity limits around z
+        to look for components
+
+    Returns
+    -------
+    components_at_z : list
+        List of components within complist within dvlims from z
+    """
+    good_complist = []
+    for comp in complist:
+        dv_comp = ltu.dv_from_z(comp.zcomp, z)
+        if (dv_comp >= dvlims[0]) and (dv_comp <= dvlims[1]):
+            good_complist += [comp]
+    return good_complist
+
+
 def get_wvobs_chunks(comp):
     """For a given component, it gets a list of tuples with the
     min/max observed wavelengths for each absorption line in the
@@ -761,3 +789,5 @@ def joebvp_from_components(comp_list, specfile, outfile):
         s = comp.repr_joebvp(specfile, flags=flags, b_default=b_val)  # still, b values from abslines take precedence if they exist
         f.write(s)
     f.close()
+
+
