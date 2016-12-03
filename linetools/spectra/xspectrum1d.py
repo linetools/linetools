@@ -315,9 +315,12 @@ class XSpectrum1D(object):
         """ Return the flux with units
         """
         #flux =  self.data[self.select]['flux'] * self.units['flux']
-        flux =  self.data['flux'][self.select].compressed() * self.units['flux']
+        flux = self.data['flux'][self.select].compressed() * self.units['flux']
         if self.normed and self.co_is_set:
-            flux /= self.data['co'][self.select].compressed()
+            # Avoid dividing by zero
+            co = self.data['co'][self.select].compressed()
+            gdco = co != 0.
+            flux[gdco] /= co[gdco]
         return flux
 
     @flux.setter
@@ -347,7 +350,10 @@ class XSpectrum1D(object):
         #sig = self.data[self.select]['sig'] * self.units['flux']
         sig = self.data['sig'][self.select].compressed() * self.units['flux']
         if self.normed and self.co_is_set:
-            sig /= self.data['co'][self.select].compressed()
+            # Avoid dividing by zero
+            co = self.data['co'][self.select].compressed()
+            gdco = co != 0.
+            sig[gdco] /= co[gdco]
         return sig
 
     @sig.setter

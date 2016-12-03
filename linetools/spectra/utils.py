@@ -201,7 +201,8 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
 
     Returns
     -------
-    XSpectrum1D of the rebinned spectrum
+    newspec : XSpectrum1D
+      XSpectrum1D of the rebinned spectrum
     """
     from linetools.spectra.xspectrum1d import XSpectrum1D
     from scipy.interpolate import interp1d
@@ -308,6 +309,7 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
     # Return
     return newspec
 
+
 def rebin_to_rest(spec, zarr, dv, debug=False):
     """ Shuffle an XSpectrum1D dataset to an array of
     observed wavelengths and rebin to dv pixels.
@@ -386,7 +388,7 @@ def smash_spectra(spec, method='average', debug=False):
     from linetools.spectra.xspectrum1d import XSpectrum1D
     # Checks
     if spec.nspec <= 1:
-        raise IOError("Use spec.rebin instead")
+        raise IOError("This method smashes an XSpectrum1D instance with multiple spectra")
     np.testing.assert_allclose(spec.data['wave'][0],spec.data['wave'][1])
     # Generate mask
     stack_msk = spec.data['sig'] > 0.
