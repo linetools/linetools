@@ -255,7 +255,7 @@ class SpectralLine(object):
         self.name = self.data['name']
 
         #
-        self.update()
+        # self.update()  # I'm commenting this, looks like is not being used.
 
 
     def setz(self, z):

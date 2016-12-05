@@ -24,6 +24,7 @@ from linetools.analysis import plots as ltap
 from linetools.spectralline import AbsLine, SpectralLine
 from linetools.abund import ions
 from linetools import utils as ltu
+from linetools.lists.linelist import LineList
 
 # Global import for speed
 c_kms = const.c.to('km/s').value
@@ -264,6 +265,69 @@ class AbsComponent(object):
                 print("Absline velocities lie beyond component\n Set chk_vel=False to skip this test.")
             if not testc:
                 print("Absline coordinates do not match.  Best to set them")
+
+    def add_abslines_from_linelist(self, llist='ISM', wvlims=None, min_Wr=None):
+        """
+        It adds associated AbsLines satisfying some conditions (see parameters below).
+
+        Parameters
+        ----------
+        llist : str
+            Name of the linetools.lists.linelist.LineList
+            object where to look for the transition names.
+            Default is 'ISM', which means the function looks
+            within `list = LineList('ISM')`.
+        wvlims : Quantity array, optional
+            Observed wavelength limits for AbsLines to be added.
+            e.g. [1200, 2000]*u.AA.
+        min_Wr : Quantity, optional
+            Minimum rest-frame equivalent with for AbsLines to be added.
+            This is calculated in the very low optical depth regime tau0<<1,
+            where Wr is independent of Doppler parameter or gamma (see eq. 9.15 of
+            Draine 2011). Still, a column density attribute for the AbsComponent
+            is needed.
+
+        Returns
+        -------
+        Adds AbsLine objects to the AbsComponent._abslines list.
+
+        """
+        # get the transitions from LineList
+        list = LineList(llist)
+        name = ions.ion_name(self.Zion, nspace=0)
+        if wvlims is not None:
+            transitions = list.available_transitions(name, wvlims=wvlims)
+        else:
+            transitions = list.all_transitions(name)
+        # check outputs
+        if transitions is None:
+            warnings.warn("No transitions satisfying the criteria found. Doing nothing.")
+            return
+        if isinstance(transitions, dict):
+            # only 1 transition found
+            iline = SpectralLine.from_dict(transitions)
+            return
+
+        # loop over the transitions when more than one found
+        for line in transitions:
+            iline = AbsLine(line['name'], z=self.zcomp)
+            iline.limits.set(self.vlim)
+            if min_Wr is not None:
+                # check logN is defined
+                logN = self.logN
+                if logN == 0:
+                    warning.warn("AbsComponent does not have logN defined. Appending abslines"
+                                 "regardless of min_Wr.")
+                else:
+                    N = 10**logN / (u.cm*u.cm)
+                    Wr_iline = iline.get_Wr_from_N(N=N)  # valid for the tau0<<1 regime.
+                    if Wr_iline < min_Wr: # do not append
+                        continue
+            self._abslines.append(iline)
+
+
+
+
 
     def build_table(self):
         """Generate an astropy QTable out of the abs lines

@@ -172,6 +172,14 @@ def test_build_components_from_lines():
     comps = ltiu.build_components_from_abslines([HIlines[0],HIlines[1],SiIIlines[0],SiIIlines[1]])
     assert len(comps) == 2
 
+# def test_add_abslines_from_linelist():
+if 1:
+    comp, HIlines = mk_comp('HI')
+    comp._abslines = [] # reset abslines
+    comp.add_abslines_from_linelist(llist='HI')
+
+
+
 
 def test_iontable_from_components():
     # Lines
