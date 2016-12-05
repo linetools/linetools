@@ -244,7 +244,7 @@ def xhtbl_from_components(components, ztbl=None, NHI_obj=None):
 
 def complist_from_table(table):
     """
-    Returns a list of AbsComponents from an input table.
+    Returns a list of AbsComponents from an input Table.
 
     Parameters
     ----------
@@ -482,7 +482,7 @@ def get_components_at_z(complist, z, dvlims):
     complist : list
         List of AbsComponents
     z : float
-        Redshift there to look for components
+        Redshift to search for components
     dvlims : Quantity array
         Rest-frame velocity limits around z
         to look for components
@@ -492,6 +492,17 @@ def get_components_at_z(complist, z, dvlims):
     components_at_z : list
         List of components within complist within dvlims from z
     """
+    # check input
+    if not isinstance(complist[0], AbsComponent):
+        raise IOError('complist must be a list of AbsComponents.')
+    if len(dvlims) != 2:
+        raise IOError('dvlims must be a Quantity array of velocity limits (vmin, vmax).')
+    else:
+        try:
+            dvlims_kms = dvlims.to('km/s')
+        except u.UnitConversionError:
+            raise IOError('dvlims must have velocity units.')
+
     good_complist = []
     for comp in complist:
         dv_comp = ltu.dv_from_z(comp.zcomp, z)

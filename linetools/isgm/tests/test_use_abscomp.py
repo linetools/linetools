@@ -228,6 +228,13 @@ def test_get_components_at_z():
     complist = ltiu.complist_from_table(tab)
     z01_comps = ltiu.get_components_at_z(complist, 0.1, [-1000,1000]*u.km/u.s)
     assert len(z01_comps) == 3
+    # check expected errors
+    with pytest.raises(IOError):
+        ltiu.get_components_at_z([1,2,3], 0.1, [-1000,1000]*u.km/u.s) # wrong complist
+    with pytest.raises(IOError):
+        ltiu.get_components_at_z(complist, 0.1, [-1000,1000, 1000]*u.km/u.s) # wrong vlims size
+    with pytest.raises(IOError):
+        ltiu.get_components_at_z(complist, 0.1, [-1000,1000]*u.km)  # wrong vlims units
 
 
 def test_cog():
