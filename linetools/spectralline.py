@@ -719,6 +719,35 @@ class AbsLine(SpectralLine):
             raise NotImplementedError('AbsLine {} has not set its gamma value.'.format(self.__repr__))
         return laa.Wr_from_N_b(N, b, self.wrest, fosc, gamma)
 
+    def get_Wr_from_N(self, N):
+        """It returns the approximated rest-frame equivalent width for
+        a given N. It uses the approximation given by Draine 2011 book
+        (eq. 9.15), which is valid for tau0<<1 where Wr is independent
+        of Doppler parameter or gamma. Use get_Wr_from_N_b() for a
+        better approximation valid for wider range in tau0.
+
+        Parameters
+        ----------
+        N : Quantity or Quantity array
+            Column density
+
+        Returns
+        -------
+        Wr : Quantity
+            Approximated rest-frame equivalent width valid for tau0<<1.
+
+        Notes
+        -----
+        This is a wrapper to linetools.analysis.absline.Wr_from_N().
+        See also get_Wr_from_N_b() and linetools.analysis.absline.Wr_from_N_transition().
+        """
+        try:
+            fosc = self.data['f']
+        except KeyError:
+            raise NotImplementedError('AbsLine {} has not set its oscillator strength.'.format(self.__repr__))
+        return laa.Wr_from_N(N, self.wrest, fosc)
+
+
     def __repr__(self):
         txt = '<{:s}:'.format(self.__class__.__name__)
         # Name
