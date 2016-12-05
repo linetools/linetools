@@ -331,19 +331,19 @@ class LineList(object):
         for sorting the underlying data table in convenient ways, e.g. by expected
         relative strength, abundance, etc.
 
-        * For atomic transitions these new column include:
+        * For atomic transitions these new columns include:
             - `ion_name` : HI, CIII, CIV, etc
             - `log(w*f)` : np.log10(wrest * fosc)  # in np.log10(AA)
             - `abundance` : either [`none`, `solar`]
             - `ion_correction` : [`none`]
             - `rel_strength` : log(w*f) + abundance + ion_correction
 
-        * For molecules a different approach is done:
+        * For molecules a different approach is used:
             - `ion_name` : B0-0P, C6-0, etc.
             - `rel_strength`: We have only three arbitrary levels: [1, 50, 100]
-                    100 is for Jj={0,1} and Jk={0,1}
-                    50 is for Jj={2,3} and Jk={2,3}
-                    1 is for the rest
+                    100 is for Jk={0,1}
+                    50 is for Jk={2,3}
+                    1 otherwise
 
         Parameters
         ----------
@@ -382,11 +382,11 @@ class LineList(object):
         self._data['ion_name'] = ion_name
 
         if self.list in ['H2']:
-            # we want Jj and Jk to be 1 or 0 first
-            cond = (self._data['Jj'] <= 1) & (self._data['Jk'] <= 1)
+            # we want Jk to be 1 or 0 first
+            cond = (self._data['Jk'] <= 1)
             rel_strength = np.where(cond, 100, 1)
-            # second level
-            cond = (self._data['Jj'] > 1) & (self._data['Jk'] > 1) & (self._data['Jj'] <= 3) & (self._data['Jk'] <= 3)
+            # second level: Jk = {2,3}
+            cond = (self._data['Jk'] > 1) & (self._data['Jk'] <= 3)
             rel_strength = np.where(cond, 50, rel_strength)
             self._data['rel_strength'] = rel_strength
             return
