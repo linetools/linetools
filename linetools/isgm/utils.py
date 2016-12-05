@@ -24,6 +24,7 @@ from linetools.isgm.abscomponent import AbsComponent
 from linetools.spectralline import init_analy
 from linetools.abund.ions import name_ion
 from linetools import utils as ltu
+from linetools.lists.linelist import LineList
 
 def chk_components(components, chk_match=False, chk_A_none=False, tol=0.2*u.arcsec):
     """ Performs checks on a list of components
@@ -443,6 +444,32 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
 
     # Return
     return synth_comp
+
+def add_abslines_to_components(complist, wvlims, llist='ISM', min_ew=None, ):
+    """
+    For a given AbsComponent in complist, it adds associated AbsLines satisfying
+    some conditions (see parameters below).
+
+    Parameters
+    ----------
+    complist : list
+        List of AbsComponent objects
+    wvlims : Quantity array
+        Wavelength limits (observed) where to look for AbsLines
+    llist : str, optional
+        Name of the LineList to look for transitions. Default is 'ISM'
+    min_ew : Quantity, optional
+        Minimum rest-frame equivalent with for AbsLines to be added.
+        This is calculated in the low optical depth regime. A column
+        density attribute for the AbsComponent is needed.
+
+
+    min_ew
+
+    Returns
+    -------
+
+    """
 
 
 def get_components_at_z(complist, z, dvlims):

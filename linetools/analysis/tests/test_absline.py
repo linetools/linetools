@@ -6,7 +6,7 @@ import pdb
 from astropy import units as u
 
 from linetools.analysis.absline import aodm, log_clm, linear_clm, photo_cross,\
-    sum_logN, get_tau0, Wr_from_N_b, Wr_from_N_b_transition
+    sum_logN, get_tau0, Wr_from_N_b, Wr_from_N_b_transition, Wr_from_N, Wr_from_N_transition
 from linetools.lists.linelist import LineList
 
 def test_aodm():
@@ -103,6 +103,16 @@ def test_Wr_from_N_b():
     np.testing.assert_allclose(Wr, Wr_test[0], rtol=1e-5)
 
 
+def test_Wr_from_N():
+    hi_list = LineList('HI')
+    lya = hi_list['HI 1215']
+    N = 10**np.linspace(12.0, 12.3, 4) / (u.cm*u.cm)
+    # test array like
+    Wr = Wr_from_N(N, lya['wrest'], lya['f'])
+    Wr_test = [ 0.00544783, 0.00685842, 0.00863423, 0.01086986] * u.AA
+    np.testing.assert_allclose(Wr, Wr_test, rtol=1e-5)
+
+
 def test_Wr_from_N_b_transition():
     N = 10**np.linspace(12.0, 22.0, 4) / (u.cm*u.cm)
     b = np.ones_like(N.value) * 10 * u.km/u.s
@@ -116,3 +126,14 @@ def test_Wr_from_N_b_transition():
     # test expected error
     with pytest.raises(ValueError):
         Wr = Wr_from_N_b_transition(N[0], b[0], transition='Wrong name jojo')
+
+
+def test_Wr_from_N_transition():
+    N = 10**np.linspace(12.0, 12.3, 4) / (u.cm*u.cm)
+    # test array like
+    Wr = Wr_from_N_transition(N, 'HI 1215')
+    Wr_test = [ 0.00544783, 0.00685842, 0.00863423, 0.01086986] * u.AA
+    np.testing.assert_allclose(Wr, Wr_test, rtol=1e-5)
+    # test expected error
+    with pytest.raises(ValueError):
+        Wr = Wr_from_N_transition(N[0], transition='Wrong name jojo')
