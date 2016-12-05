@@ -172,13 +172,27 @@ def test_build_components_from_lines():
     comps = ltiu.build_components_from_abslines([HIlines[0],HIlines[1],SiIIlines[0],SiIIlines[1]])
     assert len(comps) == 2
 
-# def test_add_abslines_from_linelist():
-if 1:
+def test_add_abslines_from_linelist():
     comp, HIlines = mk_comp('HI')
     comp._abslines = [] # reset abslines
     comp.add_abslines_from_linelist(llist='HI')
-
-
+    assert len(comp._abslines) == 30
+    comp._abslines = [] # reset
+    comp.add_abslines_from_linelist(llist='HI', wvlim=[4100, 5000]*u.AA)
+    assert len(comp._abslines) == 1
+    # check for no transitions
+    comp._abslines = [] # reset
+    comp.add_abslines_from_linelist(llist='HI', wvlim=[5000, 5100]*u.AA)
+    assert len(comp._abslines) == 0
+    # test min_Wr
+    comp._abslines = [] # reset
+    comp.logN = 13.0
+    comp.add_abslines_from_linelist(llist='HI', min_Wr=0.001*u.AA)
+    assert len(comp._abslines) == 4
+    # test logN not defined
+    comp.logN = 0.0
+    comp._abslines = [] # reset
+    comp.add_abslines_from_linelist(llist='HI', min_Wr=0.001*u.AA)
 
 
 def test_iontable_from_components():

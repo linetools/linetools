@@ -266,7 +266,7 @@ class AbsComponent(object):
             if not testc:
                 print("Absline coordinates do not match.  Best to set them")
 
-    def add_abslines_from_linelist(self, llist='ISM', wvlims=None, min_Wr=None):
+    def add_abslines_from_linelist(self, llist='ISM', wvlim=None, min_Wr=None):
         """
         It adds associated AbsLines satisfying some conditions (see parameters below).
 
@@ -295,28 +295,31 @@ class AbsComponent(object):
         # get the transitions from LineList
         list = LineList(llist)
         name = ions.ion_name(self.Zion, nspace=0)
-        if wvlims is not None:
-            transitions = list.available_transitions(name, wvlims=wvlims)
-        else:
-            transitions = list.all_transitions(name)
-        # check outputs
-        if transitions is None:
-            warnings.warn("No transitions satisfying the criteria found. Doing nothing.")
-            return
+        transitions = list.all_transitions(name)
+        # unify output to be always QTable
         if isinstance(transitions, dict):
-            # only 1 transition found
-            iline = SpectralLine.from_dict(transitions)
+            transitions = list.from_dict_to_qtable(transitions)
+
+        # check wvlims
+        if wvlim is not None:
+            cond = (transitions['wrest']*(1+self.zcomp) >= wvlim[0]) & \
+                   (transitions['wrest']*(1+self.zcomp) <= wvlim[1])
+            transitions = transitions[cond]
+
+        # check outputs
+        if len(transitions) == 0:
+            warnings.warn("No transitions satisfying the criteria found. Doing nothing.")
             return
 
         # loop over the transitions when more than one found
-        for line in transitions:
-            iline = AbsLine(line['name'], z=self.zcomp)
+        for transition in transitions:
+            iline = AbsLine(transition['name'], z=self.zcomp)
             iline.limits.set(self.vlim)
             if min_Wr is not None:
                 # check logN is defined
                 logN = self.logN
                 if logN == 0:
-                    warning.warn("AbsComponent does not have logN defined. Appending abslines"
+                    warnings.warn("AbsComponent does not have logN defined. Appending abslines"
                                  "regardless of min_Wr.")
                 else:
                     N = 10**logN / (u.cm*u.cm)
