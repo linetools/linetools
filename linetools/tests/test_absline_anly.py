@@ -126,7 +126,7 @@ def test_get_Wr_from_N_b():
 def test_get_Wr_from_N():
     abslin1 = AbsLine('HI 1215')
     N = [10**12.0, 10**12.1, 10**12.2] / (u.cm*u.cm)
-    Wr = abslin1.get_Wr_from_N_b(N)
+    Wr = abslin1.get_Wr_from_N(N)
 
 
 def test_repr():
