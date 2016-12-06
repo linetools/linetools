@@ -63,13 +63,13 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
     return abscomp, abslines
 
 def mk_comptable():
-    tab = Table()
+    tab = QTable()
     tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
     tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
-    tab['RA_deg'] = 100.0
-    tab['DEC_deg'] = -0.8
-    tab['vmin_kms'] = -50.
-    tab['vmax_kms'] = 100.
+    tab['RA'] = [100.0] * len(tab) * u.deg
+    tab['DEC'] = [-0.8] * len(tab) * u.deg
+    tab['vmin'] = [-50.] * len(tab) * u.km/u.s
+    tab['vmax'] = [100.] * len(tab) * u.km/u.s
     return tab
 
 def data_path(filename):
