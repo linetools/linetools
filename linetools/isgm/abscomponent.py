@@ -266,7 +266,7 @@ class AbsComponent(object):
             if not testc:
                 print("Absline coordinates do not match.  Best to set them")
 
-    def add_abslines_from_linelist(self, llist='ISM', wvlim=None, min_Wr=None):
+    def add_abslines_from_linelist(self, llist='ISM', wvlim=None, min_Wr=None, **kwargs):
         """
         It adds associated AbsLines satisfying some conditions (see parameters below).
 
@@ -290,6 +290,10 @@ class AbsComponent(object):
         Returns
         -------
         Adds AbsLine objects to the AbsComponent._abslines list.
+
+        Notes
+        -----
+        **kwargs are passed to AbsLine.add_absline() method.
 
         """
         # get the transitions from LineList
@@ -315,22 +319,20 @@ class AbsComponent(object):
         for transition in transitions:
             iline = AbsLine(transition['name'], z=self.zcomp)
             iline.limits.set(self.vlim)
+            iline.attrib['coord'] = self.coord
             if min_Wr is not None:
                 # check logN is defined
                 logN = self.logN
                 if logN == 0:
-                    warnings.warn("AbsComponent does not have logN defined. Appending abslines"
+                    warnings.warn("AbsComponent does not have logN defined. Appending AbsLines "
                                  "regardless of min_Wr.")
                 else:
                     N = 10**logN / (u.cm*u.cm)
                     Wr_iline = iline.get_Wr_from_N(N=N)  # valid for the tau0<<1 regime.
                     if Wr_iline < min_Wr: # do not append
                         continue
-            self._abslines.append(iline)
-
-
-
-
+            # add the absline
+            self.add_absline(iline)
 
     def build_table(self):
         """Generate an astropy QTable out of the abs lines
