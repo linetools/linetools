@@ -205,16 +205,15 @@ def test_iontable_from_components():
     assert len(tbl) == 2
 
 def test_complist_from_table():
-    tab = Table()
+    tab = QTable()
     tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
     tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
-    tab['RA_deg'] = 100.0
-    tab['DEC_deg'] = -0.8
-    tab['vmin_kms'] = -50.
-    tab['vmax_kms'] = 100.
+    tab['RA'] = [100.0]*len(tab) * u.deg
+    tab['DEC'] = [-0.8]*len(tab) * u.deg
+    tab['vmin'] = [-50.] *len(tab) * u.km / u.s
+    tab['vmax'] = [100.] *len(tab) * u.km / u.s
     complist = ltiu.complist_from_table(tab)
     assert np.sum(complist[0].vlim == [ -50., 100.] * u.km / u.s) == 2
-
     # test other columns
     tab['logN'] = 13.7
     tab['sig_logN'] = 0.1
@@ -232,17 +231,21 @@ def test_complist_from_table():
     comp = complist[-1]
     assert comp.name == 'OVI'
     # other attributes
-    tab['b'] = [10, 10, 20, 10, 60]
+    tab['b'] = [10, 10, 20, 10, 60] * u.km / u.s
     complist = ltiu.complist_from_table(tab)
     comp = complist[-1]
-    assert comp.attrib['b'] == 60
+    assert comp.attrib['b'] == 60*u.km/u.s
 
     # test errors
+    tab['sig_b'] = [1,2,3,4,5] * u.AA
+    with pytest.raises(IOError):
+        complist = ltiu.complist_from_table(tab) # bad units for sig_b
     tab = Table()
     tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
     tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
     with pytest.raises(IOError):
-        complist = ltiu.complist_from_table(tab)
+        complist = ltiu.complist_from_table(tab) # not enough mandatory columns
+
 
 
 def test_get_components_at_z():

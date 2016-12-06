@@ -248,9 +248,10 @@ def complist_from_table(table):
 
     Parameters
     ----------
-    table : Table or QTable
+    table : QTable
         Table with component information (each row must correspond
-        to a component)
+        to a component). Each column is expecting a unit when
+        appropriate.
 
     Returns
     -------
@@ -259,16 +260,21 @@ def complist_from_table(table):
 
     Notes
     -----
-    Mandatory column names: 'RA_deg', 'DEC_deg', 'ion_name', 'z_comp', 'vmin_kms', 'vmax_kms'
-        These column are required
+    Mandatory column names: 'RA', 'DEC', 'ion_name', 'z_comp', 'vmin', 'vmax'
+        These column are required.
     Special column names: 'name', 'comment', 'logN', 'sig_logN', 'flag_logN'
-        These columns will fill internal attributes when corresponding
+        These columns will fill internal attributes when corresponding.
+        In order to fill in the Ntuple attribute all three 'logN', 'sig_logN', 'flag_logN'
+        must be present. For convenience 'logN' and 'sig_logN' are expected to be floats
+        corresponding to their values in np.log10(1/cm^2).
+
     Other columns: 'any_column_name'
-        These will be added as attributes within the AbsComponent.attrib dictionary.
+        These will be added as attributes within the AbsComponent.attrib dictionary,
+        with their respective units if given.
 
     """
     # mandatory and optional columns
-    min_columns = ['RA_deg', 'DEC_deg', 'ion_name', 'z_comp', 'vmin_kms', 'vmax_kms']
+    min_columns = ['RA', 'DEC', 'ion_name', 'z_comp', 'vmin', 'vmax']
     special_columns = ['name', 'comment', 'logN', 'sig_logN', 'flag_logN']
     for colname in min_columns:
         if colname not in table.keys():
@@ -278,14 +284,14 @@ def complist_from_table(table):
     complist = []
     for row in table:
         # mandatory
-        coord = SkyCoord(row['RA_deg'], row['DEC_deg'], unit='degree')
+        coord = SkyCoord(row['RA'].to('deg').value, row['DEC'].to('deg').value, unit='deg')  # RA y DEC must both come with units
         Zion = name_ion(row['ion_name'])
         zcomp = row['z_comp']
-        vlim =[row['vmin_kms'], row['vmax_kms']] * u.km/u.s
+        vlim =[row['vmin'].to('km/s').value, row['vmax'].to('km/s').value] * u.km / u.s  # units are expected here too
 
         # special columns
         try:
-            Ntuple = (row['flag_logN'], row['logN'], row['sig_logN'])
+            Ntuple = (row['flag_logN'], row['logN'], row['sig_logN'])  # no units expected
         except KeyError:
             Ntuple = None
         try:
@@ -303,7 +309,16 @@ def complist_from_table(table):
         # other columns will be filled in comp.attrib dict
         for colname in table.keys():
             if (colname not in special_columns) and (colname not in min_columns):
-                comp.attrib[colname] = row[colname]
+                kms_cols = ['b', 'sig_b']
+                if colname in kms_cols:  # check units for parameters expected in velocity units
+                    try:
+                        val_aux = row[colname].to('km/s').value * u.km / u.s
+                    except u.UnitConversionError:
+                        raise IOError('If `{}` column is present, it must have velocity units.'.format(colname))
+                    comp.attrib[colname] = val_aux
+                # parameters we do not care about units much
+                else:
+                    comp.attrib[colname] = row[colname]
 
         # append
         complist += [comp]
