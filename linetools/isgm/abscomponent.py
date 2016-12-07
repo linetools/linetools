@@ -320,6 +320,13 @@ class AbsComponent(object):
             iline = AbsLine(transition['name'], z=self.zcomp)
             iline.limits.set(self.vlim)
             iline.attrib['coord'] = self.coord
+            iline.attrib['logN'] = self.logN
+            iline.attrib['sig_logN'] = self.sig_logN
+            iline.attrib['N'] = self.N
+            iline.attrib['sig_N'] = self.sig_N
+            for key in self.attrib.keys():
+                iline.attrib[key] = self.attrib[key]
+
             if min_Wr is not None:
                 # check logN is defined
                 logN = self.logN
@@ -329,7 +336,7 @@ class AbsComponent(object):
                 else:
                     N = 10**logN / (u.cm*u.cm)
                     Wr_iline = iline.get_Wr_from_N(N=N)  # valid for the tau0<<1 regime.
-                    if Wr_iline < min_Wr: # do not append
+                    if Wr_iline < min_Wr:  # do not append
                         continue
             # add the absline
             self.add_absline(iline)
