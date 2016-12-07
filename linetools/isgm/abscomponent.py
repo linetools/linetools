@@ -297,12 +297,12 @@ class AbsComponent(object):
 
         """
         # get the transitions from LineList
-        list = LineList(llist)
+        llist = LineList(llist)
         name = ions.ion_name(self.Zion, nspace=0)
-        transitions = list.all_transitions(name)
+        transitions = llist.all_transitions(name)
         # unify output to be always QTable
         if isinstance(transitions, dict):
-            transitions = list.from_dict_to_qtable(transitions)
+            transitions = llist.from_dict_to_qtable(transitions)
 
         # check wvlims
         if wvlim is not None:
