@@ -397,6 +397,50 @@ def Wr_from_N_b(N, b, wrest, fosc, gamma):
     return Wr
 
 
+def Wr_from_N(N, wrest, fosc):
+    """For a given transition with wrest and fosc, it
+    returns the rest-frame equivalent width for a given
+    N. This is an approximation only valid for tau0 << 1, where
+    Wr is independent on Doppler parameter and gamma (see eqs. 9.14 and 9.15 of
+    Draine 2011). Please use Wr_from_N_b() if you need an approximation
+    valid for a wider range in tau0.
+
+    Parameters
+    ----------
+    N : Quantity or Quantity array
+        Column density
+    wrest : Quantity
+        Rest-frame wavelength of the transition
+    fosc : float
+        Oscillator strength of the transition
+
+    Returns
+    -------
+    Wr : Quantity
+        Approximated rest-frame equivalent width valid for the tau0<<1 regime.
+
+    Notes
+    -----
+    For a better approximation valid for much wider range in tau0,
+    please use Wr_from_N_b(). See also Wr_from_N_transition() and Wr_from_N_b_transition().
+
+    """
+
+    # Check units by converting to CGS
+    wrest_cgs = wrest.to('cm')
+    c_cgs = const.c.to('cm/s')
+
+    # dimensionless Wr
+    W = (np.pi * e2_me_c_cgs / c_cgs) * N * fosc * wrest_cgs
+    W = W.decompose()
+    # Check dimensionless
+    if (W.unit != u.dimensionless_unscaled):
+        raise IOError('Something went wrong with the units; please check input units.')
+
+    Wr = W * wrest  # in wavelength units (see equation 9.4 of Draine)
+    return Wr
+
+
 def Wr_from_N_b_transition(N, b, transition, llist='ISM'):
     """ For a given transition this function looks
     for the atomic parameters (wa0, fosc, gamma) and returns the
@@ -442,3 +486,48 @@ def Wr_from_N_b_transition(N, b, transition, llist='ISM'):
 
     # return
     return Wr_from_N_b(N, b, wrest, fosc, gamma)
+
+
+def Wr_from_N_transition(N, transition, llist='ISM'):
+    """ For a given transition this function looks
+    for the atomic parameters (wa0, fosc) and returns the
+    rest-frame equivalent width for a given N. It uses the approximation given by
+    Draine 2011 book (eq. 9.15), which is only valid for tau0<<1 where Wr is
+    independent of Doppler parameter or gamma. Please use Wr_from_N_b_transition()
+    if you need an approximation valid for a wider range in tau0.
+
+    Parameters
+    ----------
+    N : Quantity or Quantity array
+        Column density
+    transition : str
+        Name of the transition using linetools' naming
+        convention, e.g. 'HI 1215', 'CIV 1550', etc.
+    llist : str
+        Name of the linetools.lists.linelist.LineList
+        object where to look for the transition name.
+        Default is 'ISM', which means the function looks
+        within `list = LineList('ISM')`.
+
+    Returns
+    -------
+    Wr : Quantity
+        Approximated rest-frame equivalent width valid for tau0<<1.
+
+    Notes
+    -----
+    See also Wr_from_N(), Wr_from_N_b_transition(), Wr_from_N_b()
+
+    """
+    linelist = LineList(llist)
+    transition_dict = linelist[transition]
+    if transition_dict is None:
+        raise ValueError('Transition {:s} not found within LineList {:s}'.format(transition, linelist.list))
+    else:
+        # get atomic parameters
+        wrest = transition_dict['wrest']
+        fosc = transition_dict['f']
+
+    # return
+    return Wr_from_N(N, wrest, fosc)
+

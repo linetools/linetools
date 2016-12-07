@@ -17,11 +17,14 @@ from astropy import constants as const
 from astropy import units as u
 from astropy.table import Table
 from astropy.units import Quantity
+from astropy.coordinates import SkyCoord
 
 from linetools.analysis import absline as ltaa
 from linetools.isgm.abscomponent import AbsComponent
-from linetools.utils import give_dz
 from linetools.spectralline import init_analy
+from linetools.abund.ions import name_ion
+from linetools import utils as ltu
+from linetools.lists.linelist import LineList
 
 def chk_components(components, chk_match=False, chk_A_none=False, tol=0.2*u.arcsec):
     """ Performs checks on a list of components
@@ -239,6 +242,88 @@ def xhtbl_from_components(components, ztbl=None, NHI_obj=None):
     tbl = Table()
     #
 
+def complist_from_table(table):
+    """
+    Returns a list of AbsComponents from an input Table.
+
+    Parameters
+    ----------
+    table : QTable
+        Table with component information (each row must correspond
+        to a component). Each column is expecting a unit when
+        appropriate.
+
+    Returns
+    -------
+    complist : list
+        List of AbsComponents defined from the input table.
+
+    Notes
+    -----
+    Mandatory column names: 'RA', 'DEC', 'ion_name', 'z_comp', 'vmin', 'vmax'
+        These column are required.
+    Special column names: 'name', 'comment', 'logN', 'sig_logN', 'flag_logN'
+        These columns will fill internal attributes when corresponding.
+        In order to fill in the Ntuple attribute all three 'logN', 'sig_logN', 'flag_logN'
+        must be present. For convenience 'logN' and 'sig_logN' are expected to be floats
+        corresponding to their values in np.log10(1/cm^2).
+
+    Other columns: 'any_column_name'
+        These will be added as attributes within the AbsComponent.attrib dictionary,
+        with their respective units if given.
+
+    """
+    # mandatory and optional columns
+    min_columns = ['RA', 'DEC', 'ion_name', 'z_comp', 'vmin', 'vmax']
+    special_columns = ['name', 'comment', 'logN', 'sig_logN', 'flag_logN']
+    for colname in min_columns:
+        if colname not in table.keys():
+            raise IOError('{} is a mandatory column. Please make sure your input table has it.'.format(colname))
+
+    #loop over rows
+    complist = []
+    for row in table:
+        # mandatory
+        coord = SkyCoord(row['RA'].to('deg').value, row['DEC'].to('deg').value, unit='deg')  # RA y DEC must both come with units
+        Zion = name_ion(row['ion_name'])
+        zcomp = row['z_comp']
+        vlim =[row['vmin'].to('km/s').value, row['vmax'].to('km/s').value] * u.km / u.s  # units are expected here too
+
+        # special columns
+        try:
+            Ntuple = (row['flag_logN'], row['logN'], row['sig_logN'])  # no units expected
+        except KeyError:
+            Ntuple = None
+        try:
+            comment = row['comment']
+        except KeyError:
+            comment = ''
+        try:
+            name = row['name']
+        except KeyError:
+            name = None
+
+        # define the component
+        comp = AbsComponent(coord, Zion, zcomp, vlim, Ntup=Ntuple, comment=comment, name=name)
+
+        # other columns will be filled in comp.attrib dict
+        for colname in table.keys():
+            if (colname not in special_columns) and (colname not in min_columns):
+                kms_cols = ['b', 'sig_b']
+                if colname in kms_cols:  # check units for parameters expected in velocity units
+                    try:
+                        val_aux = row[colname].to('km/s').value * u.km / u.s
+                    except u.UnitConversionError:
+                        raise IOError('If `{}` column is present, it must have velocity units.'.format(colname))
+                    comp.attrib[colname] = val_aux
+                # parameters we do not care about units much
+                else:
+                    comp.attrib[colname] = row[colname]
+
+        # append
+        complist += [comp]
+    return complist
+
 
 def iontable_from_components(components, ztbl=None, NHI_obj=None):
     """Generate a Table from a list of components
@@ -374,6 +459,45 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
 
     # Return
     return synth_comp
+
+
+def get_components_at_z(complist, z, dvlims):
+    """In a given list of components, it finds
+    the ones that are within dvlims from a given redshift
+    and returns a list of those components
+
+    Parameters
+    ----------
+    complist : list
+        List of AbsComponents
+    z : float
+        Redshift to search for components
+    dvlims : Quantity array
+        Rest-frame velocity limits around z
+        to look for components
+
+    Returns
+    -------
+    components_at_z : list
+        List of components within complist within dvlims from z
+    """
+    # check input
+    if not isinstance(complist[0], AbsComponent):
+        raise IOError('complist must be a list of AbsComponents.')
+    if len(dvlims) != 2:
+        raise IOError('dvlims must be a Quantity array of velocity limits (vmin, vmax).')
+    else:
+        try:
+            dvlims_kms = dvlims.to('km/s')
+        except u.UnitConversionError:
+            raise IOError('dvlims must have velocity units.')
+
+    good_complist = []
+    for comp in complist:
+        dv_comp = ltu.dv_from_z(comp.zcomp, z)
+        if (dv_comp >= dvlims[0]) and (dv_comp <= dvlims[1]):
+            good_complist += [comp]
+    return good_complist
 
 
 def get_wvobs_chunks(comp):
@@ -693,3 +817,5 @@ def joebvp_from_components(comp_list, specfile, outfile):
         s = comp.repr_joebvp(specfile, flags=flags, b_default=b_val)  # still, b values from abslines take precedence if they exist
         f.write(s)
     f.close()
+
+

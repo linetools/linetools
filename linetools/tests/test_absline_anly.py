@@ -13,6 +13,7 @@ from linetools.spectra import io as lsio
 from linetools import spectralline
 from linetools.lists.linelist import LineList
 
+
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), '../spectra/tests/files')
     return os.path.join(data_dir, filename)
@@ -120,6 +121,12 @@ def test_get_Wr_from_N_b():
     N = [10**13.0, 10**14.0, 10**20] / (u.cm*u.cm)
     b = [20, 20, 20] * u.km / u.s
     Wr = abslin1.get_Wr_from_N_b(N, b)
+
+
+def test_get_Wr_from_N():
+    abslin1 = AbsLine('HI 1215')
+    N = [10**12.0, 10**12.1, 10**12.2] / (u.cm*u.cm)
+    Wr = abslin1.get_Wr_from_N(N)
 
 
 def test_repr():

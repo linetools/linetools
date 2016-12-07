@@ -171,8 +171,38 @@ Generate Multiple Components
 This method generates multiple components from a list of
 AbsLines.::
 
-   comps = ltiu.build_components_from_abslines([lya,lyb,SiIIlines[0],SiIIlines[1]])
+   complist = ltiu.build_components_from_abslines([lya,lyb,SiIIlines[0],SiIIlines[1]])
 
+You can also create a list of components using an input `astropy.table.QTable` object
+(mandatory column names include: `['RA', 'DEC', 'ion_name', 'z_comp', 'vmin', 'vmax']`)::
+
+   from astropy.table import QTable
+   tab = QTable()
+   tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
+   tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.3]
+   tab['logN'] = [12.0, 13.0., 13.0, 14.0, 13.5]
+   tab['sig_logN'] = [0.1, 0.12., 0.15, 0.2, 0.1]
+   tab['flag_logN'] = [1, 1, 2, 0, 1]
+   tab['RA'] = 100.0 * u.deg * np.ones(len(tab))
+   tab['DEC'] = -0.8 * u.deg * np.ones(len(tab))
+   tab['vmin'] = -50 * u.km/u.s * np.ones(len(tab))
+   tab['vmax'] =  50 * u.km/u.s * np.ones(len(tab))
+
+   complist = ltiu.complist_from_table(tab)
+
+These components will not have AbsLines defined by default. However, it is very easy to append
+AbsLines to these components for a given observed wavelength and minimum rest-frame equivalent width::
+
+   # add abslines
+   wvlim = [1100, 1500]*u.AA
+   for comp in complist:
+      comp.add_abslines_from_linelist(llist='ISM', wvlim=wvlim, min_Wr=0.01*u.AA, chk_sep=False)
+
+This will look for transitions in the `LineList('ISM')` object and append those within expected to be within `wvlim`
+to each corresponding AbsComponent in the `complist`. In this example, only those AbsLines expected to have rest-frame
+equivalent widths larger than `0.01*u.AA` will be appended, but if you wish to include all of the available AbsLines
+you can set `min_Wr=None`. Here, we have set `chk_sep=False` to avoid checking for coordinates because by construction the
+individual AbsLines have the same coordinates as the corresponding AbsComponent.
 
 
 Use Components to create a spectrum model
@@ -182,13 +212,13 @@ You can create a spectrum model using a list of AbsComponents, e.g.::
 
    from linetools.analysis import voigt as lav
    wv_array = np.array(1100,1500, 0.1)*u.AA
-   model = lav.voigt_from_components(wv_array, comps)
+   model = lav.voigt_from_components(wv_array, complist)
 
-In this manner, model is a XSpectrum1D object with the the AbsComponents contained in the `comps` list.
+In this manner, model is a XSpectrum1D object with the the AbsComponents contained in the `complist` list.
 You may also add a convolution with a given kernel to compare with observations from different spectrographs,
 in which case you can use::
 
-   model = lav.voigt_from_components(wv_array, comps, fwhm=3)
+   model = lav.voigt_from_components(wv_array, complist, fwhm=3)
 
 This is same as before but the model is convolved with a Gaussian kernel of FWHM of 3 pixels.
 

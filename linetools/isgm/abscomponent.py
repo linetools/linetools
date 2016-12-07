@@ -24,6 +24,7 @@ from linetools.analysis import plots as ltap
 from linetools.spectralline import AbsLine, SpectralLine
 from linetools.abund import ions
 from linetools import utils as ltu
+from linetools.lists.linelist import LineList
 
 # Global import for speed
 c_kms = const.c.to('km/s').value
@@ -155,7 +156,7 @@ class AbsComponent(object):
             Atomic mass -- used to distinguish isotopes
         Ntup : tuple
             (int,float,float)
-            (flag_N,logN,sig_N)
+            (flag_N,logN,sig_logN)
             flag_N : Flag describing N measurement  (0: no info; 1: detection; 2: saturated; 3: non-detection)
             logN : log10 N column density
             sig_logN : Error in log10 N
@@ -264,6 +265,79 @@ class AbsComponent(object):
                 print("Absline velocities lie beyond component\n Set chk_vel=False to skip this test.")
             if not testc:
                 print("Absline coordinates do not match.  Best to set them")
+
+    def add_abslines_from_linelist(self, llist='ISM', wvlim=None, min_Wr=None, **kwargs):
+        """
+        It adds associated AbsLines satisfying some conditions (see parameters below).
+
+        Parameters
+        ----------
+        llist : str
+            Name of the linetools.lists.linelist.LineList
+            object where to look for the transition names.
+            Default is 'ISM', which means the function looks
+            within `list = LineList('ISM')`.
+        wvlims : Quantity array, optional
+            Observed wavelength limits for AbsLines to be added.
+            e.g. [1200, 2000]*u.AA.
+        min_Wr : Quantity, optional
+            Minimum rest-frame equivalent with for AbsLines to be added.
+            This is calculated in the very low optical depth regime tau0<<1,
+            where Wr is independent of Doppler parameter or gamma (see eq. 9.15 of
+            Draine 2011). Still, a column density attribute for the AbsComponent
+            is needed.
+
+        Returns
+        -------
+        Adds AbsLine objects to the AbsComponent._abslines list.
+
+        Notes
+        -----
+        **kwargs are passed to AbsLine.add_absline() method.
+
+        """
+        # get the transitions from LineList
+        llist = LineList(llist)
+        name = ions.ion_name(self.Zion, nspace=0)
+        transitions = llist.all_transitions(name)
+        # unify output to be always QTable
+        if isinstance(transitions, dict):
+            transitions = llist.from_dict_to_qtable(transitions)
+
+        # check wvlims
+        if wvlim is not None:
+            cond = (transitions['wrest']*(1+self.zcomp) >= wvlim[0]) & \
+                   (transitions['wrest']*(1+self.zcomp) <= wvlim[1])
+            transitions = transitions[cond]
+
+        # check outputs
+        if len(transitions) == 0:
+            warnings.warn("No transitions satisfying the criteria found. Doing nothing.")
+            return
+
+        # loop over the transitions when more than one found
+        for transition in transitions:
+            iline = AbsLine(transition['name'], z=self.zcomp)
+            iline.limits.set(self.vlim)
+            iline.attrib['coord'] = self.coord
+            iline.attrib['logN'] = self.logN
+            iline.attrib['sig_logN'] = self.sig_logN
+            for key in self.attrib.keys():
+                iline.attrib[key] = self.attrib[key]
+
+            if min_Wr is not None:
+                # check logN is defined
+                logN = self.logN
+                if logN == 0:
+                    warnings.warn("AbsComponent does not have logN defined. Appending AbsLines "
+                                 "regardless of min_Wr.")
+                else:
+                    N = 10**logN / (u.cm*u.cm)
+                    Wr_iline = iline.get_Wr_from_N(N=N)  # valid for the tau0<<1 regime.
+                    if Wr_iline < min_Wr:  # do not append
+                        continue
+            # add the absline
+            self.add_absline(iline)
 
     def build_table(self):
         """Generate an astropy QTable out of the abs lines
@@ -704,7 +778,7 @@ class AbsComponent(object):
         # Column?
         if self.flag_N > 0:
             txt = txt + ', logN={:g}'.format(self.logN)
-            txt = txt + ', sig_N={:g}'.format(self.sig_logN)
+            txt = txt + ', sig_logN={:g}'.format(self.sig_logN)
             txt = txt + ', flag_N={:d}'.format(self.flag_N)
 
         # Finish
