@@ -15,6 +15,16 @@ from linetools.spectra import utils as ltsu
 def spec():
     return io.readspec(data_path('UM184_nF.fits'))
 
+@pytest.fixture
+def specr():
+    # Replace bad pixels (for rebinning)
+    data = io.readspec(data_path('UM184_nF.fits'))
+    sig = data.sig.value
+    bad_pix = sig <= 0.
+    sig[bad_pix] = 1.
+    data.sig = sig
+    return data
+
 
 @pytest.fixture
 def spec2():
@@ -26,6 +36,11 @@ def specm(spec,spec2):
     specm = ltsu.collate([spec,spec2])
     return specm
 
+@pytest.fixture
+def specmr(specr,spec2):  # With bad pixels replaced
+    specmr = ltsu.collate([specr,spec2])
+    return specmr
+
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
@@ -36,30 +51,6 @@ def test_collate(spec,spec2):
     coll_spec = ltsu.collate([spec,spec2])
     assert coll_spec.nspec == 2
     assert coll_spec.totpix == 20379
-
-
-def test_rebin_to_rest(spec,spec2):
-    zarr = np.array([2.1,2.2])
-    # Build spectra array
-    coll_spec = ltsu.collate([spec,spec2])
-    rest_spec = ltsu.rebin_to_rest(coll_spec, zarr, 100*u.km/u.s, debug=False)
-    # Test
-    assert rest_spec.totpix == 3716
-    np.testing.assert_allclose(rest_spec.wvmin.value, 986.3506403, rtol=1e-5)
-
-
-def test_smash_spectra(spec,spec2):
-    # Try to stack 2 spectra with different wavelengths
-    coll_spec = ltsu.collate([spec,spec2])
-    with pytest.raises(AssertionError):
-        stack = ltsu.smash_spectra(coll_spec)
-    # Stack rebinned
-    zarr = np.array([2.1,2.2])
-    rest_spec = ltsu.rebin_to_rest(coll_spec, zarr, 100*u.km/u.s, debug=False)
-    stack = ltsu.smash_spectra(rest_spec, method='average')
-    # Test
-    assert stack.totpix == 3716
-    np.testing.assert_allclose(stack.flux[1].value, -3.3213510, rtol=1e-5)
 
 
 def test_airtovac_andback(spec):
@@ -77,23 +68,30 @@ def test_airtovac_andback(spec):
     assert spec.meta['airvac'] == 'air'
 
 
-def test_rebin(spec, specm):
+def test_rebin_raise_error(spec):
+    new_wv = np.arange(3000., 9000., 5) * u.AA
+    # Failure modes
+    with pytest.raises(IOError):
+        newspec = spec.rebin(new_wv)
+
+
+def test_rebin(specr, specmr):
     # Rebin
     new_wv = np.arange(3000., 9000., 5) * u.AA
-    newspec = spec.rebin(new_wv)
+    newspec = specr.rebin(new_wv)
     # Test
     np.testing.assert_allclose(newspec.flux[1000], 0.9999280967617779)
     assert newspec.flux.unit is u.dimensionless_unscaled
     # With sigma
-    newspec = spec.rebin(new_wv, do_sig=True)
+    newspec = specr.rebin(new_wv, do_sig=True)
     imn = np.argmin(np.abs(newspec.wavelength-8055*u.AA))
     np.testing.assert_allclose(newspec.sig[imn].value, 0.0169634, rtol=1e-5)
     # With NANs
-    spec.data['flux'][spec.select][100:110] = np.nan
-    newspec = spec.rebin(new_wv)
+    specr.data['flux'][specr.select][100:110] = np.nan
+    newspec = specr.rebin(new_wv)
     np.testing.assert_allclose(newspec.flux[1000], 0.9999280967617779)
     # All
-    spec2 = specm.rebin(new_wv, all=True)
+    spec2 = specmr.rebin(new_wv, all=True)
     np.testing.assert_allclose(spec2.wvmax.value, 8995.0)
 
 
@@ -135,19 +133,19 @@ def test_ivar_smooth(spec):
     assert smth_spec.flux.unit == spec.flux.unit
 
 
-def test_rebintwo(spec):
+def test_rebintwo(specr):
     # Add units
     funit = u.erg/u.s/u.cm**2
-    spec.units['flux'] = funit
+    specr.units['flux'] = funit
     # Rebin
     new_wv = np.arange(3000., 9000., 5) * u.AA
-    newspec = spec.rebin(new_wv, do_sig=True)
+    newspec = specr.rebin(new_wv, do_sig=True)
     # Test
     np.testing.assert_allclose(newspec.flux[1000].value, 0.992559,  rtol=1e-5)
     assert newspec.flux.unit == funit
     # Without sig
-    spec_nosig = XSpectrum1D.from_tuple((spec.wavelength, spec.flux))
-    newspec = spec.rebin(new_wv)
+    spec_nosig = XSpectrum1D.from_tuple((specr.wavelength, specr.flux))
+    newspec = specr.rebin(new_wv)
     assert newspec.sig_is_set is False
 
 
@@ -245,4 +243,26 @@ def test_wvmnx():
                                    np.ones(npix)*0.1))
     assert spec.wvmin.value == 5000.
     assert spec.wvmax.value == 6000.
+
+
+def test_rebin_to_rest(specmr):
+    zarr = np.array([2.1,2.2])
+    # Build spectra array
+    rest_spec = ltsu.rebin_to_rest(specmr, zarr, 100*u.km/u.s, debug=False)
+    # Test
+    assert rest_spec.totpix == 3716
+    np.testing.assert_allclose(rest_spec.wvmin.value, 986.3506403, rtol=1e-5)
+
+
+def test_smash_spectra(specmr):
+    # Try to stack 2 spectra with different wavelengths
+    with pytest.raises(AssertionError):
+        stack = ltsu.smash_spectra(specmr)
+    # Stack rebinned
+    zarr = np.array([2.1,2.2])
+    rest_spec = ltsu.rebin_to_rest(specmr, zarr, 100*u.km/u.s, debug=False)
+    stack = ltsu.smash_spectra(rest_spec, method='average')
+    # Test
+    assert stack.totpix == 3716
+    np.testing.assert_allclose(stack.flux[1].value, -3.3213510, rtol=1e-5)
 

@@ -217,6 +217,13 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
     gdf = ~badf
     flux = flux[gdf]
 
+    # Check for bad pixels (not prepared for these)
+    if spec.sig_is_set:
+        sig = spec.sig.value
+        bad_sig = sig[gdf] <= 0.
+        if np.sum(bad_sig) > 0:
+            raise IOError("Not prepared to handle data with rejected pixels (sig=0).")
+
     # Endpoints of original pixels
     npix = len(spec.wavelength)
     wvh = (spec.wavelength + np.roll(spec.wavelength, -1)) / 2.
@@ -231,8 +238,9 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
 
     # Error
     if do_sig:
-        var = spec.sig.value**2
-        var = var[gdf]
+        if not spec.sig_is_set:
+            raise IOError("sig must be set to rebin sig")
+        var = sig[gdf]**2
     else:
         var = np.ones_like(flux)
 

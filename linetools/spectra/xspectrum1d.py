@@ -1565,7 +1565,7 @@ class XSpectrum1D(object):
         self.normalize(co=co)
 
     def add_to_mask(self, add_mask, compressed=False):
-        """ Add to the mask of the current exposure
+        """ Add to the mask of the selected spectrum
         Useful for removing bad pixels
 
         Parameters
