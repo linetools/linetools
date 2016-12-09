@@ -42,8 +42,12 @@ Slice
 Return a sliced portion of the XSpectrum1D object.  Indices
 can be repeated.  A couple of examples::
 
-    two_spec = mspec.slice(np.array([0,1]))
-    one_spec = mspec.slice(1)
+    two_spec = mspec[np.array([0,1])]
+    one_spec = mspec[1]
+    two_spec = mspec[0:2]
+
+Note that the full set of headers are maintained, i.e.
+these are not sliced.
 
 
 Rebin to Rest

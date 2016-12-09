@@ -933,27 +933,6 @@ class XSpectrum1D(object):
         return XSpectrum1D.from_tuple(
                 (self.wavelength, smoothflux, newsig), meta=self.meta.copy())
 
-    def slice(self, indices):
-        """ Slice the XSpectrum1D object using a set of input indices
-        Repetition is allowed
-        Headers are passed along without slicing
-
-        Parameters
-        ----------
-        indices : int or ndarray
-
-        Returns
-        -------
-        XSpectrum1D
-          sliced as desired
-
-        """
-        # Slice
-        newdata = self.data[indices]
-        # Create
-        return XSpectrum1D(newdata['wave'], newdata['flux'], newdata['sig'], newdata['co'],
-                           units=self.units, meta=self.meta)
-
     def stitch(self, idx=None, scale=1.):
         """ Combine two or more spectra within the .data array
         Simple logic is used to order them by wavelength if the
@@ -1589,6 +1568,26 @@ class XSpectrum1D(object):
         """
         warnings.warn("Setting entire mask to False. Be careful..")
         self.data.mask = False
+
+    def __getitem__(self, item):
+        """ Slice the XSpectrum1D object using a set of input indices
+        Repetition is allowed
+        Headers are passed along without slicing
+
+        Parameters
+        ----------
+        item
+
+        Returns
+        -------
+
+        """
+        # Slice internal data
+        newdata = self.data[item]
+        # Create
+        return XSpectrum1D(newdata['wave'], newdata['flux'], newdata['sig'], newdata['co'],
+                           units=self.units, meta=self.meta)
+
 
     def __dir__(self):
         """ Does something more sensible than what Spectrum1D provides

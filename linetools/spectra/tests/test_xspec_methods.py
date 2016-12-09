@@ -19,19 +19,24 @@ def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
 
+
 def test_slice():
     spec = io.readspec(data_path('UM184_nF.fits'))
     spec2 = io.readspec(data_path('PH957_f.fits'))
     spec3 = spec2.copy()
     # Collate to make a multispec spectrum
     mspec = lsu.collate([spec,spec2,spec3])
-    newspec = mspec.slice(np.array([0,1]))
+    # Array
+    newspec = mspec[np.array([0,1])]
     # Test
     assert newspec.nspec == 2
     assert not newspec.co_is_set
-    #
-    newspec2 = mspec.slice(1)
+    # Int
+    newspec2 = mspec[1]
     assert newspec2.nspec == 1
+    # Slice
+    newspec3 = mspec[0:2]
+    assert newspec2.nspec == 2
 
 
 def test_const_sig():
