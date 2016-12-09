@@ -1583,7 +1583,10 @@ class XSpectrum1D(object):
 
         """
         # Slice internal data
-        newdata = self.data[item]
+        if isinstance(item, int):
+            newdata = self.data[np.array([item])]
+        else:
+            newdata = self.data[item]
         # Create
         return XSpectrum1D(newdata['wave'], newdata['flux'], newdata['sig'], newdata['co'],
                            units=self.units, meta=self.meta)

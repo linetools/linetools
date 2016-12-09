@@ -36,7 +36,7 @@ def test_slice():
     assert newspec2.nspec == 1
     # Slice
     newspec3 = mspec[0:2]
-    assert newspec2.nspec == 2
+    assert newspec3.nspec == 2
 
 
 def test_const_sig():
