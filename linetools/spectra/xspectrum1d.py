@@ -15,7 +15,7 @@ from astropy.io import fits
 #from astropy.nddata import StdDevUncertainty
 from astropy.table import QTable, Column, Table
 
-import linetools.utils as liu
+import linetools.utils as ltu
 
 from .plotting import get_flux_plotrange
 from .utils import meta_to_disk
@@ -802,7 +802,7 @@ class XSpectrum1D(object):
         -------
         velo : Quantity array (km/s)
         """
-        velo = liu.rel_vel(self.wavelength, wv_obs)
+        velo = ltu.rel_vel(self.wavelength, wv_obs)
         return velo
 
     #  Box car smooth
@@ -842,10 +842,10 @@ class XSpectrum1D(object):
             orig_pix = np.arange(new_npix * nbox)
 
             # Rebin (mean)
-            new_wv = liu.scipy_rebin(self.wavelength[orig_pix], new_npix)
-            new_fx = liu.scipy_rebin(self.flux[orig_pix], new_npix)
+            new_wv = ltu.scipy_rebin(self.wavelength[orig_pix], new_npix)
+            new_fx = ltu.scipy_rebin(self.flux[orig_pix], new_npix)
             if self.sig_is_set:
-                new_sig = liu.scipy_rebin(
+                new_sig = ltu.scipy_rebin(
                     self.sig[orig_pix], new_npix) / np.sqrt(nbox)
             else:
                 new_sig = None
@@ -1184,7 +1184,7 @@ class XSpectrum1D(object):
         prihdu.header['NSPEC'] = self.nspec
         prihdu.header['NPIX'] = self.npix
         units = self.units.copy()
-        d = liu.jsonify(units)
+        d = ltu.jsonify(units)
         # import pdb; pdb.set_trace()
         prihdu.header['UNITS'] = json.dumps(d)
 
@@ -1208,7 +1208,7 @@ class XSpectrum1D(object):
             hdf5[path]['meta'] = meta_to_disk(self.meta)
         # Units
         units = self.units.copy()
-        d = liu.jsonify(units)
+        d = ltu.jsonify(units)
         hdf5[path]['units'] = json.dumps(d)
         # Data with compression
         hdf5.create_dataset(path+'data', data=self.data.filled(fill_val),
@@ -1249,7 +1249,7 @@ class XSpectrum1D(object):
             hdf5['meta'] = meta_to_disk(self.meta)
         # Units
         units = self.units.copy()
-        d = liu.jsonify(units)
+        d = ltu.jsonify(units)
         hdf5['units'] = json.dumps(d)
         # Data with compression
         hdf5.create_dataset('data', data=self.data.filled(fill_val),
@@ -1319,7 +1319,7 @@ class XSpectrum1D(object):
 
         # Units
         units = self.units.copy()
-        d = liu.jsonify(units)
+        d = ltu.jsonify(units)
         prihdu.header['UNITS'] = json.dumps(d)
 
         # Write

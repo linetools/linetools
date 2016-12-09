@@ -6,7 +6,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import pytest
 from astropy import units as u
-from astropy.table import QTable
+from astropy.table import QTable, Table
 from astropy.coordinates import SkyCoord
 import numpy as np
 import pdb
@@ -62,6 +62,15 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
     abscomp = AbsComponent.from_abslines(abslines)
     return abscomp, abslines
 
+def mk_comptable():
+    tab = QTable()
+    tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
+    tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
+    tab['RA'] = [100.0] * len(tab) * u.deg
+    tab['DEC'] = [-0.8] * len(tab) * u.deg
+    tab['vmin'] = [-50.] * len(tab) * u.km/u.s
+    tab['vmax'] = [100.] * len(tab) * u.km/u.s
+    return tab
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
@@ -163,6 +172,28 @@ def test_build_components_from_lines():
     comps = ltiu.build_components_from_abslines([HIlines[0],HIlines[1],SiIIlines[0],SiIIlines[1]])
     assert len(comps) == 2
 
+def test_add_abslines_from_linelist():
+    comp, HIlines = mk_comp('HI')
+    comp._abslines = [] # reset abslines
+    comp.add_abslines_from_linelist(llist='HI')
+    assert len(comp._abslines) == 30
+    comp._abslines = [] # reset
+    comp.add_abslines_from_linelist(llist='HI', wvlim=[4100, 5000]*u.AA)
+    assert len(comp._abslines) == 1
+    # check for no transitions
+    comp._abslines = [] # reset
+    comp.add_abslines_from_linelist(llist='HI', wvlim=[5000, 5100]*u.AA)
+    assert len(comp._abslines) == 0
+    # test min_Wr
+    comp._abslines = [] # reset
+    comp.logN = 13.0
+    comp.add_abslines_from_linelist(llist='HI', min_Wr=0.001*u.AA)
+    assert len(comp._abslines) == 4
+    # test logN not defined
+    comp.logN = 0.0
+    comp._abslines = [] # reset
+    comp.add_abslines_from_linelist(llist='HI', min_Wr=0.001*u.AA)
+
 
 def test_iontable_from_components():
     # Lines
@@ -172,6 +203,63 @@ def test_iontable_from_components():
     comps = ltiu.build_components_from_abslines([HIlines[0],HIlines[1],SiIIlines[0],SiIIlines[1]])
     tbl = ltiu.iontable_from_components(comps)
     assert len(tbl) == 2
+
+def test_complist_from_table():
+    tab = QTable()
+    tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
+    tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
+    tab['RA'] = [100.0]*len(tab) * u.deg
+    tab['DEC'] = [-0.8]*len(tab) * u.deg
+    tab['vmin'] = [-50.] *len(tab) * u.km / u.s
+    tab['vmax'] = [100.] *len(tab) * u.km / u.s
+    complist = ltiu.complist_from_table(tab)
+    assert np.sum(complist[0].vlim == [ -50., 100.] * u.km / u.s) == 2
+    # test other columns
+    tab['logN'] = 13.7
+    tab['sig_logN'] = 0.1
+    tab['flag_logN'] = 1
+    complist = ltiu.complist_from_table(tab)
+    comp = complist[0]
+    # comment now
+    tab['comment'] = ['good', 'good', 'bad', 'bad', 'This is a longer comment with symbols &*^%$']
+    complist = ltiu.complist_from_table(tab)
+    comp = complist[-1]
+    assert comp.comment == 'This is a longer comment with symbols &*^%$'
+    # other naming
+    tab['name'] = tab['ion_name']
+    complist = ltiu.complist_from_table(tab)
+    comp = complist[-1]
+    assert comp.name == 'OVI'
+    # other attributes
+    tab['b'] = [10, 10, 20, 10, 60] * u.km / u.s
+    complist = ltiu.complist_from_table(tab)
+    comp = complist[-1]
+    assert comp.attrib['b'] == 60*u.km/u.s
+
+    # test errors
+    tab['sig_b'] = [1,2,3,4,5] * u.AA
+    with pytest.raises(IOError):
+        complist = ltiu.complist_from_table(tab) # bad units for sig_b
+    tab = Table()
+    tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
+    tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
+    with pytest.raises(IOError):
+        complist = ltiu.complist_from_table(tab) # not enough mandatory columns
+
+
+
+def test_get_components_at_z():
+    tab = mk_comptable()
+    complist = ltiu.complist_from_table(tab)
+    z01_comps = ltiu.get_components_at_z(complist, 0.1, [-1000,1000]*u.km/u.s)
+    assert len(z01_comps) == 3
+    # check expected errors
+    with pytest.raises(IOError):
+        ltiu.get_components_at_z([1,2,3], 0.1, [-1000,1000]*u.km/u.s) # wrong complist
+    with pytest.raises(IOError):
+        ltiu.get_components_at_z(complist, 0.1, [-1000,1000, 1000]*u.km/u.s) # wrong vlims size
+    with pytest.raises(IOError):
+        ltiu.get_components_at_z(complist, 0.1, [-1000,1000]*u.km)  # wrong vlims units
 
 
 def test_cog():
@@ -355,9 +443,9 @@ def test_group_coincident_compoments():
     for ii in range(len(out)):
         for comp in out[ii]:
             out_names[ii] += [comp.name]
-    assert out_names == [['HI', 'HI', 'HI', 'HI'], ['SiII_1', 'SiII_1'], ['SiII_2', 'SiII_2']]
+    assert out_names == [['HI', 'HI', 'HI', 'HI'], ['SiII_2', 'SiII_2'], ['SiII_1', 'SiII_1']]
     # now a case where are all different
-    comp_list = [abscomp, SiIIcomp1, SiIIcomp2]
+    comp_list = [abscomp, SiIIcomp2 ,SiIIcomp1]
     out = ltiu.group_coincident_compoments(comp_list)
     for a,b in zip(comp_list, out):
         assert len(b) == 1

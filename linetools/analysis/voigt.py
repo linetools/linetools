@@ -205,6 +205,8 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'],
             raise RuntimeError("line attribute 'N' must have units!")
         if debug:
             print(iline, iline.attrib['N'])
+        if iline.attrib['b'].value <= 0.:
+            raise RuntimeError("line attribute 'b' must have units and be positive!")
         par = [np.log10(iline.attrib['N'].value),
                iline.z, iline.attrib['b'].to('cm/s').value,
                iline.wrest.to('cm').value, iline.data['f'],

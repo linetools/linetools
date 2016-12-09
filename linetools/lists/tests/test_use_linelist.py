@@ -71,6 +71,11 @@ def test_all_transitions():
     out = ism.all_transitions(1215.6700*u.AA)
     assert len(out) == 30,"wrong line counts" # 30 Lyman series transitions
     #print('test_all_transitions() passed')
+    h2 = LineList('H2')
+    line = 'B19-0P(1)'
+    out = h2.all_transitions(line)
+    assert len(out) == 7
+
 
 def test_strongest_transitions():
     error_msg = 'Something is wrong in strongest_transitions()'

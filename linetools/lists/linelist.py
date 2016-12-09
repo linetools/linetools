@@ -329,13 +329,21 @@ class LineList(object):
                                        redo=False):
         """Sets new convenient columns to the self._data QTable. These will be useful
         for sorting the underlying data table in convenient ways, e.g. by expected
-        relative strength.
-        These new column include:
+        relative strength, abundance, etc.
+
+        * For atomic transitions these new columns include:
             - `ion_name` : HI, CIII, CIV, etc
             - `log(w*f)` : np.log10(wrest * fosc)  # in np.log10(AA)
             - `abundance` : either [`none`, `solar`]
             - `ion_correction` : [`none`]
             - `rel_strength` : log(w*f) + abundance + ion_correction
+
+        * For molecules a different approach is used:
+            - `ion_name` : B0-0P, C6-0, etc.
+            - `rel_strength`: We have only three arbitrary levels: [1, 50, 100]
+                    100 is for Jk={0,1}
+                    50 is for Jk={2,3}
+                    1 otherwise
 
         Parameters
         ----------
@@ -349,24 +357,39 @@ class LineList(object):
             Ionization correction. Options are:
                 'none' : No correction applied, so this column will
                          be filled with zeros. (Default)
-         redo : bool, optional
+        redo : bool, optional
             Remake the extra columns
 
-        Note: This function is only implemented for the following
-        lists: HI, ISM, EUV, Strong.
+        Note
+        ----
+        This method is only implemented for the following lists: HI, ISM, EUV, Strong.
+        Partially implemented for: H2.
 
         """
         # Avoid redo (especially for caching)
         if ('ion_name' in self._data.keys()) and (not redo):
             return
 
-        if self.list not in ['HI', 'ISM', 'EUV', 'Strong']:
+        if self.list not in ['HI', 'ISM', 'EUV', 'Strong', 'H2']:
             warnings.warn('Not implemented: will not set relative strength for LineList: {}.'.format(self.list))
             return
 
         # Set ion_name column
-        ion_name = [name.split(' ')[0] for name in self.name]
+        if self.list in ['HI', 'ISM', 'EUV', 'Strong']:
+            ion_name = [name.split(' ')[0] for name in self.name]  # valid for atomic transitions
+        elif self.list in ['H2']:
+            ion_name = [name.split('(')[0] for name in self.name]  # valid for H2
         self._data['ion_name'] = ion_name
+
+        if self.list in ['H2']:
+            # we want Jk to be 1 or 0 first
+            cond = (self._data['Jk'] <= 1)
+            rel_strength = np.where(cond, 100, 1)
+            # second level: Jk = {2,3}
+            cond = (self._data['Jk'] > 1) & (self._data['Jk'] <= 3)
+            rel_strength = np.where(cond, 50, rel_strength)
+            self._data['rel_strength'] = rel_strength
+            return
 
         # Set QM strength as MaskedColumn (self._data['f'] is MaskedColumn)
         qm_strength = self._data['f'] * (self._data['wrest'].to('AA').value)
@@ -552,7 +575,7 @@ class LineList(object):
 
         """
 
-        if self.list not in ['HI', 'ISM', 'EUV', 'Strong']:
+        if self.list not in ['HI', 'ISM', 'EUV', 'Strong', 'H2']:
             warnings.warn('Not implemented for LineList: {}.'.format(self.list))
             return
 
@@ -566,6 +589,15 @@ class LineList(object):
 
         if line == 'unknown':
             return self.unknown_line()
+        if self.list in ['H2']:
+
+            cond = self._data['ion_name'] == line.split('(')[0]
+            tbl = self._data[cond]  # cond is a masked boolean array
+            if len(tbl) > 1:
+                return tbl
+            else:  # this should be always len(tbl)==1 because line was found
+                return self.from_qtable_to_dict(tbl)
+
         else:
             Z = None
             for row in self._data:  # is this loop avoidable?
