@@ -1426,11 +1426,13 @@ class XSpectrum1D(object):
 
         print('Updating continuum.')
         self.co = wrapper.continuum  # this should work with the assignment, even is self.co_is_set is False
-        if 'contpoints' not in self.meta:
-            self.meta['contpoints'] = []
-        self.meta['contpoints'].extend(
-            [tuple(pts) for pts in wrapper.contpoints])
-        self.meta['contpoints'].sort()
+        # Put into meta -- has been causing trouble
+        if False:
+            if 'contpoints' not in self.meta:
+                self.meta['contpoints'] = []
+            self.meta['contpoints'].extend(
+                [tuple(pts) for pts in wrapper.contpoints])
+            self.meta['contpoints'].sort()
 
     def _interp_continuum(self, x, y, wv=None):
         """ Interpolate the continuum from spline knots.
