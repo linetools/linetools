@@ -23,6 +23,7 @@ def emlines_from_alis_output(alis_file):
       List of EmLine objects
     """
     linelist = LineList('Galaxy')
+    
     def get_value(istr):
         eqpos = istr.find('=')
         return istr[eqpos+1:]
