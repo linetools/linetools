@@ -322,6 +322,10 @@ class AbsComponent(object):
             iline.attrib['coord'] = self.coord
             iline.attrib['logN'] = self.logN
             iline.attrib['sig_logN'] = self.sig_logN
+            iline.attrib['flag_N'] = self.flag_N
+            iline.attrib['N'] = 10**iline.attrib['logN'] / (u.cm * u.cm)
+            iline.attrib['sig_N'] = 10**iline.attrib['sig_logN'] / (u.cm * u.cm)
+
             for key in self.attrib.keys():
                 iline.attrib[key] = self.attrib[key]
 
