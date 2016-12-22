@@ -198,7 +198,7 @@ class AbsComponent(object):
                 except:
                     raise IOError("Need to provide 'stars' parameter.")
             self.name = '{:s}_z{:0.5f}'.format(iname, self.zcomp)
-        elif (self.Zion != (-1, -1)):
+        elif (name is None) and (self.Zion == (-1, -1)):
             self.name = 'mol_z{:0.5f}'.format(self.zcomp)
         else:
             self.name = name
