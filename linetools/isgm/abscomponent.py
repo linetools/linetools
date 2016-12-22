@@ -190,7 +190,7 @@ class AbsComponent(object):
             self.sig_logN = 0.
 
         # Name
-        if name is None:
+        if (name is None) and (self.Zion != (-1, -1)):
             iname = ions.ion_name(self.Zion, nspace=0)
             if self.Ej.value > 0:  # Need to put *'s in name
                 try:
@@ -198,6 +198,8 @@ class AbsComponent(object):
                 except:
                     raise IOError("Need to provide 'stars' parameter.")
             self.name = '{:s}_z{:0.5f}'.format(iname, self.zcomp)
+        elif (self.Zion != (-1, -1)):
+            self.name = 'mol_z{:0.5f}'.format(self.zcomp)
         else:
             self.name = name
 
@@ -306,7 +308,7 @@ class AbsComponent(object):
         # get the transitions from LineList
         llist = LineList(llist)
         if (self.Zion) == (-1, -1):
-            # use wrest in the meantime
+            # use wrest in the meantime (this is a patch)
             wrest = self.attrib['init_wrest']
             transitions = llist.all_transitions(wrest)
         else:
