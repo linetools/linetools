@@ -184,6 +184,7 @@ def build_systems_from_components(comps, systype=None, vsys=None, **kwargs):
     Parameters
     ----------
     comps : list
+        List of AbsComponents
     systype : AbsSystem, optional
       Defaults to GenericAbsSystem
     vsys : Quantity, optional

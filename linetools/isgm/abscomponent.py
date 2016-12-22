@@ -237,9 +237,16 @@ class AbsComponent(object):
             testc = bool(self.coord.separation(absline.attrib['coord']) < tol)
         else:
             testc = True
-        testZ = self.Zion[0] == absline.data['Z']
-        testi = self.Zion[1] == absline.data['ion']
-        testE = bool(self.Ej == absline.data['Ej'])
+
+        if self.Zion == (-1,-1):  #(-1,-1) represents molecules
+            testZ = True
+            testi = True
+            testE = True
+        else: # atoms
+            testZ = self.Zion[0] == absline.data['Z']
+            testi = self.Zion[1] == absline.data['ion']
+            testE = bool(self.Ej == absline.data['Ej'])
+
         # Now redshift/velocity
         if chk_vel:
             dz_toler = (1 + self.zcomp) * vtoler / c_kms  # Avoid Quantity for speed
@@ -298,8 +305,14 @@ class AbsComponent(object):
         """
         # get the transitions from LineList
         llist = LineList(llist)
-        name = ions.ion_name(self.Zion, nspace=0)
-        transitions = llist.all_transitions(name)
+        if (self.Zion) == (-1, -1):
+            # use wrest in the meantime
+            wrest = self.attrib['init_wrest']
+            transitions = llist.all_transitions(wrest)
+        else:
+            name = ions.ion_name(self.Zion, nspace=0)
+            transitions = llist.all_transitions(name)
+
         # unify output to be always QTable
         if isinstance(transitions, dict):
             transitions = llist.from_dict_to_qtable(transitions)
@@ -317,7 +330,7 @@ class AbsComponent(object):
 
         # loop over the transitions when more than one found
         for transition in transitions:
-            iline = AbsLine(transition['name'], z=self.zcomp)
+            iline = AbsLine(transition['name'], z=self.zcomp, linelist=llist)
             iline.limits.set(self.vlim)
             iline.attrib['coord'] = self.coord
             iline.attrib['logN'] = self.logN
