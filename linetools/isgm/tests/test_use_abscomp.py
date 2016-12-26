@@ -221,7 +221,7 @@ def test_iontable_from_components():
     assert len(tbl) == 2
 
 
-def test_complist_from_table():
+def test_complist_from_table_and_table_from_complist():
     tab = QTable()
     tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
     tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
@@ -231,25 +231,36 @@ def test_complist_from_table():
     tab['vmax'] = [100.] *len(tab) * u.km / u.s
     complist = ltiu.complist_from_table(tab)
     assert np.sum(complist[0].vlim == [ -50., 100.] * u.km / u.s) == 2
+    tab2 = ltiu.table_from_complist(complist)
+    np.testing.assert_allclose(tab['z_comp'], tab2['z_comp'])
+
     # test other columns
     tab['logN'] = 13.7
     tab['sig_logN'] = 0.1
     tab['flag_logN'] = 1
     complist = ltiu.complist_from_table(tab)
+    tab2 = ltiu.table_from_complist(complist)
+    np.testing.assert_allclose(tab['logN'], tab2['logN'])
+
     comp = complist[0]
     # comment now
     tab['comment'] = ['good', 'good', 'bad', 'bad', 'This is a longer comment with symbols &*^%$']
     complist = ltiu.complist_from_table(tab)
+    tab2 = ltiu.table_from_complist(complist)
     comp = complist[-1]
     assert comp.comment == 'This is a longer comment with symbols &*^%$'
+    assert tab2['comment'][-1] == comp.comment
+
     # other naming
     tab['name'] = tab['ion_name']
     complist = ltiu.complist_from_table(tab)
+    tab2 = ltiu.table_from_complist(complist)
     comp = complist[-1]
     assert comp.name == 'OVI'
     # other attributes
     tab['b'] = [10, 10, 20, 10, 60] * u.km / u.s
     complist = ltiu.complist_from_table(tab)
+    tab2 = ltiu.table_from_complist(complist)
     comp = complist[-1]
     assert comp.attrib['b'] == 60*u.km/u.s
 

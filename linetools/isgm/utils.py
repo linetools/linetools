@@ -15,14 +15,14 @@ import warnings
 
 from astropy import constants as const
 from astropy import units as u
-from astropy.table import Table
+from astropy.table import Table, QTable
 from astropy.units import Quantity
 from astropy.coordinates import SkyCoord
 
 from linetools.analysis import absline as ltaa
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.spectralline import init_analy
-from linetools.abund.ions import name_ion
+from linetools.abund.ions import name_ion, ion_name
 from linetools import utils as ltu
 from linetools.lists.linelist import LineList
 
@@ -324,6 +324,55 @@ def complist_from_table(table):
         # append
         complist += [comp]
     return complist
+
+
+def table_from_complist(complist):
+    """
+    Returns a QTable from an input list of AbsComponents. It only
+    fills in mandatory and special attributes (see notes below).
+    Information stored in dictionary AbsComp.attrib is ignored.
+
+    Parameters
+    ----------
+    complist : list of AbsCOmponents
+        The initial list of AbsComponents to create the QTable from.
+
+    Returns
+    -------
+    table : QTable
+        QTable from the information contained in each component.
+
+    Notes
+    -----
+    Mandatory columns: 'RA', 'DEC', 'ion_name', 'z_comp', 'vmin', 'vmax'
+    Special columns: 'name', 'comment', 'logN', 'sig_logN', 'flag_logN'
+    See also complist_from_table()
+    """
+    tab = QTable()
+
+    # mandatory columns
+    tab['RA'] = [comp.coord.ra.value for comp in complist] * comp.coord.ra.unit
+    tab['DEC'] = [comp.coord.dec.value for comp in complist] * comp.coord.dec.unit
+    ion_names = []  # ion_names
+    for comp in complist:
+        if comp.Zion == (-1,-1):
+            ion_names += ["Molecule"]
+        else:
+            ion_names += [ion_name(comp.Zion)]
+    tab['ion_name'] = ion_names
+    tab['z_comp'] = [comp.zcomp for comp in complist]
+    tab['vmin'] = [comp.vlim[0].value for comp in complist] * comp.vlim.unit
+    tab['vmax'] = [comp.vlim[1].value for comp in complist] * comp.vlim.unit
+
+    # Special columns
+    tab['logN'] = [comp.logN for comp in complist]
+    tab['sig_logN'] = [comp.sig_logN for comp in complist]
+    tab['flag_logN'] = [comp.flag_N for comp in complist]
+    tab['comment'] = [comp.comment for comp in complist]
+    tab['name'] = [comp.name for comp in complist]
+
+    return tab
+
 
 
 def iontable_from_components(components, ztbl=None, NHI_obj=None):
