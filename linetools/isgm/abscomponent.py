@@ -275,17 +275,19 @@ class AbsComponent(object):
             if not testc:
                 print("Absline coordinates do not match.  Best to set them")
 
-    def add_abslines_from_linelist(self, llist='ISM', wvlim=None, min_Wr=None, **kwargs):
+    def add_abslines_from_linelist(self, llist='ISM', init_name=None, wvlim=None, min_Wr=None, **kwargs):
         """
         It adds associated AbsLines satisfying some conditions (see parameters below).
 
         Parameters
         ----------
-        llist : str
+        llist : str, optional
             Name of the linetools.lists.linelist.LineList
             object where to look for the transition names.
             Default is 'ISM', which means the function looks
             within `list = LineList('ISM')`.
+        init_name : str, optional
+            Name of the initial transition used to define the AbsComponent
         wvlims : Quantity array, optional
             Observed wavelength limits for AbsLines to be added.
             e.g. [1200, 2000]*u.AA.
@@ -307,13 +309,13 @@ class AbsComponent(object):
         """
         # get the transitions from LineList
         llist = LineList(llist)
-        if (self.Zion) == (-1, -1):
-            # use wrest in the meantime (this is a patch)
-            wrest = self.attrib['init_wrest']
-            transitions = llist.all_transitions(wrest)
-        else:
-            name = ions.ion_name(self.Zion, nspace=0)
-            transitions = llist.all_transitions(name)
+        if init_name is None:  # we have to guess it
+            if (self.Zion) == (-1, -1):  # molecules
+                # use wrest in the meantime (this is a patch)
+                init_name = self.attrib['init_name']
+            else:  # atoms
+                init_name = ions.ion_name(self.Zion, nspace=0)
+        transitions = llist.all_transitions(init_name)
 
         # unify output to be always QTable
         if isinstance(transitions, dict):
@@ -349,7 +351,7 @@ class AbsComponent(object):
                 logN = self.logN
                 if logN == 0:
                     warnings.warn("AbsComponent does not have logN defined. Appending AbsLines "
-                                 "regardless of min_Wr.")
+                                  "regardless of min_Wr.")
                 else:
                     N = 10**logN / (u.cm*u.cm)
                     Wr_iline = iline.get_Wr_from_N(N=N)  # valid for the tau0<<1 regime.

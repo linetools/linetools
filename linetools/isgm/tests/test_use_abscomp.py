@@ -19,6 +19,7 @@ from linetools.spectralline import AbsLine
 from linetools.spectra import io as lsio
 from linetools.analysis import absline as ltaa
 from linetools.isgm import utils as ltiu
+# from linetools.lists.linelist import LineList
 import linetools.utils as ltu
 
 import imp, os
@@ -62,6 +63,7 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
     abscomp = AbsComponent.from_abslines(abslines)
     return abscomp, abslines
 
+
 def mk_comptable():
     tab = QTable()
     tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
@@ -71,6 +73,7 @@ def mk_comptable():
     tab['vmin'] = [-50.] * len(tab) * u.km/u.s
     tab['vmax'] = [100.] * len(tab) * u.km/u.s
     return tab
+
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
@@ -164,6 +167,7 @@ def test_synthesize_colm():
         abscomp3._abslines[0].attrib['N'] = 0 / u.cm / u.cm
         abscomp3.synthesize_colm(overwrite=True)
 
+
 def test_build_components_from_lines():
     # Lines
     abscomp,HIlines = mk_comp('HI')
@@ -171,6 +175,18 @@ def test_build_components_from_lines():
     # Components
     comps = ltiu.build_components_from_abslines([HIlines[0],HIlines[1],SiIIlines[0],SiIIlines[1]])
     assert len(comps) == 2
+
+
+def test_abscomp_H2():
+    Zion = (-1, -1)  # temporary code for molecules
+    Ntuple = (1, 17, -1)  # initial guess for Ntuple (needs to be given for adding lines from linelist)
+    coord = SkyCoord(0,0, unit='deg')
+    z = 0.212
+    vlim = [-100., 100.] * u.km/u.s
+    comp = AbsComponent(coord, Zion, z, vlim, Ntup=Ntuple)
+    comp.add_abslines_from_linelist(llist='H2', init_name="B19-0P(1)", wvlim=[1100, 5000]*u.AA)
+    assert len(comp._abslines) == 7
+
 
 def test_add_abslines_from_linelist():
     comp, HIlines = mk_comp('HI')
@@ -203,6 +219,7 @@ def test_iontable_from_components():
     comps = ltiu.build_components_from_abslines([HIlines[0],HIlines[1],SiIIlines[0],SiIIlines[1]])
     tbl = ltiu.iontable_from_components(comps)
     assert len(tbl) == 2
+
 
 def test_complist_from_table():
     tab = QTable()
@@ -245,7 +262,6 @@ def test_complist_from_table():
     tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
     with pytest.raises(IOError):
         complist = ltiu.complist_from_table(tab) # not enough mandatory columns
-
 
 
 def test_get_components_at_z():
