@@ -195,7 +195,6 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
       Rejected pixels are propagated.
     do_co : bool, optional
       Rebin continuum if present
-      Current implementation works on continuum points from lt_continuum_fit
     all : bool, optional
       Rebin all spectra in the XSpectrum1D object?
 
@@ -213,7 +212,7 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
     # Deal with nan
     badf = np.isnan(flux)
     if np.sum(badf) > 0:
-        warnings.warn("Ignoring NAN in flux")
+        warnings.warn("Ignoring pixels with NAN in flux")
     gdf = ~badf
     flux = flux[gdf]
 
@@ -271,7 +270,7 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
     #    newcum[-1] = cumsum[-1]
     #    newvar[-1] = cumvar[-1]
 
-    # Rebinned flux, var
+    # Rebinned flux, var, co
     new_fx = (np.roll(newcum, -1) - newcum)[:-1]
     new_var = (np.roll(newvar, -1) - newvar)[:-1]
 
@@ -303,12 +302,19 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
     else:
         new_sig = None
 
-    # update continuum
-    new_co = None
+    # Continuum?
     if do_co:
-        if spec.co_is_set:
-            x, y = spec._get_contpoints()
-            new_co = spec._interp_continuum(x, y, new_wv)
+        if not spec.co_is_set:
+            raise IOError("Continuum must be set to request rebinning")
+        co = spec.co.value
+        co = co[gdf]
+        cumco = np.cumsum(co * dwv)
+        fco = interp1d(wvh, cumco, fill_value=0., bounds_error=False)
+        newco = fco(bwv) * dwv.unit
+        new_co = (np.roll(newco, -1) - newco)[:-1]
+        new_co = new_co / new_dwv[1:]
+    else:
+        new_co = None
 
     # Finish
     newspec = XSpectrum1D.from_tuple((new_wv, new_fx*funit,
@@ -321,6 +327,7 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
 def rebin_to_rest(spec, zarr, dv, debug=False):
     """ Shuffle an XSpectrum1D dataset to an array of
     observed wavelengths and rebin to dv pixels.
+
     Note: This works on the unmasked data array and returns
     unmasked spectra
 
@@ -345,6 +352,7 @@ def rebin_to_rest(spec, zarr, dv, debug=False):
         raise IOError("Use spec.rebin instead")
     if spec.nspec != len(zarr):
         raise IOError("Input redshift array must have same dimension as nspec")
+
     # Generate final wave array
     dlnlamb = np.log(1+dv/const.c)
     z2d = np.outer(zarr, np.ones(spec.totpix))
@@ -352,6 +360,7 @@ def rebin_to_rest(spec, zarr, dv, debug=False):
                     np.max(spec.data['wave']/(1+z2d))*spec.units['wave'])
     npix = int(np.round(np.log(wvmax/wvmin) / dlnlamb)) + 1
     new_wv = wvmin * np.exp(dlnlamb*np.arange(npix))
+
     # Final image
     f_flux = np.zeros((spec.nspec, npix))
     f_sig = np.zeros((spec.nspec, npix))
