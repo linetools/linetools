@@ -201,6 +201,7 @@ class LineList(object):
                                 newi.append(jj)
                         # Append new ones as Tables (can't stack QTables yet)
                         full_table = vstack([Table(full_table), Table(table[newi])])
+                        full_table = QTable(full_table)
                     # Save to avoid repeating
                     all_func.append(func)
 
