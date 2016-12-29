@@ -720,7 +720,12 @@ class AbsComponent(object):
         Parameters
         ----------
         return_fig : bool, optional
-            If True, return stackplot as plt.Figure() instance for further manipulation
+            If True, return stack plot as plt.Figure() instance for further manipulation
+
+        Returns
+        -------
+        fig : matplotlib Figure, optional
+            Figure instance containing stack plot with subplots, axes, etc.
         """
         if return_fig:
             fig = ltap.stack_plot(self._abslines, vlim=self.vlim, return_fig=True, **kwargs)

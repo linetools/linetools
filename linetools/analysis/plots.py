@@ -36,6 +36,11 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True,
       If True, return stackplot as plt.Figure() instance for further manipulation
     tight_layout : bool, optional
       If True, remove whitespace between panels
+
+    Returns
+    -------
+    fig : matplotlib Figure, optional
+        Figure instance containing stack plot with subplots, axes, etc.
     """
     mpl.rcParams['font.family'] = 'stixgeneral'
     mpl.rcParams['font.size'] = 15.
