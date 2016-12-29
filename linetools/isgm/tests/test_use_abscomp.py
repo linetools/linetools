@@ -65,7 +65,7 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
 
 
 def mk_comptable():
-    tab = QTable()
+    tab = Table()
     tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
     tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
     tab['RA'] = [100.0] * len(tab) * u.deg
@@ -222,7 +222,7 @@ def test_iontable_from_components():
 
 
 def test_complist_from_table_and_table_from_complist():
-    tab = QTable()
+    tab = Table()
     tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
     tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
     tab['RA'] = [100.0]*len(tab) * u.deg

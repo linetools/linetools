@@ -245,11 +245,11 @@ def xhtbl_from_components(components, ztbl=None, NHI_obj=None):
 
 def complist_from_table(table):
     """
-    Returns a list of AbsComponents from an input Table.
+    Returns a list of AbsComponents from an input astropy.Table.
 
     Parameters
     ----------
-    table : QTable
+    table : Table
         Table with component information (each row must correspond
         to a component). Each column is expecting a unit when
         appropriate.
@@ -274,6 +274,9 @@ def complist_from_table(table):
         with their respective units if given.
 
     """
+    # Convert to QTable to handle units in individual entries more easily
+    table = QTable(table)
+
     # mandatory and optional columns
     min_columns = ['RA', 'DEC', 'ion_name', 'z_comp', 'vmin', 'vmax']
     special_columns = ['name', 'comment', 'logN', 'sig_logN', 'flag_logN']
@@ -328,19 +331,19 @@ def complist_from_table(table):
 
 def table_from_complist(complist):
     """
-    Returns a QTable from an input list of AbsComponents. It only
+    Returns a astropy.Table from an input list of AbsComponents. It only
     fills in mandatory and special attributes (see notes below).
     Information stored in dictionary AbsComp.attrib is ignored.
 
     Parameters
     ----------
-    complist : list of AbsCOmponents
+    complist : list of AbsComponents
         The initial list of AbsComponents to create the QTable from.
 
     Returns
     -------
-    table : QTable
-        QTable from the information contained in each component.
+    table : Table
+        Table from the information contained in each component.
 
     Notes
     -----
@@ -348,7 +351,7 @@ def table_from_complist(complist):
     Special columns: 'name', 'comment', 'logN', 'sig_logN', 'flag_logN'
     See also complist_from_table()
     """
-    tab = QTable()
+    tab = Table()
 
     # mandatory columns
     tab['RA'] = [comp.coord.ra.value for comp in complist] * comp.coord.ra.unit
@@ -512,9 +515,9 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
 
 
 def get_components_at_z(complist, z, dvlims):
-    """In a given list of components, it finds
+    """In a given list of AbsComponents, it finds
     the ones that are within dvlims from a given redshift
-    and returns a list of those components
+    and returns a list of those.
 
     Parameters
     ----------
@@ -529,7 +532,7 @@ def get_components_at_z(complist, z, dvlims):
     Returns
     -------
     components_at_z : list
-        List of components within complist within dvlims from z
+        List of AbsComponents in complist within dvlims from z
     """
     # check input
     if not isinstance(complist[0], AbsComponent):

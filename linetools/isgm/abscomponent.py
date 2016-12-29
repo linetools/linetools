@@ -43,6 +43,8 @@ class AbsComponent(object):
     Zion : tuple 
         Atomic number, ion -- (int,int)
         e.g. (8,1) for OI
+        Note: (-1, -1) is special and is meant for molecules (e.g. H2)
+              This notation will most likely be changed in the future.
     zcomp : float
         Component redshift
     vlim : Quantity array
@@ -147,6 +149,8 @@ class AbsComponent(object):
         Zion : tuple
             Atomic number, ion -- (int,int)
             e.g. (8,1) for OI
+            Note: (-1, -1) is special and is meant for moleculer (e.g. H2)
+                  This notation will most likely change in the future.
         zcomp : float
             Absorption component redshift
         vlim : Quantity array
@@ -311,7 +315,7 @@ class AbsComponent(object):
         llist = LineList(llist)
         if init_name is None:  # we have to guess it
             if (self.Zion) == (-1, -1):  # molecules
-                # use wrest in the meantime (this is a patch)
+                # init_name must be in self.attrib (this is a patch)
                 init_name = self.attrib['init_name']
             else:  # atoms
                 init_name = ions.ion_name(self.Zion, nspace=0)
