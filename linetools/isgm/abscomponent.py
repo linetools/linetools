@@ -713,14 +713,20 @@ class AbsComponent(object):
             s += '\n'
         return s
 
-    def stack_plot(self, **kwargs):
+    def stack_plot(self, return_fig=False, **kwargs):
         """Show a stack plot of the component, if spec are loaded
         Assumes the data are normalized.
 
         Parameters
         ----------
+        return_fig : bool, optional
+            If True, return stackplot as plt.Figure() instance for further manipulation
         """
-        ltap.stack_plot(self._abslines, vlim=self.vlim, **kwargs)
+        if return_fig:
+            fig = ltap.stack_plot(self._abslines, vlim=self.vlim, return_fig=True, **kwargs)
+            return fig
+        else:
+            ltap.stack_plot(self._abslines, vlim=self.vlim, **kwargs)
 
     def to_dict(self):
         """ Convert component data to a dict
