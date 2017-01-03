@@ -23,7 +23,15 @@ you can check for the presence and versions of the dependencies with::
 
 If you're missing any, install them with (for example)::
 
-  conda install astropy scipy matplotlib PyQT h5py
+  conda install astropy scipy matplotlib h5py
+
+For PyQT, the current conda version is PyQT5.  Therefore, you may
+need to install with::
+
+    conda install pyqt=4
+
+for the GUIs included in linetools to be functional.  A future release
+may upgrade to PyQT5.
 
 If their versions are too old, update them with (for example)::
 
