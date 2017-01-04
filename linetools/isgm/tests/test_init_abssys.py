@@ -29,10 +29,12 @@ def test_from_json():
     # Tests from_dict too
     HIsys = LymanAbsSystem.from_json(data_path('HILya_abssys.json'))
     np.testing.assert_allclose(HIsys.zabs, 2.92939)
+    # Tests ordering
+    gensys = GenericAbsSystem.from_json(data_path('generic_abssys.json'))
+    np.testing.assert_allclose(gensys._components[0].zcomp, 2.92939)
 
 
 def test_write_json():
-    # Tests from_dict too
     HIsys = LymanAbsSystem.from_json(data_path('HILya_abssys.json'))
     HIsys.write_json()
 
@@ -134,6 +136,4 @@ def test_build_systems_from_comp():
     #
     abs_systems = ltiu.build_systems_from_components([abscomp,SiII_comp,abscomp2])
     assert len(abs_systems) == 2
-
-
 

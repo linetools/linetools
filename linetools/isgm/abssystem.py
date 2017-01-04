@@ -584,7 +584,8 @@ def add_comps_from_dict(slf, idict, skip_components=False, use_coord=False, **kw
     """
     Parameters
     ----------
-    slf : AbsSystem
+    slf : AbsSystem, AbsSightline
+      Or any object with an add_component() method
     skip_components : bool, optional
       If True, absorption components (if any exist) are not loaded from the input dict.
       Use when you are only interested in the global properties of an AbsSystem
