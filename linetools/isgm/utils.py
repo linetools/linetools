@@ -149,6 +149,7 @@ def build_components_from_dict(idict, coord=None, **kwargs):
     -------
     components :
       list of AbsComponent objects
+      Sorted by zcomp
     """
     from linetools.spectralline import AbsLine
 
@@ -172,8 +173,14 @@ def build_components_from_dict(idict, coord=None, **kwargs):
         components = build_components_from_abslines(lines, **kwargs)
     else:
         warnings.warn("No components in this dict")
+    # Sort by z -- Deals with dict keys being random
+    z = [comp.zcomp for comp in components]
+    isrt = np.argsort(np.array(z))
+    srt_comps = []
+    for idx in isrt:
+        srt_comps.append(components[idx])
     # Return
-    return components
+    return srt_comps
 
 
 def build_systems_from_components(comps, systype=None, vsys=None, **kwargs):
