@@ -354,8 +354,8 @@ def table_from_complist(complist):
     tab = Table()
 
     # mandatory columns
-    tab['RA'] = [comp.coord.ra.value for comp in complist] * comp.coord.ra.unit
-    tab['DEC'] = [comp.coord.dec.value for comp in complist] * comp.coord.dec.unit
+    tab['RA'] = [comp.coord.ra.to('deg').value for comp in complist] * u.deg
+    tab['DEC'] = [comp.coord.dec.to('deg').value for comp in complist] * u.deg
     ion_names = []  # ion_names
     for comp in complist:
         if comp.Zion == (-1,-1):
