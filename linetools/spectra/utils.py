@@ -131,9 +131,11 @@ def collate(spectra):
     # Init
     maxpix = 0
     flg_co, flg_sig = False, False
-    nspec = len(spectra)
+    nspec = 0
     units = None
+    # Setup
     for spec in spectra:
+        nspec += spec.nspec
         maxpix = max(maxpix, spec.npix)
         if spec.co_is_set:
             flg_co = True
@@ -152,20 +154,25 @@ def collate(spectra):
     else:
         sig = None
     if flg_co:
-        co = np.zeros_like(wave)
+        co = np.zeros_like(flux)
     else:
         co = None
     # Load
     meta = dict(headers=[])
-    for ii, spec in enumerate(spectra):
-        wave[ii,:spec.npix] = spec.wavelength.value
-        flux[ii,:spec.npix] = spec.flux.value
-        if flg_sig:
-            sig[ii,:spec.npix] = spec.sig.value
-        if flg_co:
-            co[ii,:spec.npix] = spec.co.value
+    idx = 0
+    for xspec in spectra:
+        # Allow for multiple spectra in the XSpectrum1D object
+        for jj in range(xspec.nspec):
+            xspec.select = jj
+            wave[idx,:xspec.npix] = xspec.wavelength.value
+            flux[idx,:xspec.npix] = xspec.flux.value
+            if flg_sig:
+                sig[idx,:xspec.npix] = xspec.sig.value
+            if flg_co:
+                co[idx,:xspec.npix] = xspec.co.value
+            idx += 1
         # Meta
-        meta['headers'].append(spec.header)
+        meta['headers'].append(xspec.header)
     # Finish
     new_spec = XSpectrum1D(wave, flux, sig=sig, co=co, units=units.copy(),
                            masking='edges', meta=meta)
