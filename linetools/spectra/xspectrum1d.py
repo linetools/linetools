@@ -315,9 +315,12 @@ class XSpectrum1D(object):
         """ Return the flux with units
         """
         #flux =  self.data[self.select]['flux'] * self.units['flux']
-        flux =  self.data['flux'][self.select].compressed() * self.units['flux']
+        flux = self.data['flux'][self.select].compressed() * self.units['flux']
         if self.normed and self.co_is_set:
-            flux /= self.data['co'][self.select].compressed()
+            # Avoid dividing by zero
+            co = self.data['co'][self.select].compressed()
+            gdco = co != 0.
+            flux[gdco] /= co[gdco]
         return flux
 
     @flux.setter
@@ -347,7 +350,10 @@ class XSpectrum1D(object):
         #sig = self.data[self.select]['sig'] * self.units['flux']
         sig = self.data['sig'][self.select].compressed() * self.units['flux']
         if self.normed and self.co_is_set:
-            sig /= self.data['co'][self.select].compressed()
+            # Avoid dividing by zero
+            co = self.data['co'][self.select].compressed()
+            gdco = co != 0.
+            sig[gdco] /= co[gdco]
         return sig
 
     @sig.setter
@@ -927,7 +933,6 @@ class XSpectrum1D(object):
         return XSpectrum1D.from_tuple(
                 (self.wavelength, smoothflux, newsig), meta=self.meta.copy())
 
-
     def stitch(self, idx=None, scale=1.):
         """ Combine two or more spectra within the .data array
         Simple logic is used to order them by wavelength if the
@@ -1421,11 +1426,13 @@ class XSpectrum1D(object):
 
         print('Updating continuum.')
         self.co = wrapper.continuum  # this should work with the assignment, even is self.co_is_set is False
-        if 'contpoints' not in self.meta:
-            self.meta['contpoints'] = []
-        self.meta['contpoints'].extend(
-            [tuple(pts) for pts in wrapper.contpoints])
-        self.meta['contpoints'].sort()
+        # Put into meta -- has been causing trouble
+        if False:
+            if 'contpoints' not in self.meta:
+                self.meta['contpoints'] = []
+            self.meta['contpoints'].extend(
+                [tuple(pts) for pts in wrapper.contpoints])
+            self.meta['contpoints'].sort()
 
     def _interp_continuum(self, x, y, wv=None):
         """ Interpolate the continuum from spline knots.
@@ -1539,7 +1546,7 @@ class XSpectrum1D(object):
         self.normalize(co=co)
 
     def add_to_mask(self, add_mask, compressed=False):
-        """ Add to the mask of the current exposure
+        """ Add to the mask of the selected spectrum
         Useful for removing bad pixels
 
         Parameters
@@ -1563,6 +1570,29 @@ class XSpectrum1D(object):
         """
         warnings.warn("Setting entire mask to False. Be careful..")
         self.data.mask = False
+
+    def __getitem__(self, item):
+        """ Slice the XSpectrum1D object using a set of input indices
+        Repetition is allowed
+        Headers are passed along without slicing
+
+        Parameters
+        ----------
+        item
+
+        Returns
+        -------
+
+        """
+        # Slice internal data
+        if isinstance(item, int):
+            newdata = self.data[np.array([item])]
+        else:
+            newdata = self.data[item]
+        # Create
+        return XSpectrum1D(newdata['wave'], newdata['flux'], newdata['sig'], newdata['co'],
+                           units=self.units, meta=self.meta)
+
 
     def __dir__(self):
         """ Does something more sensible than what Spectrum1D provides

@@ -223,8 +223,11 @@ def read_verner94():
     print(
         'linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
             verner94))
-    tbl_6 = QTable.read(verner94)
+    tbl_6 = Table.read(verner94)
 
+    # Deal with bad unit
+    tbl_6['lambda'].unit = u.AA
+    tbl_6 = QTable(tbl_6)
 
     # My table
     ldict, data = line_data(nrows=len(tbl_6))
@@ -274,6 +277,7 @@ def read_forbidden():
 
     # load values using convention names
     data['wrest'] = aux['wave']
+    data['wrest'].unit = u.AA
     data['Z'] = aux['Z']
     data['ion'] = aux['ion']
     for ii, row in enumerate(data):
@@ -303,6 +307,7 @@ def read_recomb():
 
     # load values using convention names
     data['wrest'] = aux['wave']
+    data['wrest'].unit = u.AA
     data['Z'] = aux['Z']
     data['ion'] = aux['ion']
     for ii, row in enumerate(data):
@@ -331,6 +336,7 @@ def read_galabs():
 
     # load values using convention names
     data['wrest'] = aux['wave']
+    data['wrest'].unit = u.AA
     data['Z'] = aux['Z']
     data['ion'] = aux['ion']
     for ii, row in enumerate(data):

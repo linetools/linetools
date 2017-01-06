@@ -14,7 +14,7 @@ import matplotlib.gridspec as gridspec
 import matplotlib as mpl
 
 def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True,
-               ymnx=(-0.1,1.1), figsz=(18,11)):
+               ymnx=(-0.1,1.1), figsz=(18,11), return_fig=False, tight_layout=False):
     """Show a stack plot of the input lines
     Assumes the data are normalized.
 
@@ -32,6 +32,15 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True,
       ymin, ymax
     figsz : tuple, optional
       xdim, ydim
+    return_fig : bool, optional
+      If True, return stackplot as plt.Figure() instance for further manipulation
+    tight_layout : bool, optional
+      If True, remove whitespace between panels
+
+    Returns
+    -------
+    fig : matplotlib Figure, optional
+        Figure instance containing stack plot with subplots, axes, etc.
     """
     mpl.rcParams['font.family'] = 'stixgeneral'
     mpl.rcParams['font.size'] = 15.
@@ -48,14 +57,15 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True,
     nrow = min(nplt, nrow)
     ncol = nplt // nrow + (nplt % nrow > 0)
     # Plot
-    plt.figure(figsize=figsz)
+    fig=plt.figure(figsize=figsz)
     plt.clf()
 
     gs = gridspec.GridSpec(nrow, ncol)
 
     # Loop me
     for qq, iline in enumerate(gdiline):
-        ax = plt.subplot(gs[qq % nrow, qq//nrow])
+        #ax = plt.subplot(gs[qq % nrow, qq//nrow])
+        ax = fig.add_subplot(gs[qq % nrow, qq//nrow])
         ax.clear()
         # Normalize as need be (note the spectrum can vary with iline)
         if iline.analy['spec'].co_is_set:
@@ -82,7 +92,12 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True,
         # Label
         ax.text(0.1, 0.1, iline.data['name'], transform=ax.transAxes, ha='left', va='center')#, fontsize='large')  # , bbox={'facecolor':'white'})
 
-    #plt.tight_layout(pad=0.2, h_pad=0., w_pad=0.1)
+    # Handle boolean switches
+    if tight_layout:
+        plt.tight_layout(pad=0.2, h_pad=0., w_pad=0.1)
     if show:
         plt.show()
-    plt.close()
+    if return_fig:
+        return fig
+    else:
+        plt.close()

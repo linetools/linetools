@@ -8,11 +8,9 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import numpy as np
 import os
 
-from astropy import units as u
-from astropy import constants as const
 from astropy.modeling import models, fitting
 
-# EW 
+
 def box_ew(spec):
     """  Boxcar EW calculation
 
@@ -44,6 +42,7 @@ def box_ew(spec):
 
     # Return
     return EW, sigEW
+
 
 def gaussian_ew(spec, ltype, initial_guesses=None):
     """  EW calculation using Gaussian fit
