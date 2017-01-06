@@ -136,7 +136,9 @@ def collate(spectra):
     # Setup
     for spec in spectra:
         nspec += spec.nspec
-        maxpix = max(maxpix, spec.npix)
+        for ii in range(spec.nspec):
+            spec.select = ii
+            maxpix = max(maxpix, spec.npix)
         if spec.co_is_set:
             flg_co = True
         if spec.sig_is_set:
@@ -164,12 +166,16 @@ def collate(spectra):
         # Allow for multiple spectra in the XSpectrum1D object
         for jj in range(xspec.nspec):
             xspec.select = jj
-            wave[idx,:xspec.npix] = xspec.wavelength.value
+            try:
+                wave[idx,:xspec.npix] = xspec.wavelength.value
+            except ValueError:
+                pdb.set_trace()
             flux[idx,:xspec.npix] = xspec.flux.value
             if flg_sig:
                 sig[idx,:xspec.npix] = xspec.sig.value
             if flg_co:
-                co[idx,:xspec.npix] = xspec.co.value
+                if xspec.co_is_set:  # Allow for a mix of continua (mainly for specdb)
+                    co[idx,:xspec.npix] = xspec.co.value
             idx += 1
         # Meta
         meta['headers'].append(xspec.header)
