@@ -153,6 +153,7 @@ def read_H2():
 
     # Units
     data['wrest'].unit = u.AA
+    data['gamma'].unit = 1./u.s
 
     # Rename some columns
     data.rename_column('Jp', 'Jj')

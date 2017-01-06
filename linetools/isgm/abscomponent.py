@@ -43,6 +43,8 @@ class AbsComponent(object):
     Zion : tuple 
         Atomic number, ion -- (int,int)
         e.g. (8,1) for OI
+        Note: (-1, -1) is special and is meant for molecules (e.g. H2)
+              This notation will most likely be changed in the future.
     zcomp : float
         Component redshift
     vlim : Quantity array
@@ -147,6 +149,8 @@ class AbsComponent(object):
         Zion : tuple
             Atomic number, ion -- (int,int)
             e.g. (8,1) for OI
+            Note: (-1, -1) is special and is meant for moleculer (e.g. H2)
+                  This notation will most likely change in the future.
         zcomp : float
             Absorption component redshift
         vlim : Quantity array
@@ -190,7 +194,7 @@ class AbsComponent(object):
             self.sig_logN = 0.
 
         # Name
-        if name is None:
+        if (name is None) and (self.Zion != (-1, -1)):
             iname = ions.ion_name(self.Zion, nspace=0)
             if self.Ej.value > 0:  # Need to put *'s in name
                 try:
@@ -198,6 +202,8 @@ class AbsComponent(object):
                 except:
                     raise IOError("Need to provide 'stars' parameter.")
             self.name = '{:s}_z{:0.5f}'.format(iname, self.zcomp)
+        elif (name is None) and (self.Zion == (-1, -1)):
+            self.name = 'mol_z{:0.5f}'.format(self.zcomp)
         else:
             self.name = name
 
@@ -237,9 +243,16 @@ class AbsComponent(object):
             testc = bool(self.coord.separation(absline.attrib['coord']) < tol)
         else:
             testc = True
-        testZ = self.Zion[0] == absline.data['Z']
-        testi = self.Zion[1] == absline.data['ion']
-        testE = bool(self.Ej == absline.data['Ej'])
+
+        if self.Zion == (-1,-1):  #(-1,-1) represents molecules
+            testZ = True
+            testi = True
+            testE = True
+        else: # atoms
+            testZ = self.Zion[0] == absline.data['Z']
+            testi = self.Zion[1] == absline.data['ion']
+            testE = bool(self.Ej == absline.data['Ej'])
+
         # Now redshift/velocity
         if chk_vel:
             dz_toler = (1 + self.zcomp) * vtoler / c_kms  # Avoid Quantity for speed
@@ -266,17 +279,19 @@ class AbsComponent(object):
             if not testc:
                 print("Absline coordinates do not match.  Best to set them")
 
-    def add_abslines_from_linelist(self, llist='ISM', wvlim=None, min_Wr=None, **kwargs):
+    def add_abslines_from_linelist(self, llist='ISM', init_name=None, wvlim=None, min_Wr=None, **kwargs):
         """
         It adds associated AbsLines satisfying some conditions (see parameters below).
 
         Parameters
         ----------
-        llist : str
+        llist : str, optional
             Name of the linetools.lists.linelist.LineList
             object where to look for the transition names.
             Default is 'ISM', which means the function looks
             within `list = LineList('ISM')`.
+        init_name : str, optional
+            Name of the initial transition used to define the AbsComponent
         wvlims : Quantity array, optional
             Observed wavelength limits for AbsLines to be added.
             e.g. [1200, 2000]*u.AA.
@@ -298,8 +313,14 @@ class AbsComponent(object):
         """
         # get the transitions from LineList
         llist = LineList(llist)
-        name = ions.ion_name(self.Zion, nspace=0)
-        transitions = llist.all_transitions(name)
+        if init_name is None:  # we have to guess it
+            if (self.Zion) == (-1, -1):  # molecules
+                # init_name must be in self.attrib (this is a patch)
+                init_name = self.attrib['init_name']
+            else:  # atoms
+                init_name = ions.ion_name(self.Zion, nspace=0)
+        transitions = llist.all_transitions(init_name)
+
         # unify output to be always QTable
         if isinstance(transitions, dict):
             transitions = llist.from_dict_to_qtable(transitions)
@@ -317,7 +338,7 @@ class AbsComponent(object):
 
         # loop over the transitions when more than one found
         for transition in transitions:
-            iline = AbsLine(transition['name'], z=self.zcomp)
+            iline = AbsLine(transition['name'], z=self.zcomp, linelist=llist)
             iline.limits.set(self.vlim)
             iline.attrib['coord'] = self.coord
             iline.attrib['logN'] = self.logN
@@ -334,7 +355,7 @@ class AbsComponent(object):
                 logN = self.logN
                 if logN == 0:
                     warnings.warn("AbsComponent does not have logN defined. Appending AbsLines "
-                                 "regardless of min_Wr.")
+                                  "regardless of min_Wr.")
                 else:
                     N = 10**logN / (u.cm*u.cm)
                     Wr_iline = iline.get_Wr_from_N(N=N)  # valid for the tau0<<1 regime.
