@@ -166,10 +166,7 @@ def collate(spectra):
         # Allow for multiple spectra in the XSpectrum1D object
         for jj in range(xspec.nspec):
             xspec.select = jj
-            try:
-                wave[idx,:xspec.npix] = xspec.wavelength.value
-            except ValueError:
-                pdb.set_trace()
+            wave[idx,:xspec.npix] = xspec.wavelength.value
             flux[idx,:xspec.npix] = xspec.flux.value
             if flg_sig:
                 sig[idx,:xspec.npix] = xspec.sig.value
