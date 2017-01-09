@@ -94,7 +94,7 @@ def radec_to_coord(radec):
 
     Parameters
     ----------
-    radec : str or tuple
+    radec : str or tuple or SkyCoord
         Examples:
         'J124511+144523',
         '124511+144523',
@@ -102,10 +102,12 @@ def radec_to_coord(radec):
         ('12:45:11','+14:45:23')
         ('12 45 11', +14 45 23)
         ('12:45:11','14:45:23')  -- Assumes positive DEC
+        (123.123, 12.1224) -- Assumed deg
 
     Returns
     -------
     coord : SkyCoord
+      Converts to astropy.coordinate.SkyCoord (as needed)
 
     """
     from astropy.coordinates import SkyCoord
