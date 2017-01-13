@@ -244,7 +244,7 @@ class ExamineSpecWidget(QtGui.QWidget):
             #QtCore.pyqtRemoveInputHook()
             #xdb.set_trace()
             #QtCore.pyqtRestoreInputHook()
-            if (event.key in ['N', 'E']) & (self.llist['List'] == 'None'):
+            if (event.key in ['N']) & (self.llist['List'] == 'None'):
                 print('xspec: Choose a Line list first!')
                 try:
                     self.statusBar().showMessage('Choose a Line list first!')
@@ -321,6 +321,9 @@ class ExamineSpecWidget(QtGui.QWidget):
                         sig_flux2 = np.sqrt(np.sum(self.spec.sig[pix].value**2))
                     else:
                         sig_flux2 = 9e9
+                    # EW
+                    dwv = self.spec.wavelength - np.roll(self.spec.wavelength,1)
+                    EW = np.sum((-1*model_Gauss[pix]/lconti[pix]) * np.abs(dwv[pix]))  # Model Gauss is above/below continuum
                     #QtCore.pyqtRemoveInputHook()
                     #pdb.set_trace()
                     #QtCore.pyqtRestoreInputHook()
@@ -330,38 +333,41 @@ class ExamineSpecWidget(QtGui.QWidget):
                             parm.mean.value, parm.amplitude.value, parm.stddev.value, flux)
                     mssg = mssg+' ::  sig(Mean)={:g}, sig(Amplitude)={:g}, sig(sigma)={:g}, sig(flux)={:g}'.format(
                             sig_dict['mean'], sig_dict['amplitude'], sig_dict['stddev'], min(sig_flux1,sig_flux2))
+                    mssg = mssg+' :: EW ={:g}'.format(EW)
                 else:
-                    # Find the spectral line (or request it!)
-                    rng_wrest = iwv / (self.llist['z']+1)
-                    gdl = np.where( (self.llist[self.llist['List']].wrest-rng_wrest[0]) *
-                                    (self.llist[self.llist['List']].wrest-rng_wrest[1]) < 0.)[0]
-                    if len(gdl) == 1:
-                        wrest = self.llist[self.llist['List']].wrest[gdl[0]]
-                        closest = False
-                    else:
-                        if len(gdl) == 0: # Search through them all
-                            gdl = np.arange(len(self.llist[self.llist['List']]))
-                        sel_widg = ltgl.SelectLineWidget(self.llist[self.llist['List']]._data[gdl])
-                        sel_widg.exec_()
-                        line = sel_widg.line
-                        #wrest = float(line.split('::')[1].lstrip())
-                        quant = line.split('::')[1].lstrip()
-                        spltw = quant.split(' ')
-                        wrest = Quantity(float(spltw[0]), unit=spltw[1])
-                        closest = True
-                    # Units
-                    if not hasattr(wrest,'unit'):
-                        # Assume Ang
-                        wrest = wrest * u.AA
+                    aline = None
+                    if self.llist['List'] != 'None':
+                        # Find the spectral line (or request it!)
+                        rng_wrest = iwv / (self.llist['z']+1)
+                        gdl = np.where( (self.llist[self.llist['List']].wrest-rng_wrest[0]) *
+                                        (self.llist[self.llist['List']].wrest-rng_wrest[1]) < 0.)[0]
+                        if len(gdl) == 1:
+                            wrest = self.llist[self.llist['List']].wrest[gdl[0]]
+                            closest = False
+                        else:
+                            if len(gdl) == 0: # Search through them all
+                                gdl = np.arange(len(self.llist[self.llist['List']]))
+                            sel_widg = ltgl.SelectLineWidget(self.llist[self.llist['List']]._data[gdl])
+                            sel_widg.exec_()
+                            line = sel_widg.line
+                            #wrest = float(line.split('::')[1].lstrip())
+                            quant = line.split('::')[1].lstrip()
+                            spltw = quant.split(' ')
+                            wrest = Quantity(float(spltw[0]), unit=spltw[1])
+                            closest = True
+                        # Units
+                        if not hasattr(wrest,'unit'):
+                            # Assume Ang
+                            wrest = wrest * u.AA
 
-                    # Generate the Spectral Line
-                    aline = AbsLine(wrest,linelist=self.llist[self.llist['List']],
-                                    z=self.llist['z'], closest=closest)
-                    # Generate a temporary spectrum for analysis and apply the local continuum
-                    tspec = XSpectrum1D.from_tuple((self.spec.wavelength,
-                                                    self.spec.flux, self.spec.sig))
-                    tspec.normalize(lconti)
-                    aline.analy['spec'] = tspec
+                        # Generate the Spectral Line
+                        aline = AbsLine(wrest,linelist=self.llist[self.llist['List']],
+                                        z=self.llist['z'], closest=closest)
+                        # Generate a temporary spectrum for analysis and apply the local continuum
+                        tspec = XSpectrum1D.from_tuple((self.spec.wavelength,
+                                                        self.spec.flux, self.spec.sig))
+                        tspec.normalize(lconti)
+                        aline.analy['spec'] = tspec
 
                     # AODM
                     if event.key == 'N':
@@ -378,11 +384,12 @@ class ExamineSpecWidget(QtGui.QWidget):
                         mssg = mssg + ' ::  logN = {:g} +/- {:g}'.format(
                             aline.attrib['logN'], aline.attrib['sig_logN'])
                     elif event.key == 'E':  #EW
-                        aline.limits.set(iwv)
-                        aline.measure_restew()
-                        mssg = 'Using '+ aline.__repr__()
-                        mssg = mssg + ' ::  Rest EW = {:g} +/- {:g}'.format(
-                            aline.attrib['EW'].to(mAA), aline.attrib['sig_EW'].to(mAA))
+                        if aline is not None:
+                            aline.limits.set(iwv)
+                            aline.measure_restew()
+                            mssg = 'Using '+ aline.__repr__()
+                            mssg = mssg + ' ::  Rest EW = {:g} +/- {:g}'.format(
+                                aline.attrib['EW'].to(mAA), aline.attrib['sig_EW'].to(mAA))
                 # Display values
                 try:
                     self.statusBar().showMessage(mssg)
