@@ -59,6 +59,7 @@ def splice_two(spec1, spec2, wvmx=None, scale=1., chk_units=True):
       *longer* than the original spectrum.
     wvmx : Quantity, optional
       Wavelength to begin splicing *after*
+      And to truncate original spectrum at
     scale : float, optional
       Scale factor for flux and error array.
       Mainly for convenience of plotting
@@ -82,22 +83,23 @@ def splice_two(spec1, spec2, wvmx=None, scale=1., chk_units=True):
     if wvmx is None:
         wvmx = spec1.wvmax
     #
-    gdp = np.where(spec2.wavelength > wvmx)[0]
+    gdp1 = np.where(spec1.wavelength < wvmx)[0]
+    gdp2 = np.where(spec2.wavelength > wvmx)[0]
     # Concatenate
-    new_wv = np.concatenate((spec1.wavelength.value,
-                             spec2.wavelength.value[gdp]))
+    new_wv = np.concatenate((spec1.wavelength.value[gdp1],
+                             spec2.wavelength.value[gdp2]))
     uwave = u.Quantity(new_wv, unit=spec1.units['wave'])
-    new_fx = np.concatenate((spec1.flux.value,
-                             spec2.flux.value[gdp] * scale))
+    new_fx = np.concatenate((spec1.flux.value[gdp1],
+                             spec2.flux.value[gdp2] * scale))
     # Error
     if spec1.sig_is_set:
-        new_sig = np.concatenate((spec1.sig, spec2.sig[gdp] * scale))
+        new_sig = np.concatenate((spec1.sig[gdp1], spec2.sig[gdp2] * scale))
     else:
         new_sig = None
 
     # Continuum
     if spec1.co_is_set:
-        new_co = np.concatenate((spec1.co, spec2.co[gdp] * scale))
+        new_co = np.concatenate((spec1.co[gdp1], spec2.co[gdp2] * scale))
     else:
         new_co = None
 

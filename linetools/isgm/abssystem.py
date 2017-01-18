@@ -554,7 +554,6 @@ class GenericAbsSystem(AbsSystem):
     """
     def __init__(self, radec, zabs, vlim, **kwargs):
         AbsSystem.__init__(self, radec, zabs, vlim, abs_type='Generic', **kwargs)
-        self.name = 'Foo'
 
     def print_abs_type(self):
         """"Return a string representing the type of vehicle this is."""
