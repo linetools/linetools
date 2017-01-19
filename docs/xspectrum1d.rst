@@ -9,14 +9,19 @@ XSpectrum1D Class
 Overview
 ========
 
-`~linetools.spectra.xspectrum1d.XSpectrum1D` describes a 1-d spectrum,
+`~linetools.spectra.xspectrum1d.XSpectrum1D` contains and
+manipulates 1-d spectra, each of
 which usually consists of a wavelength, flux and flux uncertainty
 array.  For absorption-line analysis, it also often contains a
-continuum array.  The data are held in a masked numpy array which
-may contain multiple spectra.  By default pixels on the edges of the
-spectrum with an input error array having values <=0 are masked.
-It is important to appreciate this masking.  It does mean that
-you will not view, print, analyze, etc. pixels that have been masked.
+continuum array.
+
+The data are held in a masked numpy array which
+may contain multiple spectra.
+By default pixels on the edges of the
+spectrum with an input error array having values <=0 are masked
+at instantiation. It is important to appreciate this masking.
+It does mean that you will not view, print, analyze, etc. pixels
+that have been masked.
 
 Attributes
 ==========
@@ -45,8 +50,8 @@ for flux. The 1-sigma uncertainty is always assumed to have the
 same units as the flux. All of these are specified in the sp.units dict.
 
 If one loads multiple 1D spectra (e.g. a brick of data from DESI
-or a set of spectrum from
-`igmspec <https://github.com/pyigm/igmspec>`_),
+or a set of spectra from
+`specdb <https://github.com/specdb/specdb>`_),
 the selected spectrum is given by the spec.select index.
 
 All of the values are stored in the masked spec.data numpy array
@@ -83,7 +88,7 @@ which contains the wave, flux, sig, etc. values.  This
 is a masked array which is convenient for many applications.
 If you wish to view/analyze all pixels in your spectrum including
 those with 0 or NAN sig values, then disable the mask when
-creating the object or by using the unnmask() method::
+creating the object (masking='None') or by using the unnmask() method::
 
     sp = XSpectrum1D.from_tuple((wa, fl, sig), masking='none')
     sp = XSpectrum1D.from_file('PH957_f.fits')
@@ -192,7 +197,7 @@ all the available methods, see the API: `~linetools.spectra.xspectrum1d.XSpectru
 Multi-spec methods
 ------------------
 
-See :ref:`xspec_multi` for more.
+See :doc:`xspec_multi` for more.
 
 File Formats Read
 =================

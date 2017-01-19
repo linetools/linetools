@@ -592,8 +592,6 @@ def parse_linetools_spectrum_format(hdulist):
     """
     if 'WAVELENGTH' not in hdulist:
         pdb.set_trace()
-        #spec1d = spec_read_fits.read_fits_spectrum1d(
-        #    os.path.expanduser(datfil), dispersion_unit='AA')
         xspec1d = XSpectrum1D.from_spec1d(spec1d)
     else:
         wave = hdulist['WAVELENGTH'].data * u.AA

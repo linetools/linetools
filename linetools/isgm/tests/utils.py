@@ -18,14 +18,14 @@ def data_path(filename):
     return os.path.join(data_dir, filename)
 
 
-def lyman_comp(radec):
+def lyman_comp(radec, z=2.92939):
     # HI Lya, Lyb
-    lya = AbsLine(1215.670*u.AA, z=2.92939)
+    lya = AbsLine(1215.670*u.AA, z=z)
     lya.limits.set([-300.,300.]*u.km/u.s)
     lya.attrib['flag_N'] = 1
     lya.attrib['N'] = 1e17 /  u.cm**2
     lya.attrib['coord'] = radec
-    lyb = AbsLine(1025.7222*u.AA, z=2.92939)
+    lyb = AbsLine(1025.7222*u.AA, z=z)
     lyb.limits.set([-300.,300.]*u.km/u.s)
     lyb.attrib['coord'] = radec
     abscomp = AbsComponent.from_abslines([lya,lyb])
@@ -59,5 +59,28 @@ def make_gensl():
     SiII_comp = si2_comp(radec)
     gensl = GenericAbsSightline.from_components([abscomp, SiII_comp])
     return gensl
+
+
+def write_comps_to_sys():
+    from linetools.isgm.abssystem import GenericAbsSystem
+    radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
+    # HI
+    abscomp = lyman_comp(radec, z=2.92940)
+    # SiII
+    SiII_comp = si2_comp(radec)
+    gensl = GenericAbsSystem.from_components([abscomp, SiII_comp])
+    # Write
+    gensl.write_json()
+
+# Command line execution
+if __name__ == '__main__':
+
+    flg_tab = 0
+    flg_tab += 2**0  # Comps to System
+
+    # Generate
+    if flg_tab & (2**0):
+        write_comps_to_sys()
+        # WRites to Foo.json
 
 

@@ -15,14 +15,14 @@ import warnings
 
 from astropy import constants as const
 from astropy import units as u
-from astropy.table import Table
+from astropy.table import Table, QTable
 from astropy.units import Quantity
 from astropy.coordinates import SkyCoord
 
 from linetools.analysis import absline as ltaa
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.spectralline import init_analy
-from linetools.abund.ions import name_ion
+from linetools.abund.ions import name_ion, ion_name
 from linetools import utils as ltu
 from linetools.lists.linelist import LineList
 
@@ -149,6 +149,7 @@ def build_components_from_dict(idict, coord=None, **kwargs):
     -------
     components :
       list of AbsComponent objects
+      Sorted by zcomp
     """
     from linetools.spectralline import AbsLine
 
@@ -172,8 +173,14 @@ def build_components_from_dict(idict, coord=None, **kwargs):
         components = build_components_from_abslines(lines, **kwargs)
     else:
         warnings.warn("No components in this dict")
+    # Sort by z -- Deals with dict keys being random
+    z = [comp.zcomp for comp in components]
+    isrt = np.argsort(np.array(z))
+    srt_comps = []
+    for idx in isrt:
+        srt_comps.append(components[idx])
     # Return
-    return components
+    return srt_comps
 
 
 def build_systems_from_components(comps, systype=None, vsys=None, **kwargs):
@@ -184,6 +191,7 @@ def build_systems_from_components(comps, systype=None, vsys=None, **kwargs):
     Parameters
     ----------
     comps : list
+        List of AbsComponents
     systype : AbsSystem, optional
       Defaults to GenericAbsSystem
     vsys : Quantity, optional
@@ -244,11 +252,11 @@ def xhtbl_from_components(components, ztbl=None, NHI_obj=None):
 
 def complist_from_table(table):
     """
-    Returns a list of AbsComponents from an input Table.
+    Returns a list of AbsComponents from an input astropy.Table.
 
     Parameters
     ----------
-    table : QTable
+    table : Table
         Table with component information (each row must correspond
         to a component). Each column is expecting a unit when
         appropriate.
@@ -273,6 +281,9 @@ def complist_from_table(table):
         with their respective units if given.
 
     """
+    # Convert to QTable to handle units in individual entries more easily
+    table = QTable(table)
+
     # mandatory and optional columns
     min_columns = ['RA', 'DEC', 'ion_name', 'z_comp', 'vmin', 'vmax']
     special_columns = ['name', 'comment', 'logN', 'sig_logN', 'flag_logN']
@@ -323,6 +334,55 @@ def complist_from_table(table):
         # append
         complist += [comp]
     return complist
+
+
+def table_from_complist(complist):
+    """
+    Returns a astropy.Table from an input list of AbsComponents. It only
+    fills in mandatory and special attributes (see notes below).
+    Information stored in dictionary AbsComp.attrib is ignored.
+
+    Parameters
+    ----------
+    complist : list of AbsComponents
+        The initial list of AbsComponents to create the QTable from.
+
+    Returns
+    -------
+    table : Table
+        Table from the information contained in each component.
+
+    Notes
+    -----
+    Mandatory columns: 'RA', 'DEC', 'ion_name', 'z_comp', 'vmin', 'vmax'
+    Special columns: 'name', 'comment', 'logN', 'sig_logN', 'flag_logN'
+    See also complist_from_table()
+    """
+    tab = Table()
+
+    # mandatory columns
+    tab['RA'] = [comp.coord.ra.to('deg').value for comp in complist] * u.deg
+    tab['DEC'] = [comp.coord.dec.to('deg').value for comp in complist] * u.deg
+    ion_names = []  # ion_names
+    for comp in complist:
+        if comp.Zion == (-1,-1):
+            ion_names += ["Molecule"]
+        else:
+            ion_names += [ion_name(comp.Zion)]
+    tab['ion_name'] = ion_names
+    tab['z_comp'] = [comp.zcomp for comp in complist]
+    tab['vmin'] = [comp.vlim[0].value for comp in complist] * comp.vlim.unit
+    tab['vmax'] = [comp.vlim[1].value for comp in complist] * comp.vlim.unit
+
+    # Special columns
+    tab['logN'] = [comp.logN for comp in complist]
+    tab['sig_logN'] = [comp.sig_logN for comp in complist]
+    tab['flag_logN'] = [comp.flag_N for comp in complist]
+    tab['comment'] = [comp.comment for comp in complist]
+    tab['name'] = [comp.name for comp in complist]
+
+    return tab
+
 
 
 def iontable_from_components(components, ztbl=None, NHI_obj=None):
@@ -462,9 +522,9 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
 
 
 def get_components_at_z(complist, z, dvlims):
-    """In a given list of components, it finds
+    """In a given list of AbsComponents, it finds
     the ones that are within dvlims from a given redshift
-    and returns a list of those components
+    and returns a list of those.
 
     Parameters
     ----------
@@ -479,7 +539,7 @@ def get_components_at_z(complist, z, dvlims):
     Returns
     -------
     components_at_z : list
-        List of components within complist within dvlims from z
+        List of AbsComponents in complist within dvlims from z
     """
     # check input
     if not isinstance(complist[0], AbsComponent):

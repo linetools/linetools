@@ -131,10 +131,14 @@ def collate(spectra):
     # Init
     maxpix = 0
     flg_co, flg_sig = False, False
-    nspec = len(spectra)
+    nspec = 0
     units = None
+    # Setup
     for spec in spectra:
-        maxpix = max(maxpix, spec.npix)
+        nspec += spec.nspec
+        for ii in range(spec.nspec):
+            spec.select = ii
+            maxpix = max(maxpix, spec.npix)
         if spec.co_is_set:
             flg_co = True
         if spec.sig_is_set:
@@ -152,20 +156,26 @@ def collate(spectra):
     else:
         sig = None
     if flg_co:
-        co = np.zeros_like(wave)
+        co = np.zeros_like(flux)
     else:
         co = None
     # Load
     meta = dict(headers=[])
-    for ii, spec in enumerate(spectra):
-        wave[ii,:spec.npix] = spec.wavelength.value
-        flux[ii,:spec.npix] = spec.flux.value
-        if flg_sig:
-            sig[ii,:spec.npix] = spec.sig.value
-        if flg_co:
-            co[ii,:spec.npix] = spec.co.value
+    idx = 0
+    for xspec in spectra:
+        # Allow for multiple spectra in the XSpectrum1D object
+        for jj in range(xspec.nspec):
+            xspec.select = jj
+            wave[idx,:xspec.npix] = xspec.wavelength.value
+            flux[idx,:xspec.npix] = xspec.flux.value
+            if flg_sig:
+                sig[idx,:xspec.npix] = xspec.sig.value
+            if flg_co:
+                if xspec.co_is_set:  # Allow for a mix of continua (mainly for specdb)
+                    co[idx,:xspec.npix] = xspec.co.value
+            idx += 1
         # Meta
-        meta['headers'].append(spec.header)
+        meta['headers'].append(xspec.header)
     # Finish
     new_spec = XSpectrum1D(wave, flux, sig=sig, co=co, units=units.copy(),
                            masking='edges', meta=meta)
@@ -173,7 +183,7 @@ def collate(spectra):
     return new_spec
 
 
-def rebin(spec, new_wv, do_sig=False, all=False, **kwargs):
+def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
     """ Rebin a single spectrum in an XSpectrum1D object to a new wavelength array
 
     Uses simple linear interpolation.  The default (and only)
@@ -193,12 +203,15 @@ def rebin(spec, new_wv, do_sig=False, all=False, **kwargs):
       Rebin error too (if it exists).
       S/N is only crudely conserved.
       Rejected pixels are propagated.
+    do_co : bool, optional
+      Rebin continuum if present
     all : bool, optional
       Rebin all spectra in the XSpectrum1D object?
 
     Returns
     -------
-    XSpectrum1D of the rebinned spectrum
+    newspec : XSpectrum1D
+      XSpectrum1D of the rebinned spectrum
     """
     from linetools.spectra.xspectrum1d import XSpectrum1D
     from scipy.interpolate import interp1d
@@ -209,9 +222,16 @@ def rebin(spec, new_wv, do_sig=False, all=False, **kwargs):
     # Deal with nan
     badf = np.isnan(flux)
     if np.sum(badf) > 0:
-        warnings.warn("Ignoring NAN in flux")
+        warnings.warn("Ignoring pixels with NAN in flux")
     gdf = ~badf
     flux = flux[gdf]
+
+    # Check for bad pixels (not prepared for these)
+    if spec.sig_is_set:
+        sig = spec.sig.value
+        bad_sig = sig[gdf] <= 0.
+        if np.sum(bad_sig) > 0:
+            raise IOError("Not prepared to handle data with rejected pixels (sig=0).")
 
     # Endpoints of original pixels
     npix = len(spec.wavelength)
@@ -227,8 +247,9 @@ def rebin(spec, new_wv, do_sig=False, all=False, **kwargs):
 
     # Error
     if do_sig:
-        var = spec.sig.value**2
-        var = var[gdf]
+        if not spec.sig_is_set:
+            raise IOError("sig must be set to rebin sig")
+        var = sig[gdf]**2
     else:
         var = np.ones_like(flux)
 
@@ -259,7 +280,7 @@ def rebin(spec, new_wv, do_sig=False, all=False, **kwargs):
     #    newcum[-1] = cumsum[-1]
     #    newvar[-1] = cumvar[-1]
 
-    # Rebinned flux, var
+    # Rebinned flux, var, co
     new_fx = (np.roll(newcum, -1) - newcum)[:-1]
     new_var = (np.roll(newvar, -1) - newvar)[:-1]
 
@@ -291,10 +312,17 @@ def rebin(spec, new_wv, do_sig=False, all=False, **kwargs):
     else:
         new_sig = None
 
-    # update continuum
-    if spec.co_is_set:
-        x, y = spec._get_contpoints()
-        new_co = spec._interp_continuum(x, y, new_wv)
+    # Continuum?
+    if do_co:
+        if not spec.co_is_set:
+            raise IOError("Continuum must be set to request rebinning")
+        co = spec.co.value
+        co = co[gdf]
+        cumco = np.cumsum(co * dwv)
+        fco = interp1d(wvh, cumco, fill_value=0., bounds_error=False)
+        newco = fco(bwv) * dwv.unit
+        new_co = (np.roll(newco, -1) - newco)[:-1]
+        new_co = new_co / new_dwv[1:]
     else:
         new_co = None
 
@@ -305,9 +333,11 @@ def rebin(spec, new_wv, do_sig=False, all=False, **kwargs):
     # Return
     return newspec
 
+
 def rebin_to_rest(spec, zarr, dv, debug=False):
     """ Shuffle an XSpectrum1D dataset to an array of
     observed wavelengths and rebin to dv pixels.
+
     Note: This works on the unmasked data array and returns
     unmasked spectra
 
@@ -332,6 +362,7 @@ def rebin_to_rest(spec, zarr, dv, debug=False):
         raise IOError("Use spec.rebin instead")
     if spec.nspec != len(zarr):
         raise IOError("Input redshift array must have same dimension as nspec")
+
     # Generate final wave array
     dlnlamb = np.log(1+dv/const.c)
     z2d = np.outer(zarr, np.ones(spec.totpix))
@@ -339,6 +370,7 @@ def rebin_to_rest(spec, zarr, dv, debug=False):
                     np.max(spec.data['wave']/(1+z2d))*spec.units['wave'])
     npix = int(np.round(np.log(wvmax/wvmin) / dlnlamb)) + 1
     new_wv = wvmin * np.exp(dlnlamb*np.arange(npix))
+
     # Final image
     f_flux = np.zeros((spec.nspec, npix))
     f_sig = np.zeros((spec.nspec, npix))
@@ -383,7 +415,7 @@ def smash_spectra(spec, method='average', debug=False):
     from linetools.spectra.xspectrum1d import XSpectrum1D
     # Checks
     if spec.nspec <= 1:
-        raise IOError("Use spec.rebin instead")
+        raise IOError("This method smashes an XSpectrum1D instance with multiple spectra")
     np.testing.assert_allclose(spec.data['wave'][0],spec.data['wave'][1])
     # Generate mask
     stack_msk = spec.data['sig'] > 0.

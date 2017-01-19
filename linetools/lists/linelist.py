@@ -196,15 +196,12 @@ class LineList(object):
                         wrest = full_table['wrest']
                         newi = []
                         for jj, row in enumerate(table):
-                            try:
-                                mt = np.abs(row['wrest'] - wrest) < tol
-                            except:
-                                import pdb
-                                pdb.set_trace()
+                            mt = np.abs(row['wrest'] - wrest) < tol
                             if mt.sum() == 0:
                                 newi.append(jj)
                         # Append new ones as Tables (can't stack QTables yet)
                         full_table = vstack([Table(full_table), Table(table[newi])])
+                        full_table = QTable(full_table)
                     # Save to avoid repeating
                     all_func.append(func)
 
