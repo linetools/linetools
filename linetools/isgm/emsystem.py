@@ -110,6 +110,7 @@ class EmSystem(object):
         EmSystem
 
         """
+        reload(lio)
         emlines = lio.emlines_from_alis_output(alis_file)
         # Add coordinates
         coord = ltu.radec_to_coord(radec)

@@ -66,9 +66,9 @@ link end
 # legendre   14.91070787      41.98922735        scale=1.0,1.0  specid=4  continuum=True
 # legendre   5.34940707      16.10995876        scale=1.0,1.0  specid=5  continuum=True
 # legendre   4.65726318      13.63971131        scale=1.0,1.0  specid=6  continuum=True
-# gaussian   1.07203070E+02  0.00000346ra      0.00000000dh        specid=0  IntFlux=True    wave=4862.721
+# gaussian   1.07203070E+02  0.00000346ra      0.00000000dh        specid=0  IntFlux=True    wave=4862.683
 # gaussian   1.24076227E+02  0.00000346ra      0.00000000dh        specid=1  IntFlux=True    wave=4341.684
-# gaussian   1.34774396E+02  0.00000346ra      0.00000000dh        specid=2  IntFlux=True    wave=4102.891
+# gaussian   1.34774396E+02  0.00000346ra      0.00000000dh        specid=2  IntFlux=True    wave=4102.892
 # gaussian   1.51170291E+02  0.00000346ra      0.00000000dh        specid=3  IntFlux=True    wave=3971.195
 # gaussian   2.13668992E+02  0.00000346ra      0.00000000do        specid=4  IntFlux=True    wave=3727.092
 # gaussian   2.14767652E+02  0.00000346ra      0.00000000do        specid=4  IntFlux=True    wave=3729.874

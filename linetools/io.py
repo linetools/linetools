@@ -4,6 +4,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import pdb
 
+import numpy as np
 from astropy import units as u
 
 from linetools.spectralline import EmLine
@@ -44,13 +45,18 @@ def emlines_from_alis_output(alis_file):
         return
 
     flg_model = False
+    flg_error = False
     flg_emiss = False
+    flg_sigemiss = False
     line_dict = dict(continuum={}, lines=[], errors=[])
     with open(alis_file) as file_to_search:
         for line in file_to_search:
             # model
             if 'model read' in line:
                 flg_model = True
+            # Errors
+            if 'Errors:' in line:
+                flg_error = True
             if flg_model:
                 # End
                 if 'model end' in line:
@@ -58,10 +64,24 @@ def emlines_from_alis_output(alis_file):
                     flg_emiss = False
                 if 'emission' in line:
                     flg_emiss = True
+            if flg_error:
+                # End
+                if line[0] != '#':
+                    flg_error = False
+                    flg_sigemiss = False
+                    flg_emiss = False
+                if 'emission' in line:
+                    flg_sigemiss = True
+                    flg_emiss = True
             # lines
             if flg_emiss:
                 flg_intflux = True
-                conti_sp = line.split()
+                if flg_sigemiss:
+                    conti_sp = line.split()[1:]
+                else:
+                    conti_sp = line.split()
+                if len(conti_sp) == 0:
+                    continue
                 # Find specid
                 for istr in conti_sp:
                     if 'specid' in istr:
@@ -76,18 +96,29 @@ def emlines_from_alis_output(alis_file):
                         elif 'wave=' in istr:
                             wrest = float(get_value(istr))
                     # Values
-                    gauss_fit = {}
-                    if flg_intflux:
-                        gauss_fit['flux'] = strip_end(conti_sp[1])
+                    if flg_sigemiss is False:
+                        gauss_fit = {}
+                        if flg_intflux:
+                            gauss_fit['flux'] = strip_end(conti_sp[1])
+                        else:
+                            gauss_fit['amp'] = strip_end(conti_sp[1])
+                        gauss_fit['z'] = strip_end(conti_sp[2])
+                        gauss_fit['sigma'] = strip_end(conti_sp[3])
+                        gauss_fit['type'] = 'gaussian'
+                        gauss_fit['wrest'] = wrest*u.AA
+                        # Init?
+                        line_dict['lines'].append(gauss_fit)
                     else:
-                        gauss_fit['amp'] = strip_end(conti_sp[1])
-                    gauss_fit['z'] = strip_end(conti_sp[2])
-                    gauss_fit['sigma'] = strip_end(conti_sp[3])
-                    gauss_fit['type'] = 'gaussian'
-                    gauss_fit['wrest'] = wrest*u.AA
-                    # Init?
-                    line_dict['lines'].append(gauss_fit)
-            # Errors
+                        waves = np.array([idict['wrest'].value for idict in line_dict['lines']])
+                        mt = np.where(np.abs(waves-wrest) < 1e-3)[0]
+                        if len(mt) != 1:
+                            raise ValueError("Bad wrest")
+                        # Fill in
+                        if flg_intflux:
+                            line_dict['lines'][mt[0]]['sig_flux'] = strip_end(conti_sp[1])
+                        else:
+                            line_dict['lines'][mt[0]]['sig_amp'] = strip_end(conti_sp[1])
+
     # Generate EmLines
     emlines = []
     for iline in line_dict['lines']:
@@ -98,6 +129,8 @@ def emlines_from_alis_output(alis_file):
         except KeyError:
             # Amplitude
             pdb.set_trace()
+        else:
+            obj.attrib['sig_flux'] = iline['sig_flux']*u.erg/u.s
         # Append
         emlines.append(obj)
     # Return
