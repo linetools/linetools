@@ -110,7 +110,6 @@ class EmSystem(object):
         EmSystem
 
         """
-        reload(lio)
         emlines = lio.emlines_from_alis_output(alis_file)
         # Add coordinates
         coord = ltu.radec_to_coord(radec)
@@ -187,6 +186,12 @@ class EmSystem(object):
         # Refs (list of references)
         self.Refs = []
 
+    def add_emlines_from_alis(self, alis_file, **kwargs):
+        dum_sys = EmSystem.from_alis(alis_file, (0.,0.))  # Fake coords
+        # Add in lines
+        for emline in dum_sys._emlines:
+            self.add_emline(emline, chk_sep=False, **kwargs)
+
     def add_emline(self, emline, tol=0.2*u.arcsec,
                       chk_sep=True, chk_z=True, overlap_only=False,
                       vtoler=1., debug=False, **kwargs):
@@ -231,8 +236,10 @@ class EmSystem(object):
             zlim_sys = self.zem + (1 + self.zem) * (sys_vlim_mks / c_mks)
             testz = (emline.z >= (zlim_sys[0]-dz_toler)) & (
                     emline.z <= (zlim_sys[1]+dz_toler))
+        else:
+            testz = True
 
-        # Additional checks (specific to AbsSystem type)
+        # Additional checks (specific to EmSystem type)
         testcomp = self.chk_emline(emline)
         test = testcoord & testcomp & testz
 
@@ -270,8 +277,8 @@ class EmSystem(object):
         """
         self._trans = ltlu.transtable_from_speclines(self.list_of_abslines())
 
-    def get_absline(self, inp):
-        """ Returns an AbsLine from the AbsSystem
+    def get_emline(self, inp):
+        """ Returns an EmLine from the AbsSystem
 
         Parameters
         ----------
@@ -288,23 +295,22 @@ class EmSystem(object):
           be a list instead of a single object
         """
         # Generate the lines
-        abslines = self.list_of_abslines()
         if isinstance(inp,basestring):
-            names = np.array([absline.name for absline in abslines])
+            names = np.array([emline.name for emline in self._emlines])
             mt = np.where(names == inp)[0]
         elif isinstance(inp,Quantity):
-            wrest = Quantity([absline.wrest for absline in abslines])
+            wrest = Quantity([emline.wrest for emline in self._emlines])
             mt = np.where(np.abs(wrest-inp) < 0.01*u.AA)[0]
         else:
-            raise IOError("Bad input to absline")
+            raise IOError("Bad input to emline")
         # Finish
         if len(mt) == 0:
-            warnings.warn("No absline with input={}".format(inp))
+            warnings.warn("No emline with input={}".format(inp))
             return None
         elif len(mt) == 1:
-            return abslines[mt]
+            return self._emlines[mt[0]]
         else:
-            return [abslines[ii] for ii in mt]
+            return [self._emlines[ii] for ii in mt]
 
     def get_component(self, inp):
         """ Returns the component related to the given input
@@ -358,20 +364,6 @@ class EmSystem(object):
         # Raise error?
         warnings.warn("Input absorption line is not in any component")
         return None
-
-    def list_of_abslines(self):
-        """ Generate a list of the absorption lines in this system
-
-        Drawn from the components
-
-        Returns
-        -------
-        abslist : list of AbsLines
-
-        """
-        # Return
-        return [iline for component in self._components
-                for iline in component._abslines]
 
     def measure_restew(self, spec=None, **kwargs):
         """ Measure rest-frame EWs for lines in the AbsSystem
