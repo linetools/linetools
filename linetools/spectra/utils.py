@@ -83,7 +83,7 @@ def splice_two(spec1, spec2, wvmx=None, scale=1., chk_units=True):
     if wvmx is None:
         wvmx = spec1.wvmax
     #
-    gdp1 = np.where(spec1.wavelength < wvmx)[0]
+    gdp1 = np.where(spec1.wavelength <= wvmx)[0]
     gdp2 = np.where(spec2.wavelength > wvmx)[0]
     # Concatenate
     new_wv = np.concatenate((spec1.wavelength.value[gdp1],
