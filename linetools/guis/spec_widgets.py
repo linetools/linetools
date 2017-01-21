@@ -1051,7 +1051,8 @@ U         : Indicate as a upper limit
                 if (((jj+1) % self.sub_xy[0]) == 0) or ((jj+1) == len(all_idx)):
                     self.ax.set_xlabel('Relative Velocity (km/s)')
                 else:
-                    self.ax.get_xaxis().set_ticks([])
+                    #self.ax.get_xaxis().set_ticks([])
+                    self.ax.tick_params(labelbottom='off')
                 lbl = self.llist[self.llist['List']].name[idx]
                 # Kinematics
                 kinl = ''
@@ -1069,7 +1070,7 @@ U         : Indicate as a upper limit
 
                 # Reset window limits
                 #QtCore.pyqtRemoveInputHook()
-                #xdb.set_trace()
+                #pdb.set_trace()
                 #QtCore.pyqtRestoreInputHook()
                 self.ax.set_xlim(self.psdict['x_minmax'])
 

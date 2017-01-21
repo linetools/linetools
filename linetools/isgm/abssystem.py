@@ -521,6 +521,38 @@ class AbsSystem(object):
         # Return
         return outdict
 
+    def update_vlim(self, sub_system=None):
+        """ Update vlim in the main or subsystems
+
+        Parameters
+        ----------
+        sub_system : str, optional
+          If provided, apply to given sub-system.  Only used in LLS so far
+        """
+        def get_vmnx(components):
+            sys_vlim_mks = self.vlim.to('km/s').value
+            zlim_sys = self.zabs + (1 + self.zabs) * (sys_vlim_mks / c_mks)
+            zmin, zmax = zlim_sys
+            for component in components:
+                comp_vlim_mks = component.vlim.to('km/s').value
+                zlim_comp = component.zcomp + (1 + component.zcomp) * (comp_vlim_mks / c_mks)
+                zmin = min(zmin, zlim_comp[0])
+                zmax = max(zmax, zlim_comp[1])
+            # Convert back to velocities
+            vmin = (zmin-self.zabs)/(1+self.zabs) * c_mks
+            vmax = (zmax-self.zabs)/(1+self.zabs) * c_mks
+            return vmin,vmax
+
+        # Sub-system?
+        if sub_system is not None:
+            components = self.subsys[sub_system]._components
+            vmin, vmax = get_vmnx(components)
+            self.subsys[sub_system].vlim = [vmin, vmax]*u.km/u.s
+        else:
+            components = self._components
+            vmin, vmax = get_vmnx(components)  # Using system z
+            self.vlim = [vmin, vmax]*u.km/u.s
+
     def write_json(self, outfil=None):
         """ Generate a JSON file from the system
 
