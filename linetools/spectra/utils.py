@@ -177,7 +177,7 @@ def collate(spectra):
                     co[idx,:xspec.npix] = xspec.co.value
             idx += 1
         # Meta
-        meta['headers'].append(xspec.header)
+        meta['headers'] += xspec.meta['headers']
     # Finish
     new_spec = XSpectrum1D(wave, flux, sig=sig, co=co, units=units.copy(),
                            masking='edges', meta=meta)
