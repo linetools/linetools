@@ -623,7 +623,7 @@ def parse_linetools_spectrum_format(hdulist):
     return xspec1d
 
 
-def parse_hdf5(inp, **kwargs):
+def parse_hdf5(inp, close=True, **kwargs):
     """ Read a spectrum from HDF5 written in XSpectrum1D format
     Expects:  meta, data, units
 
@@ -675,7 +675,8 @@ def parse_hdf5(inp, **kwargs):
     except (NameError, IndexError):
         co = None
     # Finish
-    hdf5.close()
+    if close:
+        hdf5.close()
     return XSpectrum1D(data['wave'], data['flux'], sig=sig, co=co,
                           meta=meta, units=units, **kwargs)
 
