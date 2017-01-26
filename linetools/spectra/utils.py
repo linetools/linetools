@@ -185,7 +185,7 @@ def collate(spectra):
     return new_spec
 
 
-def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
+def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, grow_bad_sig=False, **kwargs):
     """ Rebin a single spectrum in an XSpectrum1D object to a new wavelength array
 
     Uses simple linear interpolation.  The default (and only)
@@ -209,6 +209,8 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
       Rebin continuum if present
     all : bool, optional
       Rebin all spectra in the XSpectrum1D object?
+    grow_bad_sig : bool, optional
+      Allow sig<=0. values and grow them
 
     Returns
     -------
@@ -233,7 +235,8 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
         sig = spec.sig.value
         bad_sig = sig[gdf] <= 0.
         if np.sum(bad_sig) > 0:
-            raise IOError("Not prepared to handle data with rejected pixels (sig=0).")
+            if not grow_bad_sig:
+                raise IOError("Data contains rejected pixels (sig=0). Use grow_bad_sig to proceed and grow them.")
 
     # Endpoints of original pixels
     npix = len(spec.wavelength)
@@ -252,6 +255,7 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
         if not spec.sig_is_set:
             raise IOError("sig must be set to rebin sig")
         var = sig[gdf]**2
+        var[bad_sig] = 0.
     else:
         var = np.ones_like(flux)
 
@@ -301,7 +305,7 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
         new_sig = np.zeros_like(new_var)
         gd = new_var > 0.
         new_sig[gd] = np.sqrt(new_var[gd].value)
-        # Deal with bad pixels
+        # Deal with bad pixels (grow_bad_sig should be True)
         bad = np.where(var <= 0.)[0]
         for ibad in bad:
             bad_new = np.where(np.abs(new_wv-spec.wavelength[ibad]) <
@@ -336,7 +340,7 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
     return newspec
 
 
-def rebin_to_rest(spec, zarr, dv, debug=False):
+def rebin_to_rest(spec, zarr, dv, debug=False, **kwargs):
     """ Shuffle an XSpectrum1D dataset to an array of
     observed wavelengths and rebin to dv pixels.
 
@@ -384,7 +388,7 @@ def rebin_to_rest(spec, zarr, dv, debug=False):
         # Select
         spec.select = ispec
         # Rebin in obs frame
-        tspec = spec.rebin(new_wv*(1+zarr[ispec]), do_sig=True, masking='none')
+        tspec = spec.rebin(new_wv*(1+zarr[ispec]), do_sig=True, masking='none', **kwargs)
         # Save in rest-frame (worry about flambda)
         f_flux[ispec, :] = tspec.flux.value
         f_sig[ispec, :] = tspec.sig.value
