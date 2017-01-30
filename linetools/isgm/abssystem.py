@@ -530,17 +530,15 @@ class AbsSystem(object):
           If provided, apply to given sub-system.  Only used in LLS so far
         """
         def get_vmnx(components):
-            #sys_vlim_mks = self.vlim.to('km/s').value
-            zlim_sys = ltu.z_from_dv(self.vlim, self.zabs, rel=False)  # self.zabs + (1 + self.zabs) * (sys_vlim_mks / c_mks)
+            zlim_sys = ltu.z_from_dv(self.vlim, self.zabs, rel=False)
             zmin, zmax = zlim_sys
             for component in components:
-                zlim_comp = ltu.z_from_dv(component.vlim, component.zcomp, rel=False)  # self.zabs + (1 + self.zabs) * (sys_vlim_mks / c_mks)
+                zlim_comp = ltu.z_from_dv(component.vlim, component.zcomp, rel=False)
                 zmin = min(zmin, zlim_comp[0])
                 zmax = max(zmax, zlim_comp[1])
             # Convert back to velocities
-            vmin = (zmin-self.zabs)/(1+self.zabs) * c_mks
-            vmax = (zmax-self.zabs)/(1+self.zabs) * c_mks
-            return vmin,vmax
+            vmnx = ltu.dv_from_z([zmin,zmax], self.zabs, rel=False)
+            return vmnx[0],vmnx[1]
 
         # Sub-system?
         if sub_system is not None:

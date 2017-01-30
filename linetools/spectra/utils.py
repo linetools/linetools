@@ -354,6 +354,8 @@ def rebin_to_rest(spec, zarr, dv, debug=False, **kwargs):
       Array of redshifts
     dv : Quantity
       Velocity width of the new pixels
+    **kwargs :
+      Passed to spec.rebin()
 
     Returns
     -------
