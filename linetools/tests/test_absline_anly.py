@@ -123,10 +123,12 @@ def test_get_Wr_from_N_b():
     Wr = abslin1.get_Wr_from_N_b(N, b)
 
 
-def test_get_Wr_from_N():
+def test_get_Wr_from_N_and_viceversa():
     abslin1 = AbsLine('HI 1215')
     N = [10**12.0, 10**12.1, 10**12.2] / (u.cm*u.cm)
     Wr = abslin1.get_Wr_from_N(N)
+    N_new = abslin1.get_N_from_Wr(Wr)
+    np.testing.assert_allclose(N, N_new, rtol=1e-5)
 
 
 def test_repr():
