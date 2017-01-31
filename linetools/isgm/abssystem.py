@@ -521,6 +521,32 @@ class AbsSystem(object):
         # Return
         return outdict
 
+    def update_vlim(self, sub_system=None):
+        """ Update vlim in the main or subsystems
+
+        Parameters
+        ----------
+        sub_system : str, optional
+          If provided, apply to given sub-system.  Only used in LLS so far
+        """
+        def get_vmnx(components):
+            zlim_sys = ltu.z_from_dv(self.vlim, self.zabs, rel=False)
+            zmin, zmax = zlim_sys
+            for component in components:
+                zlim_comp = ltu.z_from_dv(component.vlim, component.zcomp, rel=False)
+                zmin = min(zmin, zlim_comp[0])
+                zmax = max(zmax, zlim_comp[1])
+            # Convert back to velocities
+            return ltu.dv_from_z([zmin,zmax], self.zabs, rel=False)
+
+        # Sub-system?
+        if sub_system is not None:
+            components = self.subsys[sub_system]._components
+            self.subsys[sub_system].vlim = get_vmnx(components)
+        else:
+            components = self._components
+            self.vlim = get_vmnx(components)  # Using system z
+
     def write_json(self, outfil=None):
         """ Generate a JSON file from the system
 
@@ -554,7 +580,6 @@ class GenericAbsSystem(AbsSystem):
     """
     def __init__(self, radec, zabs, vlim, **kwargs):
         AbsSystem.__init__(self, radec, zabs, vlim, abs_type='Generic', **kwargs)
-        self.name = 'Foo'
 
     def print_abs_type(self):
         """"Return a string representing the type of vehicle this is."""

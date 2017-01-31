@@ -256,8 +256,8 @@ class AbsComponent(object):
         # Now redshift/velocity
         if chk_vel:
             dz_toler = (1 + self.zcomp) * vtoler / c_kms  # Avoid Quantity for speed
-            zlim_line = (1 + absline.z) * absline.limits.vlim.to('km/s').value / c_kms
-            zlim_comp = (1+self.zcomp) * self.vlim.to('km/s').value / c_kms
+            zlim_line = absline.limits.zlim  # absline.z + (1 + absline.z) * absline.limits.vlim.to('km/s').value / c_kms
+            zlim_comp = self.zcomp + (1+self.zcomp) * self.vlim.to('km/s').value / c_kms
             testv = (zlim_line[0] >= (zlim_comp[0] - dz_toler)) & (
                 zlim_line[1] <= (zlim_comp[1] + dz_toler))
         else:

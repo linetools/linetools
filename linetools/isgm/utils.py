@@ -221,7 +221,6 @@ def build_systems_from_components(comps, systype=None, vsys=None, **kwargs):
         # Use the first one
         comp = cpy_comps.pop(0)
         abssys = systype.from_components([comp])
-        abs_systems.append(abssys)
         # Try the rest
         comps_left = []
         for icomp in cpy_comps:
@@ -229,6 +228,11 @@ def build_systems_from_components(comps, systype=None, vsys=None, **kwargs):
                 pass
             else:
                 comps_left.append(icomp)
+        # Update vlim
+        abssys.update_vlim()
+        # Append
+        abs_systems.append(abssys)
+        # Save
         cpy_comps = comps_left
     # Return
     return abs_systems
