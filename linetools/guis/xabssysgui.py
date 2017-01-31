@@ -214,7 +214,7 @@ class XAbsSysGui(QtGui.QDialog):
         self.done(1)
 
 
-def main(args, **kwargs):
+def main(ispec, abs_sys, **kwargs):
     """ Simple GUI call
     ParametersS
     ----------
@@ -228,7 +228,7 @@ def main(args, **kwargs):
     import sys
     # Run
     app = QtGui.QApplication(sys.argv)
-    gui = XAbsSysGui(args, **kwargs)
+    gui = XAbsSysGui(ispec, abs_sys, **kwargs)
     gui.show()
     app.exec_()
     return

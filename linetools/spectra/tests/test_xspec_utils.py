@@ -50,6 +50,10 @@ def test_collate(spec,spec2):
     coll_spec = ltsu.collate([spec,spec2])
     assert coll_spec.nspec == 2
     assert coll_spec.totpix == 20379
+    # Now a 2 and a 1
+    coll_spec2 = ltsu.collate([coll_spec,spec2])
+    assert coll_spec2.nspec == 3
+    assert coll_spec2.totpix == 20379
 
 
 def test_airtovac_andback(spec):

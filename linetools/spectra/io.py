@@ -155,7 +155,9 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
 
             # Look for co
             if len(hdulist) == 4:
-                co = hdulist[3].data.flatten()
+                data = hdulist[3].data
+                if 'float' in data.dtype.name:  # This can be an int mask (e.g. BOSS)
+                    co = data
 
             wave = give_wv_units(wave)
             xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, co), **kwargs)
@@ -623,7 +625,7 @@ def parse_linetools_spectrum_format(hdulist):
     return xspec1d
 
 
-def parse_hdf5(inp, **kwargs):
+def parse_hdf5(inp, close=True, **kwargs):
     """ Read a spectrum from HDF5 written in XSpectrum1D format
     Expects:  meta, data, units
 
@@ -675,7 +677,8 @@ def parse_hdf5(inp, **kwargs):
     except (NameError, IndexError):
         co = None
     # Finish
-    hdf5.close()
+    if close:
+        hdf5.close()
     return XSpectrum1D(data['wave'], data['flux'], sig=sig, co=co,
                           meta=meta, units=units, **kwargs)
 
