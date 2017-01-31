@@ -537,18 +537,15 @@ class AbsSystem(object):
                 zmin = min(zmin, zlim_comp[0])
                 zmax = max(zmax, zlim_comp[1])
             # Convert back to velocities
-            vmnx = ltu.dv_from_z([zmin,zmax], self.zabs, rel=False)
-            return vmnx[0],vmnx[1]
+            return ltu.dv_from_z([zmin,zmax], self.zabs, rel=False)
 
         # Sub-system?
         if sub_system is not None:
             components = self.subsys[sub_system]._components
-            vmin, vmax = get_vmnx(components)
-            self.subsys[sub_system].vlim = [vmin, vmax]*u.km/u.s
+            self.subsys[sub_system].vlim = get_vmnx(components)
         else:
             components = self._components
-            vmin, vmax = get_vmnx(components)  # Using system z
-            self.vlim = [vmin, vmax]*u.km/u.s
+            self.vlim = get_vmnx(components)  # Using system z
 
     def write_json(self, outfil=None):
         """ Generate a JSON file from the system
