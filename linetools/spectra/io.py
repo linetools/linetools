@@ -155,7 +155,9 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
 
             # Look for co
             if len(hdulist) == 4:
-                co = hdulist[3].data.flatten()
+                data = hdulist[3].data
+                if 'float' in data.dtype.name:  # This can be an int mask (e.g. BOSS)
+                    co = data
 
             wave = give_wv_units(wave)
             xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, co), **kwargs)
