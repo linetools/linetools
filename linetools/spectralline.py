@@ -746,6 +746,31 @@ class AbsLine(SpectralLine):
             raise NotImplementedError('AbsLine {} has not set its oscillator strength.'.format(self.__repr__))
         return laa.Wr_from_N(N, self.wrest, fosc)
 
+    def get_N_from_Wr(self, Wr):
+        """It returns the approximated column density N, for a given rest-frame equivalent width
+        Wr. This is an approximation only valid for tau0 << 1, where
+        Wr is independent on Doppler parameter and gamma (see eqs. 9.14 and 9.15 of
+        Draine 2011). This may be useful to put upper limits on non-detections.
+
+        Parameters
+        ----------
+        Wr : Quantity or Quantity array
+            Rest-frame equivalent width of the AbsLine
+
+        Returns
+        -------
+        N : Quantity
+            Approximated column density N valid for the tau0<<1 regime.
+
+        Notes
+        -----
+        This is a wrapper to linetools.analysis.absline.Wr_from_N(). See also self.get_Wr_from_N()
+        """
+        try:
+            fosc = self.data['f']
+        except KeyError:
+            raise NotImplementedError('AbsLine {} has not set its oscillator strength.'.format(self.__repr__))
+        return laa.N_from_Wr(Wr, self.wrest, fosc)
 
     def __repr__(self):
         txt = '<{:s}:'.format(self.__class__.__name__)
