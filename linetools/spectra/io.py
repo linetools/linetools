@@ -309,7 +309,7 @@ def get_wave_unit(tag, hdulist, idx=None):
         except KeyError:
            return None
         else:
-            if tunit == 'Angstroem':
+            if tunit in ['Angstroem', 'Angstroms']:
                 tunit = 'Angstrom'
             unit = Unit(tunit)
             return unit
