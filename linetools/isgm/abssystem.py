@@ -260,6 +260,7 @@ class AbsSystem(object):
         else:
             testcoord = True
         # Now redshift/velocity
+        testz = True
         if chk_z:
             # Will avoid Quantity for speed
             comp_vlim_mks = abscomp.vlim.to('km/s').value
@@ -348,7 +349,7 @@ class AbsSystem(object):
             warnings.warn("No absline with input={}".format(inp))
             return None
         elif len(mt) == 1:
-            return abslines[mt]
+            return abslines[mt[0]]
         else:
             return [abslines[ii] for ii in mt]
 
@@ -437,8 +438,12 @@ class AbsSystem(object):
             # Fill in spec?
             if spec is not None:
                 iline.analy['spec'] = spec
-            # Measure
-            iline.measure_restew(**kwargs)
+            # Check for analysis
+            if iline.analy['do_analysis'] == 0:
+                warnings.warn("Skipping {:s} because do_analysis=0".format(iline))
+            else:
+                # Measure
+                iline.measure_restew(**kwargs)
 
     def measure_aodm(self, spec=None, **kwargs):
         """ Measure ADOM columns for the list of lines
