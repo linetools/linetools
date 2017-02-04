@@ -442,7 +442,7 @@ class AbsSystem(object):
                 iline.analy['spec'] = spec
             # Check for analysis
             if iline.analy['do_analysis'] == 0:
-                warnings.warn("Skipping {:s} because do_analysis=0".format(iline))
+                warnings.warn("Skipping {:s} because do_analysis=0".format(iline.__repr__))
             else:
                 # Measure
                 iline.measure_restew(**kwargs)
