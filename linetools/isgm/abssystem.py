@@ -422,6 +422,8 @@ class AbsSystem(object):
 
     def measure_restew(self, spec=None, **kwargs):
         """ Measure rest-frame EWs for lines in the AbsSystem
+        Analysis is only performed on lines with analy['do_analysis'] != 0
+
         Parameters
         ----------
         spec : XSpectrum1D, optional
