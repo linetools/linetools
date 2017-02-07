@@ -40,9 +40,9 @@ def test_lsf_COS():
 
 
 def test_lsf_STIS():
-    gratings = ['G750L', 'G140M', 'G140L', 'G230M', 'G230L']
-                # Echelle gratings, G750M, G430M, G430L, G230LB G230MB still not fully implemented.
-                #todo : implement Echelle gratings, G430M, G430L, G230LB G230MB
+    gratings = ['G750L', 'G140M', 'G140L', 'G230M', 'G230L','E140H','E140M','E230H','E230M']
+                # G750M, G430M, G430L, G230LB G230MB still not fully implemented.
+                #todo : implement G430M, G430L, G230LB, G230MB
 
     available_slits = {
             'G140L': ['52x0.1', '52x0.2', '52x0.5', '52x2.0'],

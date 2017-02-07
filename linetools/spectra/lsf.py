@@ -113,6 +113,7 @@ class LSF(object):
 
         At the moment this function does the following:
          - Make sure that the number of relative pixels of the LSF is odd integer
+            - Unfortunately, the STIS LSFs provided by STScI have an even number
          - Impose the middle value to define the 0 relative pixel
 
         Parameters
@@ -127,12 +128,14 @@ class LSF(object):
 
         # odd integer for total number of relative pixels
         n_pix = len(relpix)
-        assert n_pix % 2 != 0, ValueError('LSF tables must be given as odd integers!')
+        if self.instr_config['name'] != 'STIS':  # STIS LSFs have even no. of pixels
+            assert n_pix % 2 != 0, ValueError('LSF tables must be given as odd integers!')
 
         # make sure relpix == 0 is in the middle of the array
         n_half = (n_pix - 1) / 2
         mid_value = relpix[n_half]
         new_relpix = relpix - mid_value  # 0 in the middle
+
 
         return new_relpix
 
@@ -290,7 +293,7 @@ class LSF(object):
         if grating not in channel_dict.keys():
             raise NotImplementedError('Not ready for this HST/STIS grating: {}. '
                                       'Available gratings for HST/STIS are: {}'.format(grating, channel_dict.keys()))
-        if grating in ['E140H', 'E140M', 'E230M', 'E230H', 'G750M', 'G430M', 'G430L']:
+        if grating in ['G750M', 'G430M', 'G430L']:
             raise NotImplementedError('{} not implemented yet; coming soon...'.format(grating))
 
         # We also need to know the slit width
@@ -331,7 +334,12 @@ class LSF(object):
             # reformat rel_pix
             data_aux['rel_pix'] = self.check_and_reformat_relpix(data_aux['rel_pix'])
             # create column with absolute wavelength based on pixel scales
-            wave_aux = float(wa_names[ii])*u.AA + data_aux['rel_pix']*pixel_scale_dict[grating]
+            if not isinstance(pixel_scale_dict[grating],u.quantity.Quantity):
+                # deal with wavelength-dependent pixel scale (i.e., STIS echelle)
+                scalefac = 1./float(pixel_scale_dict[grating].split('/')[-1])
+                wave_aux = float(wa_names[ii])*u.AA * (1. + data_aux['rel_pix']*scalefac)
+            else:
+                wave_aux = float(wa_names[ii])*u.AA + data_aux['rel_pix']*pixel_scale_dict[grating]
             data_aux['wv'] = wave_aux  # not used for now, but may be useful with a different approach
             # create column with normalized kernel for relevant slit
             kernel = data_aux[slit] / np.sum(data_aux[slit])
@@ -450,7 +458,13 @@ class LSF(object):
         lsf_vals = Column(name='kernel', data=lsf_vals)
 
         # create column of relative pixel in absolute wavelength
-        wv_array = [(self.pixel_scale * self._data['rel_pix'][i] + wv0*u.AA).value for i in range(len(self._data))]
+        if not isinstance(self.pixel_scale,u.quantity.Quantity):
+            # deal with wavelength-dependent pixel scale (i.e., STIS echelle)
+            scalefac = 1./float(self.pixel_scale.split('/')[-1])
+            wv_array = [(wv0*u.AA * (1. + scalefac * self._data['rel_pix'][i])).value
+                        for i in range(len(self._data))]
+        else:
+            wv_array = [(self.pixel_scale * self._data['rel_pix'][i] + wv0*u.AA).value for i in range(len(self._data))]
         wv = Column(name='wv',data=wv_array, unit=u.AA)
 
         # create lsf Table
