@@ -20,7 +20,6 @@ lt_path = imp.find_module('linetools')[1]
 
 
 # TODO
-# Ingest Galaxy lines
 # Ingest AGN lines
 # Add Ej, Ek, Ex for emission lines (specially Balmer, Paschen and Brackett)
 
