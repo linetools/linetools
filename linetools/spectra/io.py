@@ -620,7 +620,10 @@ def parse_linetools_spectrum_format(hdulist):
             if aux_s.endswith("}\' /"):
                 aux_s = aux_s[:-3]  # delete these extra characters
                 hdulist[0].header['METADATA'] = aux_s
-        xspec1d.meta.update(json.loads(hdulist[0].header['METADATA']))
+        # Prepare for JSON
+        metas = hdulist[0].header['METADATA']
+        ipos = metas.rfind('}')
+        xspec1d.meta.update(json.loads(metas[:ipos+1]))
 
     return xspec1d
 
