@@ -309,7 +309,7 @@ def get_wave_unit(tag, hdulist, idx=None):
         except KeyError:
            return None
         else:
-            if tunit == 'Angstroem':
+            if tunit in ['Angstroem', 'Angstroms']:
                 tunit = 'Angstrom'
             unit = Unit(tunit)
             return unit
@@ -613,14 +613,10 @@ def parse_linetools_spectrum_format(hdulist):
     xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, co))
 
     if 'METADATA' in hdulist[0].header:
-        # import pdb; pdb.set_trace()
-        # patch for reading continuum metadata; todo: should be fixed properly!!!
-        if "contpoints" in hdulist[0].header['METADATA']:
-            aux_s = hdulist[0].header['METADATA']
-            if aux_s.endswith("}\' /"):
-                aux_s = aux_s[:-3]  # delete these extra characters
-                hdulist[0].header['METADATA'] = aux_s
-        xspec1d.meta.update(json.loads(hdulist[0].header['METADATA']))
+        # Prepare for JSON (bug fix of sorts)
+        metas = hdulist[0].header['METADATA']
+        ipos = metas.rfind('}')
+        xspec1d.meta.update(json.loads(metas[:ipos+1]))
 
     return xspec1d
 
