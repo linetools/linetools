@@ -289,8 +289,7 @@ class ExamineSpecWidget(QtGui.QWidget):
             zlya = event.xdata/1215.6701 - 1.
             self.llist['z'] = zlya
             # Generate Lya profile
-            lya_line = AbsLine(1215.6701*u.AA)
-            lya_line.attrib['z'] = zlya
+            lya_line = AbsLine(1215.6701*u.AA, z=zlya)
             lya_line.attrib['N'] = NHI
             lya_line.attrib['b'] = 30. * u.km/u.s
             lya_spec = ltv.voigt_from_abslines(self.spec.wavelength, lya_line, fwhm=3.)
