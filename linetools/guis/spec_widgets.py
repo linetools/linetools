@@ -21,6 +21,7 @@ from astropy.modeling import models, fitting
 
 from linetools.isgm.abssystem import GenericAbsSystem
 from linetools import utils as ltu
+from linetools.lists.linelist import LineList
 from linetools.guis import utils as ltgu
 from linetools.guis import simple_widgets
 from linetools.guis import line_widgets as ltgl
@@ -1148,4 +1149,132 @@ U         : Indicate as a upper limit
         # Draw
         self.canvas.draw()
 
+
+class AbsSysWidget(QtGui.QWidget):
+    ''' Widget to organize AbsSys along a given sightline
+
+    Parameters:
+    -----------
+    abssys_list: List
+      String list of abssys files
+
+    16-Dec-2014 by JXP
+    '''
+    def __init__(self, abssys_list, parent=None,
+        only_one=False, linelist=None, no_buttons=False):
+        '''
+        only_one: bool, optional
+          Restrict to one selection at a time? [False]
+        no_buttons: bool, optional
+          Eliminate Refine/Reload buttons?
+        '''
+        super(AbsSysWidget, self).__init__(parent)
+
+        #if not status is None:
+        #    self.statusBar = status
+        self.abssys_list = abssys_list
+
+        # Speeds things up
+        if linelist is None:
+            self.linelist = LineList('ISM')
+        else:
+            self.linelist = linelist
+
+        # Create the line list
+        list_label = QtGui.QLabel('Abs Systems:')
+        self.abslist_widget = QtGui.QListWidget(self)
+        if not only_one:
+            self.abslist_widget.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+        self.abslist_widget.addItem('None')
+        #self.abslist_widget.addItem('Test')
+
+        # Lists
+        self.abs_sys = []
+        self.items = []
+        self.all_items = []
+        self.all_abssys = []
+        for abssys_fil in self.abssys_list:
+            self.all_abssys.append(GenericAbsSystem.from_json(abssys_fil,
+                linelist=self.linelist))
+            self.add_item(abssys_fil)
+
+        self.abslist_widget.setCurrentRow(0)
+        self.abslist_widget.itemSelectionChanged.connect(self.on_list_change)
+
+        # Layout
+        vbox = QtGui.QVBoxLayout()
+        vbox.addWidget(list_label)
+
+        # Buttons
+        if not no_buttons:
+            buttons = QtGui.QWidget()
+            self.refine_button = QtGui.QPushButton('Refine', self)
+            #self.refine_button.clicked.connect(self.refine) # CONNECTS TO A PARENT
+            reload_btn = QtGui.QPushButton('Reload', self)
+            reload_btn.clicked.connect(self.reload)
+            hbox1 = QtGui.QHBoxLayout()
+            hbox1.addWidget(self.refine_button)
+            hbox1.addWidget(reload_btn)
+            buttons.setLayout(hbox1)
+            vbox.addWidget(buttons)
+
+        vbox.addWidget(self.abslist_widget)
+        self.setLayout(vbox)
+
+    # ##
+    def on_list_change(self):
+
+        items = self.abslist_widget.selectedItems()
+        # Empty the list
+        #self.abs_sys = []
+        if len(self.abs_sys) > 0:
+            for ii in range(len(self.abs_sys)-1,-1,-1):
+                self.abs_sys.pop(ii)
+        # Load up abs_sys (as need be)
+        new_items = []
+        for item in items:
+            txt = item.text()
+            # Dummy
+            if txt == 'None':
+                continue
+            print('Including {:s} in the list'.format(txt))
+            # Using LLS for now.  Might change to generic
+            new_items.append(txt)
+            ii = self.all_items.index(txt)
+            self.abs_sys.append(self.all_abssys[ii])
+
+        # Pass back
+        self.items = new_items
+        #QtCore.pyqtRemoveInputHook()
+        #xdb.set_trace()
+        #QtCore.pyqtRestoreInputHook()
+
+    def add_fil(self,abssys_fil):
+        self.abssys_list.append( abssys_fil )
+        self.add_item(abssys_fil)
+
+    def add_item(self,abssys_fil):
+        ipos0 = abssys_fil.rfind('/') + 1
+        ipos1 = abssys_fil.rfind('.fits')
+        if ipos1 == -1:
+            ipos1 = len(abssys_fil)
+        #
+        self.all_items.append( abssys_fil[ipos0:ipos1] )
+        self.abslist_widget.addItem(abssys_fil[ipos0:ipos1] )
+
+    def remove_item(self,idx):
+        # Delete
+        del self.all_items[idx]
+        del self.all_abssys[idx]
+        tmp = self.abslist_widget.takeItem(idx+1) # 1 for None
+        self.on_list_change()
+
+    def reload(self):
+        print('AbsSysWidget: Reloading systems..')
+        self.all_abssys = []
+        for abssys_fil in self.abssys_list:
+            self.all_abssys.append(GenericAbsSystem.from_json(abssys_fil,
+                linelist=self.linelist))
+            #self.add_item(abssys_fil)
+        self.on_list_change()
 
