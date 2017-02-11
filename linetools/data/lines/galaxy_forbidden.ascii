@@ -7,6 +7,7 @@
 ## The wavelengths are laboratory wavelengths in vacuum (Angstroms).
 ##
 ## Z and ion have been added by hand by N.Tejos (Dec 28, 2015)
+## Added [OIII]_4363 (JXP on 8 Feb 2017)
 # 1 name
 # 2 wave 
 # 3 ratio
@@ -14,6 +15,7 @@
 # 5 ion
 [OIII]_5007  5008.239  1.0  8   3
 [OIII]_4959  4960.295  1.0  8   3
+[OIII]_4363  4364.435  1.0  8   3
  [NII]_6584  6585.277  1.0  7   2
  [NII]_6548  6549.852  1.0  7   2
  [SII]_6716  6718.294  1.0  16  2
