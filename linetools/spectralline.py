@@ -786,7 +786,7 @@ class AbsLine(SpectralLine):
         # fval
         try:
             txt = txt+', f={:g}'.format(self.data['f'])
-        except KeyError:
+        except (KeyError, ValueError):
             pass
         txt = txt + '>'
         return (txt)
