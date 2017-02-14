@@ -49,7 +49,7 @@ out of date.  We will try to update before long.  But for now
 follow the instructions in the section below,
 :ref:`installsource` to install linetools.
 
-Alos note, if you wish to have full functionality of the GUIs and are
+Also note, if you wish to have full functionality of the GUIs and are
 using MacOSX, then you probably need to change
 your *backend* from macosx to TkAgg in the matplotlibrc file.
 
