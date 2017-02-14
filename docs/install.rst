@@ -44,15 +44,12 @@ installed with pip.
 Installing Linetools
 ====================
 
-If you plan to play around with the code and possibly contribute
-changes, then follow the instructions in the section below,
-:ref:`installsource`. Otherwise simply use::
+There is currently a pip wheel on PyPi but it is woefully
+out of date.  We will try to update before long.  But for now
+follow the instructions in the section below,
+:ref:`installsource` to install linetools.
 
-    pip install linetools
-
-and you're done!
-
-If you wish to have full functionality of the GUIs and are
+Also note, if you wish to have full functionality of the GUIs and are
 using MacOSX, then you probably need to change
 your *backend* from macosx to TkAgg in the matplotlibrc file.
 
