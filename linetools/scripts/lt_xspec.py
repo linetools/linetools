@@ -13,7 +13,7 @@ def main(*args, **kwargs):
     """
     import argparse
 
-    parser = argparse.ArgumentParser(description='Parse for XSpec; Extra arguments are passed to read_spec')
+    parser = argparse.ArgumentParser(description='Parser for lt_xspec; \n Note: Extra arguments are passed to read_spec (e.g. --flux_tag=FX)')
     parser.add_argument("file", type=str, help="Spectral file; specify extension by appending #exten#")
     parser.add_argument("-z", "--zsys", type=float, help="System Redshift")
     parser.add_argument("--norm", help="Show spectrum continuum normalized (if continuum is provided)",
