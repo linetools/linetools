@@ -6,8 +6,10 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import numpy as np
 import pdb
 
-from PyQt4 import QtGui
-from PyQt4 import QtCore
+from PyQt5 import QtGui
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QWidget, QDialog, QPushButton
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
 
 from astropy.units import Quantity
 from astropy import constants as const
@@ -30,8 +32,12 @@ from ..spectralline import AbsLine
 from ..analysis import voigt as ltv
 from .xabssysgui import XAbsSysGui
 
+try:
+    basestring
+except NameError:  # For Python 3
+    basestring = str
 
-class ExSpecDialog(QtGui.QDialog):
+class ExSpecDialog(QDialog):
     """
     """
     def __init__(self, ispec, parent=None, **kwargs):
@@ -54,16 +60,17 @@ class ExSpecDialog(QtGui.QDialog):
         self.spec_widg = ExamineSpecWidget(ispec, llist=self.pltline_widg.llist, zsys=0., **kwargs)
         self.spec_widg.canvas.mpl_connect('button_press_event', self.on_click)
         # Layout
-        rside = QtGui.QWidget()
+        rside = QWidget()
         rside.setMaximumWidth(300)
-        vbox = QtGui.QVBoxLayout()
-        qbtn = QtGui.QPushButton('Quit', self)
+        vbox = QVBoxLayout()
+        qbtn = QPushButton(self)
+        qbtn.setText('Quit')
         qbtn.clicked.connect(self.quit)
         vbox.addWidget(self.pltline_widg)
         vbox.addWidget(qbtn)
         rside.setLayout(vbox)
 
-        hbox = QtGui.QHBoxLayout()
+        hbox = QHBoxLayout()
         hbox.addWidget(self.spec_widg)
         hbox.addWidget(rside)
         self.setLayout(hbox)
@@ -96,7 +103,7 @@ class ExSpecDialog(QtGui.QDialog):
         self.close()
 
 
-class ExamineSpecWidget(QtGui.QWidget):
+class ExamineSpecWidget(QWidget):
     """ Widget to plot a spectrum and interactively
         fiddle about.  Akin to XIDL/x_specplot.pro
 
@@ -654,7 +661,7 @@ class ExamineSpecWidget(QtGui.QWidget):
                      ]
 
 # ######################
-class VelPlotWidget(QtGui.QWidget):
+class VelPlotWidget(QWidget):
     """ Widget for a velocity plot with interaction.
     Akin to XIDL/x_velplot
 
@@ -1149,7 +1156,7 @@ U         : Indicate as a upper limit
         self.canvas.draw()
 
 
-class AbsSysWidget(QtGui.QWidget):
+class AbsSysWidget(QWidget):
     ''' Widget to organize AbsSys along a given sightline
 
     Parameters:
@@ -1201,17 +1208,19 @@ class AbsSysWidget(QtGui.QWidget):
         self.abslist_widget.itemSelectionChanged.connect(self.on_list_change)
 
         # Layout
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         vbox.addWidget(list_label)
 
         # Buttons
         if not no_buttons:
-            buttons = QtGui.QWidget()
-            self.refine_button = QtGui.QPushButton('Refine', self)
+            buttons = QWidget()
+            self.refine_button = QPushButton(self)
+            self.refine_button.setText('Refine')
             #self.refine_button.clicked.connect(self.refine) # CONNECTS TO A PARENT
-            reload_btn = QtGui.QPushButton('Reload', self)
+            reload_btn = QPushButton(self)
+            reload_btn.setText('Reload')
             reload_btn.clicked.connect(self.reload)
-            hbox1 = QtGui.QHBoxLayout()
+            hbox1 = QHBoxLayout()
             hbox1.addWidget(self.refine_button)
             hbox1.addWidget(reload_btn)
             buttons.setLayout(hbox1)
