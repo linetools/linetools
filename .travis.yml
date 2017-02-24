@@ -80,7 +80,7 @@ before_install:
 install:
 
     # CONDA
-    - conda create --yes -n test -c astropy-ci-extras python=$TRAVIS_PYTHON_VERSION
+    - conda create --yes -n test -c astropy-ci-extras python=$TRAVIS_PYTHON_VERSION pyqt=5
     - source activate test
 
     # CORE DEPENDENCIES

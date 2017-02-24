@@ -5,7 +5,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 from PyQt5 import QtGui
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget, QDialog, QLabel, QLineEdit, QListWidget
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
+from PyQt5.QtWidgets import QVBoxLayout, QPushButton
 
 import numpy as np
 import pdb
@@ -171,8 +171,8 @@ class SelectLineWidget(QDialog):
         self.resize(250, 800)
 
         # Create the line list
-        line_label = QtGui.QLabel('Lines:')
-        self.lines_widget = QtGui.QListWidget(self)
+        line_label = QLabel('Lines:')
+        self.lines_widget = QListWidget(self)
         self.lines_widget.addItem('None')
         self.lines_widget.setCurrentRow(0)
 
@@ -197,11 +197,12 @@ class SelectLineWidget(QDialog):
         #self.scrollArea = QtGui.QScrollArea()
 
         # Quit
-        qbtn = QtGui.QPushButton('Quit', self)
+        qbtn = QPushButton(self)
+        qbtn.setText('Quit')
         qbtn.clicked.connect(self.close)
 
         # Layout
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         vbox.addWidget(line_label)
         vbox.addWidget(self.lines_widget)
         vbox.addWidget(qbtn)
@@ -241,7 +242,7 @@ class SelectedLinesWidget(QWidget):
         self.plot_widget = plot_widget
 
         # Create the line list
-        line_label = QtGui.QLabel('Lines:')
+        line_label = QLabel('Lines:')
         self.lines_widget = QtGui.QListWidget(self)
         self.lines_widget.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
 

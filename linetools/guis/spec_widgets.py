@@ -16,7 +16,7 @@ from astropy import constants as const
 from astropy import units as u
 u.def_unit(['mAA', 'milliAngstrom'], 0.001 * u.AA, namespace=globals()) # mA
 
-from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 
 from astropy.modeling import models, fitting
@@ -212,7 +212,7 @@ class ExamineSpecWidget(QWidget):
         if filename is not None:
             self.fig.suptitle(filename)
 
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         vbox.addWidget(self.canvas)
 
         self.setLayout(vbox)
@@ -759,7 +759,7 @@ U         : Indicate as a upper limit
         self.fig.subplots_adjust(hspace=0.0, wspace=0.1)
 
         # Layout
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         vbox.addWidget(self.canvas)
         self.setLayout(vbox)
 
