@@ -80,11 +80,11 @@ before_install:
 install:
 
     # CONDA
-    - conda create --yes -n test -c astropy-ci-extras python=$TRAVIS_PYTHON_VERSION pyqt=5
+    - conda create --yes -n test -c astropy-ci-extras python=$TRAVIS_PYTHON_VERSION pyqt=5 qtpy
     - source activate test
 
     # CORE DEPENDENCIES
-    - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION pytest pip Cython jinja2 pyqt; fi
+    - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION pytest pip Cython jinja2; fi
     - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL pytest-xdist; fi
 
     # ASTROPY
