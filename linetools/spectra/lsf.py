@@ -130,7 +130,6 @@ class LSF(object):
         n_pix = len(relpix)
         if self.instr_config['name'] != 'STIS':  # STIS LSFs have even no. of pixels
             assert n_pix % 2 != 0, ValueError('LSF tables must be given as odd integers!')
-        ### TODO: Add missing value into STIS LSFs if they are in fact symmetric
 
         # make sure relpix == 0 is in the middle of the array
         n_half = (n_pix - 1) / 2
