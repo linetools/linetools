@@ -334,7 +334,17 @@ class LSF(object):
             data_aux = ascii.read(file_name, data_start=2, names=col_names)
             # reformat rel_pix
             data_aux['rel_pix'] = self.check_and_reformat_relpix(data_aux['rel_pix'])
-            print('This one:',type(pixel_scale_dict[grating]))
+
+            # handle asymmetric STIS LSF
+            if data_aux['rel_pix'][len(data_aux['rel_pix']) // 2] == 0.:
+                pass
+            elif data_aux['rel_pix'][(len(data_aux['rel_pix']) // 2) - 1 ] ==0.:
+                data_aux.insert_row(0,data_aux[-1])
+                data_aux['rel_pix'][0]=-data_aux['rel_pix'][-1]
+            elif data_aux['rel_pix'][(len(data_aux['rel_pix']) // 2) + 1 ] ==0.:
+                data_aux.add_row(data_aux[0])
+                data_aux['rel_pix'][-1]=-data_aux['rel_pix'][0]
+
             # create column with absolute wavelength based on pixel scales
             if isinstance(pixel_scale_dict[grating],unicode):
                 # deal with wavelength-dependent pixel scale (i.e., STIS echelle)
@@ -460,7 +470,7 @@ class LSF(object):
         lsf_vals = Column(name='kernel', data=lsf_vals)
 
         # create column of relative pixel in absolute wavelength
-        if not isinstance(self.pixel_scale,u.quantity.Quantity):
+        if isinstance(self.pixel_scale,unicode):
             # deal with wavelength-dependent pixel scale (i.e., STIS echelle)
             scalefac = 1./float(self.pixel_scale.split('/')[-1])
             wv_array = [(wv0*u.AA * (1. + scalefac * self._data['rel_pix'][i])).value

@@ -22,6 +22,8 @@ def test_interpolate_to_wv0(plot=False, lp='2'):
     lsf_stis_echelle = LSF(stis_echelle_dict)
     for lsf in [lsf_cos, lsf_stis, lsf_stis_echelle]:
         lsf_tab = lsf.interpolate_to_wv0(wv0)
+        import pdb
+        pdb.set_trace()
         assert lsf_tab[len(lsf_tab) // 2]['wv'] == wv0.value, err_msg
         assert lsf_tab[len(lsf_tab) // 2]['kernel'] == np.max(lsf_tab['kernel']), err_msg
         if plot:
