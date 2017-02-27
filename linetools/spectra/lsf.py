@@ -112,7 +112,7 @@ class LSF(object):
         """Performs checks and reformating on a relative pixel array.
 
         At the moment this function does the following:
-         - Make sure that the number of relative pixels of the LSF is odd integer
+         - Make sure that the number of relative pixels of the LSF is an odd integer
             - Unfortunately, the STIS LSFs provided by STScI have an even number
          - Impose the middle value to define the 0 relative pixel
 
@@ -130,6 +130,7 @@ class LSF(object):
         n_pix = len(relpix)
         if self.instr_config['name'] != 'STIS':  # STIS LSFs have even no. of pixels
             assert n_pix % 2 != 0, ValueError('LSF tables must be given as odd integers!')
+        ### TODO: Add missing value into STIS LSFs if they are in fact symmetric
 
         # make sure relpix == 0 is in the middle of the array
         n_half = (n_pix - 1) / 2
@@ -333,8 +334,9 @@ class LSF(object):
             data_aux = ascii.read(file_name, data_start=2, names=col_names)
             # reformat rel_pix
             data_aux['rel_pix'] = self.check_and_reformat_relpix(data_aux['rel_pix'])
+            print('This one:',type(pixel_scale_dict[grating]))
             # create column with absolute wavelength based on pixel scales
-            if not isinstance(pixel_scale_dict[grating],u.quantity.Quantity):
+            if isinstance(pixel_scale_dict[grating],unicode):
                 # deal with wavelength-dependent pixel scale (i.e., STIS echelle)
                 scalefac = 1./float(pixel_scale_dict[grating].split('/')[-1])
                 wave_aux = float(wa_names[ii])*u.AA * (1. + data_aux['rel_pix']*scalefac)
