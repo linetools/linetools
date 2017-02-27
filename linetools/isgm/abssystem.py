@@ -313,7 +313,7 @@ class AbsSystem(object):
         self._ionN = ltiu.iontable_from_components(self._components, **kwargs)
 
     def fill_trans(self, **kwargs):
-        """ Fills the ionN Table from the list of components
+        """ Generates a table of transitions
         """
         self._trans = ltlu.transtable_from_speclines(self.list_of_abslines())
 
@@ -332,7 +332,7 @@ class AbsSystem(object):
         absline -- AbsLine object or list of Abslines
           More than one will be returned if this line exists in
           multiple components.  The returned quantity will then
-          be a list instead of a single object
+          be a list instead of a single AbsLine object
         """
         # Generate the lines
         abslines = self.list_of_abslines()
