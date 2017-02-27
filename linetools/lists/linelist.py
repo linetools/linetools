@@ -49,7 +49,7 @@ class LineList(object):
         * 'HI'      :: HI Lyman series
         * 'H2'      :: H2 (Lyman-Werner)
         * 'CO'      :: CO UV band-heads
-        * 'EUV'     :: EUV lines (for CASBAH project)
+        * 'EUV'     :: EUV lines (for CASBAH project);  Limited X-ray lines too
         * 'Galaxy'  :: Lines typically identified in galaxy spectra
         * 'AGN'     :: Key AGN lines (to be implemented)
 
@@ -151,6 +151,7 @@ class LineList(object):
             'molecules': [lilp.read_H2, lilp.read_CO],
             'euv': [lilp.read_euv],  # EUV lines (by hand for now; soon to be Verner96)
             'galaxy': [lilp.read_forbidden, lilp.read_recomb, lilp.read_galabs],
+            'xray': [lilp.parse_verner96],  # Verner 96
         }
 
         sets = []

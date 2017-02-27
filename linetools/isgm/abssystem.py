@@ -191,8 +191,8 @@ class AbsSystem(object):
         self.coord = ltu.radec_to_coord(radec)
         if name is None:
             self.name = 'J{:s}{:s}_z{:.3f}'.format(
-                    self.coord.ra.to_string(unit=u.hour,sep='',pad=True),
-                    self.coord.dec.to_string(sep='',pad=True,alwayssign=True),
+                    self.coord.fk5.ra.to_string(unit=u.hour,sep='',pad=True),
+                    self.coord.fk5.dec.to_string(sep='',pad=True,alwayssign=True),
                     self.zabs)
         else:
             self.name = name
@@ -513,7 +513,7 @@ class AbsSystem(object):
         outdict = dict(Name=self.name, abs_type=self.abs_type, zabs=self.zabs,
                        vlim=self.vlim.to('km/s').value, zem=self.zem,
                        NHI=self.NHI, sig_NHI=self.sig_NHI, flag_NHI=self.flag_NHI,
-                       RA=self.coord.ra.value, DEC=self.coord.dec.value,
+                       RA=self.coord.fk5.ra.value, DEC=self.coord.fk5.dec.value,
                        kin=self.kin, Refs=self.Refs, CreationDate=date,
                        ZH=self.ZH, sig_ZH=self.sig_ZH,
                        user=user
@@ -574,8 +574,8 @@ class AbsSystem(object):
     def __repr__(self):
         txt = '<{:s}: name={:s} type={:s}, {:s} {:s}, z={:g}, NHI={:g}'.format(
                 self.__class__.__name__, self.name, self.abs_type,
-                self.coord.ra.to_string(unit=u.hour,sep=':',pad=True),
-                self.coord.dec.to_string(sep=':',pad=True,alwayssign=True),
+                self.coord.fk5.ra.to_string(unit=u.hour,sep=':',pad=True),
+                self.coord.fk5.dec.to_string(sep=':',pad=True,alwayssign=True),
                 self.zabs, self.NHI)
         # Finish
         txt = txt + '>'
