@@ -428,7 +428,12 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
     cols['vmax']=float
     cols['flag_N']=int
     cols['logN']=float
-    cols['sig_logN']=float
+    if isinstance(components[0].sig_logN, float):
+        cols['sig_logN'] = float
+    elif components[0].sig_logN.size == 2:
+        cols['sig_logN'] = np.ndarray
+    else:
+        raise IOError("Not prepared for this type of sig_logN")
     names = cols.keys()
     dtypes = [cols[key] for key in names]
     iontbl = Table(names=names,dtype=dtypes)
