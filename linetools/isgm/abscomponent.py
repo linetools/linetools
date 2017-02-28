@@ -164,6 +164,7 @@ class AbsComponent(object):
             flag_N : Flag describing N measurement  (0: no info; 1: detection; 2: saturated; 3: non-detection)
             logN : log10 N column density
             sig_logN : Error in log10 N
+              # TODO FUTURE IMPLEMENTATION WILL ALLOW FOR 2-element ndarray for sig_logN
         Ej : Quantity, optional
             Energy of lower level (1/cm)
         stars : str, optional
@@ -814,7 +815,7 @@ class AbsComponent(object):
         # Column?
         if self.flag_N > 0:
             txt = txt + ', logN={:g}'.format(self.logN)
-            txt = txt + ', sig_logN={:g}'.format(self.sig_logN)
+            txt = txt + ', sig_logN={}'.format(self.sig_logN)
             txt = txt + ', flag_N={:d}'.format(self.flag_N)
 
         # Finish
