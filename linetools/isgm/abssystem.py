@@ -304,6 +304,10 @@ class AbsSystem(object):
         ----------
         component : AbsComponent
 
+        Returns
+        -------
+        Modifies self._ionN
+
         """
         return True
 
@@ -312,8 +316,6 @@ class AbsSystem(object):
         """
         if len(self._components) > 0:
             self._ionN = ltiu.iontable_from_components(self._components, **kwargs)
-        else:
-            self._ionN = Table()
 
     def fill_trans(self, **kwargs):
         """ Generates a table of transitions
