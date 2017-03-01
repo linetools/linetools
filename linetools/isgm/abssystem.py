@@ -15,7 +15,7 @@ from abc import ABCMeta
 
 from astropy import units as u
 from astropy.units import Quantity
-from astropy.table import QTable
+from astropy.table import QTable, Table
 from astropy import constants as const
 from astropy.coordinates import SkyCoord
 
@@ -310,7 +310,10 @@ class AbsSystem(object):
     def fill_ionN(self, **kwargs):
         """ Fills the ionN Table from the list of components
         """
-        self._ionN = ltiu.iontable_from_components(self._components, **kwargs)
+        if len(self._components) > 0:
+            self._ionN = ltiu.iontable_from_components(self._components, **kwargs)
+        else:
+            self._ionN = Table()
 
     def fill_trans(self, **kwargs):
         """ Generates a table of transitions
