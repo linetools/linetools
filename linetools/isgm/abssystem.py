@@ -294,6 +294,8 @@ class AbsSystem(object):
                 warnings.warn('Failed component check')
             if not testz:
                 warnings.warn('Failed velocity overlap')
+                if debug:
+                    pdb.set_trace()
         #
         return test
 
