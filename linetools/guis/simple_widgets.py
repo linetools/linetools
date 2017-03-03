@@ -2,11 +2,16 @@
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
-from PyQt4 import QtGui
-from PyQt4 import QtCore
+from PyQt5 import QtGui
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QWidget, QDialog
 
+try:
+    ustr = unicode
+except NameError:  # For Python 3
+    ustr = str
 
-class AnsBox(QtGui.QDialog):
+class AnsBox(QDialog):
     """Solicit an input answer from the User
     """
     def __init__(self, lbl, format=str, parent=None):
@@ -35,13 +40,13 @@ class AnsBox(QtGui.QDialog):
 
     def setv(self):
         try:
-            self.value = self.format(unicode(self.box.text()))
+            self.value = self.format(ustr(self.box.text()))
         except ValueError:
             print('Bad input value! Try again with right type')
         else:
             self.done(0)
 
-class EditBox(QtGui.QWidget):
+class EditBox(QWidget):
     """ Generate a simple box for editing
 
     """
@@ -75,7 +80,7 @@ class EditBox(QtGui.QWidget):
         self.setLayout(vbox)
 
     def setv(self):
-        self.value = unicode(self.box.text())
+        self.value = str(self.box.text())
 
     def set_text(self,value):
         self.value = value
@@ -83,7 +88,7 @@ class EditBox(QtGui.QWidget):
 
 
 # ##################################
-class WarningWidg(QtGui.QDialog):
+class WarningWidg(QDialog):
     """ GUI to warn user about coming action and solicit response
     """
     def __init__(self, message, parent=None):
@@ -122,7 +127,7 @@ class WarningWidg(QtGui.QDialog):
         self.done(0)
 
 
-class WriteQuitWidget(QtGui.QWidget):
+class WriteQuitWidget(QWidget):
     def __init__(self, parent=None):
         """
         """

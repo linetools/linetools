@@ -3,7 +3,9 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import sys
-from PyQt4 import QtGui
+from PyQt5 import QtGui
+from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QMainWindow
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
 
 from matplotlib import rcParams
 
@@ -13,12 +15,12 @@ from linetools.guis import utils as ltgu
 from linetools.guis import line_widgets as ltgl
 from linetools.guis import spec_widgets as ltgsp
 
-class XSpecGui(QtGui.QMainWindow):
+class XSpecGui(QMainWindow):
     """ GUI to replace XIDL x_specplot (which simulated a GUI by T. Barlow)
     """
     def __init__(self, ispec, parent=None, zsys=None, norm=None, exten=None,
                  rsp_kwargs={}, unit_test=False, **kwargs):
-        QtGui.QMainWindow.__init__(self, parent)
+        QMainWindow.__init__(self, parent)
         """
         ispec = str, XSpectrum1D or tuple of arrays
           Input spectrum or spectrum filename.  If tuple then (wave,
@@ -43,7 +45,7 @@ class XSpecGui(QtGui.QMainWindow):
         rcParams['axes.formatter.useoffset'] = False  # avoid scientific notation in axes tick labels
 
         # Build a widget combining several others
-        self.main_widget = QtGui.QWidget()
+        self.main_widget = QWidget()
 
         # Status bar
         self.create_status_bar()
@@ -62,16 +64,17 @@ class XSpecGui(QtGui.QMainWindow):
 
         self.spec_widg.canvas.mpl_connect('button_press_event', self.on_click)
 
-        extras = QtGui.QWidget()
+        extras = QWidget()
         extras.setMaximumWidth(130)
-        vbox = QtGui.QVBoxLayout()
-        qbtn = QtGui.QPushButton('Quit', self)
+        vbox = QVBoxLayout()
+        qbtn = QPushButton(self)
+        qbtn.setText('Quit')
         qbtn.clicked.connect(self.quit)
         vbox.addWidget(self.pltline_widg)
         vbox.addWidget(qbtn)
         extras.setLayout(vbox)
 
-        hbox = QtGui.QHBoxLayout()
+        hbox = QHBoxLayout()
         hbox.addWidget(self.spec_widg)
         hbox.addWidget(extras)
 
@@ -85,7 +88,7 @@ class XSpecGui(QtGui.QMainWindow):
     def create_status_bar(self):
         """ Status bar for the GUI
         """
-        self.status_text = QtGui.QLabel("XSpec")
+        self.status_text = QLabel("XSpec")
         self.statusBar().addWidget(self.status_text, 1)
 
     def on_click(self, event):

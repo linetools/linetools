@@ -32,7 +32,8 @@ def main(*args, **kwargs):
 
 
 
-    from PyQt4 import QtGui
+    from PyQt5 import QtGui
+    from PyQt5.QtWidgets import QApplication
     from linetools.guis.xspecgui import XSpecGui
 
     # Normalized?
@@ -72,7 +73,7 @@ def main(*args, **kwargs):
         rsp_kwargs[spl[0][2:]] = spl[1]
 
     # GUI
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     gui = XSpecGui(file, zsys=zsys, norm=norm, exten=exten,
                    rsp_kwargs=rsp_kwargs, air=pargs.air)
     gui.show()
