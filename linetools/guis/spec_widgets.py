@@ -8,12 +8,13 @@ import pdb
 
 from PyQt5 import QtGui
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget, QDialog, QPushButton
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
+from PyQt5.QtWidgets import QWidget, QDialog, QPushButton, QLabel
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QListWidget
 
 from astropy.units import Quantity
 from astropy import constants as const
 from astropy import units as u
+
 u.def_unit(['mAA', 'milliAngstrom'], 0.001 * u.AA, namespace=globals()) # mA
 
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
@@ -1157,7 +1158,7 @@ U         : Indicate as a upper limit
 
 
 class AbsSysWidget(QWidget):
-    ''' Widget to organize AbsSys along a given sightline
+    """ Widget to organize AbsSys along a given sightline
 
     Parameters:
     -----------
@@ -1165,15 +1166,15 @@ class AbsSysWidget(QWidget):
       String list of abssys files
 
     16-Dec-2014 by JXP
-    '''
+    """
     def __init__(self, abssys_list, parent=None,
         only_one=False, linelist=None, no_buttons=False):
-        '''
+        """
         only_one: bool, optional
           Restrict to one selection at a time? [False]
         no_buttons: bool, optional
           Eliminate Refine/Reload buttons?
-        '''
+        """
         super(AbsSysWidget, self).__init__(parent)
 
         #if not status is None:
@@ -1187,10 +1188,10 @@ class AbsSysWidget(QWidget):
             self.linelist = linelist
 
         # Create the line list
-        list_label = QtGui.QLabel('Abs Systems:')
-        self.abslist_widget = QtGui.QListWidget(self)
+        list_label = QLabel('Abs Systems:')
+        self.abslist_widget = QListWidget(self)
         if not only_one:
-            self.abslist_widget.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+            self.abslist_widget.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.abslist_widget.addItem('None')
         #self.abslist_widget.addItem('Test')
 
