@@ -4,7 +4,9 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 from PyQt5 import QtGui
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget, QDialog
+from PyQt5.QtWidgets import QWidget, QDialog, QLabel
+from PyQt5.QtWidgets import QPushButton, QLineEdit
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
 
 try:
     ustr = unicode
@@ -26,14 +28,13 @@ class AnsBox(QDialog):
 
         self.format=format
         #
-        label = QtGui.QLabel(lbl)
-        self.box = QtGui.QLineEdit()
+        label = QLabel(lbl)
+        self.box = QLineEdit()
         self.box.setMinimumWidth(90)
         # Connect
-        self.connect(self.box,
-            QtCore.SIGNAL('editingFinished ()'), self.setv)
+        self.box.textChanged[str](self.setv)
         # Layout
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         vbox.addWidget(label)
         vbox.addWidget(self.box)
         self.setLayout(vbox)
@@ -64,22 +65,25 @@ class EditBox(QWidget):
 
         self.value = initv
         #
-        label = QtGui.QLabel(lbl)
-        self.box = QtGui.QLineEdit()
+        label = QLabel(lbl)
+        self.box = QLineEdit()
         # Format
         self.box.frmt = format
         self.box.setText(self.box.frmt.format(self.value))
         self.box.setMinimumWidth(90)
         # Connect
-        self.connect(self.box,
-            QtCore.SIGNAL('editingFinished ()'), self.setv)
+        self.box.textChanged[str].connect(self.setv)
+        #self.connect(self.box,
+        #    QtCore.SIGNAL('editingFinished ()'), self.setv)
         # Layout
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         vbox.addWidget(label)
         vbox.addWidget(self.box)
         self.setLayout(vbox)
 
-    def setv(self):
+    def setv(self, text):
+        self.box.setText(text)
+        self.box.adjustSize()
         self.value = str(self.box.text())
 
     def set_text(self,value):
@@ -103,16 +107,18 @@ class WarningWidg(QDialog):
         # Initialize
 
         # Grab the pieces and tie together
-        z_label = QtGui.QLabel('Warning: {:s}'.format(message))
+        z_label = QLabel('Warning: {:s}'.format(message))
 
         # Quit
-        nbtn = QtGui.QPushButton('No', self)
+        nbtn = QPushButton(self)
+        nbtn.setText('No')
         nbtn.clicked.connect(self.touch_no)
-        ybtn = QtGui.QPushButton('Yes', self)
+        ybtn = QPushButton(self)
+        ybtn.setText('Yes')
         ybtn.clicked.connect(self.touch_yes)
 
         # Layout
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         vbox.addWidget(z_label)
         vbox.addWidget(nbtn)
         vbox.addWidget(ybtn)
@@ -135,20 +141,23 @@ class WriteQuitWidget(QWidget):
         self.parent = parent
 
         # Generate Buttons
-        wbtn = QtGui.QPushButton('Write', self)
+        wbtn = QPushButton(self)
+        wbtn.setText('Write')
         wbtn.setAutoDefault(False)
         wbtn.clicked.connect(self.parent.write_out)
 
-        wqbtn = QtGui.QPushButton('Write\n Quit', self)
+        wqbtn = QPushButton(self)
+        wqbtn.setText('Write\n Quit')
         wqbtn.setAutoDefault(False)
         wqbtn.clicked.connect(self.parent.write_quit)
 
-        qbtn = QtGui.QPushButton('Quit', self)
+        qbtn = QPushButton(self)
+        qbtn.setText('Quit')
         qbtn.setAutoDefault(False)
         qbtn.clicked.connect(self.parent.quit)
 
         # Layout
-        hbox = QtGui.QHBoxLayout()
+        hbox = QHBoxLayout()
         hbox.addWidget(wbtn)
         hbox.addWidget(wqbtn)
         hbox.addWidget(qbtn)
