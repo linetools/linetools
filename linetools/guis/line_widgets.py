@@ -5,7 +5,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 from PyQt5 import QtGui
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget, QDialog, QLabel, QLineEdit, QListWidget
-from PyQt5.QtWidgets import QVBoxLayout, QPushButton
+from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QAbstractItemView
 
 import numpy as np
 import pdb
@@ -243,8 +243,8 @@ class SelectedLinesWidget(QWidget):
 
         # Create the line list
         line_label = QLabel('Lines:')
-        self.lines_widget = QtGui.QListWidget(self)
-        self.lines_widget.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
+        self.lines_widget = QListWidget(self)
+        self.lines_widget.setSelectionMode(QAbstractItemView.MultiSelection)
 
         # Initialize list
         self.item_flg = 0
@@ -272,7 +272,7 @@ class SelectedLinesWidget(QWidget):
         self.lines_widget.itemSelectionChanged.connect(self.on_item_change)
 
         # Layout
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         vbox.addWidget(line_label)
         vbox.addWidget(self.lines_widget)
 
