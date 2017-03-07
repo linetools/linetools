@@ -2,6 +2,7 @@
 """
 
 from __future__ import print_function, absolute_import, division, unicode_literals
+from six import itervalues
 
 # Python 2 & 3 compatibility
 try:
@@ -300,8 +301,8 @@ def get_wave_unit(tag, hdulist, idx=None):
         # NEED HEADER INFO
         return None
     # Try table header (following VLT/X-Shooter here)
-    keys = header.keys()
-    values = header.values()
+    keys = list(header)  # Python 3
+    values = list(itervalues(header)) # Python 3
     hidx = values.index(tag)
     if keys[hidx][0:5] == 'TTYPE':
         try:
