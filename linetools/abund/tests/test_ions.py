@@ -14,33 +14,33 @@ from linetools.abund.roman import OutOfRangeError, NotIntegerError,InvalidRomanN
 
 def test_ion_to_name():
     # Normal
-    ionnm = ions.ion_name((6,2))
+    ionnm = ions.ion_to_name((6,2))
     assert ionnm == 'CII'
     # Latex
-    ionnm = ions.ion_name((6,2), flg=1)
+    ionnm = ions.ion_to_name((6,2), flg=1)
     assert ionnm == '{\\rm C}^{+}'
     # as dict
     ion = dict(ion=2, Z=6)
-    ionnm = ions.ion_name(ion)
+    ionnm = ions.ion_to_name(ion)
     assert ionnm == 'CII'
     # latex not ready yet
     with pytest.raises(ValueError):
-        ionnm = ions.ion_name((6,0), flg=1)
+        ionnm = ions.ion_to_name((6,0), flg=1)
     for ii in [1,2,3,4]:
-        ionnm = ions.ion_name((6,ii), flg=1)
+        ionnm = ions.ion_to_name((6,ii), flg=1)
     # bad flag
     with pytest.raises(ValueError):
-        ionnm = ions.ion_name((6,2), flg=99)
+        ionnm = ions.ion_to_name((6,2), flg=99)
 
 
 def test_name_to_ion():
-    Zion = ions.name_ion('Si II')
+    Zion = ions.name_to_ion('Si II')
     assert Zion == (14,2)
     # bad input
     with pytest.raises(ValueError):
-        aux = ions.name_ion(4)  # not a string
+        aux = ions.name_to_ion(4)  # not a string
     # Deuterium
-    aux = ions.name_ion('DI')
+    aux = ions.name_to_ion('DI')
 
 
 def test_roman():

@@ -8,8 +8,8 @@ Dependencies
 Linetools depends on these packages:
 
 * `python <http://www.python.org/>`_ versions 2.7, or 3.3 or later
-* `numpy <http://www.numpy.org/>`_ version 1.9 or later
-* `astropy`_ version 1.0 or later
+* `numpy <http://www.numpy.org/>`_ version 1.11 or later
+* `astropy`_ version 1.3 or later
 * `scipy <http://www.scipy.org/>`_ version 0.16 or later
 * `matplotlib <http://matplotlib.org/>`_  version 1.4 or later
 * `PyQT4 <https://wiki.python.org/moin/PyQt>`_ version 4 (for GUIs)
