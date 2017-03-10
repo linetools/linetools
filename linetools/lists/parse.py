@@ -242,8 +242,7 @@ def read_verner94():
         data[ii]['name'] = (
             row['Species'][0:2].strip() + row['Species'][2:].strip() + 
             ' {:d}'.format(int(row['lambda'].value)))
-        #xdb.set_trace()
-        # name
+    # name
     names = []
     for row in data:
         ionnm = ions.ion_name((row['Z'], row['ion']))
