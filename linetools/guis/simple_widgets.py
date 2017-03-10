@@ -32,14 +32,19 @@ class AnsBox(QDialog):
         self.box = QLineEdit()
         self.box.setMinimumWidth(90)
         # Connect
-        self.box.textChanged[str](self.setv)
+        self.box.textChanged[str].connect(self.setv)
+        self.box.editingFinished.connect(self.done)
         # Layout
         vbox = QVBoxLayout()
         vbox.addWidget(label)
         vbox.addWidget(self.box)
         self.setLayout(vbox)
 
-    def setv(self):
+    def setv(self, text):
+        self.box.setText(text)
+        self.box.adjustSize()
+
+    def done(self):
         try:
             self.value = self.format(ustr(self.box.text()))
         except ValueError:
