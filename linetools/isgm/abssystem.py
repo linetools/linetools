@@ -15,7 +15,7 @@ from abc import ABCMeta
 
 from astropy import units as u
 from astropy.units import Quantity
-from astropy.table import QTable
+from astropy.table import QTable, Table
 from astropy import constants as const
 from astropy.coordinates import SkyCoord
 
@@ -191,8 +191,8 @@ class AbsSystem(object):
         self.coord = ltu.radec_to_coord(radec)
         if name is None:
             self.name = 'J{:s}{:s}_z{:.3f}'.format(
-                    self.coord.ra.to_string(unit=u.hour,sep='',pad=True),
-                    self.coord.dec.to_string(sep='',pad=True,alwayssign=True),
+                    self.coord.fk5.ra.to_string(unit=u.hour,sep='',pad=True),
+                    self.coord.fk5.dec.to_string(sep='',pad=True,alwayssign=True),
                     self.zabs)
         else:
             self.name = name
@@ -260,6 +260,7 @@ class AbsSystem(object):
         else:
             testcoord = True
         # Now redshift/velocity
+        testz = True
         if chk_z:
             # Will avoid Quantity for speed
             comp_vlim_mks = abscomp.vlim.to('km/s').value
@@ -293,6 +294,8 @@ class AbsSystem(object):
                 warnings.warn('Failed component check')
             if not testz:
                 warnings.warn('Failed velocity overlap')
+                if debug:
+                    pdb.set_trace()
         #
         return test
 
@@ -303,16 +306,21 @@ class AbsSystem(object):
         ----------
         component : AbsComponent
 
+        Returns
+        -------
+        Modifies self._ionN
+
         """
         return True
 
     def fill_ionN(self, **kwargs):
         """ Fills the ionN Table from the list of components
         """
-        self._ionN = ltiu.iontable_from_components(self._components, **kwargs)
+        if len(self._components) > 0:
+            self._ionN = ltiu.iontable_from_components(self._components, **kwargs)
 
     def fill_trans(self, **kwargs):
-        """ Fills the ionN Table from the list of components
+        """ Generates a table of transitions
         """
         self._trans = ltlu.transtable_from_speclines(self.list_of_abslines())
 
@@ -331,7 +339,7 @@ class AbsSystem(object):
         absline -- AbsLine object or list of Abslines
           More than one will be returned if this line exists in
           multiple components.  The returned quantity will then
-          be a list instead of a single object
+          be a list instead of a single AbsLine object
         """
         # Generate the lines
         abslines = self.list_of_abslines()
@@ -348,7 +356,7 @@ class AbsSystem(object):
             warnings.warn("No absline with input={}".format(inp))
             return None
         elif len(mt) == 1:
-            return abslines[mt]
+            return abslines[mt[0]]
         else:
             return [abslines[ii] for ii in mt]
 
@@ -421,6 +429,8 @@ class AbsSystem(object):
 
     def measure_restew(self, spec=None, **kwargs):
         """ Measure rest-frame EWs for lines in the AbsSystem
+        Analysis is only performed on lines with analy['do_analysis'] != 0
+
         Parameters
         ----------
         spec : XSpectrum1D, optional
@@ -437,8 +447,12 @@ class AbsSystem(object):
             # Fill in spec?
             if spec is not None:
                 iline.analy['spec'] = spec
-            # Measure
-            iline.measure_restew(**kwargs)
+            # Check for analysis
+            if iline.analy['do_analysis'] == 0:
+                warnings.warn("Skipping {:s} because do_analysis=0".format(iline.name))
+            else:
+                # Measure
+                iline.measure_restew(**kwargs)
 
     def measure_aodm(self, spec=None, **kwargs):
         """ Measure ADOM columns for the list of lines
@@ -506,7 +520,7 @@ class AbsSystem(object):
         outdict = dict(Name=self.name, abs_type=self.abs_type, zabs=self.zabs,
                        vlim=self.vlim.to('km/s').value, zem=self.zem,
                        NHI=self.NHI, sig_NHI=self.sig_NHI, flag_NHI=self.flag_NHI,
-                       RA=self.coord.ra.value, DEC=self.coord.dec.value,
+                       RA=self.coord.fk5.ra.value, DEC=self.coord.fk5.dec.value,
                        kin=self.kin, Refs=self.Refs, CreationDate=date,
                        ZH=self.ZH, sig_ZH=self.sig_ZH,
                        user=user
@@ -567,8 +581,8 @@ class AbsSystem(object):
     def __repr__(self):
         txt = '<{:s}: name={:s} type={:s}, {:s} {:s}, z={:g}, NHI={:g}'.format(
                 self.__class__.__name__, self.name, self.abs_type,
-                self.coord.ra.to_string(unit=u.hour,sep=':',pad=True),
-                self.coord.dec.to_string(sep=':',pad=True,alwayssign=True),
+                self.coord.fk5.ra.to_string(unit=u.hour,sep=':',pad=True),
+                self.coord.fk5.dec.to_string(sep=':',pad=True,alwayssign=True),
                 self.zabs, self.NHI)
         # Finish
         txt = txt + '>'

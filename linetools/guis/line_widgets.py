@@ -2,8 +2,10 @@
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
-from PyQt4 import QtGui
-from PyQt4 import QtCore
+from PyQt5 import QtGui
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QWidget, QDialog, QLabel, QLineEdit, QListWidget
+from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QAbstractItemView
 
 import numpy as np
 import pdb
@@ -13,9 +15,14 @@ from astropy.table import Table
 from linetools.guis import utils as ltgu
 from linetools.lists.linelist import LineList
 
+try:
+    ustr = unicode
+except NameError:
+    ustr = str
+
 
 # #####
-class PlotLinesWidget(QtGui.QWidget):
+class PlotLinesWidget(QWidget):
     """ Widget to set up spectral lines for plotting
     """
     def __init__(self, parent=None, status=None, init_llist=None, init_z=None,
@@ -45,22 +52,23 @@ class PlotLinesWidget(QtGui.QWidget):
 
         # Create a dialog window for redshift
         if edit_z:
-            z_label = QtGui.QLabel('z=')
-            self.zbox = QtGui.QLineEdit()
+            z_label = QLabel('z=')
+            self.zbox = QLineEdit()
             self.zbox.z_frmt = '{:.7f}'
             self.zbox.setText(self.zbox.z_frmt.format(init_z))
             self.zbox.setMinimumWidth(50)
-            self.connect(self.zbox, QtCore.SIGNAL('editingFinished ()'), self.setz)
+            self.zbox.textChanged[str].connect(self.setz)
+            #self.connect(self.zbox, QtCore.SIGNAL('editingFinished ()'), self.setz)
         else:
-            z_label = QtGui.QLabel('z={:.7f}'.format(init_z))
+            z_label = QLabel('z={:.7f}'.format(init_z))
 
         # Create the line list
         self.lists = ['None', 'ISM', 'Strong', 'HI', 'Galaxy', 'H2', 'EUV']
         #'grb.lst', 'dla.lst', 'lls.lst', 'subLLS.lst',
 #                      'lyman.lst', 'Dlyman.lst', 'gal_vac.lst', 'ne8.lst',
 #                      'lowz_ovi.lst', 'casbah.lst', 'H2.lst']
-        list_label = QtGui.QLabel('Line Lists:')
-        self.llist_widget = QtGui.QListWidget(self)
+        list_label = QLabel('Line Lists:')
+        self.llist_widget = QListWidget(self)
         for ilist in self.lists:
             self.llist_widget.addItem(ilist)
         self.llist_widget.setCurrentRow(0)
@@ -89,7 +97,7 @@ class PlotLinesWidget(QtGui.QWidget):
                 pass
 
         # Layout
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         vbox.addWidget(z_label)
         if edit_z:
             vbox.addWidget(self.zbox)
@@ -119,8 +127,9 @@ class PlotLinesWidget(QtGui.QWidget):
             except AttributeError:
                 return
 
-    def setz(self):
-        sstr = unicode(self.zbox.text())
+    def setz(self, text):
+        self.zbox.setText(text)
+        sstr = ustr(self.zbox.text())
         try:
             self.llist['z'] = float(sstr)
         except ValueError:
@@ -143,7 +152,7 @@ class PlotLinesWidget(QtGui.QWidget):
         except AttributeError:
             return
 
-class SelectLineWidget(QtGui.QDialog):
+class SelectLineWidget(QDialog):
     """ Widget to select a spectral line
     inp: string or dict or Table
       Input line list
@@ -162,8 +171,8 @@ class SelectLineWidget(QtGui.QDialog):
         self.resize(250, 800)
 
         # Create the line list
-        line_label = QtGui.QLabel('Lines:')
-        self.lines_widget = QtGui.QListWidget(self)
+        line_label = QLabel('Lines:')
+        self.lines_widget = QListWidget(self)
         self.lines_widget.addItem('None')
         self.lines_widget.setCurrentRow(0)
 
@@ -188,11 +197,12 @@ class SelectLineWidget(QtGui.QDialog):
         #self.scrollArea = QtGui.QScrollArea()
 
         # Quit
-        qbtn = QtGui.QPushButton('Quit', self)
+        qbtn = QPushButton(self)
+        qbtn.setText('Quit')
         qbtn.clicked.connect(self.close)
 
         # Layout
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         vbox.addWidget(line_label)
         vbox.addWidget(self.lines_widget)
         vbox.addWidget(qbtn)
@@ -205,7 +215,7 @@ class SelectLineWidget(QtGui.QDialog):
         print('You chose: {:s}'.format(curr.text()))
 
 
-class SelectedLinesWidget(QtGui.QWidget):
+class SelectedLinesWidget(QWidget):
     """ Widget to show and enable lines to be selected
     inp : LineList
       Input LineList
@@ -232,9 +242,9 @@ class SelectedLinesWidget(QtGui.QWidget):
         self.plot_widget = plot_widget
 
         # Create the line list
-        line_label = QtGui.QLabel('Lines:')
-        self.lines_widget = QtGui.QListWidget(self)
-        self.lines_widget.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
+        line_label = QLabel('Lines:')
+        self.lines_widget = QListWidget(self)
+        self.lines_widget.setSelectionMode(QAbstractItemView.MultiSelection)
 
         # Initialize list
         self.item_flg = 0
@@ -262,7 +272,7 @@ class SelectedLinesWidget(QtGui.QWidget):
         self.lines_widget.itemSelectionChanged.connect(self.on_item_change)
 
         # Layout
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         vbox.addWidget(line_label)
         vbox.addWidget(self.lines_widget)
 

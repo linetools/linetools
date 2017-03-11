@@ -98,7 +98,7 @@ class AbsSightline(object):
         # Return
         return slf
 
-    def __init__(self, radec, sl_type=None, em_type=None, comment=None, name=None):
+    def __init__(self, radec, sl_type=None, em_type=None, comment=None, name=None, **kwargs):
         """  Initiator
 
         Parameters

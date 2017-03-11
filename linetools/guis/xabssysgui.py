@@ -6,8 +6,11 @@ import io
 import json
 import pdb
 
-from PyQt4 import QtGui
-from PyQt4 import QtCore
+from PyQt5 import QtGui
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QWidget, QDialog, QLabel, QPushButton, QLineEdit
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
+from PyQt5.QtCore import pyqtSlot
 
 import warnings
 
@@ -39,7 +42,7 @@ Analyzing system for future abundance analysis
 See VelPlotWidget doc
 '''
 
-class XAbsSysGui(QtGui.QDialog):
+class XAbsSysGui(QDialog):
     """ GUI to replace XIDL x_velplot (and more)
     """
     def __init__(self, ispec, abs_sys, parent=None, llist=None, norm=True,
@@ -68,7 +71,7 @@ class XAbsSysGui(QtGui.QDialog):
 
         # Grab the pieces and tie together
         newfont = QtGui.QFont("Times", 10, QtGui.QFont.Bold)
-        sys_label = QtGui.QLabel('Name: \n {:s}'.format(abs_sys.name))
+        sys_label = QLabel('Name: \n {:s}'.format(abs_sys.name))
         sys_label.setFont(newfont)
         self.vplt_widg = ltgs.VelPlotWidget(ispec, self.z, abs_lines=abs_lines, llist=llist,
                                             vmnx=self.vmnx, norm=self.norm)
@@ -86,40 +89,44 @@ class XAbsSysGui(QtGui.QDialog):
         self.vplt_widg.canvas.mpl_connect('key_press_event', self.on_key)
 
         # Outfil
-        wbtn = QtGui.QPushButton('Write', self)
+        wbtn = QPushButton(self)
+        wbtn.setText('Write')
         wbtn.setAutoDefault(False)
         wbtn.clicked.connect(self.write_out)
-        self.out_box = QtGui.QLineEdit()
+        self.out_box = QLineEdit()
         self.out_box.setText(self.outfil)
-        self.connect(self.out_box, QtCore.SIGNAL('editingFinished ()'), self.set_outfil)
+        self.out_box.textChanged[str].connect(self.set_outfil)
+        #self.connect(self.out_box, QtCore.SIGNAL('editingFinished ()'), self.set_outfil)
 
         #QtCore.pyqtRemoveInputHook()
         #pdb.set_trace()
         #QtCore.pyqtRestoreInputHook()
 
         # Quit
-        buttons = QtGui.QWidget()
-        wqbtn = QtGui.QPushButton('Write+Quit', self)
+        buttons = QWidget()
+        wqbtn = QPushButton(self)
+        wqbtn.setText('Write+Quit')
         wqbtn.setAutoDefault(False)
         wqbtn.clicked.connect(self.write_quit)
-        qbtn = QtGui.QPushButton('Quit', self)
+        qbtn = QPushButton(self)
+        qbtn.setText('Quit')
         qbtn.setAutoDefault(False)
         qbtn.clicked.connect(self.quit)
 
         # Sizes
-        lines_widg = QtGui.QWidget()
+        lines_widg = QWidget()
         lines_widg.setMaximumWidth(300)
         lines_widg.setMinimumWidth(200)
 
         # Layout
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         vbox.addWidget(sys_label)
         vbox.addWidget(self.pltline_widg)
         vbox.addWidget(self.slines)
         vbox.addWidget(wbtn)
         vbox.addWidget(self.out_box)
         # Write/Quit buttons
-        hbox1 = QtGui.QHBoxLayout()
+        hbox1 = QHBoxLayout()
         hbox1.addWidget(wqbtn)
         hbox1.addWidget(qbtn)
         buttons.setLayout(hbox1)
@@ -127,7 +134,7 @@ class XAbsSysGui(QtGui.QDialog):
         vbox.addWidget(buttons)
         lines_widg.setLayout(vbox)
 
-        hbox = QtGui.QHBoxLayout()
+        hbox = QHBoxLayout()
         hbox.addWidget(self.vplt_widg)
         hbox.addWidget(lines_widg)
 
@@ -160,7 +167,9 @@ class XAbsSysGui(QtGui.QDialog):
         self.slines.on_list_change(llist[llist['List']])
 
     # Write
-    def set_outfil(self):
+    def set_outfil(self, text):
+        self.out_box.setText(text)
+        self.out_box.adjustSize()
         self.outfil = str(self.out_box.text())
         print('AbsKin: Will write to {:s}'.format(self.outfil))
 
@@ -188,6 +197,7 @@ class XAbsSysGui(QtGui.QDialog):
         return
 
     # Write
+    @pyqtSlot()
     def write_out(self):
         # Update components and spectrum filename
         self.set_new_comps()
@@ -203,12 +213,14 @@ class XAbsSysGui(QtGui.QDialog):
                                        separators=(',', ': ')))
 
     # Write + Quit
+    @pyqtSlot()
     def write_quit(self):
         self.write_out()
         self.flg_quit = 1
         self.done(1)
 
     # Write + Quit
+    @pyqtSlot()
     def quit(self):
         self.flg_quit = 0
         self.done(1)

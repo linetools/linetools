@@ -12,7 +12,7 @@
 #;------------------------------------------------------------------------------
 from __future__ import (print_function, absolute_import, division,
                         unicode_literals)
-
+import warnings
 # Python 2 & 3 compatibility
 try:
     basestring
@@ -25,6 +25,22 @@ from linetools.abund import roman
 ########################## ##########################
 ########################## ##########################
 def ion_name(ion, flg=0, nspace=None):
+    """ Wrapper to ion_to_name for backwards compatability
+    WILL BE DEPRECATED
+    Parameters
+    ----------
+    ion
+    flg
+    nspace
+
+    Returns
+    -------
+
+    """
+    warnings.warn("This method will be DEPRECATED.  Use ion_to_name")
+    return ion_to_name(ion, flg=flg, nspace=nspace)
+
+def ion_to_name(ion, flg=0, nspace=None):
     """ Convert ion tuple into a string
 
     Parameters
@@ -80,6 +96,20 @@ def ion_name(ion, flg=0, nspace=None):
 ########################## ##########################
 ########################## ##########################
 def name_ion(ion):
+    """ Wrapper to name_to_ion for backwards compatability
+    WILL BE DEPRECATED
+    Parameters
+    ----------
+    ion
+
+    Returns
+    -------
+
+    """
+    warnings.warn("This method will be DEPRECATED.  Use name_to_ion")
+    return name_ion(ion)
+
+def name_to_ion(ion):
     """ Convert string into ion tuple
 
     Parameters

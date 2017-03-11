@@ -9,6 +9,10 @@ from astropy import units as u
 from linetools.spectra import plotting as ltsp
 from linetools.utils import between
 
+try:
+    basestring
+except NameError:  # For Python 3
+    basestring = str
 
 def navigate(psdict, event, init=False, wave=None, flux=None):
     """ Method to Navigate spectrum

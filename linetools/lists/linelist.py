@@ -49,7 +49,7 @@ class LineList(object):
         * 'HI'      :: HI Lyman series
         * 'H2'      :: H2 (Lyman-Werner)
         * 'CO'      :: CO UV band-heads
-        * 'EUV'     :: EUV lines (for CASBAH project)
+        * 'EUV'     :: EUV lines (for CASBAH project);  Limited X-ray lines too
         * 'Galaxy'  :: Lines typically identified in galaxy spectra
         * 'AGN'     :: Key AGN lines (to be implemented)
 

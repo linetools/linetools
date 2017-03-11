@@ -31,21 +31,18 @@ def data_path(filename):
 def init_system():
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
     # HI Lya, Lyb
-    lya = AbsLine(1215.670*u.AA)
+    lya = AbsLine(1215.670*u.AA, z=2.92939)
     lya.limits.set([-300.,300.]*u.km/u.s)
-    lya.attrib['z'] = 2.92939
     lya.attrib['coord'] = radec
-    lyb = AbsLine(1025.7222*u.AA)
+    lyb = AbsLine(1025.7222*u.AA, z=lya.z)
     lyb.limits.set([-300.,300.]*u.km/u.s)
-    lyb.attrib['z'] = lya.attrib['z']
     lyb.attrib['coord'] = radec
     abscomp = AbsComponent.from_abslines([lya,lyb])
     # SiII
     SiIItrans = ['SiII 1260', 'SiII 1304', 'SiII 1526', 'SiII 1808']
     abslines = []
     for trans in SiIItrans:
-        iline = AbsLine(trans)
-        iline.attrib['z'] = 2.92939
+        iline = AbsLine(trans, z=2.92939)
         iline.attrib['coord'] = radec
         iline.limits.set([-250.,80.]*u.km/u.s)
         abslines.append(iline)
@@ -64,8 +61,6 @@ def test_list_of_abslines():
     abslines = gensys.list_of_abslines()
     # Test
     assert len(abslines) == 6
-    # Measure EWs
-    gensys.measure_restew(spec=spec)
     # Measure AODM
     gensys.measure_aodm(spec=spec)
     # trans table
@@ -77,6 +72,19 @@ def test_list_of_abslines():
     lyb = gensys.get_absline(1025.72*u.AA)
     np.testing.assert_allclose(lyb.wrest.value, 1025.7222)
 
+def test_measure_ew():
+    spec = io.readspec(data_path('UM184_nF.fits'))
+    gensys = init_system()
+    # Measure EWs
+    gensys.measure_restew(spec=spec)
+    for aline in gensys.list_of_abslines():
+        assert aline.attrib['flag_EW'] == 1
+    # Skip do_analysis = 0
+    gensys2 = init_system()
+    lyb = gensys2.get_absline('HI 1025')
+    lyb.analy['do_analysis'] = 0
+    gensys2.measure_restew(spec=spec)
+    assert lyb.attrib['flag_EW'] == 0
 
 def test_ionn():
     gensys = init_system()

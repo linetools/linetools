@@ -13,7 +13,7 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib as mpl
 
-def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True,
+def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None,
                ymnx=(-0.1,1.1), figsz=(18,11), return_fig=False, tight_layout=False):
     """Show a stack plot of the input lines
     Assumes the data are normalized.
@@ -49,6 +49,10 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True,
     for iline in abslines:
         if isinstance(iline.analy['spec'], XSpectrum1D):
             gdiline.append(iline)
+        else:
+            if spec is not None:
+                iline.analy['spec'] = spec
+                gdiline.append(iline)
     nplt = len(gdiline)
     if nplt == 0:
         print("Load spectra into the absline.analy['spec']")

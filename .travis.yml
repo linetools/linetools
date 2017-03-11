@@ -11,8 +11,8 @@ addons:
 
 python:
     - 2.7
-    - 3.4
     - 3.5
+    - 3.6
 
     # This is just for "egg_info".  All other builds are explicitly given in the matrix
 env:
@@ -20,7 +20,7 @@ env:
         # The following versions are the 'default' for tests, unless
         # overidden underneath. They are defined here in order to save having
         # to repeat them for all configurations.
-        - NUMPY_VERSION=1.10
+        - NUMPY_VERSION=1.11
         - ASTROPY_VERSION=stable
         - CONDA_INSTALL='conda install -c astropy-ci-extras --yes'
         - PIP_INSTALL='pip install'
@@ -49,9 +49,9 @@ matrix:
         # Try all python versions with the latest numpy
         - python: 2.7
           env: SETUP_CMD='test'
-        - python: 3.4
-          env: SETUP_CMD='test'
         - python: 3.5
+          env: SETUP_CMD='test'
+        - python: 3.6
           env: SETUP_CMD='test'
 
         # Try older numpy versions.
@@ -80,11 +80,11 @@ before_install:
 install:
 
     # CONDA
-    - conda create --yes -n test -c astropy-ci-extras python=$TRAVIS_PYTHON_VERSION
+    - conda create --yes -n test -c astropy-ci-extras python=$TRAVIS_PYTHON_VERSION pyqt=5 qtpy
     - source activate test
 
     # CORE DEPENDENCIES
-    - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION pytest pip Cython jinja2 pyqt; fi
+    - if [[ $SETUP_CMD != egg_info ]]; then $CONDA_INSTALL numpy=$NUMPY_VERSION pytest pip Cython jinja2; fi
     - if [[ $SETUP_CMD != egg_info ]]; then $PIP_INSTALL pytest-xdist; fi
 
     # ASTROPY

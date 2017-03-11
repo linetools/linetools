@@ -85,10 +85,19 @@ AbsLines
 --------
 
 There are a few methods related to the AbsLine objects within
-an AbsSystem.  One can generate a list of all the AbsLine objects
+an AbsSystem.
+
+List
+++++
+
+One can generate a list of all the AbsLine objects
 with::
 
    lines = abssys.list_of_abslines()
+
+
+get absline
++++++++++++
 
 One can retrieve one or more AbsLine objects matching the name
 or rest-wavelength of a transition, e.g. ::
@@ -97,6 +106,26 @@ or rest-wavelength of a transition, e.g. ::
    # or
    lyb = abssys.get_absline(1025.72*u.AA)  # Nearest 0.01 A is required
 
+measure_restew
+++++++++++++++
+
+Measure the rest-frame equivalent widths for all AbsLine objects
+in the system.
+In addition to the inputs described in :ref:`measure-ew`,
+each line to be measured must have line.analy['do_anlaysis']=1.
+Here is an example::
+
+   abssys.measure_restew(spec=xspec_object)
+
+
+fill transitions
+++++++++++++++++
+
+Generate an astropy.Table of information on the absorption lines
+in the system.  This is stored in the ._trans attribute::
+
+   abssys.fill_trans()
+   print(abssys._trans)
 
 Components
 ----------
@@ -121,6 +150,8 @@ These are derived from the components ::
 
    abssys.fill_ionN()
    print(abssys._ionN)
+
+
 
 Output
 ======
