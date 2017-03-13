@@ -660,9 +660,9 @@ class XSpectrum1D(object):
         # Launch XSpectrum1D??
         if 'xspec' in kwargs:
             import sys
-            from PyQt4 import QtGui
+            from PyQt5.QtWidgets import QApplication
             from linetools.guis.xspecgui import XSpecGui
-            app = QtGui.QApplication(sys.argv)
+            app = QApplication(sys.argv)
             gui = XSpecGui(self)
             gui.show()
             app.exec_()
