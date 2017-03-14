@@ -22,7 +22,7 @@ from astropy.coordinates import SkyCoord
 from linetools.analysis import absline as ltaa
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.spectralline import init_analy
-from linetools.abund.ions import name_ion, ion_name
+from linetools.abund.ions import name_to_ion, ion_to_name
 from linetools import utils as ltu
 from linetools.lists.linelist import LineList
 
@@ -300,7 +300,7 @@ def complist_from_table(table):
     for row in table:
         # mandatory
         coord = SkyCoord(row['RA'].to('deg').value, row['DEC'].to('deg').value, unit='deg')  # RA y DEC must both come with units
-        Zion = name_ion(row['ion_name'])
+        Zion = name_to_ion(row['ion_name'])
         zcomp = row['z_comp']
         vlim =[row['vmin'].to('km/s').value, row['vmax'].to('km/s').value] * u.km / u.s  # units are expected here too
 
@@ -372,7 +372,7 @@ def table_from_complist(complist):
         if comp.Zion == (-1,-1):
             ion_names += ["Molecule"]
         else:
-            ion_names += [ion_name(comp.Zion)]
+            ion_names += [ion_to_name(comp.Zion)]
     tab['ion_name'] = ion_names
     tab['z_comp'] = [comp.zcomp for comp in complist]
     tab['vmin'] = [comp.vlim[0].value for comp in complist] * comp.vlim.unit

@@ -85,7 +85,7 @@ def main(args=None):
                 if key in cols:
                     print('{:s}: {}'.format(key,value))
         else:  # Ion
-            Zion = ltai.name_ion(pargs.inp)
+            Zion = ltai.name_to_ion(pargs.inp)
             mtion = (llist.Z == Zion[0]) & (llist.ion == Zion[1])
             llist._data[cols][mtion].pprint(99999)
 
