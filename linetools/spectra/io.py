@@ -3,8 +3,7 @@
 
 from __future__ import print_function, absolute_import, division, unicode_literals
 
-# Python 2 & 3 compatibility
-try:
+try: # Python 2 & 3 compatibility
     basestring
 except NameError:
     basestring = str
@@ -162,7 +161,6 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
                     co = data
 
             wave = give_wv_units(wave)
-            pdb.set_trace()
             xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, co), **kwargs)
 
     elif head0['NAXIS'] == 2:
