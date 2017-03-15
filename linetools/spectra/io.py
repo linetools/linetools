@@ -3,8 +3,7 @@
 
 from __future__ import print_function, absolute_import, division, unicode_literals
 
-# Python 2 & 3 compatibility
-try:
+try: # Python 2 & 3 compatibility
     basestring
 except NameError:
     basestring = str
@@ -15,6 +14,8 @@ import numpy as np
 import warnings
 import os, pdb
 import json
+
+from six import itervalues
 
 from astropy.io import fits
 from astropy import units as u
@@ -52,6 +53,8 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
       Selected spectrum (for sets of 1D spectra, e.g. DESI brick)
     head_exten : int, optional
       Extension for header to ingest
+    **kwargs : optional
+      Passed to XSpectrum1D object
 
     Returns
     -------
@@ -124,7 +127,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
             if debug:
                 print(
   'linetools.spectra.io.readspec(): Assuming separate flux and err files.')
-            xspec1d = parse_linetools_spectrum_format(hdulist)
+            xspec1d = parse_linetools_spectrum_format(hdulist, **kwargs)
 
         else:  # ASSUMING MULTI-EXTENSION
             co=None
@@ -180,20 +183,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
         print('Not sure what has been input.  Send to JXP.')
         return
 
-
-    # Generate, as needed
-    """
-    if 'xspec1d' not in locals():
-        # Give Ang as default
-        if not hasattr(wave, 'unit'):
-            uwave = u.Quantity(wave, unit=u.AA)
-        elif wave.unit is None:
-            uwave = u.Quantity(wave, unit=u.AA)
-        else:
-            uwave = u.Quantity(wave)
-        xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, None))
-    """
-
+    # Check for bad wavelengths
     if np.any(np.isnan(xspec1d.wavelength)):
         warnings.warn('WARNING: Some wavelengths are NaN')
 
@@ -300,8 +290,8 @@ def get_wave_unit(tag, hdulist, idx=None):
         # NEED HEADER INFO
         return None
     # Try table header (following VLT/X-Shooter here)
-    keys = header.keys()
-    values = header.values()
+    keys = list(header)  # Python 3
+    values = list(itervalues(header)) # Python 3
     hidx = values.index(tag)
     if keys[hidx][0:5] == 'TTYPE':
         try:
@@ -579,7 +569,7 @@ def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
         xspec1d.meta.update(json.loads(hdulist[0].header['METADATA']))
     return xspec1d
 
-def parse_linetools_spectrum_format(hdulist):
+def parse_linetools_spectrum_format(hdulist, **kwargs):
     """ Parse an old linetools-format spectrum from an hdulist
 
     Parameters
@@ -610,7 +600,7 @@ def parse_linetools_spectrum_format(hdulist):
     else:
         co = None
 
-    xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, co))
+    xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, co), **kwargs)
 
     if 'METADATA' in hdulist[0].header:
         # Prepare for JSON (bug fix of sorts)

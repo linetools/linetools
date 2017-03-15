@@ -13,6 +13,10 @@ from astropy import constants as const
 
 from linetools import utils as liu
 
+try: # Python 2 & 3 compatibility
+    basestring
+except NameError:
+    basestring = str
 
 def meta_to_disk(in_meta):
     """ Polish up the meta dict for I/O
