@@ -54,6 +54,8 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
       Selected spectrum (for sets of 1D spectra, e.g. DESI brick)
     head_exten : int, optional
       Extension for header to ingest
+    **kwargs : optional
+      Passed to XSpectrum1D object
 
     Returns
     -------
