@@ -9,7 +9,7 @@ import pdb
 from PyQt5 import QtGui
 from PyQt5 import QtCore
 from PyQt5.QtWidgets import QWidget, QDialog, QLabel, QPushButton, QLineEdit
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
+from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QApplication
 from PyQt5.QtCore import pyqtSlot
 
 import warnings
@@ -239,7 +239,7 @@ def main(ispec, abs_sys, **kwargs):
     """
     import sys
     # Run
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     gui = XAbsSysGui(ispec, abs_sys, **kwargs)
     gui.show()
     app.exec_()
