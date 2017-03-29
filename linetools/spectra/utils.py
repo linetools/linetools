@@ -228,9 +228,9 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, grow_bad_sig=False
     flux = spec.flux.value
 
     # Deal with nan
-    badf = np.isnan(flux)
+    badf = np.any([np.isnan(flux), np.isinf(flux)], axis=0)
     if np.sum(badf) > 0:
-        warnings.warn("Ignoring pixels with NAN in flux")
+        warnings.warn("Ignoring pixels with NAN or INF in flux")
     gdf = ~badf
     flux = flux[gdf]
 
@@ -241,6 +241,8 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, grow_bad_sig=False
         if np.sum(bad_sig) > 0:
             if not grow_bad_sig:
                 raise IOError("Data contains rejected pixels (sig=0). Use grow_bad_sig to proceed and grow them.")
+        bads = np.any([np.isnan(sig[gdf]), np.isinf(sig[gdf]**2)], axis=0)  # Latter is for way too large values
+        bad_sig[bads] = True
 
     # Endpoints of original pixels
     npix = len(spec.wavelength)
@@ -265,7 +267,7 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, grow_bad_sig=False
 
     # Cumulative Sum
     cumsum = np.cumsum(flux * dwv)
-    cumvar = np.cumsum(var * dwv)
+    cumvar = np.cumsum(var * dwv.value, dtype=np.float64)
 
     # Interpolate (loses the units)
     fcum = interp1d(wvh, cumsum, fill_value=0., bounds_error=False)
@@ -291,13 +293,12 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, grow_bad_sig=False
     #    newvar[-1] = cumvar[-1]
 
     # Rebinned flux, var, co
+    pdb.set_trace()
     new_fx = (np.roll(newcum, -1) - newcum)[:-1]
     new_var = (np.roll(newvar, -1) - newvar)[:-1]
 
     # Normalize (preserve counts and flambda)
     new_dwv = bwv - np.roll(bwv, 1)
-    #import pdb
-    # pdb.set_trace()
     new_fx = new_fx / new_dwv[1:]
     # Preserve S/N (crudely)
     med_newdwv = np.median(new_dwv.value)
@@ -317,6 +318,8 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, grow_bad_sig=False
             new_sig[bad_new] = 0.
         # Zero out edge pixels -- not to be trusted
         igd = np.where(gd)[0]
+        if len(igd) == 0:  # Should not get here!
+            pdb.set_trace()
         new_sig[igd[0]] = 0.
         new_sig[igd[-1]] = 0.
     else:
