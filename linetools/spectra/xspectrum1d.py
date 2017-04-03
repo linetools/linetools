@@ -823,6 +823,7 @@ class XSpectrum1D(object):
         Returns
         -------
         A new XSpectrum1D instance of the smoothed spectrum
+          Has the same number of pixels as the original
         """
         if preserve:
             from astropy.convolution import convolve, Box1DKernel
