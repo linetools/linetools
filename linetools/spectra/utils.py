@@ -293,7 +293,6 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, grow_bad_sig=False
     #    newvar[-1] = cumvar[-1]
 
     # Rebinned flux, var, co
-    pdb.set_trace()
     new_fx = (np.roll(newcum, -1) - newcum)[:-1]
     new_var = (np.roll(newvar, -1) - newvar)[:-1]
 
