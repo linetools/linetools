@@ -12,7 +12,7 @@ import numpy as np
 
 from astropy import units as u
 from astropy.units.quantity import Quantity
-from astropy.table import QTable, Table, vstack, Column, MaskedColumn
+from astropy.table import Table, vstack, Column, MaskedColumn
 import warnings
 
 import imp
@@ -186,8 +186,6 @@ class LineList(object):
                 if func not in all_func:
                     # Read
                     table = func()
-                    # make it a QTable
-                    table = QTable(table)
 
                     if full_table is None:
                         full_table = table
@@ -199,14 +197,13 @@ class LineList(object):
                             mt = np.abs(row['wrest'] - wrest) < tol
                             if mt.sum() == 0:
                                 newi.append(jj)
-                        # Append new ones as Tables (can't stack QTables yet)
-                        full_table = vstack([Table(full_table), Table(table[newi])])
-                        full_table = QTable(full_table)
+                        # Append
+                        full_table = vstack([full_table, table[newi]])
                     # Save to avoid repeating
                     all_func.append(func)
 
-        # Save as QTable
-        self._fulltable = QTable(full_table)
+        # Save
+        self._fulltable = full_table.copy()
 
         # Update wavelength values
         if flag_wrest:
@@ -241,7 +238,7 @@ class LineList(object):
             self._data = CACHE['data'][key]
             return
         elif use_ISM_table and self.list in ('ISM', 'Strong', 'EUV', 'HI'):
-            data = QTable(Table.read(lt_path + '/data/lines/ISM_table.fits'))
+            data = Table.read(lt_path + '/data/lines/ISM_table.fits')
             if self.list != 'ISM':
                 cond = data['is_'  + self.list]
                 self._data = data[cond]
@@ -324,7 +321,7 @@ class LineList(object):
 
     def set_extra_columns_to_datatable(self, abundance_type='solar', ion_correction='none',
                                        redo=False):
-        """Sets new convenient columns to the self._data QTable. These will be useful
+        """Sets new convenient columns to the self._data Table. These will be useful
         for sorting the underlying data table in convenient ways, e.g. by expected
         relative strength, abundance, etc.
 
@@ -473,7 +470,7 @@ class LineList(object):
             LineList object) e.g. (['HI 1215', 'CIV 1548'] or
             [1215.67 * u.AA, 1548.195 * u.AA])
         reset_data : bool, optional
-            Reset self._data QTable based on the original list at the
+            Reset self._data Table based on the original list at the
             initialization (i.e. the default list). This is useful for
             changing subsets of lines without the need to initialize a
             different LineList() object. Default is False.
@@ -567,8 +564,8 @@ class LineList(object):
 
         Returns
         -------
-        dict or QTable
-            dict if only 1 transition found, otherwise QTable.
+        dict or Table
+            dict if only 1 transition found, otherwise Table.
 
         """
 
@@ -593,7 +590,7 @@ class LineList(object):
             if len(tbl) > 1:
                 return tbl
             else:  # this should be always len(tbl)==1 because line was found
-                return self.from_qtable_to_dict(tbl)
+                return self.from_table_to_dict(tbl)
 
         else:
             Z = None
@@ -622,7 +619,7 @@ class LineList(object):
                 if len(tbl) > 1:
                     return tbl
                 else:  # this should be always len(tbl)==1 because Z is not None
-                    return self.from_qtable_to_dict(tbl)
+                    return self.from_table_to_dict(tbl)
             else:
                 raise ValueError(
                     'Line {} not found in the LineList: {}'.format(line, self.list))
@@ -652,7 +649,7 @@ class LineList(object):
         Returns
         -------
         None (if no transitions are found), dict (if only 1 transition
-        found), or QTable (if > 1 transitions are found)
+        found), or Table (if > 1 transitions are found)
 
         """
         good_linelists = ['HI', 'ISM', 'EUV', 'Strong']
@@ -693,8 +690,8 @@ class LineList(object):
             return None
         elif isinstance(data, dict):  # Only 1 case from a dict format
             return data
-        elif np.sum(cond) == 1:  # only 1 case from a QTable format
-            return self.from_qtable_to_dict(data[cond])
+        elif np.sum(cond) == 1:  # only 1 case from a Table format
+            return self.from_table_to_dict(data[cond])
         else:
             # remove transitions out of range
             data = data[cond]
@@ -707,8 +704,8 @@ class LineList(object):
             # keep only the first n_max or less
             if n_max is not None:
                 data = data[:n_max]
-            if len(data) == 1:  # Only 1 case from a QTable format; return a dictionary
-                return self.from_qtable_to_dict(data)
+            if len(data) == 1:  # Only 1 case from a Table format; return a dictionary
+                return self.from_table_to_dict(data)
             else:
                 return data
 
@@ -738,7 +735,7 @@ class LineList(object):
 
         Returns
         -------
-        dict (if only 1 transition found) or QTable (if > 1
+        dict (if only 1 transition found) or Table (if > 1
         transitions are found) or None (if no transition is found)
         """
 
@@ -794,22 +791,22 @@ class LineList(object):
             name = row['name']
             aux = self.strongest_transitions(name, wvlims, n_max=n_max_tuple)
 
-            # need to deal with dict vs QTable format now
+            # need to deal with dict vs Table format now
             if isinstance(aux, dict):
-                aux = self.from_dict_to_qtable(aux)
+                aux = self.from_dict_to_table(aux)
 
-            # convert to Table because QTable does not like vstack
+            # convert to Table because Table does not like vstack
             output = vstack([output, Table(aux)])
 
         # Deal with output formatting now
         # if len==1 return dict
         if len(output) == 1:
-            return self.from_qtable_to_dict(output)
+            return self.from_table_to_dict(output)
         else:
-            return QTable(output)
+            return Table(output)
 
-    def from_dict_to_qtable(self, a):
-        """Converts dictionary `a` to its QTable version.
+    def from_dict_to_table(self, a):
+        """Converts dictionary `a` to its Table version.
 
         Parameters
         ----------
@@ -820,7 +817,7 @@ class LineList(object):
 
         Returns
         -------
-        A QTable of 1 Row, with filled with the data from
+        A Table of 1 Row, with filled with the data from
         the input dictionary.
 
         """
@@ -832,15 +829,15 @@ class LineList(object):
 
         keys = self._data.keys()
 
-        # Create a QTable with same shape as self._data
-        tab = QTable(data=self._data[0])
+        # Create a Table with same shape as self._data
+        tab = Table(data=self._data[0])
         # re-write the value elements
         for key in keys:
             tab[0][key] = a[key]
         return tab
 
-    def from_qtable_to_dict(self, tab):
-        """Converts QTable `tab` to its dictionary version.
+    def from_table_to_dict(self, tab):
+        """Converts Table `tab` to its dictionary version.
         An error is raised if len(tab) > 1.
 
         Parameters
@@ -855,6 +852,7 @@ class LineList(object):
         input table.
 
         """
+        from astropy.table import QTable
 
         if not isinstance(tab, (QTable, Table)):
             raise ValueError('Input has to be QTable or Table.')

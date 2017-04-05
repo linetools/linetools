@@ -10,7 +10,7 @@ import os, pdb
 import pytest
 import astropy.io.ascii as ascii
 from astropy import units as u
-from astropy.table import QTable
+from astropy.table import Table
 import numpy as np
 
 from linetools.lists.linelist import LineList
@@ -44,7 +44,7 @@ def test_closest():
     ism.closest=True
     # 
     line = ism[1250.584*u.AA]
-    np.testing.assert_allclose(line['wrest'], 1250.578*u.AA, rtol=1e-7)
+    np.testing.assert_allclose(line['wrest'], 1250.578, rtol=1e-7)
 
 def test_all_transitions():
     error_msg = 'Something is wrong in all_transitions()'
@@ -85,7 +85,7 @@ def test_strongest_transitions():
     transitions = ism.strongest_transitions('HI',wvlims/(1+z),n_max=5)
     assert len(transitions) == 5,  error_msg
     assert transitions[0]['name'] == 'HI 1025' , error_msg
-    assert isinstance(transitions,QTable), error_msg
+    assert isinstance(transitions,Table), error_msg
 
     wvlims = (1500,1700)*u.AA
     z = 0.5
@@ -106,7 +106,7 @@ def test_available_transitions():
 
     transitions = ism.available_transitions(wvlims/(1+z),n_max_tuple=5)
     assert transitions[2]['name'] == 'HI 972' , error_msg
-    assert isinstance(transitions,QTable), error_msg
+    assert isinstance(transitions,Table), error_msg
 
     transitions = ism.available_transitions(wvlims/(1+z),n_max_tuple=2)
     assert transitions[2]['name'] == 'CIII 977' , error_msg
