@@ -251,7 +251,7 @@ class SpectralLine(object):
 
 
         # Update
-        self.wrest = self.data['wrest']
+        self.wrest = self.data['wrest']*self.data['wrest'].unit
         self.name = self.data['name']
 
         #

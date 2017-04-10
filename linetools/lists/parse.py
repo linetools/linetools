@@ -11,7 +11,7 @@ if not sys.version_info[0] > 2:
 from astropy import units as u
 from astropy.units.quantity import Quantity
 from astropy.io import fits, ascii
-from astropy.table import QTable, Column, Table, vstack
+from astropy.table import Column, Table, vstack
 
 from ..abund import roman, ions
 from ..abund.elements import ELEMENTS
@@ -77,7 +77,8 @@ def line_data(nrows=1):
     clms = []
     for key in ldict.keys():
         if type(ldict[key]) is Quantity:
-            clm = Column( ([ldict[key].value]*nrows)*ldict[key].unit, name=key)
+            clm = Column( ([ldict[key].value]*nrows), name=key)
+            clm.unit = ldict[key].unit
         else:
             clm = Column( [ldict[key]]*nrows, name=key)
         # Append
@@ -118,7 +119,7 @@ def read_euv():
 
     Returns
     -------
-    QTable of EUV lines
+    Table of EUV lines
     """
     EUV_fil = lt_path + '/data/lines/EUV_lines.ascii'
     print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(EUV_fil))
@@ -136,7 +137,7 @@ def read_H2():
 
     Returns
     -------
-    QTable of H2 lines
+    Table of H2 lines
 
     References
     ----------
@@ -226,7 +227,7 @@ def read_verner94():
 
     # Deal with bad unit
     tbl_6['lambda'].unit = u.AA
-    tbl_6 = QTable(tbl_6)
+    tbl_6 = Table(tbl_6)
 
     # My table
     ldict, data = line_data(nrows=len(tbl_6))
@@ -241,7 +242,7 @@ def read_verner94():
     for ii,row in enumerate(tbl_6):
         data[ii]['name'] = (
             row['Species'][0:2].strip() + row['Species'][2:].strip() + 
-            ' {:d}'.format(int(row['lambda'].value)))
+            ' {:d}'.format(int(row['lambda'])))
     # name
     names = []
     for row in data:
@@ -264,7 +265,7 @@ def read_forbidden():
 
     Returns
     -------
-    QTable of forbidden lines
+    Table of forbidden lines
     """
     forb_fil = lt_path + '/data/lines/galaxy_forbidden.ascii'
     print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(forb_fil))
@@ -294,7 +295,7 @@ def read_recomb():
 
     Returns
     -------
-    QTable of recombination lines
+    Table of recombination lines
     """
     recomb_fil = lt_path + '/data/lines/galaxy_recomb.ascii'
     print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(recomb_fil))
@@ -323,7 +324,7 @@ def read_galabs():
 
     Returns
     -------
-    QTable of recombination lines
+    Table of recombination lines
     """
     galabs_fil = lt_path + '/data/lines/galaxy_abs.ascii'
     print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(galabs_fil))
@@ -353,7 +354,7 @@ def mask_gal(data, mask_keys=None):
 
     Parameters
     ----------
-    data : Table or QTable (masked)
+    data : Table (masked)
         The original table to mask columns for
     mask_keys : list of strings, optional
         List of column names to be masked if given
@@ -361,22 +362,15 @@ def mask_gal(data, mask_keys=None):
 
     Returns
     -------
-    data_masked : QTable (masked)
+    data_masked : Table (masked)
         The masked version of `data`
-
-        [Known issue: QTable is not masking columns with units]
-
     """
     # check input
-    if not isinstance(data, (Table, QTable)):
-        raise RuntimeError('The input table has to be astropy Table or QTable')
+    if not isinstance(data, (Table)):
+        raise RuntimeError('The input table has to be astropy Table')
 
     if data.masked is not True:
-        raise RuntimeError('The input Table/QTable has to be masked.')
-
-    #convert to QTable
-    if isinstance(data, Table):
-        data = QTable(data)
+        raise RuntimeError('The input Table has to be masked.')
 
     # set default keys to mask
     if mask_keys is None:
@@ -384,7 +378,7 @@ def mask_gal(data, mask_keys=None):
                      'Ej','Am','Ex','Jj','Jk','gk','gj','gamma']
 
     for key in mask_keys:
-        data[key].mask= True
+        data[key].mask = True
 
     return data
 
@@ -611,6 +605,8 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
                         if len(gdi) != 1:
                             pdb.set_trace()
                             raise ValueError('Uh oh ion')
+                        else:
+                            gdi = gdi[0]
                     if ioni[gdi] in isoi: # Isotope
                         continue
                     # Ion
@@ -626,6 +622,8 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
                         else:
                             #xdb.set_trace()
                             raise ValueError('Uh oh elm')
+                    else:
+                        gdZ = gdZ[0]
                     tbl[count]['Z'] = elmZ[gdZ]
                     # Name
                     tbl[count]['name'] = elmc[gdZ]+ionv[gdi]+' {:d}'.format(
@@ -710,7 +708,7 @@ def mktab_morton03(do_this=False, outfil=None, fits=True):
     else:
         if outfil is None:
             outfil = lt_path + '/data/lines/morton03_table2.vot'
-        m03.write(outfil, format='votable')
+        m03.write(outfil, format='votable', overwrite=True)
     print('mktab_morton03: Wrote {:s}'.format(outfil))
     # Compress and delete
     print('mktab_morton03: Now compressing...')
@@ -802,20 +800,20 @@ def update_fval(table, verbose=False):
 
     Parameters
     ----------
-    table : QTable
+    table : Table
       Data to be updated
     verbose : bool, optional
 
     Returns
     -------
-    table : QTable
+    table : Table
       Updated table.
       Note: This return is required to handle the vstack, i.e.
       as opposed to modifying the input table in place.
     """
     # Shectman et al. 1998, ApJ, 504, 921 
     #   Morton2003 cites this but uses a different f-value
-    imn = np.argmin(np.abs(table['wrest']-1526.707*u.AA))
+    imn = np.argmin(np.abs(table['wrest']-1526.707))
     table['f'][imn] = 0.127
 
     # Howk 2000 (using Weise 2002 as in Morton for FeII 1142,1143,1144)
@@ -853,8 +851,8 @@ def update_fval(table, verbose=False):
     # Lines without f-value but of interest
 
     # AsII
-    mn = np.min(np.abs(table['wrest']-1355.934*u.AA))  # In Morton2000
-    if mn > 0.05*u.AA:
+    mn = np.min(np.abs(table['wrest']-1355.934))  # In Morton2000
+    if mn > 0.05:  # Ang
         _, new_row = line_data()
         new_row['Z'] = 33
         new_row['ion'] = 2
@@ -862,7 +860,7 @@ def update_fval(table, verbose=False):
         new_row['name'] = 'AsII 1355'
         new_row['f'].mask = True
         # Stack
-        table = QTable(vstack([Table(table), new_row]))
+        table = Table(vstack([Table(table), new_row]))
 
     return table
 
@@ -872,7 +870,7 @@ def update_gamma(table):
 
     Parameters
     ----------
-    table : QTable
+    table : Table
       Data to be updated
     verbose : bool, optional
     """
@@ -886,11 +884,11 @@ def update_gamma(table):
         if len(HI) > 0:
             # Same kludge as in atom.dat of VPFIT for higher order lines
             table['gamma'] = table['A']
-            # More accurate for stronger lines (pulled from Morton)
-            gdict = {1215.670:6.265E+08/u.s, 1025.7222:1.897E+08/u.s, # From Morton
-                972.5367:8.127E+07/u.s, 949.7430:4.204E+07/u.s, 937.8034:2.450E+07/u.s}
+            # More accurate for stronger lines (pulled from Morton) [all in units of s^-1]
+            gdict = {1215.670: 6.265E+08, 1025.7222: 1.897E+08, # From Morton
+                972.5367: 8.127E+07, 949.7430: 4.204E+07, 937.8034: 2.450E+07}
             for key in gdict.keys():
-                mt = np.where( (np.abs(table['wrest']-key*u.AA) < 1e-4*u.AA))[0] 
+                mt = np.where( (np.abs(table['wrest']-key) < 1e-4))[0]
                 if len(mt) > 0:
                     table['gamma'][mt[0]] = gdict[key]
 
@@ -900,7 +898,7 @@ def update_wrest(table, verbose=True):
 
     Parameters
     ----------
-    table : QTable
+    table : Table
       Data to be updated
     verbose : bool, optional
     """
@@ -932,7 +930,7 @@ def _write_ref_ISM_table():
     euv = LineList('EUV', use_ISM_table=False)
     hi = LineList('HI', use_ISM_table=False)
 
-    # need a Table, not QTable to write
+    # need a Table to write
     tab = Table(ism._data.copy())
     tab.sort(('wrest'))
 

@@ -161,14 +161,14 @@ def add_galaxy_lines(outfil, infil=None, stop=True):
     tmp_row['fgE'] = 1
     # Add if new
     for row in forbidden:
-        if np.sum(np.abs(row['wrest'].value-data['wrest']) < 0.0001) == 0:
-            tmp_row['wrest'] = row['wrest'].value
+        if np.sum(np.abs(row['wrest']-data['wrest']) < 0.0001) == 0:
+            tmp_row['wrest'] = row['wrest']
             tmp_row['name'] = row['name']
             data.add_row(tmp_row)
     # Add if new
     for row in recomb:
-        if np.sum(np.abs(row['wrest'].value-data['wrest']) < 0.0001) == 0:
-            tmp_row['wrest'] = row['wrest'].value
+        if np.sum(np.abs(row['wrest']-data['wrest']) < 0.0001) == 0:
+            tmp_row['wrest'] = row['wrest']
             tmp_row['name'] = row['name'].replace('_',' ')
             data.add_row(tmp_row)
 

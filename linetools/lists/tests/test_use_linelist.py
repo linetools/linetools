@@ -23,7 +23,7 @@ def test_lines_from_ion():
     ism = LineList('ISM')
     # 
     lines = ism[(6,2)]
-    assert (1334.5323*u.AA in lines['wrest'])
+    assert (1334.5323 in lines['wrest'])
 
 def test_subset():
     ism = LineList('ISM')
@@ -43,8 +43,8 @@ def test_closest():
     ism = LineList('ISM')
     ism.closest=True
     # 
-    line = ism[1250.584*u.AA]
-    np.testing.assert_allclose(line['wrest'], 1250.578, rtol=1e-7)
+    line = ism[1250.584*u.AA]  # dict with units
+    np.testing.assert_allclose(line['wrest'], 1250.578*u.AA, rtol=1e-7)
 
 def test_all_transitions():
     error_msg = 'Something is wrong in all_transitions()'

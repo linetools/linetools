@@ -134,8 +134,20 @@ class LineList(object):
         """
         return self._data['ion']
 
-    def load_data(self, use_ISM_table=True, tol=1e-3 * u.AA, use_cache=True):
+    def load_data(self, use_ISM_table=True, tol=1e-3, use_cache=True):
         """Grab the data for the lines of interest
+        Also load into CACHE
+
+        Parameters
+        ----------
+        use_ISM_table : bool, optional
+        tol : float, optional
+          Tolerance for matching wavelength in AA
+        use_cache : bool, optional
+
+        Returns
+        -------
+
         """
         global CACHE
         key = self.list, tol
@@ -284,7 +296,7 @@ class LineList(object):
             # Read standard file
             set_data = lilp.read_sets()
             # Speed up
-            wrest = self._fulltable['wrest'].value  # Assuming Angstroms
+            wrest = self._fulltable['wrest']  # Assuming Angstroms
             for sflag in set_flags:
                 gdset = np.where(set_data[sflag] == 1)[0]
                 # Match to wavelengths
@@ -390,7 +402,7 @@ class LineList(object):
             return
 
         # Set QM strength as MaskedColumn (self._data['f'] is MaskedColumn)
-        qm_strength = self._data['f'] * (self._data['wrest'].to('AA').value)
+        qm_strength = self._data['f'] * self._data['wrest']
         qm_strength.name = 'qm_strength'
         self._data['log(w*f)'] = np.log10(qm_strength)
         # mask out potential nans
@@ -498,7 +510,7 @@ class LineList(object):
 
         indices = []
         if isinstance(subset[0], (float, Quantity)):  # wrest
-            wrest = self._data['wrest'].to('AA').value  # In Angstroms
+            wrest = self._data['wrest'] # Assumes Angstroms
             for gdlin in subset:
                 mt = np.where(
                     np.abs(gdlin.to('AA').value - wrest) < 1e-4)[0]
@@ -686,7 +698,7 @@ class LineList(object):
 
         data = self.all_transitions(line)
         # condition to be within wvrange
-        cond = (data['wrest'] >= wvlims[0]) & (data['wrest'] <= wvlims[1])
+        cond = (data['wrest'] >= wvlims[0].to('AA').value) & (data['wrest'] <= wvlims[1].to('AA').value)
         if np.sum(cond) == 0:
             if verbose:
                 print(
@@ -816,7 +828,7 @@ class LineList(object):
         ----------
         a : dict
             The input dictionary to be converted to a
-            QTable. The resulting QTable will have the
+            Table. The resulting Table will have the
             same keys as self._data
 
         Returns
@@ -882,7 +894,7 @@ class LineList(object):
         Returns
         -------
         dict (from row in the data table if only 1 line is found) or
-          QTable (tuple when more than 1 lines are found)
+          Table (tuple when more than 1 lines are found)
         """
         try:
             tmp = self.memoize[k].copy()
@@ -919,7 +931,13 @@ class LineList(object):
             # Now we have something
             if len(mt) == 1:
                 # Pass back as dict
-                self.memoize[k] = dict(zip(self._data.dtype.names, self._data[mt][0]))
+                tmp2 = {}
+                for name in self._data.dtype.names:  # Captures units
+                    if self._data[name].unit is None:
+                        tmp2[name] = self._data[name][mt][0]
+                    else:
+                        tmp2[name] = self._data[name][mt][0] * self._data[name].unit
+                self.memoize[k] = tmp2.copy()
                 # return self._data[mt][0]  # Pass back as a Row not a Table
             elif isinstance(k, tuple):
                 self.memoize[k] = self._data[mt]
