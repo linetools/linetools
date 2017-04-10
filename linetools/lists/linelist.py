@@ -14,6 +14,7 @@ from astropy import units as u
 from astropy.units.quantity import Quantity
 from astropy.table import Table, vstack, Column, MaskedColumn
 import warnings
+import pdb
 
 import imp
 
@@ -198,7 +199,10 @@ class LineList(object):
                             if mt.sum() == 0:
                                 newi.append(jj)
                         # Append
-                        full_table = vstack([full_table, table[newi]])
+                        try:
+                            full_table = vstack([full_table, table[newi]])
+                        except NotImplementedError:
+                            pdb.set_trace()
                     # Save to avoid repeating
                     all_func.append(func)
 

@@ -17,6 +17,7 @@ from linetools.lists import mk_sets as llmk
 
 def test_ism_read_source_catalogues():
     ism = LineList('ISM', use_ISM_table=False)
+    pytest.set_trace()
     np.testing.assert_allclose(ism['HI 1215']['wrest'],
                                1215.6700*u.AA, rtol=1e-7)
 
