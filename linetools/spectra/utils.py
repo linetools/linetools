@@ -318,7 +318,7 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, grow_bad_sig=False
         # Zero out edge pixels -- not to be trusted
         igd = np.where(gd)[0]
         if len(igd) == 0:  # Should not get here!
-            pdb.set_trace()
+            raise ValueError("Not a single good pixel?!  Something went wrong...")
         new_sig[igd[0]] = 0.
         new_sig[igd[-1]] = 0.
     else:

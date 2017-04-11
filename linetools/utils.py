@@ -156,6 +156,8 @@ def scipy_rebin(aa, *args):
     and executes a python command.
 
     """
+    raise DeprecationWarning("This function is deprecated and likely broken")
+    """
     shape = aa.shape
     lenShape = len(shape)
     factor = np.asarray(shape)/np.asarray(args)
@@ -163,8 +165,8 @@ def scipy_rebin(aa, *args):
              ['args[%d],factor[%d],'%(i,i) for i in range(lenShape)] + \
              [')'] + ['.mean(%d)'%(i+1) for i in range(lenShape)]
     #print ''.join(evList)
-    pdb.set_trace()
     return eval(''.join(evList))
+    """
 
 
 def jsonify(obj, debug=False):
