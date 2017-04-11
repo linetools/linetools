@@ -251,7 +251,10 @@ class SpectralLine(object):
 
 
         # Update
-        self.wrest = self.data['wrest']*self.data['wrest'].unit
+        if isinstance(self.data, dict):
+            self.wrest = self.data['wrest']
+        else:
+            self.wrest = self.data['wrest']*self.data['wrest'].unit
         self.name = self.data['name']
 
         #
