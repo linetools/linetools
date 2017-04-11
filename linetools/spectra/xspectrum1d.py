@@ -806,7 +806,7 @@ class XSpectrum1D(object):
         return velo
 
     #  Box car smooth
-    def box_smooth(self, nbox, preserve=False, **kwargs):
+    def box_smooth(self, nbox, preserve=True, **kwargs):
         """ Box car smooth the spectrum
 
         Parameters
@@ -823,16 +823,22 @@ class XSpectrum1D(object):
         Returns
         -------
         A new XSpectrum1D instance of the smoothed spectrum
+          Has the same number of pixels as the original
         """
         if preserve:
             from astropy.convolution import convolve, Box1DKernel
             new_fx = convolve(self.flux, Box1DKernel(nbox), **kwargs)
             if self.sig_is_set:
-                new_sig = convolve(self.sig, Box1DKernel(nbox), **kwargs)
+                new_sig = convolve(self.sig, Box1DKernel(nbox), **kwargs) / np.sqrt(nbox)
             else:
                 new_sig = None
+            if self.co_is_set:
+                new_co = convolve(self.co, Box1DKernel(nbox), **kwargs)
+            else:
+                new_co = None
             new_wv = self.wavelength
         else:
+            raise DeprecationWarning("The scipy thing is busted..")
             # Truncate arrays as need be
             npix = len(self.flux)
             try:
@@ -842,7 +848,7 @@ class XSpectrum1D(object):
             orig_pix = np.arange(new_npix * nbox)
 
             # Rebin (mean)
-            new_wv = ltu.scipy_rebin(self.wavelength[orig_pix], new_npix)
+            new_wv = ltu.scipy_rebin(self.wavelength[orig_pix].value, new_npix)
             new_fx = ltu.scipy_rebin(self.flux[orig_pix], new_npix)
             if self.sig_is_set:
                 new_sig = ltu.scipy_rebin(
@@ -852,7 +858,7 @@ class XSpectrum1D(object):
 
         # Return
         return XSpectrum1D.from_tuple(
-            (new_wv, new_fx, new_sig), meta=self.meta.copy())
+            (new_wv, new_fx, new_sig, new_co), meta=self.meta.copy())
 
     def gauss_smooth(self, fwhm, **kwargs):
         """ Smooth a spectrum with a Gaussian
