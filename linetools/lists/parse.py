@@ -860,7 +860,7 @@ def update_fval(table, verbose=False):
         new_row['name'] = 'AsII 1355'
         new_row['f'].mask = True
         # Stack
-        table = Table(vstack([Table(table), new_row]))
+        table = vstack([table, new_row])
 
     return table
 
@@ -931,7 +931,7 @@ def _write_ref_ISM_table():
     hi = LineList('HI', use_ISM_table=False)
 
     # need a Table to write
-    tab = Table(ism._data.copy())
+    tab = ism._data.copy()
     tab.sort(('wrest'))
 
     # Using np.in1d doesn't work for some reason. Do it the long way

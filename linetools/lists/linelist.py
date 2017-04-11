@@ -812,14 +812,14 @@ class LineList(object):
                 aux = self.from_dict_to_table(aux)
 
             # convert to Table because Table does not like vstack
-            output = vstack([output, Table(aux)])
+            output = vstack([output, aux])
 
         # Deal with output formatting now
         # if len==1 return dict
         if len(output) == 1:
             return self.from_table_to_dict(output)
         else:
-            return Table(output)
+            return output
 
     def from_dict_to_table(self, a):
         """Converts dictionary `a` to its Table version.
