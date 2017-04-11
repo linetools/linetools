@@ -282,7 +282,7 @@ class SelectedLinesWidget(QWidget):
         nlin = len(self.lines['wrest'])
         for ii in range(nlin):
             self.lines_widget.addItem('{:s} :: {:.3f} :: {}'.format(self.lines['name'][ii],
-                                                         self.lines['wrest'][ii].value,
+                                                         self.lines['wrest'][ii],
                                                          self.lines['f'][ii]))
 
     def on_item_change(self): #,item):

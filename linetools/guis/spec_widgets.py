@@ -582,7 +582,7 @@ class ExamineSpecWidget(QWidget):
                                  (wvobs < self.psdict['x_minmax'][1]))[0]
                 for kk in range(len(gdwv)):
                     jj = gdwv[kk]
-                    wrest = self.llist[self.llist['List']].wrest[jj].value
+                    wrest = self.llist[self.llist['List']].wrest[jj]
                     lbl = self.llist[self.llist['List']].name[jj]
                     # Plot
                     self.ax.plot(wrest*np.array([z+1,z+1]), self.psdict['y_minmax'], 'b--')
@@ -777,6 +777,10 @@ U         : Indicate as a upper limit
         #
         wrest = self.llist[self.llist['List']].wrest
         wvobs = (1+self.z) * wrest
+
+        #QtCore.pyqtRemoveInputHook()
+        #pdb.set_trace()
+        #QtCore.pyqtRestoreInputHook()
         gdlin = np.where( (wvobs > wvmin) & (wvobs < wvmax) )[0]
         self.llist['show_line'] = gdlin
 

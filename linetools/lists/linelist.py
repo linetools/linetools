@@ -118,9 +118,9 @@ class LineList(object):
 
     @property
     def wrest(self):
-        """ Return the rest wavelengths
+        """ Return the rest wavelengths as a Quantity array
         """
-        return self._data['wrest']
+        return Quantity(self._data['wrest'])
 
     @property
     def Z(self):
