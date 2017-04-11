@@ -160,7 +160,7 @@ def radec_to_coord(radec):
     return coord
 
 
-def scipy_rebin(a, *args):
+def scipy_rebin(aa, *args):
     """ Simple script to rebin an input array to a new shape.
 
     Akin to IDL's routine Taken from scipy documentation:
@@ -169,14 +169,17 @@ def scipy_rebin(a, *args):
     and executes a python command.
 
     """
-    shape = a.shape
+    raise DeprecationWarning("This function is deprecated and likely broken")
+    """
+    shape = aa.shape
     lenShape = len(shape)
     factor = np.asarray(shape)/np.asarray(args)
-    evList = ['a.reshape('] + \
+    evList = ['aa.reshape('] + \
              ['args[%d],factor[%d],'%(i,i) for i in range(lenShape)] + \
              [')'] + ['.mean(%d)'%(i+1) for i in range(lenShape)]
     #print ''.join(evList)
     return eval(''.join(evList))
+    """
 
 
 def jsonify(obj, debug=False):
