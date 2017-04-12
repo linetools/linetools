@@ -94,7 +94,7 @@ def radec_to_coord(radec):
 
     Parameters
     ----------
-    radec : str or tuple or SkyCoord
+    radec : str or tuple or SkyCoord or list
         Examples:
         'J124511+144523',
         '124511+144523',
@@ -103,11 +103,14 @@ def radec_to_coord(radec):
         ('12 45 11', +14 45 23)
         ('12:45:11','14:45:23')  -- Assumes positive DEC
         (123.123, 12.1224) -- Assumed deg
+        [(123.123, 12.1224), (125.123, 32.1224)]
 
     Returns
     -------
     coord : SkyCoord
       Converts to astropy.coordinate.SkyCoord (as needed)
+      Returns a SkyCoord array if input is a list
+
 
     """
     from astropy.coordinates import SkyCoord
@@ -143,11 +146,21 @@ def radec_to_coord(radec):
                 raise ValueError("radec must include + or - for DEC")
             newradec = (radec[0:2]+':'+radec[2:4]+':'+radec[4:sign+3] +':'+radec[sign+3:sign+5]+':'+radec[sign+5:])
             coord = SkyCoord(newradec, frame='fk5', unit=(u.hourangle, u.deg))
+    elif isinstance(radec,list):
+        clist = []
+        for item in radec:
+            clist.append(radec_to_coord(item))
+        # Convert to SkyCoord array
+        ras = [ii.fk5.ra.value for ii in clist]
+        decs = [ii.fk5.dec.value for ii in clist]
+        return SkyCoord(ra=ras, dec=decs, unit='deg')
+    else:
+        raise IOError("Bad input type for radec")
     # Return
     return coord
 
 
-def scipy_rebin(a, *args):
+def scipy_rebin(aa, *args):
     """ Simple script to rebin an input array to a new shape.
 
     Akin to IDL's routine Taken from scipy documentation:
@@ -156,14 +169,17 @@ def scipy_rebin(a, *args):
     and executes a python command.
 
     """
-    shape = a.shape
+    raise DeprecationWarning("This function is deprecated and likely broken")
+    """
+    shape = aa.shape
     lenShape = len(shape)
     factor = np.asarray(shape)/np.asarray(args)
-    evList = ['a.reshape('] + \
+    evList = ['aa.reshape('] + \
              ['args[%d],factor[%d],'%(i,i) for i in range(lenShape)] + \
              [')'] + ['.mean(%d)'%(i+1) for i in range(lenShape)]
     #print ''.join(evList)
     return eval(''.join(evList))
+    """
 
 
 def jsonify(obj, debug=False):

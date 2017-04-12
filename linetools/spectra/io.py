@@ -2,6 +2,7 @@
 """
 
 from __future__ import print_function, absolute_import, division, unicode_literals
+from six import itervalues
 
 try: # Python 2 & 3 compatibility
     basestring
