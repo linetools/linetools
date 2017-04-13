@@ -813,7 +813,7 @@ class XSpectrum1D(object):
         ----------
         nbox: int
           Number of pixels to smooth over
-        preserve: bool (False)
+        preserve: bool, optional
           If True, perform a convolution to ensure the new spectrum
           has the same number of pixels as the original.
         **kwargs: dict
@@ -845,16 +845,20 @@ class XSpectrum1D(object):
                 new_npix = npix // nbox  # New division
             except ZeroDivisionError:
                 raise ZeroDivisionError('Dividing by zero..')
-            orig_pix = np.arange(new_npix * nbox)
+            orig_pix_trunc = np.arange(new_npix * nbox)
 
             # Rebin (mean)
-            new_wv = ltu.scipy_rebin(self.wavelength[orig_pix].value, new_npix)
-            new_fx = ltu.scipy_rebin(self.flux[orig_pix], new_npix)
+            new_wv = ltu.scipy_rebin(self.wavelength[orig_pix_trunc].value, new_npix)
+            new_fx = ltu.scipy_rebin(self.flux[orig_pix_trunc], new_npix)
             if self.sig_is_set:
                 new_sig = ltu.scipy_rebin(
-                    self.sig[orig_pix], new_npix) / np.sqrt(nbox)
+                    self.sig[orig_pix_trunc], new_npix) / np.sqrt(nbox)
             else:
                 new_sig = None
+            if self.co_is_set:
+                new_co = ltu.scipy_rebin(self.co[orig_pix_trunc], new_npix)
+            else:
+                new_co = None
 
         # Return
         return XSpectrum1D.from_tuple(
