@@ -181,9 +181,8 @@ class SelectLineWidget(QDialog):
         srt = np.argsort(lines['wrest'])
         for ii in srt:
             try:
-                s = '{:s} :: {:.2f} :: {:.3f}'.format(lines['name'][ii], lines['wrest'][ii],
-                                                      lines['f'][ii])
-            except ValueError:  # f-value masked (most likely)
+                s = '{:s} :: {:.2f} :: {:.3f}'.format(lines['name'][ii], lines['wrest'][ii], lines['f'][ii])
+            except (ValueError, TypeError):  # f-value masked (most likely)
                 s = '{:s} :: {:.2f}'.format(lines['name'][ii], lines['wrest'][ii])
             #  is there a column called 'redshift'? (only used in igmguesses for now)
             try:

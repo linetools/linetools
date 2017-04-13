@@ -855,6 +855,10 @@ class XSpectrum1D(object):
                     self.sig[orig_pix], new_npix) / np.sqrt(nbox)
             else:
                 new_sig = None
+            if self.co_is_set:
+                new_co = ltu.scipy_rebin(self.co[orig_pix], new_npix)
+            else:
+                new_co = None
 
         # Return
         return XSpectrum1D.from_tuple(
