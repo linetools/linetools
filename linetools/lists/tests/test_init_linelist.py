@@ -17,15 +17,13 @@ from linetools.lists import mk_sets as llmk
 
 def test_ism_read_source_catalogues():
     ism = LineList('ISM', use_ISM_table=False)
-    np.testing.assert_allclose(ism['HI 1215']['wrest'],
-                               1215.6700*u.AA, rtol=1e-7)
+    np.testing.assert_allclose(ism['HI 1215']['wrest'], 1215.6700*u.AA, rtol=1e-7)
 
 # ISM LineList
 def test_ism():
     ism = LineList('ISM')
     #
-    np.testing.assert_allclose(ism['HI 1215']['wrest'],
-                               1215.6700*u.AA, rtol=1e-7)
+    np.testing.assert_allclose(ism['HI 1215']['wrest'], 1215.6700*u.AA, rtol=1e-7)
 
 # Test update_fval
 def test_updfval():
@@ -49,7 +47,7 @@ def test_strong():
 def test_euv():
     euv = LineList('EUV')
     #
-    assert np.max(euv._data['wrest'].value) < 1000.
+    assert np.max(euv._data['wrest']) < 1000.
 
 # HI LineList
 def test_h1():
@@ -74,7 +72,7 @@ def test_co():
 def test_galx():
     galx = LineList('Galaxy')
     #
-    np.testing.assert_allclose(galx["Halpha"]['wrest'].value, 6564.613, rtol=1e-5)
+    np.testing.assert_allclose(galx["Halpha"]['wrest'], 6564.613*u.AA, rtol=1e-5)
 
 
 # Unknown lines
