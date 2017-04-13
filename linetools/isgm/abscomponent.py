@@ -196,7 +196,7 @@ class AbsComponent(object):
 
         # Name
         if (name is None) and (self.Zion != (-1, -1)):
-            iname = ions.ion_name(self.Zion, nspace=0)
+            iname = ions.ion_to_name(self.Zion, nspace=0)
             if self.Ej.value > 0:  # Need to put *'s in name
                 try:
                     iname += stars
@@ -319,7 +319,7 @@ class AbsComponent(object):
                 # init_name must be in self.attrib (this is a patch)
                 init_name = self.attrib['init_name']
             else:  # atoms
-                init_name = ions.ion_name(self.Zion, nspace=0)
+                init_name = ions.ion_to_name(self.Zion, nspace=0)
         transitions = llist.all_transitions(init_name)
 
         # unify output to be always QTable
@@ -596,7 +596,7 @@ class AbsComponent(object):
         b = b.to('km/s').value
 
         # Ion name
-        name = ions.ion_name(self.Zion, nspace=1)
+        name = ions.ion_to_name(self.Zion, nspace=1)
         name = name.replace(' ', '')
 
         # Deal with fix and tie parameters
@@ -663,7 +663,7 @@ class AbsComponent(object):
             nucleons = 2 * self.Zion[0]
 
         # name
-        name = ions.ion_name(self.Zion, nspace=1)
+        name = ions.ion_to_name(self.Zion, nspace=1)
         name = '{}'.format(nucleons)+name.replace(' ', '_')
 
         # Deal with fix and tie parameters
