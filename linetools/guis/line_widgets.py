@@ -126,6 +126,10 @@ class PlotLinesWidget(QWidget):
                 self.spec_widg.on_draw()
             except AttributeError:
                 return
+            except TypeError:
+                QtCore.pyqtRemoveInputHook()
+                pdb.set_trace()
+                QtCore.pyqtRestoreInputHook()
 
     def setz(self, text):
         self.zbox.setText(text)

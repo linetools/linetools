@@ -534,10 +534,9 @@ class ExamineSpecWidget(QWidget):
 
         if replot is True:
             self.ax.clear()
-            self.ax.plot(self.spec.wavelength, self.spec.flux,
-                'k-',drawstyle='steps-mid')
+            self.ax.plot(self.spec.wavelength.value, self.spec.flux.value, 'k-',drawstyle='steps-mid')
             try:
-                self.ax.plot(self.spec.wavelength, self.spec.sig, 'r:')
+                self.ax.plot(self.spec.wavelength.value, self.spec.sig.value, 'r:')
             except ValueError:
                 pass
             self.ax.set_xlabel('Wavelength (Ang)')
@@ -561,15 +560,15 @@ class ExamineSpecWidget(QWidget):
 
             # Continuum?
             if self.spec.co_is_set:
-                self.ax.plot(self.spec.wavelength, self.spec.co, color='pink')
+                self.ax.plot(self.spec.wavelength.value, self.spec.co.value, color='pink')
 
             # Model?
             if self.model is not None:
-                self.ax.plot(self.model.wavelength, self.model.flux,
+                self.ax.plot(self.model.wavelength.value, self.model.flux.value,
                     color='cyan')
                 if self.bad_model is not None:
-                    self.ax.scatter(self.model.wavelength[self.bad_model],
-                        self.model.flux[self.bad_model],  marker='o',
+                    self.ax.scatter(self.model.wavelength[self.bad_model].value,
+                        self.model.flux[self.bad_model].value,  marker='o',
                         color='red', s=3.)
 
 
@@ -582,7 +581,7 @@ class ExamineSpecWidget(QWidget):
                                  (wvobs < self.psdict['x_minmax'][1]))[0]
                 for kk in range(len(gdwv)):
                     jj = gdwv[kk]
-                    wrest = self.llist[self.llist['List']].wrest[jj]
+                    wrest = self.llist[self.llist['List']].wrest[jj].value
                     lbl = self.llist[self.llist['List']].name[jj]
                     # Plot
                     self.ax.plot(wrest*np.array([z+1,z+1]), self.psdict['y_minmax'], 'b--')
@@ -611,8 +610,8 @@ class ExamineSpecWidget(QWidget):
                         # Paint spectrum red
                         wvlim = wvobs[jj]*(1 + lines[jj].limits.vlim/const.c.to('km/s'))
                         pix = np.where( (self.spec.wavelength > wvlim[0]) & (self.spec.wavelength < wvlim[1]))[0]
-                        self.ax.plot(self.spec.wavelength[pix], self.spec.flux[pix], '-',drawstyle='steps-mid',
-                                     color=clrs[ii])
+                        self.ax.plot(self.spec.wavelength[pix].value, self.spec.flux[pix].value,
+                                     '-',drawstyle='steps-mid', color=clrs[ii])
                         # Label
                         lbl = lines[jj].analy['name']+' z={:g}'.format(abs_sys.zabs)
                         self.ax.text(wvobs[jj].value, ylbl, lbl, color=clrs[ii], rotation=90., size='x-small')
@@ -628,7 +627,7 @@ class ExamineSpecWidget(QWidget):
                 model = self.lya_line.flux
                 if self.spec.co_is_set and not self.norm:
                     model *= self.spec.co
-                self.ax.plot(self.spec.wavelength, model, color='green')
+                self.ax.plot(self.spec.wavelength.value, model.value, color='green')
 
         # Reset window limits
         self.ax.set_xlim(self.psdict['x_minmax'])
@@ -1054,7 +1053,7 @@ U         : Indicate as a upper limit
                 velo = (self.spec.wavelength/wvobs - 1.)*const.c.to('km/s')
 
                 # Plot
-                self.ax.plot(velo, self.spec.flux, 'k-',drawstyle='steps-mid')
+                self.ax.plot(velo.value, self.spec.flux.value, 'k-',drawstyle='steps-mid')
 
                 # GID for referencing
                 self.ax.set_gid(wrest)
@@ -1155,8 +1154,7 @@ U         : Indicate as a upper limit
                         clr = 'red'
 
                     pix = np.where( (velo > vlim[0]) & (velo < vlim[1]))[0]
-                    self.ax.plot(velo[pix], self.spec.flux[pix], '-',
-                                 drawstyle='steps-mid', color=clr)
+                    self.ax.plot(velo[pix].value, self.spec.flux[pix].value, '-', drawstyle='steps-mid', color=clr)
         # Draw
         self.canvas.draw()
 
