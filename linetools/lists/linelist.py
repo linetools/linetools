@@ -827,14 +827,14 @@ class LineList(object):
         """Wrapper to the utility
         This method will be DEPRECATED
         """
-        warnings.warn("This method will be deprecated")
+        warnings.warn("This dict_to_table method will be deprecated")
         return lilu.from_dict_to_table(a)
 
     def from_table_to_dict(self, tab):
         """Wrapper to the utility
         This method will be DEPRECATED
         """
-        warnings.warn("This method will be deprecated")
+        warnings.warn("This from_table_to_dict will be deprecated")
         return lilu.from_table_to_dict(tab)
 
     def __getitem__(self, k, tol=1e-3*u.AA):
