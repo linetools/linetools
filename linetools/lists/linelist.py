@@ -25,6 +25,7 @@ lt_path = imp.find_module('linetools')[1]
 CACHE = {'full_table': {}, 'data': {}}
 
 from linetools.lists import parse as lilp
+from linetools.lists import utils as lilu
 
 # TODO
 # Do something about transitions that are both in Galaxy and ISM
@@ -582,6 +583,7 @@ class LineList(object):
         -------
         dict or Table
             dict if only 1 transition found, otherwise Table.
+            If dict, it will have units!
 
         """
 
@@ -698,7 +700,7 @@ class LineList(object):
 
         data = self.all_transitions(line)
         # condition to be within wvrange
-        cond = (data['wrest'] >= wvlims[0].to('AA').value) & (data['wrest'] <= wvlims[1].to('AA').value)
+        cond = (Quantity(data['wrest']) >= wvlims[0]) & (Quantity(data['wrest']) <= wvlims[1])
         if np.sum(cond) == 0:
             if verbose:
                 print(
@@ -822,63 +824,18 @@ class LineList(object):
             return output
 
     def from_dict_to_table(self, a):
-        """Converts dictionary `a` to its Table version.
-
-        Parameters
-        ----------
-        a : dict
-            The input dictionary to be converted to a
-            Table. The resulting Table will have the
-            same keys as self._data
-
-        Returns
-        -------
-        A Table of 1 Row, with filled with the data from
-        the input dictionary.
-
+        """Wrapper to the utility
+        This method will be DEPRECATED
         """
-
-        if isinstance(a, dict):
-            pass
-        else:
-            raise ValueError('Input has to be a dictionary.')
-
-        keys = self._data.keys()
-
-        # Create a Table with same shape as self._data
-        tab = Table(data=self._data[0])
-        # re-write the value elements
-        for key in keys:
-            tab[0][key] = a[key]
-        return tab
+        warnings.warn("This dict_to_table method will be deprecated")
+        return lilu.from_dict_to_table(a)
 
     def from_table_to_dict(self, tab):
-        """Converts Table `tab` to its dictionary version.
-        An error is raised if len(tab) > 1.
-
-        Parameters
-        ----------
-        tab : QTable or Table
-            The table to be converted to a dictionary.
-            It has to be of length == 1!
-
-        Returns
-        -------
-        A dictionary with the same keys and values of the
-        input table.
-
+        """Wrapper to the utility
+        This method will be DEPRECATED
         """
-        from astropy.table import QTable
-
-        if not isinstance(tab, (QTable, Table)):
-            raise ValueError('Input has to be QTable or Table.')
-        elif len(tab) != 1:
-            raise ValueError('Input has to be of len(tab) == 1.')
-
-        a_dict = dict()
-        for key in tab.keys():
-            a_dict[key] = tab[0][key]
-        return a_dict
+        warnings.warn("This from_table_to_dict will be deprecated")
+        return lilu.from_table_to_dict(tab)
 
     def __getitem__(self, k, tol=1e-3*u.AA):
         """ Passback data as a dict (from the table) for the input line
