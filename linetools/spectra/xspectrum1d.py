@@ -565,7 +565,11 @@ class XSpectrum1D(object):
                 else:
                     raise ValueError('normalize: Continuum needs to be longer!')
             else:
-                raise ValueError('normalize: Continuum needs to be same length as flux array')
+                try: 
+                    gdp = ~self.data['co'][self.select].mask
+                    self.data['co'][self.select][gdp] = co[gdp]
+                except ValueError:
+                    raise ValueError('normalize: Continuum needs to be same length as flux array')
         else:
             self.co = co
         self.normed = True
