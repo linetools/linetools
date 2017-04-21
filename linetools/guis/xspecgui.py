@@ -19,7 +19,8 @@ class XSpecGui(QMainWindow):
     """ GUI to replace XIDL x_specplot (which simulated a GUI by T. Barlow)
     """
     def __init__(self, ispec, parent=None, zsys=None, norm=None, exten=None,
-                 rsp_kwargs={}, unit_test=False, **kwargs):
+                 rsp_kwargs={}, unit_test=False, screen_scale=1.,
+                 **kwargs):
         QMainWindow.__init__(self, parent)
         """
         ispec = str, XSpectrum1D or tuple of arrays
@@ -32,6 +33,8 @@ class XSpecGui(QMainWindow):
           extension for the spectrum in multi-extension FITS file
         norm : bool, optional
           True if the spectrum is normalized
+        screen_scale : float, optional
+          Scale the default sizes for the gui size
         """
         #reload(ltgl)
         #reload(ltgsp)
@@ -39,6 +42,8 @@ class XSpecGui(QMainWindow):
         #QtCore.pyqtRemoveInputHook()
         #xdb.set_trace()
         #QtCore.pyqtRestoreInputHook()
+
+        self.scale = screen_scale
 
         # Needed to avoid crash in large spectral files
         rcParams['agg.path.chunksize'] = 20000
@@ -51,21 +56,22 @@ class XSpecGui(QMainWindow):
         self.create_status_bar()
 
         # Grab the pieces and tie together
-        self.pltline_widg = ltgl.PlotLinesWidget(status=self.statusBar, init_z=zsys)
-        self.pltline_widg.setMaximumWidth(300)
+        self.pltline_widg = ltgl.PlotLinesWidget(status=self.statusBar,
+        init_z=zsys, screen_scale=self.scale)
+        self.pltline_widg.setMaximumWidth(300*self.scale)
 
         # Hook the spec widget to Plot Line
         self.spec_widg = ltgsp.ExamineSpecWidget(ispec,status=self.statusBar,
-                                                 parent=self,
-                                                llist=self.pltline_widg.llist,
+                                                 parent=self, llist=self.pltline_widg.llist,
                                                 zsys=zsys, norm=norm, exten=exten,
+                                                screen_scale=self.scale,
                                                  rsp_kwargs=rsp_kwargs, **kwargs)
         self.pltline_widg.spec_widg = self.spec_widg
 
         self.spec_widg.canvas.mpl_connect('button_press_event', self.on_click)
 
         extras = QWidget()
-        extras.setMaximumWidth(130)
+        extras.setMaximumWidth(130*self.scale)
         vbox = QVBoxLayout()
         qbtn = QPushButton(self)
         qbtn.setText('Quit')
@@ -98,7 +104,8 @@ class XSpecGui(QMainWindow):
             if self.pltline_widg.llist['List'] is None:
                 return
             self.select_line_widg = ltgl.SelectLineWidget(
-                self.pltline_widg.llist[self.pltline_widg.llist['List']]._data)
+                self.pltline_widg.llist[self.pltline_widg.llist['List']]._data,
+                scale=self.scale)
             self.select_line_widg.exec_()
             line = self.select_line_widg.line
             if line.strip() == 'None':
