@@ -999,7 +999,7 @@ U         : Indicate as a upper limit
     # Click of main mouse button
     def on_click(self,event):
         try:
-            print('button={:d}, x={:f}, y={:f}, xdata={:f}, ydata={:f}'.format(
+            print('button={}, x={}, y={}, xdata={}, ydata={}'.format(
                 event.button, event.x, event.y, event.xdata, event.ydata))
         except ValueError:
             return
