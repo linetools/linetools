@@ -115,7 +115,8 @@ class XSpecGui(QMainWindow):
             #QtCore.pyqtRemoveInputHook()
             #pdb.set_trace()
             #QtCore.pyqtRestoreInputHook()
-            wrest = Quantity(float(spltw[0]), unit=u.AA) # spltw[1])  [A bit risky!]
+            wrest = Quantity(float(spltw[0]), unit=self.pltline_widg.llist[
+                self.pltline_widg.llist['List']]._data['wrest'].unit) # spltw[1])  [A bit risky!]
             z = event.xdata/wrest.value - 1.
             self.pltline_widg.llist['z'] = z
             self.statusBar().showMessage('z = {:f}'.format(z))
