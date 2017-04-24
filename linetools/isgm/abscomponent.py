@@ -70,9 +70,15 @@ class AbsComponent(object):
         Parameters
         ----------
         abslines : list 
-          List of AbsLine objects
+            List of AbsLine objects
         stars : str, optional
-          Asterisks to append to the ion name (e.g. fine-structure, CII*)
+            Asterisks to append to the ion name (e.g. fine-structure, CII*)
+        reliability : str, optional
+            Reliability of AbsComponent
+                'a' - reliable
+                'b' - possible
+                'c' - uncertain
+                'none' - not defined (default)
         """
         # Check
         if not isinstance(abslines, list):
@@ -97,7 +103,7 @@ class AbsComponent(object):
     def from_component(cls, component, **kwargs):
         """ Instantiate from an AbsComponent object
 
-        Uses RA/DEC, Zion, Ej, A, z, vlim
+        Uses coord, Zion, Ej, A, zcomp, vlim, name, reliability, comment
 
         Parameters
         ----------
@@ -113,7 +119,8 @@ class AbsComponent(object):
             raise IOError('Need an AbsComponent object')
         # Return
         return cls(component.coord, component.Zion, component.zcomp, component.vlim, Ej=component.Ej,
-                   A=component.A, name=component.name, reliability=component.reliability, **kwargs)
+                   A=component.A, name=component.name, reliability=component.reliability, comment= component.comment,
+                   **kwargs)
 
     @classmethod
     def from_dict(cls, idict, coord=None, **kwargs):
