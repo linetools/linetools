@@ -3,13 +3,17 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import sys
+import pdb
+
 from PyQt5 import QtGui
 from PyQt5.QtWidgets import QWidget, QLabel, QPushButton, QMainWindow
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
+from PyQt5 import QtCore
 
 from matplotlib import rcParams
 
 from astropy.units import Quantity
+from astropy import units as u
 
 from linetools.guis import utils as ltgu
 from linetools.guis import line_widgets as ltgl
@@ -95,6 +99,8 @@ class XSpecGui(QMainWindow):
         """ Over-loads click events
         """
         if event.button == 3: # Set redshift
+            if event.xdata is None:  # Mac bug [I think]
+                return
             if self.pltline_widg.llist['List'] is None:
                 return
             self.select_line_widg = ltgl.SelectLineWidget(
@@ -106,7 +112,10 @@ class XSpecGui(QMainWindow):
             #
             quant = line.split('::')[1].lstrip()
             spltw = quant.split(' ')
-            wrest = Quantity(float(spltw[0]), unit=spltw[1])
+            #QtCore.pyqtRemoveInputHook()
+            #pdb.set_trace()
+            #QtCore.pyqtRestoreInputHook()
+            wrest = Quantity(float(spltw[0]), unit=u.AA) # spltw[1])  [A bit risky!]
             z = event.xdata/wrest.value - 1.
             self.pltline_widg.llist['z'] = z
             self.statusBar().showMessage('z = {:f}'.format(z))
