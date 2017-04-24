@@ -16,6 +16,11 @@ import astropy.units as u
 import matplotlib.transforms as mtran
 import matplotlib.pyplot as plt
 
+try:  # Python 3
+    input = raw_input
+except NameError:
+    pass
+
 
 def local_median(wa, fl, er, x, npix=10, default=None):
     """ find the median flux value at x using +/- npix pixels.
@@ -241,7 +246,7 @@ q        : quit
         self.anchor = anchor
 
         if os.path.lexists('./_knots.jsn'):
-            c = raw_input('knots file exists, use this? (y) ')
+            c = input('knots file exists, use this? (y) ')
             if c.lower() != 'n':
                 contpoints = loadjson('./_knots.jsn')
         # need the float call here to make sure values are all float64
