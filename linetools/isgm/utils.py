@@ -873,7 +873,7 @@ def joebvp_from_components(comp_list, specfile, outfile):
     f = open(outfile, 'w')
 
     # Print header
-    s = 'specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|trans\n'
+    s = 'specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|trans|reliability\n'
     f.write(s)
 
     # Components

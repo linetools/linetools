@@ -229,6 +229,7 @@ def test_complist_from_table_and_table_from_complist():
     tab['DEC'] = [-0.8]*len(tab) * u.deg
     tab['vmin'] = [-50.] *len(tab) * u.km / u.s
     tab['vmax'] = [100.] *len(tab) * u.km / u.s
+    tab['reliability'] = ['a', 'b', 'b', 'none', 'a']
     complist = ltiu.complist_from_table(tab)
     assert np.sum(complist[0].vlim == [ -50., 100.] * u.km / u.s) == 2
     tab2 = ltiu.table_from_complist(complist)
@@ -250,6 +251,7 @@ def test_complist_from_table_and_table_from_complist():
     comp = complist[-1]
     assert comp.comment == 'This is a longer comment with symbols &*^%$'
     assert tab2['comment'][-1] == comp.comment
+    assert tab2['reliability'][-1] == comp.reliability
 
     # other naming
     tab['name'] = tab['ion_name']
@@ -403,7 +405,8 @@ def test_repr_joebvp():
                 'test.fits|1025.72220|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI# Something\n'
 
 
-def test_complist_to_joebvp():
+# def test_complist_to_joebvp():
+if 1:
     # will write a file in directory ./files/
     abscomp, HIlines = mk_comp('HI', b=15*u.km/u.s, use_rand=False)
     comp_list = [abscomp, abscomp]
