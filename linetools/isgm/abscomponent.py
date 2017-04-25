@@ -142,11 +142,12 @@ class AbsComponent(object):
         #slf = cls(radec, tuple(idict['Zion']), idict['zcomp'], Quantity(idict['vlim'], unit='km/s'),
 
         # backwards compatibility
-        reliability = 'none'
         for key in ['reliability', 'Reliability']:
             if key in idict.keys():
                 reliability = idict[key]
                 break
+            else:
+                reliability = 'none'
 
         # init
         slf = cls(radec, tuple(idict['Zion']), idict['zcomp'], idict['vlim']*u.km/u.s,
@@ -212,7 +213,7 @@ class AbsComponent(object):
         # Optional
         self.A = A
         self.Ej = Ej
-        self.comment = str(comment)
+        self.comment = comment
         if Ntup is not None:
             self.flag_N = Ntup[0]
             self.logN = Ntup[1]

@@ -405,8 +405,7 @@ def test_repr_joebvp():
                 'test.fits|1025.72220|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI# Something\n'
 
 
-# def test_complist_to_joebvp():
-if 1:
+def test_complist_to_joebvp():
     # will write a file in directory ./files/
     abscomp, HIlines = mk_comp('HI', b=15*u.km/u.s, use_rand=False)
     comp_list = [abscomp, abscomp]
