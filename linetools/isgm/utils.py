@@ -384,6 +384,7 @@ def table_from_complist(complist):
     tab['flag_logN'] = [comp.flag_N for comp in complist]
     tab['comment'] = [comp.comment for comp in complist]
     tab['name'] = [comp.name for comp in complist]
+    tab['reliability'] = [comp.reliability for comp in complist]
 
     return tab
 
