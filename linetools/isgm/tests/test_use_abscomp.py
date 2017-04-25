@@ -229,6 +229,7 @@ def test_complist_from_table_and_table_from_complist():
     tab['DEC'] = [-0.8]*len(tab) * u.deg
     tab['vmin'] = [-50.] *len(tab) * u.km / u.s
     tab['vmax'] = [100.] *len(tab) * u.km / u.s
+    tab['reliability'] = ['a', 'b', 'b', 'none', 'a']
     complist = ltiu.complist_from_table(tab)
     assert np.sum(complist[0].vlim == [ -50., 100.] * u.km / u.s) == 2
     tab2 = ltiu.table_from_complist(complist)
@@ -250,6 +251,7 @@ def test_complist_from_table_and_table_from_complist():
     comp = complist[-1]
     assert comp.comment == 'This is a longer comment with symbols &*^%$'
     assert tab2['comment'][-1] == comp.comment
+    assert tab2['reliability'][-1] == comp.reliability
 
     # other naming
     tab['name'] = tab['ion_name']
@@ -389,18 +391,18 @@ def test_repr_joebvp():
     # test with b=0, should be replaced by b_default
     abscomp, HIlines = mk_comp('HI', b=0*u.km/u.s, use_rand=False)
     s = abscomp.repr_joebvp('test.fits', b_default=3.3*u.km/u.s)
-    assert s == 'test.fits|1215.67000|2.92939000|13.3000|3.3000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|HI\n' \
-                'test.fits|1025.72220|2.92939000|13.3000|3.3000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI\n'
+    assert s == 'test.fits|1215.67000|2.92939000|13.3000|3.3000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|HI|none\n' \
+                'test.fits|1025.72220|2.92939000|13.3000|3.3000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI|none\n'
     # test with b != 0
     abscomp, HIlines = mk_comp('HI', b=15*u.km/u.s, use_rand=False)
     s = abscomp.repr_joebvp('test.fits', b_default=3.3*u.km/u.s)
-    assert s == 'test.fits|1215.67000|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|HI\n' \
-                'test.fits|1025.72220|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI\n'
+    assert s == 'test.fits|1215.67000|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|HI|none\n' \
+                'test.fits|1025.72220|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI|none\n'
     # test with comment
     abscomp.comment = 'Something'
     s = abscomp.repr_joebvp('test.fits')
-    assert s == 'test.fits|1215.67000|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|HI# Something\n' \
-                'test.fits|1025.72220|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI# Something\n'
+    assert s == 'test.fits|1215.67000|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|HI|none# Something\n' \
+                'test.fits|1025.72220|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI|none# Something\n'
 
 
 def test_complist_to_joebvp():

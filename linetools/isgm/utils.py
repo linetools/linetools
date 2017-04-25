@@ -384,6 +384,7 @@ def table_from_complist(complist):
     tab['flag_logN'] = [comp.flag_N for comp in complist]
     tab['comment'] = [comp.comment for comp in complist]
     tab['name'] = [comp.name for comp in complist]
+    tab['reliability'] = [comp.reliability for comp in complist]
 
     return tab
 
@@ -873,7 +874,7 @@ def joebvp_from_components(comp_list, specfile, outfile):
     f = open(outfile, 'w')
 
     # Print header
-    s = 'specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|trans\n'
+    s = 'specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|trans|reliability\n'
     f.write(s)
 
     # Components
