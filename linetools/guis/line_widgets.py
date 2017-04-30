@@ -26,7 +26,7 @@ class PlotLinesWidget(QWidget):
     """ Widget to set up spectral lines for plotting
     """
     def __init__(self, parent=None, status=None, init_llist=None, init_z=None,
-                 edit_z=True):
+                 edit_z=True, screen_scale=1.):
         """
         Parameters
         ----------
@@ -37,6 +37,8 @@ class PlotLinesWidget(QWidget):
           Initial redshift
         edit_z : bool, optional
           Allow z to be editable
+        screen_scale : float, optional
+          Scale GUI dimensions
 
         Returns
         -------
@@ -49,6 +51,7 @@ class PlotLinesWidget(QWidget):
             self.statusBar = status
         if init_z is None:
             init_z = 0.
+        self.scale = screen_scale
 
         # Create a dialog window for redshift
         if edit_z:
@@ -56,7 +59,7 @@ class PlotLinesWidget(QWidget):
             self.zbox = QLineEdit()
             self.zbox.z_frmt = '{:.7f}'
             self.zbox.setText(self.zbox.z_frmt.format(init_z))
-            self.zbox.setMinimumWidth(50)
+            self.zbox.setMinimumWidth(50*self.scale)
             self.zbox.textChanged[str].connect(self.setz)
             #self.connect(self.zbox, QtCore.SIGNAL('editingFinished ()'), self.setz)
         else:
@@ -73,7 +76,7 @@ class PlotLinesWidget(QWidget):
             self.llist_widget.addItem(ilist)
         self.llist_widget.setCurrentRow(0)
         self.llist_widget.currentItemChanged.connect(self.on_list_change)
-        self.llist_widget.setMaximumHeight(100)
+        self.llist_widget.setMaximumHeight(100*self.scale)
 
         # Input line list?
         if init_llist is None:
@@ -105,7 +108,7 @@ class PlotLinesWidget(QWidget):
         vbox.addWidget(self.llist_widget)
 
         self.setLayout(vbox)
-        self.setMaximumHeight(200)
+        self.setMaximumHeight(200*self.scale)
 
     def on_list_change(self,curr,prev):
         llist = str(curr.text())
@@ -163,7 +166,7 @@ class SelectLineWidget(QDialog):
 
     15-Dec-2014 by JXP
     """
-    def __init__(self, inp, parent=None):
+    def __init__(self, inp, parent=None, scale=1.):
         super(SelectLineWidget, self).__init__(parent)
 
         # Line list Table
@@ -172,7 +175,7 @@ class SelectLineWidget(QDialog):
         else:
             raise ValueError('SelectLineWidget: Wrong type of input')
 
-        self.resize(250, 800)
+        self.resize(250*scale, 800*scale)
 
         # Create the line list
         line_label = QLabel('Lines:')

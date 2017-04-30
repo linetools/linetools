@@ -113,7 +113,8 @@ class ExamineSpecWidget(QWidget):
     def __init__(self, ispec, parent=None, status=None, llist=None,
                  abs_sys=None, norm=True, second_file=None, zsys=None,
                  key_events=True, vlines=None, plotzero=False, exten=None,
-                 xlim=None, ylim=None, rsp_kwargs=None, air=False):
+                 xlim=None, ylim=None, rsp_kwargs=None, air=False,
+                 screen_scale=1.):
         """
         Parameters
         ----------
@@ -137,6 +138,8 @@ class ExamineSpecWidget(QWidget):
           Initial y plotting limits
         air : bool, optional
           Spectrum is wavelength calibrated `in air`
+        screen_scale : float, optional
+          Scale GUI sizes by this factor
         """
         super(ExamineSpecWidget, self).__init__(parent)
 
@@ -177,6 +180,7 @@ class ExamineSpecWidget(QWidget):
         self.adict = {}  # Dict for analysis
         self.init_spec(xlim=xlim, ylim=ylim)
         self.xval = None  # Used with velplt
+        self.scale = screen_scale
 
         # Status Bar?
         if not status is None:
@@ -195,7 +199,7 @@ class ExamineSpecWidget(QWidget):
         # Create the mpl Figure and FigCanvas objects.
         # 5x4 inches, 100 dots-per-inch
         #
-        self.dpi = 150  # 150
+        self.dpi = 150 * self.scale # 150
         self.fig = Figure((8.0, 4.0), dpi=self.dpi)
         self.canvas = FigureCanvas(self.fig)
         self.canvas.setParent(self)
@@ -668,7 +672,7 @@ class VelPlotWidget(QWidget):
         19-Dec-2014 by JXP
     """
     def __init__(self, ispec, z, abs_lines=None, parent=None, llist=None, norm=True,
-                 vmnx=[-300., 300.]*u.km/u.s):
+                 vmnx=[-300., 300.]*u.km/u.s, fsize=6.):
         '''
         spec : XSpectrum1D
         z : float
@@ -716,6 +720,7 @@ U         : Indicate as a upper limit
         self.z = z
         self.vmnx = vmnx
         self.norm = norm
+        self.fsize = fsize
 
         # Abs Lines
         if abs_lines is None:
@@ -1101,7 +1106,7 @@ U         : Indicate as a upper limit
                 # Fonts
                 for item in ([self.ax.title, self.ax.xaxis.label, self.ax.yaxis.label] +
                          self.ax.get_xticklabels() + self.ax.get_yticklabels()):
-                    item.set_fontsize(6)
+                    item.set_fontsize(self.fsize)  # 6 is good on 2000 pixel machines
 
 
                 clr='black'

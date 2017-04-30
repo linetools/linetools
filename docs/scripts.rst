@@ -26,10 +26,29 @@ For example::
 You can explore the data, perform simple analysis (e.g. EW
 measurements) and more. See the Notebook for more.
 
-.. warning::
- 
-  The xspec gui is still in an experimental stage and some aspects
-  might not work as expected.
+Here is the full usage::
+
+    usage: lt_xspec [-h] [-z ZSYS] [--norm] [--air] [--exten EXTEN]
+                    [--splice SPLICE] [--scale SCALE]
+                    file
+
+    Parser for lt_xspec v1.2; Note: Extra arguments are passed to read_spec (e.g.
+    --flux_tag=FX)
+
+    positional arguments:
+      file                  Spectral file; specify extension by appending #exten#
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -z ZSYS, --zsys ZSYS  System Redshift
+      --norm                Show spectrum continuum normalized (if continuum is
+                            provided)
+      --air                 Convert input spectrum wavelengths from air to vacuum
+      --exten EXTEN         FITS extension
+      --splice SPLICE       Splice with the input file; extension convention
+                            applies
+      --scale SCALE         Scale factor for GUI size [1. is default]
+
 
 
 lt_plot
