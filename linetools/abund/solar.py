@@ -13,7 +13,6 @@ import numpy as np
 import numbers
 import imp
 
-from astropy import constants as const
 from astropy.io import ascii
 from astropy.utils.misc import isiterable
 
