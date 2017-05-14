@@ -19,7 +19,7 @@ def parser(options=None):
     import argparse
     # Parse
     parser = argparse.ArgumentParser(
-        description='Print spectral line data of a line or lines.')
+        description='Print Solar abundance data for an element or all elements.')
     parser.add_argument("inp", nargs='?', default=None, help="Elm (e.g. H, Fe)")
     parser.add_argument("-a", "--all", default=False, action='store_true', help="Print all values")
     parser.add_argument("--sortZ", default=False, action='store_true', help="Sort on Atomic Number")
