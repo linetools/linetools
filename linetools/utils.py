@@ -586,8 +586,10 @@ def overlapping_chunks(chunk1, chunk2):
 
 def is_local_minima(a):
     """For a given 1-d array a, it returns True for local minima
-    and False otherwise. Both edges of array are always False by
-    definition.
+    and False otherwise. A local minima corresponds to an element
+    in the array whose value is strictly lower than the values of
+    its two immediate neighbours. Both edges of array are always
+    False by definition.
 
     Parameters
     ----------
@@ -596,26 +598,29 @@ def is_local_minima(a):
 
     Returns
     -------
-    boolean, whether the value is a local minima
+    answer : boolean
+        Whether a value in array `a` is a local minima
 
     Notes
     -----
     See also is_local_maxima()
 
     """
-    a = np.array(a)
-    mask = np.zeros_like(a).astype(bool)
-    for i in range(1, len(a) - 1):  # note that the two edges are always False by definition
-        cond = (a[i] < a[i - 1]) and (a[i] < a[i + 1])
-        if cond: # local minima
-            mask[i] = True
-    return mask
+    a_r = np.roll(a, 1)
+    a_l = np.roll(a, -1)
+    is_lmin = (a < a_r) & (a < a_l)
+    # fill edges with False
+    is_lmin[0] = False
+    is_lmin[-1] = False
+    return is_lmin
 
 
 def is_local_maxima(a):
     """For a given 1-d array a, it returns True for local maxima
-    and False otherwise. Both edges of array are always False by
-    definition.
+    and False otherwise. A local maxima corresponds to an element
+    in the array whose value is strictly larger than the values of
+    its two immediate neighbours. Both edges of array are
+    always False by definition.
 
     Parameters
     ----------
@@ -624,17 +629,18 @@ def is_local_maxima(a):
 
     Returns
     -------
-    boolean, whether the value is a local maxima
+    answer : boolean
+        Whether a value in array `a` is a local maxima
 
     Notes
     -----
     See also is_local_minima()
 
     """
-    a = np.array(a)
-    mask = np.zeros_like(a).astype(bool)
-    for i in range(1, len(a) - 1):  # note that the two edges are always False by definition
-        cond = (a[i] > a[i - 1]) and (a[i] > a[i + 1])
-        if cond: # local maxima
-            mask[i] = True
-    return mask
+    a_r = np.roll(a, 1)
+    a_l = np.roll(a, -1)
+    is_lmax = (a > a_r) & (a > a_l)
+    # fill edges with False
+    is_lmax[0] = False
+    is_lmax[-1] = False
+    return is_lmax
