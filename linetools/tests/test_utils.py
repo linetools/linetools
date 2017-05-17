@@ -146,6 +146,7 @@ def test_overlapping_chunks():
     except ValueError:
         pass
 
+
 def test_is_local_minima_maxima():
     a = np.ones(100)
     #adding local minima/maxima by hand
