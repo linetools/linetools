@@ -606,8 +606,8 @@ def is_local_minima(a):
     See also is_local_maxima()
 
     """
-    a_r = np.roll(a, 1)
-    a_l = np.roll(a, -1)
+    a_l = np.roll(a, 1)
+    a_r = np.roll(a, -1)
     is_lmin = (a < a_r) & (a < a_l)
     # fill edges with False
     is_lmin[0] = False
@@ -637,8 +637,8 @@ def is_local_maxima(a):
     See also is_local_minima()
 
     """
-    a_r = np.roll(a, 1)
-    a_l = np.roll(a, -1)
+    a_l = np.roll(a, 1)
+    a_r = np.roll(a, -1)
     is_lmax = (a > a_r) & (a > a_l)
     # fill edges with False
     is_lmax[0] = False
