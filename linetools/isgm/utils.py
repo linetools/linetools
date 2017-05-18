@@ -767,7 +767,7 @@ def _whichgroupscontainmember(groups,member):
             matches.append(i)
     return matches
 
-def group_coincident_compoments_old(comp_list, output_type='list'):
+def group_coincident_components_old(comp_list, output_type='list'):
     """For a given input list of components, this function
     groups together components that are coincident to each other
     (including by transitivity), and returns them as a list (default)
