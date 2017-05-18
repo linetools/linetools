@@ -145,3 +145,17 @@ def test_overlapping_chunks():
         f = ltu.overlapping_chunks((1, 2, 3, 4), (4, 5, 3, 6))
     except ValueError:
         pass
+
+
+def test_is_local_minima_maxima():
+    a = np.ones(100)
+    #adding local minima/maxima by hand
+    ind_lmin = [14, 50, 75]  # these should be in increasing order for the assert later
+    ind_lmax = [25, 60, 90]
+    a[ind_lmin] = 0.  # local minima
+    a[ind_lmax] = 2.  # local maxima
+    a_lmin = ltu.is_local_minima(a)
+    a_lmax = ltu.is_local_maxima(a)
+
+    assert all(np.where(a_lmin)[0] == ind_lmin)
+    assert all(np.where(a_lmax)[0] == ind_lmax)

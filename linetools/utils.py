@@ -582,3 +582,65 @@ def overlapping_chunks(chunk1, chunk2):
         return False
     else:  # overlap exists
         return True
+
+
+def is_local_minima(a):
+    """For a given 1-d array a, it returns True for local minima
+    and False otherwise. A local minima corresponds to an element
+    in the array whose value is strictly lower than the values of
+    its two immediate neighbours. Both edges of array are always
+    False by definition.
+
+    Parameters
+    ----------
+    a : list, 1-d np.array
+        An array of values
+
+    Returns
+    -------
+    answer : boolean
+        Whether a value in array `a` is a local minima
+
+    Notes
+    -----
+    See also is_local_maxima()
+
+    """
+    a_l = np.roll(a, 1)
+    a_r = np.roll(a, -1)
+    is_lmin = (a < a_r) & (a < a_l)
+    # fill edges with False
+    is_lmin[0] = False
+    is_lmin[-1] = False
+    return is_lmin
+
+
+def is_local_maxima(a):
+    """For a given 1-d array a, it returns True for local maxima
+    and False otherwise. A local maxima corresponds to an element
+    in the array whose value is strictly larger than the values of
+    its two immediate neighbours. Both edges of array are
+    always False by definition.
+
+    Parameters
+    ----------
+    a : list, 1-d np.array
+        An array of values
+
+    Returns
+    -------
+    answer : boolean
+        Whether a value in array `a` is a local maxima
+
+    Notes
+    -----
+    See also is_local_minima()
+
+    """
+    a_l = np.roll(a, 1)
+    a_r = np.roll(a, -1)
+    is_lmax = (a > a_r) & (a > a_l)
+    # fill edges with False
+    is_lmax[0] = False
+    is_lmax[-1] = False
+    return is_lmax
