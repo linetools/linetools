@@ -749,7 +749,7 @@ class AbsComponent(object):
             May contain multiple "\n" (1 per absline within component)
 
         """
-        # Reference:
+        # Reference: (note that comment column must be the last one)
         # specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|trans|rely|comment
         s = ''
         for aline in self._abslines:
