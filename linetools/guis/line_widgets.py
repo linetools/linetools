@@ -182,6 +182,7 @@ class SelectLineWidget(QDialog):
         self.lines_widget = QListWidget(self)
         self.lines_widget.addItem('None')
         self.lines_widget.setCurrentRow(0)
+        self.line = "None"  # init "selected line" as "None"
 
         # Loop on lines (could put a preferred list first)
         # Sort
