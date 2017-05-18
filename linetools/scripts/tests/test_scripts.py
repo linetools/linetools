@@ -7,7 +7,8 @@ import pytest
 from linetools.scripts.lt_absline import plot_absline
 from linetools.scripts import lt_line
 from linetools.scripts import lt_radec
-#from linetools.scripts import lt_plot
+from linetools.scripts import lt_solabnd
+
 
 def test_lt_absline():
     plot_absline(1550, 15, 5, show=False)
@@ -28,3 +29,7 @@ def test_lt_radec():
     lt_radec.main(['J100902.16+071343.8'])
     lt_radec.main(['10:09:02.16,+07:13:43.8'])
 
+def test_lt_solabnd():
+    lt_solabnd.main(['Fe'])
+    lt_solabnd.main(['-a'])
+    lt_solabnd.main(['-a', '--sortZ'])

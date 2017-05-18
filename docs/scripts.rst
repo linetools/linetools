@@ -119,6 +119,53 @@ entire linelist.::
     lt_line 1215
     lt_line --all
 
+Here is the usage::
+
+    beast> lt_line -h
+    usage: lt_line [-h] [-a] [--llist LLIST] [-t TOLER] [-z REDSHIFT] [inp]
+
+    Print spectral line data of a line or lines.
+
+    positional arguments:
+      inp                   Ion, transition name, or Rest wavelength (e.g. HI,
+                            HI1215 or 1215)
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -a, --all             Print all lines
+      --llist LLIST         Name of LineList: ISM, HI, H2, CO, etc.
+      -t TOLER, --toler TOLER
+                            Matching tolerance (in Ang) on input wavelength
+      -z REDSHIFT, --redshift REDSHIFT
+                            Matching tolerance (in Ang) on input wavelength
+
+
+lt_solabnd
+----------
+
+Print the solar abundances by number relative to Hydrogen on the
+traditional log scale of 12, e.g. e(Fe) = 7.55::
+
+   lt_solabnd Fe
+   lt_solabnd -a
+   lt_solabnd -a --sortZ
+
+Here is the usage::
+
+    beast> lt_solabnd -h
+    usage: lt_solabnd [-h] [-a] [--sortZ] [inp]
+
+    Print Solar abundance data for an element or all elements.
+
+    positional arguments:
+      inp         Elm (e.g. H, Fe)
+
+    optional arguments:
+      -h, --help  show this help message and exit
+      -a, --all   Print all values
+      --sortZ     Sort on Atomic Number
+
+
 lt_continuumfit
 ---------------
 
