@@ -463,7 +463,7 @@ def test_group_coincident_compoments():
     SiIIcomp1.name = 'SiII_1'
     SiIIcomp2.name = 'SiII_2'
     comp_list = [abscomp, abscomp, SiIIcomp1, abscomp, SiIIcomp2, abscomp, SiIIcomp1, SiIIcomp2]
-    out = ltiu.group_coincident_compoments(comp_list)
+    out = ltiu.group_coincident_components(comp_list)
     assert len(out) == 3  # only three groups
     out_names_0 = [comp.name for comp in out[0]]  # these should be only HI in group 0, and 4 of them
     assert np.sum([n == 'HI' for n in out_names_0]) == 4
@@ -475,10 +475,10 @@ def test_group_coincident_compoments():
     assert out_names == [['HI', 'HI', 'HI', 'HI'], ['SiII_2', 'SiII_2'], ['SiII_1', 'SiII_1']]
     # now a case where are all different
     comp_list = [abscomp, SiIIcomp2 ,SiIIcomp1]
-    out = ltiu.group_coincident_compoments(comp_list)
+    out = ltiu.group_coincident_components(comp_list)
     for a,b in zip(comp_list, out):
         assert len(b) == 1
         assert a == b[0]
     # check output as dictionary
-    out = ltiu.group_coincident_compoments(comp_list, output_type='dict')
+    out = ltiu.group_coincident_components(comp_list, output_type='dict')
     assert isinstance(out, dict)

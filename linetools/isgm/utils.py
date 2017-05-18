@@ -642,7 +642,7 @@ def coincident_components(comp1, comp2, tol=0.2*u.arcsec):
     return False
 
 
-def group_coincident_compoments(comp_list, output_type='list'):
+def group_coincident_components(comp_list, output_type='list'):
     """For a given input list of components, this function
     groups together components that are coincident to each other
     (including by transitivity), and returns them as a list (default)
