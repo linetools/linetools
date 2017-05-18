@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """
-Plot the solar abundance data for an element or all elements
+Print the solar abundance data for an element or all elements
   Examples:
   lt_solabnd Fe
   lt_solabnd -a
