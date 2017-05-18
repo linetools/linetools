@@ -454,7 +454,7 @@ def test_coincident_components():
         a = ltiu.coincident_components(abscomp, 'not_a_component')
 
 
-def test_group_coincident_compoments():
+def test_group_coincident_components():
     abscomp, HIlines = mk_comp('HI', zcomp=2.92939)
     SiIIcomp1, _ = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s, zcomp=2.92939)
     SiIIcomp2, _ = mk_comp('SiII',vlim=[-300.,0.]*u.km/u.s, zcomp=2.92939)
