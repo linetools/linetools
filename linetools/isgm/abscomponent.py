@@ -764,8 +764,8 @@ class AbsComponent(object):
             s += '{}|{}|{}|'.format(int(flags[0]), int(flags[1]), int(flags[2]))
             vlim = aline.limits.vlim.to('km/s').value
             wvlim = aline.limits.wvlim.to('AA').value
-            s += '{:.8f}|{:.4f}|{:.4f}|{:.5f}|{:.5f}|'.format(self.zcomp, vlim[0], vlim[1], wvlim[0], wvlim[1])
-            s += '{:s}|{:s}|{:s}'.format(aline.data['ion_name'], self.reliability, self.comment)
+            s += '{:.4f}|{:.4f}|{:.5f}|{:.5f}|'.format(vlim[0], vlim[1], wvlim[0], wvlim[1])
+            s += '{:.8f}|{:s}|{:s}|{:s}'.format(self.zcomp, aline.data['ion_name'], self.reliability, self.comment)
 
             # if len(self.comment) > 0:
             #     s += '# {:s}'.format(self.comment)
