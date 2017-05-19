@@ -391,18 +391,18 @@ def test_repr_joebvp():
     # test with b=0, should be replaced by b_default
     abscomp, HIlines = mk_comp('HI', b=0*u.km/u.s, use_rand=False)
     s = abscomp.repr_joebvp('test.fits', b_default=3.3*u.km/u.s)
-    assert s == 'test.fits|1215.67000|2.92939000|13.3000|3.3000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|HI|none\n' \
-                'test.fits|1025.72220|2.92939000|13.3000|3.3000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI|none\n'
+    assert s == 'test.fits|1215.67000|2.92939000|13.3000|3.3000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|2.92939000|HI|none|\n' \
+                'test.fits|1025.72220|2.92939000|13.3000|3.3000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|2.92939000|HI|none|\n'
     # test with b != 0
     abscomp, HIlines = mk_comp('HI', b=15*u.km/u.s, use_rand=False)
     s = abscomp.repr_joebvp('test.fits', b_default=3.3*u.km/u.s)
-    assert s == 'test.fits|1215.67000|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|HI|none\n' \
-                'test.fits|1025.72220|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI|none\n'
+    assert s == 'test.fits|1215.67000|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|2.92939000|HI|none|\n' \
+                'test.fits|1025.72220|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|2.92939000|HI|none|\n'
     # test with comment
     abscomp.comment = 'Something'
     s = abscomp.repr_joebvp('test.fits')
-    assert s == 'test.fits|1215.67000|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|HI|none# Something\n' \
-                'test.fits|1025.72220|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|HI|none# Something\n'
+    assert s == 'test.fits|1215.67000|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|2.92939000|HI|none|Something\n' \
+                'test.fits|1025.72220|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|2.92939000|HI|none|Something\n'
 
 
 def test_complist_to_joebvp():
@@ -454,7 +454,7 @@ def test_coincident_components():
         a = ltiu.coincident_components(abscomp, 'not_a_component')
 
 
-def test_group_coincident_compoments():
+def test_group_coincident_components():
     abscomp, HIlines = mk_comp('HI', zcomp=2.92939)
     SiIIcomp1, _ = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s, zcomp=2.92939)
     SiIIcomp2, _ = mk_comp('SiII',vlim=[-300.,0.]*u.km/u.s, zcomp=2.92939)
@@ -463,7 +463,7 @@ def test_group_coincident_compoments():
     SiIIcomp1.name = 'SiII_1'
     SiIIcomp2.name = 'SiII_2'
     comp_list = [abscomp, abscomp, SiIIcomp1, abscomp, SiIIcomp2, abscomp, SiIIcomp1, SiIIcomp2]
-    out = ltiu.group_coincident_compoments(comp_list)
+    out = ltiu.group_coincident_components(comp_list)
     assert len(out) == 3  # only three groups
     out_names_0 = [comp.name for comp in out[0]]  # these should be only HI in group 0, and 4 of them
     assert np.sum([n == 'HI' for n in out_names_0]) == 4
@@ -475,10 +475,10 @@ def test_group_coincident_compoments():
     assert out_names == [['HI', 'HI', 'HI', 'HI'], ['SiII_2', 'SiII_2'], ['SiII_1', 'SiII_1']]
     # now a case where are all different
     comp_list = [abscomp, SiIIcomp2 ,SiIIcomp1]
-    out = ltiu.group_coincident_compoments(comp_list)
+    out = ltiu.group_coincident_components(comp_list)
     for a,b in zip(comp_list, out):
         assert len(b) == 1
         assert a == b[0]
     # check output as dictionary
-    out = ltiu.group_coincident_compoments(comp_list, output_type='dict')
+    out = ltiu.group_coincident_components(comp_list, output_type='dict')
     assert isinstance(out, dict)

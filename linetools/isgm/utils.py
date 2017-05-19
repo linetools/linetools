@@ -642,7 +642,7 @@ def coincident_components(comp1, comp2, tol=0.2*u.arcsec):
     return False
 
 
-def group_coincident_compoments(comp_list, output_type='list'):
+def group_coincident_components(comp_list, output_type='list'):
     """For a given input list of components, this function
     groups together components that are coincident to each other
     (including by transitivity), and returns them as a list (default)
@@ -767,7 +767,7 @@ def _whichgroupscontainmember(groups,member):
             matches.append(i)
     return matches
 
-def group_coincident_compoments_old(comp_list, output_type='list'):
+def group_coincident_components_old(comp_list, output_type='list'):
     """For a given input list of components, this function
     groups together components that are coincident to each other
     (including by transitivity), and returns them as a list (default)
@@ -874,7 +874,7 @@ def joebvp_from_components(comp_list, specfile, outfile):
     f = open(outfile, 'w')
 
     # Print header
-    s = 'specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|trans|reliability\n'
+    s = 'specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|z_comp|trans|rely|comment\n'
     f.write(s)
 
     # Components

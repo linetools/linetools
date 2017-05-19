@@ -749,8 +749,8 @@ class AbsComponent(object):
             May contain multiple "\n" (1 per absline within component)
 
         """
-        # Reference:
-        # specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|trans|reliability
+        # Reference: (note that comment column must be the last one)
+        # specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|z_comp|trans|rely|comment
         s = ''
         for aline in self._abslines:
             s += '{:s}|{:.5f}|'.format(specfile, aline.wrest.to('AA').value)
@@ -760,15 +760,15 @@ class AbsComponent(object):
                 b_val = b_default.to('km/s').value
 
             # write string
-            s += '{:.8f}|{:.4f}|{:.4f}|0.|'.format(self.zcomp, logN, b_val)  # `vel` is set to 0. because z is zcomp
+            s += '{:.8f}|{:.4f}|{:.4f}|0.|'.format(self.zcomp, logN, b_val)  # `vel` is set to 0. because zsys is zcomp
             s += '{}|{}|{}|'.format(int(flags[0]), int(flags[1]), int(flags[2]))
             vlim = aline.limits.vlim.to('km/s').value
             wvlim = aline.limits.wvlim.to('AA').value
             s += '{:.4f}|{:.4f}|{:.5f}|{:.5f}|'.format(vlim[0], vlim[1], wvlim[0], wvlim[1])
-            s += '{:s}|{:s}'.format(aline.data['ion_name'], self.reliability)
+            s += '{:.8f}|{:s}|{:s}|{:s}'.format(self.zcomp, aline.data['ion_name'], self.reliability, self.comment)  # zcomp again here
 
-            if len(self.comment) > 0:
-                s += '# {:s}'.format(self.comment)
+            # if len(self.comment) > 0:
+            #     s += '# {:s}'.format(self.comment)
             s += '\n'
         return s
 
