@@ -750,7 +750,7 @@ class AbsComponent(object):
 
         """
         # Reference: (note that comment column must be the last one)
-        # specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|trans|rely|comment
+        # specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|z_comp|trans|rely|comment
         s = ''
         for aline in self._abslines:
             s += '{:s}|{:.5f}|'.format(specfile, aline.wrest.to('AA').value)
@@ -764,7 +764,7 @@ class AbsComponent(object):
             s += '{}|{}|{}|'.format(int(flags[0]), int(flags[1]), int(flags[2]))
             vlim = aline.limits.vlim.to('km/s').value
             wvlim = aline.limits.wvlim.to('AA').value
-            s += '{:.4f}|{:.4f}|{:.5f}|{:.5f}|'.format(vlim[0], vlim[1], wvlim[0], wvlim[1])
+            s += '{:.8f}|{:.4f}|{:.4f}|{:.5f}|{:.5f}|'.format(self.zcomp, vlim[0], vlim[1], wvlim[0], wvlim[1])
             s += '{:s}|{:s}|{:s}'.format(aline.data['ion_name'], self.reliability, self.comment)
 
             # if len(self.comment) > 0:
