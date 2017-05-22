@@ -197,7 +197,7 @@ class RelAbund(object):
         #
         clms = ['flag', '[X/{:s}]'.format(Yc), 'sig([X/{:s}])'.format(Yc)]
         dkeys = ['flag', 'val', 'sig']
-        lists = [[] for x in xrange(len(clms))]
+        lists = [[] for x in range(len(clms))]
         # List it
         Zlist, nlist = [], []
         for key in self._data.keys():

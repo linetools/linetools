@@ -24,7 +24,7 @@ def main(*args, **kwargs):
 
     pargs = parser.parse_args()
 
-    from PyQt4 import QtGui
+    from PyQt5.QtWidgets import QApplication
     from linetools.guis.xabssysgui import XAbsSysGui
 
     # Normalized?
@@ -49,7 +49,7 @@ def main(*args, **kwargs):
     from linetools.isgm.abssystem import GenericAbsSystem
     abs_sys = GenericAbsSystem.from_json(pargs.abssys_file)#, chk_vel=False)
 
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
 
     gui = XAbsSysGui(pargs.spec_file, abs_sys, norm=norm, llist=llist,
                      outfil=pargs.outfile)
