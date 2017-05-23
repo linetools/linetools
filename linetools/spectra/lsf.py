@@ -113,7 +113,6 @@ class LSF(object):
 
         At the moment this function does the following:
          - Make sure that the number of relative pixels of the LSF is an odd integer
-            - Unfortunately, the STIS LSFs provided by STScI have an even number
          - Impose the middle value to define the 0 relative pixel
 
         Parameters
@@ -128,8 +127,7 @@ class LSF(object):
 
         # odd integer for total number of relative pixels
         n_pix = len(relpix)
-        if self.instr_config['name'] != 'STIS':  # STIS LSFs have even no. of pixels
-            assert n_pix % 2 != 0, ValueError('LSF tables must be given as odd integers!')
+        assert n_pix % 2 != 0, ValueError('LSF tables must be given as odd integers!')
 
         # make sure relpix == 0 is in the middle of the array
         n_half = (n_pix - 1) / 2
