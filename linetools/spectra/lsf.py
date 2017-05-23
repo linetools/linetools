@@ -305,10 +305,20 @@ class LSF(object):
             raise NotImplementedError('Not ready for this HST/STIS slit: {}. '
                                       'Available slits for HST/STIS grating {} are: {}'.format(slit, grating, available_slits[grating]))
 
-        # now we need to read the right files
-        lsf_files = glob.glob(lt_path + '/data/lsf/STIS/stis_LSF_{}_????.txt'.format(grating))
+        # now we need to read the right files (new ones for echelle modes)
+        if grating[0]=='E':
+            lsf_files = glob.glob(lt_path + '/data/lsf/STIS/stis_LSF_{}_????_LTmod.txt'.format(grating))
+            # figure relevant wavelengths from file names
+            wa_names = [fname.split('/')[-1].split('_')[-2].split('.')[0] for fname in lsf_files]
+        else:
+            lsf_files = glob.glob(lt_path + '/data/lsf/STIS/stis_LSF_{}_????.txt'.format(grating))
+            # figure relevant wavelengths from file names
+            wa_names = [fname.split('/')[-1].split('_')[-1].split('.')[0] for fname in lsf_files]
+        #TODO: Remove following lines upon testing
+        '''
         # figure relevant wavelengths from file names
-        wa_names = [fname.split('/')[-1].split('_')[-1].split('.')[0] for fname in lsf_files]
+        #wa_names = [fname.split('/')[-1].split('_')[-1].split('.')[0] for fname in lsf_files]
+        '''
         # sort them
         sorted_inds = np.argsort(wa_names)
         lsf_files = np.array(lsf_files)[sorted_inds]
@@ -334,6 +344,8 @@ class LSF(object):
             # reformat rel_pix
             data_aux['rel_pix'] = self.check_and_reformat_relpix(data_aux['rel_pix'])
 
+            #TODO: remove the following block upon testing
+            '''
             # handle asymmetric STIS LSF
             if data_aux['rel_pix'][len(data_aux['rel_pix']) // 2] == 0.:
                 pass
@@ -343,6 +355,7 @@ class LSF(object):
             elif data_aux['rel_pix'][(len(data_aux['rel_pix']) // 2) + 1 ] ==0.:
                 data_aux.add_row(data_aux[0])
                 data_aux['rel_pix'][-1]=-data_aux['rel_pix'][0]
+            '''
 
             # create column with absolute wavelength based on pixel scales
             if isinstance(pixel_scale_dict[grating],unicode):
