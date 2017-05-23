@@ -358,7 +358,7 @@ class LSF(object):
             '''
 
             # create column with absolute wavelength based on pixel scales
-            if isinstance(pixel_scale_dict[grating],unicode):
+            if isinstance(pixel_scale_dict[grating],np.unicode):
                 # deal with wavelength-dependent pixel scale (i.e., STIS echelle)
                 scalefac = 1./float(pixel_scale_dict[grating].split('/')[-1])
                 wave_aux = float(wa_names[ii])*u.AA * (1. + data_aux['rel_pix']*scalefac)
@@ -482,7 +482,7 @@ class LSF(object):
         lsf_vals = Column(name='kernel', data=lsf_vals)
 
         # create column of relative pixel in absolute wavelength
-        if isinstance(self.pixel_scale,unicode):
+        if isinstance(self.pixel_scale,np.unicode):
             # deal with wavelength-dependent pixel scale (i.e., STIS echelle)
             scalefac = 1./float(self.pixel_scale.split('/')[-1])
             wv_array = [(wv0*u.AA * (1. + scalefac * self._data['rel_pix'][i])).value
