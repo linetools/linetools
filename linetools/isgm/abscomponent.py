@@ -772,7 +772,7 @@ class AbsComponent(object):
             s += '\n'
         return s
 
-    def stack_plot(self, return_fig=False, **kwargs):
+    def stack_plot(self, return_fig=False, vlim=None, **kwargs):
         """Show a stack plot of the component, if spec are loaded
         Assumes the data are normalized.
 
@@ -780,17 +780,24 @@ class AbsComponent(object):
         ----------
         return_fig : bool, optional
             If True, return stack plot as plt.Figure() instance for further manipulation
+        vlim : Quantity array, optional
+            Velocity limits of the plots
+            e.g.  [-300,300]*u.km/u.s
 
         Returns
         -------
         fig : matplotlib Figure, optional
             Figure instance containing stack plot with subplots, axes, etc.
         """
+        if vlim:
+            plotvlim=vlim
+        else:
+            plotvlim=self.vlim
         if return_fig:
-            fig = ltap.stack_plot(self._abslines, vlim=self.vlim, return_fig=True, **kwargs)
+            fig = ltap.stack_plot(self._abslines, vlim=plotvlim, return_fig=True, **kwargs)
             return fig
         else:
-            ltap.stack_plot(self._abslines, vlim=self.vlim, **kwargs)
+            ltap.stack_plot(self._abslines, vlim=plotvlim, **kwargs)
 
     def to_dict(self):
         """ Convert component data to a dict
