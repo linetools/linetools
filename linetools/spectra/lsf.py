@@ -112,7 +112,7 @@ class LSF(object):
         """Performs checks and reformating on a relative pixel array.
 
         At the moment this function does the following:
-         - Make sure that the number of relative pixels of the LSF is odd integer
+         - Make sure that the number of relative pixels of the LSF is an odd integer
          - Impose the middle value to define the 0 relative pixel
 
         Parameters
@@ -133,6 +133,7 @@ class LSF(object):
         n_half = (n_pix - 1) / 2
         mid_value = relpix[n_half]
         new_relpix = relpix - mid_value  # 0 in the middle
+
 
         return new_relpix
 
@@ -290,7 +291,7 @@ class LSF(object):
         if grating not in channel_dict.keys():
             raise NotImplementedError('Not ready for this HST/STIS grating: {}. '
                                       'Available gratings for HST/STIS are: {}'.format(grating, channel_dict.keys()))
-        if grating in ['E140H', 'E140M', 'E230M', 'E230H', 'G750M', 'G430M', 'G430L']:
+        if grating in ['G750M', 'G430M', 'G430L']:
             raise NotImplementedError('{} not implemented yet; coming soon...'.format(grating))
 
         # We also need to know the slit width
@@ -302,10 +303,20 @@ class LSF(object):
             raise NotImplementedError('Not ready for this HST/STIS slit: {}. '
                                       'Available slits for HST/STIS grating {} are: {}'.format(slit, grating, available_slits[grating]))
 
-        # now we need to read the right files
-        lsf_files = glob.glob(lt_path + '/data/lsf/STIS/stis_LSF_{}_????.txt'.format(grating))
+        # now we need to read the right files (new ones for echelle modes)
+        if grating[0]=='E':
+            lsf_files = glob.glob(lt_path + '/data/lsf/STIS/stis_LSF_{}_????_LTmod.txt'.format(grating))
+            # figure relevant wavelengths from file names
+            wa_names = [fname.split('/')[-1].split('_')[-2].split('.')[0] for fname in lsf_files]
+        else:
+            lsf_files = glob.glob(lt_path + '/data/lsf/STIS/stis_LSF_{}_????.txt'.format(grating))
+            # figure relevant wavelengths from file names
+            wa_names = [fname.split('/')[-1].split('_')[-1].split('.')[0] for fname in lsf_files]
+        #TODO: Remove following lines upon testing
+        '''
         # figure relevant wavelengths from file names
-        wa_names = [fname.split('/')[-1].split('_')[-1].split('.')[0] for fname in lsf_files]
+        #wa_names = [fname.split('/')[-1].split('_')[-1].split('.')[0] for fname in lsf_files]
+        '''
         # sort them
         sorted_inds = np.argsort(wa_names)
         lsf_files = np.array(lsf_files)[sorted_inds]
@@ -330,8 +341,27 @@ class LSF(object):
             data_aux = ascii.read(file_name, data_start=2, names=col_names)
             # reformat rel_pix
             data_aux['rel_pix'] = self.check_and_reformat_relpix(data_aux['rel_pix'])
+
+            #TODO: remove the following block upon testing
+            '''
+            # handle asymmetric STIS LSF
+            if data_aux['rel_pix'][len(data_aux['rel_pix']) // 2] == 0.:
+                pass
+            elif data_aux['rel_pix'][(len(data_aux['rel_pix']) // 2) - 1 ] ==0.:
+                data_aux.insert_row(0,data_aux[-1])
+                data_aux['rel_pix'][0]=-data_aux['rel_pix'][-1]
+            elif data_aux['rel_pix'][(len(data_aux['rel_pix']) // 2) + 1 ] ==0.:
+                data_aux.add_row(data_aux[0])
+                data_aux['rel_pix'][-1]=-data_aux['rel_pix'][0]
+            '''
+
             # create column with absolute wavelength based on pixel scales
-            wave_aux = float(wa_names[ii])*u.AA + data_aux['rel_pix']*pixel_scale_dict[grating]
+            if isinstance(pixel_scale_dict[grating],np.unicode):
+                # deal with wavelength-dependent pixel scale (i.e., STIS echelle)
+                scalefac = 1./float(pixel_scale_dict[grating].split('/')[-1])
+                wave_aux = float(wa_names[ii])*u.AA * (1. + data_aux['rel_pix']*scalefac)
+            else:
+                wave_aux = float(wa_names[ii])*u.AA + data_aux['rel_pix']*pixel_scale_dict[grating]
             data_aux['wv'] = wave_aux  # not used for now, but may be useful with a different approach
             # create column with normalized kernel for relevant slit
             kernel = data_aux[slit] / np.sum(data_aux[slit])
@@ -450,7 +480,13 @@ class LSF(object):
         lsf_vals = Column(name='kernel', data=lsf_vals)
 
         # create column of relative pixel in absolute wavelength
-        wv_array = [(self.pixel_scale * self._data['rel_pix'][i] + wv0*u.AA).value for i in range(len(self._data))]
+        if isinstance(self.pixel_scale,np.unicode):
+            # deal with wavelength-dependent pixel scale (i.e., STIS echelle)
+            scalefac = 1./float(self.pixel_scale.split('/')[-1])
+            wv_array = [(wv0*u.AA * (1. + scalefac * self._data['rel_pix'][i])).value
+                        for i in range(len(self._data))]
+        else:
+            wv_array = [(self.pixel_scale * self._data['rel_pix'][i] + wv0*u.AA).value for i in range(len(self._data))]
         wv = Column(name='wv',data=wv_array, unit=u.AA)
 
         # create lsf Table
