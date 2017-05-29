@@ -377,7 +377,7 @@ class SpectralLine(object):
         # Return
         return fx, sig, dict(wave=wave, velo=velo, pix=pix)
 
-    def measure_ew(self, flg=1, initial_guesses=None):
+    def measure_ew(self, flg=1, initial_guesses=None, nsig=3.):
         """ Measures the observer frame equivalent width
 
         Note this requires self.limits to be initialized
@@ -397,6 +397,8 @@ class SpectralLine(object):
         initial_guesses : tuple of floats [None]
           If a model is chosen (e.g. flg=2, Gaussian) a tuple of
           (amplitude, mean, stddev) can be specified.
+        nsig : float, optional
+          Number of sigma for flagging
 
         """
         # Cut spectrum
@@ -418,9 +420,14 @@ class SpectralLine(object):
             raise ValueError('measure_ew: Not ready for this flag {:d}'.format(flg))
 
         # Fill
-        self.attrib['flag_EW'] = 1
         self.attrib['EW'] = EW
         self.attrib['sig_EW'] = sig_EW
+
+        # Flagging
+        if EW > (sig_EW * nsig):
+            self.attrib['flag_EW'] = 1
+        else:
+            self.attrib['flag_EW'] = 3
 
     def measure_restew(self, **kwargs):
         """  Measure the rest-frame equivalent width
