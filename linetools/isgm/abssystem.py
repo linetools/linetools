@@ -212,6 +212,7 @@ class AbsSystem(object):
         # Metallicity
         self.ZH = 0.
         self.sig_ZH = 0.
+        self.flag_ZH = 0
 
         # Abundances and Tables
         self._EW = QTable()
@@ -522,7 +523,7 @@ class AbsSystem(object):
                        NHI=self.NHI, sig_NHI=self.sig_NHI, flag_NHI=self.flag_NHI,
                        RA=self.coord.fk5.ra.value, DEC=self.coord.fk5.dec.value,
                        kin=self.kin, Refs=self.Refs, CreationDate=date,
-                       ZH=self.ZH, sig_ZH=self.sig_ZH,
+                       ZH=self.ZH, sig_ZH=self.sig_ZH, flag_ZH=self.flag_ZH,
                        user=user
                        )
         outdict['class'] = self.__class__.__name__
@@ -561,19 +562,22 @@ class AbsSystem(object):
             components = self._components
             self.vlim = get_vmnx(components)  # Using system z
 
-    def write_json(self, outfil=None):
+    def write_json(self, outfil=None, overwrite=True):
         """ Generate a JSON file from the system
 
-        Returns
-        -------
-
+        Parameters
+        ----------
+        outfil : str, optional
+          Output filename;  generated from system name if not provided
+        overwrite : bool, optional
+          Overwrite?
         """
         # Generate the dict
         odict = self.to_dict()
         # Write
         if outfil is None:
             outfil = self.name+'.json'
-        ltu.savejson(outfil, odict, overwrite=True, easy_to_read=True)
+        ltu.savejson(outfil, odict, overwrite=overwrite, easy_to_read=True)
         # Finish
         print("Wrote {:s} system to {:s} file".format(self.name, outfil))
 
