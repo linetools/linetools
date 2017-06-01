@@ -76,9 +76,12 @@ def test_measure_ew():
     spec = io.readspec(data_path('UM184_nF.fits'))
     gensys = init_system()
     # Measure EWs
-    gensys.measure_restew(spec=spec)
+    gensys.measure_restew(spec=spec, nsig=3.)
     for aline in gensys.list_of_abslines():
-        assert aline.attrib['flag_EW'] == 1
+        if aline.attrib['EW'] > 3.*aline.attrib['sig_EW']:
+            assert aline.attrib['flag_EW'] == 1
+        else:
+            assert aline.attrib['flag_EW'] == 3
     # Skip do_analysis = 0
     gensys2 = init_system()
     lyb = gensys2.get_absline('HI 1025')
