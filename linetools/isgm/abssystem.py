@@ -531,6 +531,9 @@ class AbsSystem(object):
         outdict['components'] = {}
         for component in self._components:
             outdict['components'][component.name] = ltu.jsonify(component.to_dict())
+        # Spectrum file?
+        if hasattr(self, 'spec_file'):
+            outdict['spec_file'] = self.spec_file
         # Polish
         outdict = ltu.jsonify(outdict)
         # Return
@@ -583,11 +586,14 @@ class AbsSystem(object):
 
 
     def __repr__(self):
-        txt = '<{:s}: name={:s} type={:s}, {:s} {:s}, z={:g}, NHI={:g}'.format(
+        txt = '<{:s}: name={:s} type={:s}, {:s} {:s}, z={:g}'.format(
                 self.__class__.__name__, self.name, self.abs_type,
                 self.coord.fk5.ra.to_string(unit=u.hour,sep=':',pad=True),
                 self.coord.fk5.dec.to_string(sep=':',pad=True,alwayssign=True),
-                self.zabs, self.NHI)
+                self.zabs)
+        # NHI
+        if self.NHI is not None:
+            txt = txt + ', NHI={:g}'.format(self.NHI)
         # Finish
         txt = txt + '>'
         return (txt)
