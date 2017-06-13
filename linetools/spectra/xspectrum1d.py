@@ -1337,7 +1337,7 @@ class XSpectrum1D(object):
         print('Wrote spectrum to {:s}'.format(outfil))
 
     def fit_continuum(self, knots=None, edges=None, wlim=None, dw=10.,
-                      kind=None, **kwargs):
+                      kind=None, numguesspix=10, **kwargs):
         """ Interactively fit a continuum.
 
         This sets the following attributes
@@ -1366,6 +1366,9 @@ class XSpectrum1D(object):
         kind : {'QSO', None}, optional
           If not None, generate spline knots using
           linetools.analysis.continuum.find_continuum.
+        numguesspix : int, optional
+          Number of pixels included when guessing knot location using flux
+          median ('A' or 'M'); default is 10
         **kwargs : dict
           Other keyword arguments are passed to
           ~linetools.analysis.continuum.find_continuum.  For
@@ -1428,7 +1431,7 @@ class XSpectrum1D(object):
         fig = plt.figure(figsize=(11, 7))
         fig.subplots_adjust(left=0.05, right=0.95, bottom=0.1, top=0.95)
         wrapper = InteractiveCoFit(wa, flux, sig,
-                                   contpoints, co=co_init, fig=fig, anchor=anchor)
+                                   contpoints, co=co_init, fig=fig, anchor=anchor, numguesspix=numguesspix)
 
         # wait until the interactive fitting has finished
         while not wrapper.finished:
