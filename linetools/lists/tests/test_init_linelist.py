@@ -48,6 +48,10 @@ def test_euv():
     euv = LineList('EUV')
     #
     assert np.max(euv._data['wrest']) < 1000.
+    # Test for X-ray lines
+    ovii = euv['OVII 21']
+    assert np.isclose(ovii['wrest'].value, 21.6019)
+
 
 # HI LineList
 def test_h1():
