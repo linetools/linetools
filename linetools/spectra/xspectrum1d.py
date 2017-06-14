@@ -148,7 +148,7 @@ class XSpectrum1D(object):
         return spec
 
     def __init__(self, wave, flux, sig=None, co=None, units=None, select=0,
-                 meta=None, verbose=False, masking='edges'):
+                 meta=None, verbose=False, masking='none'):
         """
         Parameters
         ----------
@@ -778,7 +778,7 @@ class XSpectrum1D(object):
         if 'masking' in kwargs:
             masking = kwargs['masking']
         else:
-            masking = 'edges'
+            masking = 'none'
         #
         if not all:
             new_spec = rebin(self, new_wv, **kwargs)

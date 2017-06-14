@@ -127,6 +127,8 @@ def collate(spectra, **kwargs):
     ----------
     spectra : list
       of XSpectrum1D
+    **kwargs : optional
+      Passed to the XSpectrum1D object generated
 
     Returns
     -------
