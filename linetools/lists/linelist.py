@@ -87,7 +87,7 @@ class LineList(object):
         self.closest = closest
         self.verbose = verbose
 
-        if not use_ISM_table or llst_key not in ('ISM', 'HI', 'Strong', 'EUV'):
+        if not use_ISM_table or llst_key not in ('ISM', 'HI', 'Strong'):
             # Load Data
             self.load_data(use_cache=use_cache)
 
@@ -187,9 +187,8 @@ class LineList(object):
         else:
             # import pdb
             # pdb.set_trace()
-            raise ValueError(
-                'LineList: load_data: Not ready for this LineList name: {:s}'.format(self.list))
-
+            print('LineList: load_data: Not ready for this LineList name: {:s}'.format(self.list))
+            raise ValueError('LineList:  Available options are --  ISM, Strong, EUV, H2, CO, HI, Galaxy')
         full_table = None
         all_func = []
         # Loop on data sets
@@ -254,7 +253,7 @@ class LineList(object):
         if use_cache and key in CACHE['data']:
             self._data = CACHE['data'][key]
             return
-        elif use_ISM_table and self.list in ('ISM', 'Strong', 'EUV', 'HI'):
+        elif use_ISM_table and self.list in ('ISM', 'Strong', 'HI'):
             data = Table.read(lt_path + '/data/lines/ISM_table.fits')
             if self.list != 'ISM':
                 cond = data['is_'  + self.list]
@@ -291,8 +290,6 @@ class LineList(object):
                 'set_lines: Not ready for this: {:s}'.format(self.list))
 
         # Deal with Defined sets
-        # import pdb
-        # pdb.set_trace()
         if len(set_flags) > 0:
             # Read standard file
             set_data = lilp.read_sets()
@@ -302,20 +299,14 @@ class LineList(object):
                 gdset = np.where(set_data[sflag] == 1)[0]
                 # Match to wavelengths
                 for igd in gdset:
-                    mt = np.where(
-                        np.abs(set_data[igd]['wrest'] - wrest) < 9e-5)[0]
+                    mt = np.where(np.abs(set_data['wrest'][igd] - wrest) < 9e-5)[0]
                     if len(mt) == 1:
-                        for imt in mt:
-                            # Over-ride name!
-                            self._fulltable[imt][
-                                'name'] = set_data[igd]['name']
-                            # if set_data[igd]['name'] == 'DI 1215':
-                            #    xdb.set_trace()
+                        self._fulltable['name'][mt[0]] = set_data['name'][igd]
                         indices.append(mt[0])
                     elif len(mt) > 1:
                         #
                         wmsg = 'WARNING: Multiple lines with wrest={:g}'.format(
-                            set_data[igd]['wrest'])
+                            set_data['wrest'][igd])
                         warnings.warn(wmsg)
                         warnings.warn(
                             'Taking the first entry. Maybe use higher precision.')
