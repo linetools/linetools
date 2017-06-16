@@ -46,7 +46,7 @@ def test_const_sig():
 
 
 def test_unmask():
-    spec = XSpectrum1D.from_file(data_path('UM184_nF.fits'))
+    spec = XSpectrum1D.from_file(data_path('UM184_nF.fits'), masking='edges')
     assert np.sum(spec.data['wave'].mask) > 0
     spec.unmask()
     assert np.sum(spec.data['wave'].mask) == 0
