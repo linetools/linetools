@@ -190,7 +190,6 @@ def add_xray_lines(outfil, infil=None, stop=True):
     infil : str, optional
       Starting file.  Should use latest llist_vX.X.ascii
     """
-    import pdb
     if infil is None:
         fils = glob.glob(lt_path+'/lists/sets/llist_v*')
         fils.sort()
@@ -212,6 +211,7 @@ def add_xray_lines(outfil, infil=None, stop=True):
             continue
         if np.min(np.abs(row['wrest']-data['wrest'])) > 0.0001:
             tmp_row['wrest'] = row['wrest']
+            import pdb; pdb.set_trace()
             tmp_row['name'] = row['name']
             data.add_row(tmp_row)
 
@@ -221,8 +221,7 @@ def add_xray_lines(outfil, infil=None, stop=True):
     # Write
     print('Make sure you want to do this!')
     if stop:
-        import pdb
-        pdb.set_trace()
+        import pdb; pdb.set_trace()
     data.write(outfil, format='ascii.fixed_width', overwrite=True)
 
 
