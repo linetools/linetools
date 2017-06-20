@@ -306,7 +306,7 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, grow_bad_sig=False
     # Return new spectrum
     if do_sig:
         # Create new_sig
-        new_sig = np.zeros_like(new_var)
+        new_sig = np.zeros_like(new_var.value)
         gd = new_var > 0.
         new_sig[gd] = np.sqrt(new_var[gd].value)
         # Deal with bad pixels (grow_bad_sig should be True)
