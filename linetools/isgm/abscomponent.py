@@ -240,7 +240,7 @@ class AbsComponent(object):
 
         # reliability
         if reliability not in ['a', 'b', 'c', 'none']:
-            raise ValueError("Input reliability not valid.")
+            raise ValueError("Input reliability `{}` not valid.".format(reliability))
         self.reliability = reliability
 
         # Potential for attributes
