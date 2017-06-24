@@ -148,7 +148,7 @@ class XSpectrum1D(object):
         return spec
 
     def __init__(self, wave, flux, sig=None, co=None, units=None, select=0,
-                 meta=None, verbose=False, masking='edges'):
+                 meta=None, verbose=False, masking='none'):
         """
         Parameters
         ----------
@@ -181,6 +181,7 @@ class XSpectrum1D(object):
             raise IOError("Invalid masking type.")
         #if (masking != 'None') and (sig is None):
         #    warnings.warn("Must input sig array to use masking")
+        self.masking = masking
 
         # Handle many spectra
         if len(wave.shape) == 1:
@@ -766,13 +767,19 @@ class XSpectrum1D(object):
         all : bool, optional
           Rebin all spectra in the XSpectrum1D object?
           Set masking='none' to have the resultant spectra all be regsitered, but note
-             that there will still be masking
+             that there will still be masking unless otherwise specified in kwargs
 
         Returns
         -------
         XSpectrum1D of the rebinned spectrum
         """
         from .utils import rebin, collate
+        #
+        if 'masking' in kwargs:
+            masking = kwargs['masking']
+        else:
+            masking = 'none'
+        #
         if not all:
             new_spec = rebin(self, new_wv, **kwargs)
         else:
@@ -781,7 +788,7 @@ class XSpectrum1D(object):
                 self.select = ii
                 spec_list.append(rebin(self, new_wv, **kwargs))
             # Collate
-            new_spec = collate(spec_list)
+            new_spec = collate(spec_list, masking=masking)
         # Return
         return new_spec
 
