@@ -150,6 +150,8 @@ def add_galaxy_lines(outfil, infil=None, stop=True):
 
     # Read set file
     data = ascii.read(infil, format='fixed_width')
+    # reformat name column to avoid truncation of names
+    data['name'] = data['name'].astype("|S20")
 
     # Read galaxy lines (emission)
     forbidden = llp.read_forbidden()
