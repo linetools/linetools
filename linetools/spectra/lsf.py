@@ -130,7 +130,7 @@ class LSF(object):
         assert n_pix % 2 != 0, ValueError('LSF tables must be given as odd integers!')
 
         # make sure relpix == 0 is in the middle of the array
-        n_half = (n_pix - 1) / 2
+        n_half = int( (n_pix - 1) / 2)
         mid_value = relpix[n_half]
         new_relpix = relpix - mid_value  # 0 in the middle
 
