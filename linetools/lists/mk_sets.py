@@ -231,5 +231,5 @@ if __name__ == '__main__':
     flg += 2**0   # X-ray lines
 
     if flg & (2**0):
-        add_xray_lines('sets/llist_v1.1.ascii')
-
+        add_galaxy_lines('sets/llist_v1.2.ascii')
+        add_xray_lines('sets/llist_v1.2.ascii')
