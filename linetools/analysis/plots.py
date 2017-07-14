@@ -17,6 +17,9 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None
                ymnx=(-0.1,1.1), figsz=(18,11), return_fig=False, tight_layout=False, add_ew=False):
     """Show a stack plot of the input lines
     Assumes the data are normalized.
+    Comments about EW:
+      If line is blended, upper limit is shown with error
+      If EW < 3*sig_EW : upper limit is set to 2*sig_EW and shown
     Parameters
     ----------
     abslines : list
@@ -104,7 +107,6 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None
                 compsign = '<'
                 ewval = '{:05.2f}'.format(iline.attrib['sig_EW'].value *2)
                 ewtext = 'EW' + compsign + str(ewval) +r'$\AA$'
-            print('ewtext:',ewtext)
             ax.text(0.95, 0.1, ewtext, transform=ax.transAxes, ha='right', va='center')
     # Handle boolean switches
     if tight_layout:
