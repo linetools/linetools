@@ -14,10 +14,9 @@ import matplotlib.gridspec as gridspec
 import matplotlib as mpl
 
 def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None,
-               ymnx=(-0.1,1.1), figsz=(18,11), return_fig=False, tight_layout=False):
+               ymnx=(-0.1,1.1), figsz=(18,11), return_fig=False, tight_layout=False, add_ew=False):
     """Show a stack plot of the input lines
     Assumes the data are normalized.
-
     Parameters
     ----------
     abslines : list
@@ -36,7 +35,8 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None
       If True, return stackplot as plt.Figure() instance for further manipulation
     tight_layout : bool, optional
       If True, remove whitespace between panels
-
+    add_ew : bool, optional
+      If True, add EW values on the figure
     Returns
     -------
     fig : matplotlib Figure, optional
@@ -63,9 +63,7 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None
     # Plot
     fig=plt.figure(figsize=figsz)
     plt.clf()
-
     gs = gridspec.GridSpec(nrow, ncol)
-
     # Loop me
     for qq, iline in enumerate(gdiline):
         #ax = plt.subplot(gs[qq % nrow, qq//nrow])
@@ -95,7 +93,15 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None
             ax.get_xaxis().set_ticks([])
         # Label
         ax.text(0.1, 0.1, iline.data['name'], transform=ax.transAxes, ha='left', va='center')#, fontsize='large')  # , bbox={'facecolor':'white'})
-
+        if add_ew:
+            ewval = '{:05.2f}'.format(iline.attrib['EW'].value)
+            ewsigval = '{:05.2f}'.format(iline.attrib['sig_EW'].value)
+            compsign = ' = '
+            if iline.analy['flg_eye'] == 1:
+                compsign = ' < '
+            ewtext = 'EW' + compsign + str(ewval) +r'$\pm$'+ewsigval+r'$\AA$'
+            print('ewtext:',ewtext)
+            ax.text(0.95, 0.1, ewtext, transform=ax.transAxes, ha='right', va='center')
     # Handle boolean switches
     if tight_layout:
         plt.tight_layout(pad=0.2, h_pad=0., w_pad=0.1)
@@ -105,3 +111,4 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None
         return fig
     else:
         plt.close()
+
