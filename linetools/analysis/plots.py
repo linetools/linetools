@@ -96,9 +96,12 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None
         if add_ew:
             ewval = '{:05.2f}'.format(iline.attrib['EW'].value)
             ewsigval = '{:05.2f}'.format(iline.attrib['sig_EW'].value)
-            compsign = ' = '
+            compsign = '='
             if iline.analy['flg_eye'] == 1:
-                compsign = ' < '
+                compsign = '<'
+            if iline.attrib['EW'].value < 3.* iline.attrib['sig_EW'].value:
+                compsign = '<'
+                ewval = '{:05.2f}'.format(iline.attrib['EW'].value *2)
             ewtext = 'EW' + compsign + str(ewval) +r'$\pm$'+ewsigval+r'$\AA$'
             print('ewtext:',ewtext)
             ax.text(0.95, 0.1, ewtext, transform=ax.transAxes, ha='right', va='center')
