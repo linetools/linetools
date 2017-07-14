@@ -97,17 +97,18 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None
         # Label
         ax.text(0.1, 0.1, iline.data['name'], transform=ax.transAxes, ha='left', va='center')#, fontsize='large')  # , bbox={'facecolor':'white'})
         if add_ew:
-            ewval = '{:05.2f}'.format(iline.attrib['EW'].value)
-            ewsigval = '{:05.2f}'.format(iline.attrib['sig_EW'].value)
-            compsign = '='
-            if iline.analy['flg_eye'] == 1:
-                compsign = '<'
-            ewtext = 'EW' + compsign + str(ewval) + r'$\pm$' + ewsigval + r'$\AA$'
-            if iline.attrib['EW'].value < 3.* iline.attrib['sig_EW'].value:
-                compsign = '<'
-                ewval = '{:05.2f}'.format(iline.attrib['sig_EW'].value *2)
-                ewtext = 'EW' + compsign + str(ewval) +r'$\AA$'
-            ax.text(0.95, 0.1, ewtext, transform=ax.transAxes, ha='right', va='center')
+            if iline.attrib['flag_EW'] > 0:
+                ewval = '{:05.2f}'.format(iline.attrib['EW'].value)
+                ewsigval = '{:05.2f}'.format(iline.attrib['sig_EW'].value)
+                compsign = '='
+                if iline.analy['flg_eye'] == 1:
+                    compsign = '<'
+                ewtext = 'EW' + compsign + str(ewval) + r'$\pm$' + ewsigval + r'$\AA$'
+                if iline.attrib['EW'].value < 3.* iline.attrib['sig_EW'].value:
+                    compsign = '<'
+                    ewval = '{:05.2f}'.format(iline.attrib['sig_EW'].value *2)
+                    ewtext = 'EW' + compsign + str(ewval) +r'$\AA$'
+                ax.text(0.95, 0.1, ewtext, transform=ax.transAxes, ha='right', va='center')
     # Handle boolean switches
     if tight_layout:
         plt.tight_layout(pad=0.2, h_pad=0., w_pad=0.1)
