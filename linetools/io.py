@@ -131,6 +131,7 @@ def emlines_from_alis_output(alis_file):
             pdb.set_trace()
         else:
             obj.attrib['sig_flux'] = iline['sig_flux']*u.erg/u.s
+            obj.attrib['flag_flux'] = 1  # Measured
         # Append
         emlines.append(obj)
     # Return
