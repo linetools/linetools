@@ -440,6 +440,42 @@ def Wr_from_N(N, wrest, fosc):
     Wr = W * wrest  # in wavelength units (see equation 9.4 of Draine)
     return Wr
 
+def N_from_Wr(Wr, wrest, fosc):
+    """For a given transition with wrest and fosc, it
+    returns the column density N, for a given rest-frame equivalent width
+    Wr. This is an approximation only valid for tau0 << 1, where
+    Wr is independent on Doppler parameter and gamma (see eqs. 9.14 and 9.15 of
+    Draine 2011).
+
+    Parameters
+    ----------
+    Wr : Quantity or Quantity array
+        Rest-frame equivalent width of the AbsLine
+    wrest : Quantity
+        Rest-frame wavelength of the transition
+    fosc : float
+        Oscillator strength of the transition
+
+    Returns
+    -------
+    N : Quantity
+        Approximated column density N only valid for the tau0<<1 regime.
+
+    Notes
+    -----
+    See also Wr_from_N()
+
+    """
+
+    # Check units by converting to CGS
+    wrest_cgs = wrest.to('cm')
+    c_cgs = const.c.to('cm/s')
+
+    # dimensionless Wr
+    W = Wr / wrest
+    N = (c_cgs / (np.pi * e2_me_c_cgs)) * W / ( wrest_cgs * fosc)
+    N = N.to((1/u.cm**2))
+    return N
 
 def Wr_from_N_b_transition(N, b, transition, llist='ISM'):
     """ For a given transition this function looks
@@ -530,4 +566,48 @@ def Wr_from_N_transition(N, transition, llist='ISM'):
 
     # return
     return Wr_from_N(N, wrest, fosc)
+
+
+def N_from_Wr_transition(Wr, transition, llist='ISM'):
+    """ For a given transition this function looks
+    for the atomic parameters (wa0, fosc) and returns the
+    column density for a given rest-frame equivalent width. It uses
+    the approximation given by Draine 2011 book (eq. 9.15), which is
+    only valid for tau0<<1 where Wr is independent of Doppler
+    parameter or gamma.
+
+    Parameters
+    ----------
+    Wr : Quantity or Quantity array
+        Rest-frame wavelength
+    transition : str
+        Name of the transition using linetools' naming
+        convention, e.g. 'HI 1215', 'CIV 1550', etc.
+    llist : str
+        Name of the linetools.lists.linelist.LineList
+        object where to look for the transition name.
+        Default is 'ISM', which means the function looks
+        within `list = LineList('ISM')`.
+
+    Returns
+    -------
+    N : Quantity
+        Approximated column density only valid for tau0<<1.
+
+    Notes
+    -----
+    See also Wr_from_N(), Wr_from_N_b_transition(), Wr_from_N_b()
+
+    """
+    linelist = LineList(llist)
+    transition_dict = linelist[transition]
+    if transition_dict is None:
+        raise ValueError('Transition {:s} not found within LineList {:s}'.format(transition, linelist.list))
+    else:
+        # get atomic parameters
+        wrest = transition_dict['wrest']
+        fosc = transition_dict['f']
+
+    # return
+    return N_from_Wr(Wr, wrest, fosc)
 

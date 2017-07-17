@@ -10,14 +10,14 @@ import pytest
 import numpy as np
 from astropy import units as u
 
-from PyQt4 import QtGui
+from PyQt5.QtWidgets import QApplication
 
 from linetools.guis import xspecgui, xabssysgui
 from linetools.guis import utils as ltgu
 from linetools.spectra import io as lsio
 from linetools.isgm.abssystem import GenericAbsSystem
 
-app = QtGui.QApplication(sys.argv)
+app = QApplication(sys.argv)
 
 # Set of Input lines
 def data_path(filename):

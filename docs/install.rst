@@ -8,11 +8,11 @@ Dependencies
 Linetools depends on these packages:
 
 * `python <http://www.python.org/>`_ versions 2.7, or 3.3 or later
-* `numpy <http://www.numpy.org/>`_ version 1.9 or later
-* `astropy`_ version 1.0 or later
+* `numpy <http://www.numpy.org/>`_ version 1.11 or later
+* `astropy`_ version 1.3 or later
 * `scipy <http://www.scipy.org/>`_ version 0.16 or later
 * `matplotlib <http://matplotlib.org/>`_  version 1.4 or later
-* `PyQT4 <https://wiki.python.org/moin/PyQt>`_ version 4 (for GUIs)
+* `PyQT5 <https://wiki.python.org/moin/PyQt>`_ version 5 (for GUIs)
 * `h5py <https://www.h5py.org/>`_ version 2.6 (for data I/O)
 
 We strongly recommend that you use `Anaconda
@@ -25,13 +25,10 @@ If you're missing any, install them with (for example)::
 
   conda install astropy scipy matplotlib h5py
 
-For PyQT, the current conda version is PyQT5.  Therefore, you may
-need to install with::
+For PyQT, the current conda version is PyQT5.  If you are still using
+PyQT4, then you will need to update to use linetools GUIs:
 
-    conda install pyqt=4
-
-for the GUIs included in linetools to be functional.  A future release
-may upgrade to PyQT5.
+    conda install pyqt=5
 
 If their versions are too old, update them with (for example)::
 
@@ -44,15 +41,12 @@ installed with pip.
 Installing Linetools
 ====================
 
-If you plan to play around with the code and possibly contribute
-changes, then follow the instructions in the section below,
-:ref:`installsource`. Otherwise simply use::
+There is currently a pip wheel on PyPi but it is woefully
+out of date.  We will try to update before long.  But for now
+follow the instructions in the section below,
+:ref:`installsource` to install linetools.
 
-    pip install linetools
-
-and you're done!
-
-If you wish to have full functionality of the GUIs and are
+Also note, if you wish to have full functionality of the GUIs and are
 using MacOSX, then you probably need to change
 your *backend* from macosx to TkAgg in the matplotlibrc file.
 

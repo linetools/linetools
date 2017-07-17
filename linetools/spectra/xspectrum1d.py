@@ -148,7 +148,7 @@ class XSpectrum1D(object):
         return spec
 
     def __init__(self, wave, flux, sig=None, co=None, units=None, select=0,
-                 meta=None, verbose=False, masking='edges'):
+                 meta=None, verbose=False, masking='none'):
         """
         Parameters
         ----------
@@ -181,6 +181,7 @@ class XSpectrum1D(object):
             raise IOError("Invalid masking type.")
         #if (masking != 'None') and (sig is None):
         #    warnings.warn("Must input sig array to use masking")
+        self.masking = masking
 
         # Handle many spectra
         if len(wave.shape) == 1:
@@ -660,9 +661,9 @@ class XSpectrum1D(object):
         # Launch XSpectrum1D??
         if 'xspec' in kwargs:
             import sys
-            from PyQt4 import QtGui
+            from PyQt5.QtWidgets import QApplication
             from linetools.guis.xspecgui import XSpecGui
-            app = QtGui.QApplication(sys.argv)
+            app = QApplication(sys.argv)
             gui = XSpecGui(self)
             gui.show()
             app.exec_()
@@ -766,13 +767,19 @@ class XSpectrum1D(object):
         all : bool, optional
           Rebin all spectra in the XSpectrum1D object?
           Set masking='none' to have the resultant spectra all be regsitered, but note
-             that there will still be masking
+             that there will still be masking unless otherwise specified in kwargs
 
         Returns
         -------
         XSpectrum1D of the rebinned spectrum
         """
         from .utils import rebin, collate
+        #
+        if 'masking' in kwargs:
+            masking = kwargs['masking']
+        else:
+            masking = 'none'
+        #
         if not all:
             new_spec = rebin(self, new_wv, **kwargs)
         else:
@@ -781,7 +788,7 @@ class XSpectrum1D(object):
                 self.select = ii
                 spec_list.append(rebin(self, new_wv, **kwargs))
             # Collate
-            new_spec = collate(spec_list)
+            new_spec = collate(spec_list, masking=masking)
         # Return
         return new_spec
 
@@ -806,14 +813,14 @@ class XSpectrum1D(object):
         return velo
 
     #  Box car smooth
-    def box_smooth(self, nbox, preserve=False, **kwargs):
+    def box_smooth(self, nbox, preserve=True, **kwargs):
         """ Box car smooth the spectrum
 
         Parameters
         ----------
         nbox: int
           Number of pixels to smooth over
-        preserve: bool (False)
+        preserve: bool, optional
           If True, perform a convolution to ensure the new spectrum
           has the same number of pixels as the original.
         **kwargs: dict
@@ -823,36 +830,46 @@ class XSpectrum1D(object):
         Returns
         -------
         A new XSpectrum1D instance of the smoothed spectrum
+          Has the same number of pixels as the original
         """
         if preserve:
             from astropy.convolution import convolve, Box1DKernel
             new_fx = convolve(self.flux, Box1DKernel(nbox), **kwargs)
             if self.sig_is_set:
-                new_sig = convolve(self.sig, Box1DKernel(nbox), **kwargs)
+                new_sig = convolve(self.sig, Box1DKernel(nbox), **kwargs) / np.sqrt(nbox)
             else:
                 new_sig = None
+            if self.co_is_set:
+                new_co = convolve(self.co, Box1DKernel(nbox), **kwargs)
+            else:
+                new_co = None
             new_wv = self.wavelength
         else:
+            raise DeprecationWarning("The scipy thing is busted..")
             # Truncate arrays as need be
             npix = len(self.flux)
             try:
                 new_npix = npix // nbox  # New division
             except ZeroDivisionError:
                 raise ZeroDivisionError('Dividing by zero..')
-            orig_pix = np.arange(new_npix * nbox)
+            orig_pix_trunc = np.arange(new_npix * nbox)
 
             # Rebin (mean)
-            new_wv = ltu.scipy_rebin(self.wavelength[orig_pix], new_npix)
-            new_fx = ltu.scipy_rebin(self.flux[orig_pix], new_npix)
+            new_wv = ltu.scipy_rebin(self.wavelength[orig_pix_trunc].value, new_npix)
+            new_fx = ltu.scipy_rebin(self.flux[orig_pix_trunc], new_npix)
             if self.sig_is_set:
                 new_sig = ltu.scipy_rebin(
-                    self.sig[orig_pix], new_npix) / np.sqrt(nbox)
+                    self.sig[orig_pix_trunc], new_npix) / np.sqrt(nbox)
             else:
                 new_sig = None
+            if self.co_is_set:
+                new_co = ltu.scipy_rebin(self.co[orig_pix_trunc], new_npix)
+            else:
+                new_co = None
 
         # Return
         return XSpectrum1D.from_tuple(
-            (new_wv, new_fx, new_sig), meta=self.meta.copy())
+            (new_wv, new_fx, new_sig, new_co), meta=self.meta.copy())
 
     def gauss_smooth(self, fwhm, **kwargs):
         """ Smooth a spectrum with a Gaussian
@@ -1327,7 +1344,7 @@ class XSpectrum1D(object):
         print('Wrote spectrum to {:s}'.format(outfil))
 
     def fit_continuum(self, knots=None, edges=None, wlim=None, dw=10.,
-                      kind=None, **kwargs):
+                      kind=None, numguesspix=10, **kwargs):
         """ Interactively fit a continuum.
 
         This sets the following attributes
@@ -1356,6 +1373,9 @@ class XSpectrum1D(object):
         kind : {'QSO', None}, optional
           If not None, generate spline knots using
           linetools.analysis.continuum.find_continuum.
+        numguesspix : int, optional
+          Number of pixels included when guessing knot location using flux
+          median ('A' or 'M'); default is 10
         **kwargs : dict
           Other keyword arguments are passed to
           ~linetools.analysis.continuum.find_continuum.  For
@@ -1418,7 +1438,7 @@ class XSpectrum1D(object):
         fig = plt.figure(figsize=(11, 7))
         fig.subplots_adjust(left=0.05, right=0.95, bottom=0.1, top=0.95)
         wrapper = InteractiveCoFit(wa, flux, sig,
-                                   contpoints, co=co_init, fig=fig, anchor=anchor)
+                                   contpoints, co=co_init, fig=fig, anchor=anchor, numguesspix=numguesspix)
 
         # wait until the interactive fitting has finished
         while not wrapper.finished:

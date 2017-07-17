@@ -16,9 +16,11 @@ def test_interpolate_to_wv0(plot=False, lp='2'):
     wv0 = 1160 * u.AA
     cos_dict = dict(name='COS', grating='G130M', life_position=lp, cen_wave='1309')
     stis_dict = dict(name='STIS', grating='G140L', slit='52x0.2')
+    stis_echelle_dict = dict(name='STIS', grating='E140M', slit='0.2x0.06')
     lsf_cos = LSF(cos_dict)
     lsf_stis = LSF(stis_dict)
-    for lsf in [lsf_cos, lsf_stis]:
+    lsf_stis_echelle = LSF(stis_echelle_dict)
+    for lsf in [lsf_cos, lsf_stis, lsf_stis_echelle]:
         lsf_tab = lsf.interpolate_to_wv0(wv0)
         assert lsf_tab[len(lsf_tab) // 2]['wv'] == wv0.value, err_msg
         assert lsf_tab[len(lsf_tab) // 2]['kernel'] == np.max(lsf_tab['kernel']), err_msg

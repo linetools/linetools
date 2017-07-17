@@ -251,7 +251,10 @@ class SpectralLine(object):
 
 
         # Update
-        self.wrest = self.data['wrest']
+        if isinstance(self.data, dict):
+            self.wrest = self.data['wrest']
+        else:
+            self.wrest = self.data['wrest']*self.data['wrest'].unit
         self.name = self.data['name']
 
         #
@@ -374,7 +377,7 @@ class SpectralLine(object):
         # Return
         return fx, sig, dict(wave=wave, velo=velo, pix=pix)
 
-    def measure_ew(self, flg=1, initial_guesses=None):
+    def measure_ew(self, flg=1, initial_guesses=None, nsig=3.):
         """ Measures the observer frame equivalent width
 
         Note this requires self.limits to be initialized
@@ -394,6 +397,8 @@ class SpectralLine(object):
         initial_guesses : tuple of floats [None]
           If a model is chosen (e.g. flg=2, Gaussian) a tuple of
           (amplitude, mean, stddev) can be specified.
+        nsig : float, optional
+          Number of sigma for flagging
 
         """
         # Cut spectrum
@@ -415,9 +420,14 @@ class SpectralLine(object):
             raise ValueError('measure_ew: Not ready for this flag {:d}'.format(flg))
 
         # Fill
-        self.attrib['flag_EW'] = 1
         self.attrib['EW'] = EW
         self.attrib['sig_EW'] = sig_EW
+
+        # Flagging
+        if EW > (sig_EW * nsig):
+            self.attrib['flag_EW'] = 1
+        else:
+            self.attrib['flag_EW'] = 3
 
     def measure_restew(self, **kwargs):
         """  Measure the rest-frame equivalent width
@@ -746,6 +756,31 @@ class AbsLine(SpectralLine):
             raise NotImplementedError('AbsLine {} has not set its oscillator strength.'.format(self.__repr__))
         return laa.Wr_from_N(N, self.wrest, fosc)
 
+    def get_N_from_Wr(self, Wr):
+        """It returns the approximated column density N, for a given rest-frame equivalent width
+        Wr. This is an approximation only valid for tau0 << 1, where
+        Wr is independent on Doppler parameter and gamma (see eqs. 9.14 and 9.15 of
+        Draine 2011). This may be useful to put upper limits on non-detections.
+
+        Parameters
+        ----------
+        Wr : Quantity or Quantity array
+            Rest-frame equivalent width of the AbsLine
+
+        Returns
+        -------
+        N : Quantity
+            Approximated column density N valid for the tau0<<1 regime.
+
+        Notes
+        -----
+        This is a wrapper to linetools.analysis.absline.Wr_from_N(). See also self.get_Wr_from_N()
+        """
+        try:
+            fosc = self.data['f']
+        except KeyError:
+            raise NotImplementedError('AbsLine {} has not set its oscillator strength.'.format(self.__repr__))
+        return laa.N_from_Wr(Wr, self.wrest, fosc)
 
     def __repr__(self):
         txt = '<{:s}:'.format(self.__class__.__name__)
@@ -761,7 +796,7 @@ class AbsLine(SpectralLine):
         # fval
         try:
             txt = txt+', f={:g}'.format(self.data['f'])
-        except KeyError:
+        except (KeyError, ValueError):
             pass
         txt = txt + '>'
         return (txt)

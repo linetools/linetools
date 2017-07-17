@@ -7,17 +7,11 @@ import imp, glob
 import copy
 
 from astropy.io import ascii
-from astropy.table import Column
 
 from linetools.lists import parse as llp
 
 
 lt_path = imp.find_module('linetools')[1]
-
-try:
-    xa_path = imp.find_module('xastropy')[1]
-except ImportError:
-    pass
 
 
 '''
@@ -156,6 +150,8 @@ def add_galaxy_lines(outfil, infil=None, stop=True):
 
     # Read set file
     data = ascii.read(infil, format='fixed_width')
+    # reformat name column to avoid truncation of names
+    data['name'] = data['name'].astype("|S20")
 
     # Read galaxy lines (emission)
     forbidden = llp.read_forbidden()
@@ -167,14 +163,14 @@ def add_galaxy_lines(outfil, infil=None, stop=True):
     tmp_row['fgE'] = 1
     # Add if new
     for row in forbidden:
-        if np.sum(np.abs(row['wrest'].value-data['wrest']) < 0.0001) == 0:
-            tmp_row['wrest'] = row['wrest'].value
+        if np.sum(np.abs(row['wrest']-data['wrest']) < 0.0001) == 0:
+            tmp_row['wrest'] = row['wrest']
             tmp_row['name'] = row['name']
             data.add_row(tmp_row)
     # Add if new
     for row in recomb:
-        if np.sum(np.abs(row['wrest'].value-data['wrest']) < 0.0001) == 0:
-            tmp_row['wrest'] = row['wrest'].value
+        if np.sum(np.abs(row['wrest']-data['wrest']) < 0.0001) == 0:
+            tmp_row['wrest'] = row['wrest']
             tmp_row['name'] = row['name'].replace('_',' ')
             data.add_row(tmp_row)
 
@@ -184,3 +180,58 @@ def add_galaxy_lines(outfil, infil=None, stop=True):
         import pdb
         pdb.set_trace()
     data.write(outfil, format='ascii.fixed_width')
+
+
+def add_xray_lines(outfil, infil=None, stop=True):
+    """ Pre-pend X-ray lines (as necessary)
+
+    Parameters
+    ----------
+    outfil : str
+      Output file.
+    infil : str, optional
+      Starting file.  Should use latest llist_vX.X.ascii
+    """
+    if infil is None:
+        fils = glob.glob(lt_path+'/lists/sets/llist_v*')
+        fils.sort()
+        infil = fils[-1]  # Should grab the latest
+
+    # Read set file
+    data = ascii.read(infil, format='fixed_width')
+
+    # Read galaxy lines (emission)
+    v96 = llp.parse_verner96()
+
+    tmp_row = copy.deepcopy(data[0])
+    for key in ['fISM', 'fSI', 'fHI', 'fAGN']:
+        tmp_row[key] = 0
+    tmp_row['fEUV'] = 1
+    # Add if new
+    for row in v96:
+        if row['wrest'] > 100.:
+            continue
+        if np.min(np.abs(row['wrest']-data['wrest'])) > 0.0001:
+            tmp_row['wrest'] = row['wrest']
+            import pdb; pdb.set_trace()
+            tmp_row['name'] = row['name']
+            data.add_row(tmp_row)
+
+    # Sort
+    data.sort('wrest')
+
+    # Write
+    print('Make sure you want to do this!')
+    if stop:
+        import pdb; pdb.set_trace()
+    data.write(outfil, format='ascii.fixed_width', overwrite=True)
+
+
+# Test
+if __name__ == '__main__':
+    flg = 0
+    flg += 2**0   # X-ray lines
+
+    if flg & (2**0):
+        add_galaxy_lines('sets/llist_v1.2.ascii')
+        add_xray_lines('sets/llist_v1.2.ascii')

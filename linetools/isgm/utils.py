@@ -22,7 +22,7 @@ from astropy.coordinates import SkyCoord
 from linetools.analysis import absline as ltaa
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.spectralline import init_analy
-from linetools.abund.ions import name_ion, ion_name
+from linetools.abund.ions import name_to_ion, ion_to_name
 from linetools import utils as ltu
 from linetools.lists.linelist import LineList
 
@@ -221,7 +221,6 @@ def build_systems_from_components(comps, systype=None, vsys=None, **kwargs):
         # Use the first one
         comp = cpy_comps.pop(0)
         abssys = systype.from_components([comp])
-        abs_systems.append(abssys)
         # Try the rest
         comps_left = []
         for icomp in cpy_comps:
@@ -229,6 +228,11 @@ def build_systems_from_components(comps, systype=None, vsys=None, **kwargs):
                 pass
             else:
                 comps_left.append(icomp)
+        # Update vlim
+        abssys.update_vlim()
+        # Append
+        abs_systems.append(abssys)
+        # Save
         cpy_comps = comps_left
     # Return
     return abs_systems
@@ -296,7 +300,7 @@ def complist_from_table(table):
     for row in table:
         # mandatory
         coord = SkyCoord(row['RA'].to('deg').value, row['DEC'].to('deg').value, unit='deg')  # RA y DEC must both come with units
-        Zion = name_ion(row['ion_name'])
+        Zion = name_to_ion(row['ion_name'])
         zcomp = row['z_comp']
         vlim =[row['vmin'].to('km/s').value, row['vmax'].to('km/s').value] * u.km / u.s  # units are expected here too
 
@@ -368,7 +372,7 @@ def table_from_complist(complist):
         if comp.Zion == (-1,-1):
             ion_names += ["Molecule"]
         else:
-            ion_names += [ion_name(comp.Zion)]
+            ion_names += [ion_to_name(comp.Zion)]
     tab['ion_name'] = ion_names
     tab['z_comp'] = [comp.zcomp for comp in complist]
     tab['vmin'] = [comp.vlim[0].value for comp in complist] * comp.vlim.unit
@@ -380,6 +384,7 @@ def table_from_complist(complist):
     tab['flag_logN'] = [comp.flag_N for comp in complist]
     tab['comment'] = [comp.comment for comp in complist]
     tab['name'] = [comp.name for comp in complist]
+    tab['reliability'] = [comp.reliability for comp in complist]
 
     return tab
 
@@ -424,7 +429,12 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
     cols['vmax']=float
     cols['flag_N']=int
     cols['logN']=float
-    cols['sig_logN']=float
+    if isinstance(components[0].sig_logN, float):
+        cols['sig_logN'] = float
+    elif components[0].sig_logN.size == 2:
+        cols['sig_logN'] = np.ndarray
+    else:
+        raise IOError("Not prepared for this type of sig_logN")
     names = cols.keys()
     dtypes = [cols[key] for key in names]
     iontbl = Table(names=names,dtype=dtypes)
@@ -632,7 +642,7 @@ def coincident_components(comp1, comp2, tol=0.2*u.arcsec):
     return False
 
 
-def group_coincident_compoments(comp_list, output_type='list'):
+def group_coincident_components(comp_list, output_type='list'):
     """For a given input list of components, this function
     groups together components that are coincident to each other
     (including by transitivity), and returns them as a list (default)
@@ -757,7 +767,7 @@ def _whichgroupscontainmember(groups,member):
             matches.append(i)
     return matches
 
-def group_coincident_compoments_old(comp_list, output_type='list'):
+def group_coincident_components_old(comp_list, output_type='list'):
     """For a given input list of components, this function
     groups together components that are coincident to each other
     (including by transitivity), and returns them as a list (default)
@@ -864,7 +874,7 @@ def joebvp_from_components(comp_list, specfile, outfile):
     f = open(outfile, 'w')
 
     # Print header
-    s = 'specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|trans\n'
+    s = 'specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|z_comp|trans|rely|comment\n'
     f.write(s)
 
     # Components

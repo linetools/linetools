@@ -54,19 +54,31 @@ class AbsComponent(object):
         Atomic mass -- used to distinguish isotopes
     Ej : Quantity
         Energy of lower level (1/cm)
-    comment : str
+    reliability : str, optional
+        Reliability of AbsComponent
+            'a' - reliable
+            'b' - possible
+            'c' - uncertain
+            'none' - not defined (default)
+    comment : str, optional
         A comment, default is ``
     """
     @classmethod
-    def from_abslines(cls, abslines, stars=None, **kwargs):
+    def from_abslines(cls, abslines, stars=None, reliability='none', **kwargs):
         """Instantiate from a list of AbsLine objects
 
         Parameters
         ----------
         abslines : list 
-          List of AbsLine objects
+            List of AbsLine objects
         stars : str, optional
-          Asterisks to append to the ion name (e.g. fine-structure, CII*)
+            Asterisks to append to the ion name (e.g. fine-structure, CII*)
+        reliability : str, optional
+            Reliability of AbsComponent
+                'a' - reliable
+                'b' - possible
+                'c' - uncertain
+                'none' - not defined (default)
         """
         # Check
         if not isinstance(abslines, list):
@@ -78,7 +90,7 @@ class AbsComponent(object):
         init_line = abslines[0]
         slf = cls( init_line.attrib['coord'], (init_line.data['Z'],init_line.data['ion']),
                    init_line.z, init_line.limits.vlim,
-                   Ej=init_line.data['Ej'], stars=stars)
+                   Ej=init_line.data['Ej'], stars=stars, reliability=reliability)
         slf._abslines.append(init_line)
         # Append with component checking
         if len(abslines) > 1:
@@ -91,7 +103,7 @@ class AbsComponent(object):
     def from_component(cls, component, **kwargs):
         """ Instantiate from an AbsComponent object
 
-        Uses RA/DEC, Zion, Ej, A, z, vlim
+        Uses coord, Zion, Ej, A, zcomp, vlim, name, reliability, comment
 
         Parameters
         ----------
@@ -107,7 +119,8 @@ class AbsComponent(object):
             raise IOError('Need an AbsComponent object')
         # Return
         return cls(component.coord, component.Zion, component.zcomp, component.vlim, Ej=component.Ej,
-                   A=component.A, name=component.name, **kwargs)
+                   A=component.A, name=component.name, reliability=component.reliability, comment= component.comment,
+                   **kwargs)
 
     @classmethod
     def from_dict(cls, idict, coord=None, **kwargs):
@@ -127,10 +140,21 @@ class AbsComponent(object):
             radec = SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg)
         # Init
         #slf = cls(radec, tuple(idict['Zion']), idict['zcomp'], Quantity(idict['vlim'], unit='km/s'),
+
+        # backwards compatibility
+        for key in ['reliability', 'Reliability']:
+            if key in idict.keys():
+                reliability = idict[key]
+                break
+            else:
+                reliability = 'none'
+
+        # init
         slf = cls(radec, tuple(idict['Zion']), idict['zcomp'], idict['vlim']*u.km/u.s,
                   Ej=idict['Ej']/u.cm, A=idict['A'],
                   Ntup = tuple([idict[key] for key in ['flag_N', 'logN', 'sig_logN']]),
-                  comment=idict['comment'], name=idict['Name'])
+                  comment=idict['comment'], name=idict['Name'], reliability=reliability)
+
         # Add lines
         for key in idict['lines'].keys():
             iline = SpectralLine.from_dict(idict['lines'][key], coord=coord, **kwargs)
@@ -139,7 +163,7 @@ class AbsComponent(object):
         return slf
 
     def __init__(self, radec, Zion, zcomp, vlim, Ej=0./u.cm, A=None,
-                 Ntup=None, comment='', name=None, stars=None):
+                 Ntup=None, comment='', name=None, stars=None, reliability='none'):
         """  Initiator
 
         Parameters
@@ -164,11 +188,18 @@ class AbsComponent(object):
             flag_N : Flag describing N measurement  (0: no info; 1: detection; 2: saturated; 3: non-detection)
             logN : log10 N column density
             sig_logN : Error in log10 N
+              # TODO FUTURE IMPLEMENTATION WILL ALLOW FOR 2-element ndarray for sig_logN
         Ej : Quantity, optional
             Energy of lower level (1/cm)
         stars : str, optional
             asterisks to add to name, e.g. '**' for CI**
             Required if name=None and Ej>0.
+        reliability : str, optional
+            Reliability of AbsComponent
+                'a' - reliable
+                'b' - possible
+                'c' - uncertain
+                'none' - not defined (default)
         comment : str, optional
             A comment, default is ``
         """
@@ -195,7 +226,7 @@ class AbsComponent(object):
 
         # Name
         if (name is None) and (self.Zion != (-1, -1)):
-            iname = ions.ion_name(self.Zion, nspace=0)
+            iname = ions.ion_to_name(self.Zion, nspace=0)
             if self.Ej.value > 0:  # Need to put *'s in name
                 try:
                     iname += stars
@@ -206,6 +237,11 @@ class AbsComponent(object):
             self.name = 'mol_z{:0.5f}'.format(self.zcomp)
         else:
             self.name = name
+
+        # reliability
+        if reliability not in ['a', 'b', 'c', 'none']:
+            raise ValueError("Input reliability `{}` not valid.".format(reliability))
+        self.reliability = reliability
 
         # Potential for attributes
         self.attrib = dict()
@@ -256,8 +292,8 @@ class AbsComponent(object):
         # Now redshift/velocity
         if chk_vel:
             dz_toler = (1 + self.zcomp) * vtoler / c_kms  # Avoid Quantity for speed
-            zlim_line = (1 + absline.z) * absline.limits.vlim.to('km/s').value / c_kms
-            zlim_comp = (1+self.zcomp) * self.vlim.to('km/s').value / c_kms
+            zlim_line = absline.limits.zlim  # absline.z + (1 + absline.z) * absline.limits.vlim.to('km/s').value / c_kms
+            zlim_comp = self.zcomp + (1+self.zcomp) * self.vlim.to('km/s').value / c_kms
             testv = (zlim_line[0] >= (zlim_comp[0] - dz_toler)) & (
                 zlim_line[1] <= (zlim_comp[1] + dz_toler))
         else:
@@ -277,7 +313,7 @@ class AbsComponent(object):
             if not testv:
                 print("Absline velocities lie beyond component\n Set chk_vel=False to skip this test.")
             if not testc:
-                print("Absline coordinates do not match.  Best to set them")
+                print("Absline coordinates do not match. Best to set them")
 
     def add_abslines_from_linelist(self, llist='ISM', init_name=None, wvlim=None, min_Wr=None, **kwargs):
         """
@@ -318,7 +354,7 @@ class AbsComponent(object):
                 # init_name must be in self.attrib (this is a patch)
                 init_name = self.attrib['init_name']
             else:  # atoms
-                init_name = ions.ion_name(self.Zion, nspace=0)
+                init_name = ions.ion_to_name(self.Zion, nspace=0)
         transitions = llist.all_transitions(init_name)
 
         # unify output to be always QTable
@@ -398,7 +434,7 @@ class AbsComponent(object):
           COG Doppler parameter (km/s)
         """
         from linetools.analysis import cog as ltcog
-        reload(ltcog)
+        #reload(ltcog)
         # Redo EWs?
         if redo_EW:
             for aline in self._abslines:
@@ -595,7 +631,7 @@ class AbsComponent(object):
         b = b.to('km/s').value
 
         # Ion name
-        name = ions.ion_name(self.Zion, nspace=1)
+        name = ions.ion_to_name(self.Zion, nspace=1)
         name = name.replace(' ', '')
 
         # Deal with fix and tie parameters
@@ -662,7 +698,7 @@ class AbsComponent(object):
             nucleons = 2 * self.Zion[0]
 
         # name
-        name = ions.ion_name(self.Zion, nspace=1)
+        name = ions.ion_to_name(self.Zion, nspace=1)
         name = '{}'.format(nucleons)+name.replace(' ', '_')
 
         # Deal with fix and tie parameters
@@ -713,8 +749,8 @@ class AbsComponent(object):
             May contain multiple "\n" (1 per absline within component)
 
         """
-        # Reference:
-        # specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|trans
+        # Reference: (note that comment column must be the last one)
+        # specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|z_comp|trans|rely|comment
         s = ''
         for aline in self._abslines:
             s += '{:s}|{:.5f}|'.format(specfile, aline.wrest.to('AA').value)
@@ -722,19 +758,21 @@ class AbsComponent(object):
             b_val = aline.attrib['b'].to('km/s').value
             if b_val == 0:  # set the default
                 b_val = b_default.to('km/s').value
-            s += '{:.8f}|{:.4f}|{:.4f}|0.|'.format(self.zcomp, logN, b_val)  # `vel` is set to 0. because z is zcomp
+
+            # write string
+            s += '{:.8f}|{:.4f}|{:.4f}|0.|'.format(self.zcomp, logN, b_val)  # `vel` is set to 0. because zsys is zcomp
             s += '{}|{}|{}|'.format(int(flags[0]), int(flags[1]), int(flags[2]))
             vlim = aline.limits.vlim.to('km/s').value
             wvlim = aline.limits.wvlim.to('AA').value
             s += '{:.4f}|{:.4f}|{:.5f}|{:.5f}|'.format(vlim[0], vlim[1], wvlim[0], wvlim[1])
-            s += '{:s}'.format(aline.data['ion_name'])
+            s += '{:.8f}|{:s}|{:s}|{:s}'.format(self.zcomp, aline.data['ion_name'], self.reliability, self.comment)  # zcomp again here
 
-            if len(self.comment) > 0:
-                s += '# {:s}'.format(self.comment)
+            # if len(self.comment) > 0:
+            #     s += '# {:s}'.format(self.comment)
             s += '\n'
         return s
 
-    def stack_plot(self, return_fig=False, **kwargs):
+    def stack_plot(self, return_fig=False, vlim=None, **kwargs):
         """Show a stack plot of the component, if spec are loaded
         Assumes the data are normalized.
 
@@ -742,17 +780,24 @@ class AbsComponent(object):
         ----------
         return_fig : bool, optional
             If True, return stack plot as plt.Figure() instance for further manipulation
+        vlim : Quantity array, optional
+            Velocity limits of the plots
+            e.g.  [-300,300]*u.km/u.s
 
         Returns
         -------
         fig : matplotlib Figure, optional
             Figure instance containing stack plot with subplots, axes, etc.
         """
+        if vlim:
+            plotvlim=vlim
+        else:
+            plotvlim=self.vlim
         if return_fig:
-            fig = ltap.stack_plot(self._abslines, vlim=self.vlim, return_fig=True, **kwargs)
+            fig = ltap.stack_plot(self._abslines, vlim=plotvlim, return_fig=True, **kwargs)
             return fig
         else:
-            ltap.stack_plot(self._abslines, vlim=self.vlim, **kwargs)
+            ltap.stack_plot(self._abslines, vlim=plotvlim, **kwargs)
 
     def to_dict(self):
         """ Convert component data to a dict
@@ -762,7 +807,7 @@ class AbsComponent(object):
         """
         cdict = dict(Zion=self.Zion, zcomp=self.zcomp, vlim=self.vlim.to('km/s').value,
                      Name=self.name,
-                     RA=self.coord.ra.value, DEC=self.coord.dec.value,
+                     RA=self.coord.fk5.ra.value, DEC=self.coord.fk5.dec.value,
                      A=self.A, Ej=self.Ej.to('1/cm').value, comment=self.comment,
                      flag_N=self.flag_N, logN=self.logN, sig_logN=self.sig_logN)
         cdict['class'] = self.__class__.__name__
@@ -808,13 +853,13 @@ class AbsComponent(object):
 
     def __repr__(self):
         txt = '<{:s}: {:s} {:s}, Name={:s}, Zion=({:d},{:d}), Ej={:g}, z={:g}, vlim={:g},{:g}'.format(
-            self.__class__.__name__, self.coord.ra.to_string(unit=u.hour,sep=':', pad=True),
-                self.coord.dec.to_string(sep=':',pad=True,alwayssign=True), self.name, self.Zion[0], self.Zion[1], self.Ej, self.zcomp, self.vlim[0], self.vlim[1])
+            self.__class__.__name__, self.coord.fk5.ra.to_string(unit=u.hour,sep=':', pad=True),
+                self.coord.fk5.dec.to_string(sep=':',pad=True,alwayssign=True), self.name, self.Zion[0], self.Zion[1], self.Ej, self.zcomp, self.vlim[0], self.vlim[1])
 
         # Column?
         if self.flag_N > 0:
             txt = txt + ', logN={:g}'.format(self.logN)
-            txt = txt + ', sig_logN={:g}'.format(self.sig_logN)
+            txt = txt + ', sig_logN={}'.format(self.sig_logN)
             txt = txt + ', flag_N={:d}'.format(self.flag_N)
 
         # Finish

@@ -12,12 +12,13 @@ from linetools.spectra import utils as ltsu
 
 @pytest.fixture
 def spec():
-    return io.readspec(data_path('UM184_nF.fits'))
+    return io.readspec(data_path('UM184_nF.fits'), masking='edges')
+
 
 @pytest.fixture
 def specr():
     # Replace bad pixels (for rebinning)
-    data = io.readspec(data_path('UM184_nF.fits'))
+    data = io.readspec(data_path('UM184_nF.fits'), masking='edges')
     sig = data.sig.value
     bad_pix = sig <= 0.
     sig[bad_pix] = 1.
@@ -27,17 +28,17 @@ def specr():
 
 @pytest.fixture
 def spec2():
-    return io.readspec(data_path('PH957_f.fits'))
+    return io.readspec(data_path('PH957_f.fits'), masking='edges')
 
 
 @pytest.fixture
 def specm(spec,spec2):
-    specm = ltsu.collate([spec,spec2])
+    specm = ltsu.collate([spec,spec2], masking='edges')
     return specm
 
 @pytest.fixture
 def specmr(specr,spec2):  # With bad pixels replaced
-    specmr = ltsu.collate([specr,spec2])
+    specmr = ltsu.collate([specr,spec2], masking='edges')
     return specmr
 
 
@@ -47,11 +48,11 @@ def data_path(filename):
 
 
 def test_collate(spec,spec2):
-    coll_spec = ltsu.collate([spec,spec2])
+    coll_spec = ltsu.collate([spec,spec2], masking='edges')
     assert coll_spec.nspec == 2
     assert coll_spec.totpix == 20379
     # Now a 2 and a 1
-    coll_spec2 = ltsu.collate([coll_spec,spec2])
+    coll_spec2 = ltsu.collate([coll_spec,spec2], masking='edges')
     assert coll_spec2.nspec == 3
     assert coll_spec2.totpix == 20379
 
@@ -111,11 +112,11 @@ def test_addnoise(spec):
 def test_box_smooth(spec):
     # Smooth
     newspec3 = spec.box_smooth(3)
-    np.testing.assert_allclose(newspec3.flux[4000], 0.9650185, rtol=1e-5)
+    np.testing.assert_allclose(newspec3.flux[4000], 0.8429098, rtol=1e-5)
     assert newspec3.flux.unit == u.dimensionless_unscaled
 
     newspec5 = spec.box_smooth(5)
-    np.testing.assert_allclose(newspec5.flux[3000], 1.0405008,rtol=1e-5)
+    np.testing.assert_allclose(newspec5.flux[3000], 0.7609909,rtol=1e-5)
     # Preserve
     newspec5p = spec.box_smooth(5, preserve=True)
 
@@ -144,7 +145,7 @@ def test_rebintwo(specr):
     new_wv = np.arange(3000., 9000., 5) * u.AA
     newspec = specr.rebin(new_wv, do_sig=True)
     # Test
-    np.testing.assert_allclose(newspec.flux[1000].value, 0.992559,  rtol=1e-5)
+    np.testing.assert_allclose(newspec.flux[1000].value, 0.999928,  rtol=1e-5)
     assert newspec.flux.unit == funit
     # Without sig
     spec_nosig = XSpectrum1D.from_tuple((specr.wavelength, specr.flux))

@@ -13,7 +13,7 @@ def main(*args, **kwargs):
     """
     import argparse
 
-    parser = argparse.ArgumentParser(description='Parse for XSpec; Extra arguments are passed to read_spec')
+    parser = argparse.ArgumentParser(description='Parser for lt_xspec v1.2; \n Note: Extra arguments are passed to read_spec (e.g. --flux_tag=FX)')
     parser.add_argument("file", type=str, help="Spectral file; specify extension by appending #exten#")
     parser.add_argument("-z", "--zsys", type=float, help="System Redshift")
     parser.add_argument("--norm", help="Show spectrum continuum normalized (if continuum is provided)",
@@ -21,6 +21,7 @@ def main(*args, **kwargs):
     parser.add_argument("--air", default=False, help="Convert input spectrum wavelengths from air to vacuum", action="store_true")
     parser.add_argument("--exten", type=int, help="FITS extension")
     parser.add_argument("--splice", type=str, help="Splice with the input file; extension convention applies")
+    parser.add_argument("--scale", type=float, help="Scale factor for GUI size [1. is default]")
     #parser.add_argument("--wave_tag", type=str, help="Tag for wave in Table")
     #parser.add_argument("--flux_tag", type=str, help="Tag for flux in Table")
     #parser.add_argument("--sig_tag", type=str, help="Tag for sig in Table")
@@ -30,9 +31,7 @@ def main(*args, **kwargs):
     #pargs = parser.parse_args()
     pargs, unknown = parser.parse_known_args()
 
-
-
-    from PyQt4 import QtGui
+    from PyQt5.QtWidgets import QApplication
     from linetools.guis.xspecgui import XSpecGui
 
     # Normalized?
@@ -65,6 +64,12 @@ def main(*args, **kwargs):
             exten = [exten, None]
             file = [file, pargs.splice]
 
+    # Scale
+    if pargs.scale is None:
+        scale = 1.
+    else:
+        scale = pargs.scale
+
     # Read spec keywords
     rsp_kwargs = {}
     for arg in unknown:
@@ -72,8 +77,9 @@ def main(*args, **kwargs):
         rsp_kwargs[spl[0][2:]] = spl[1]
 
     # GUI
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     gui = XSpecGui(file, zsys=zsys, norm=norm, exten=exten,
-                   rsp_kwargs=rsp_kwargs, air=pargs.air)
+                   rsp_kwargs=rsp_kwargs, air=pargs.air,
+                   screen_scale=scale)
     gui.show()
     app.exec_()

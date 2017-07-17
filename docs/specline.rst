@@ -50,7 +50,7 @@ within its own object.  It is also accessible as a property, e.g.::
 
    z = sline.z
 
-.. _specanalysis
+.. _spec-analysis:
 
 Analysis
 ========
@@ -91,6 +91,8 @@ and whether they are from the same ion::
    print specline.ismatch(another_line)
 
 
+.. _measure-ew:
+
 measure_ew
 ----------
 
@@ -99,11 +101,13 @@ Following absorption-line convention, absorption will
 have a positive value and emission will have a negative value.
 
 To perform the calculation, the line must be associated to
-a spectrum (see `Analysis_`) and either wvlim or vlim must
-be specified.  When executed, the EW and sig_EW attibutes
-are filled::
+a spectrum (see `Analysis`_ above) and the LineLimits of the line
+must have previously been specified.
+
+When executed, the EW and sig_EW attibutes are filled::
 
    specline.measure_ew()
+   print(specline.attrib['EW'])
 
 
 measure_kin
@@ -111,7 +115,7 @@ measure_kin
 
 Measure kinematic characteristics of an AbsLine.
 To perform the calculation, the line must be associated to
-a spectrum (see `Analysis_`) and vlim must
+a spectrum (see `Analysis`_) and vlim must
 be specified.  When executed, the 'kin' attribute is filled
 with a dict of measurements.  Default set of measurements
 are the v90, fedg, and fmm statistics of Prochaska & Wolfe 1997::
@@ -123,7 +127,7 @@ measure_restew
 --------------
 
 Measure the rest-frame Equivalent width of a SpectralLine.
-See `measure_ew`_ for details.
+See :ref:`measure-ew` for other details.
 
 to_dict
 -------

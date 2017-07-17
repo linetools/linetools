@@ -13,6 +13,10 @@ from astropy import constants as const
 
 from linetools import utils as liu
 
+try: # Python 2 & 3 compatibility
+    basestring
+except NameError:
+    basestring = str
 
 def meta_to_disk(in_meta):
     """ Polish up the meta dict for I/O
@@ -59,6 +63,7 @@ def splice_two(spec1, spec2, wvmx=None, scale=1., chk_units=True):
       *longer* than the original spectrum.
     wvmx : Quantity, optional
       Wavelength to begin splicing *after*
+      And to truncate original spectrum at
     scale : float, optional
       Scale factor for flux and error array.
       Mainly for convenience of plotting
@@ -82,22 +87,23 @@ def splice_two(spec1, spec2, wvmx=None, scale=1., chk_units=True):
     if wvmx is None:
         wvmx = spec1.wvmax
     #
-    gdp = np.where(spec2.wavelength > wvmx)[0]
+    gdp1 = np.where(spec1.wavelength <= wvmx)[0]
+    gdp2 = np.where(spec2.wavelength > wvmx)[0]
     # Concatenate
-    new_wv = np.concatenate((spec1.wavelength.value,
-                             spec2.wavelength.value[gdp]))
+    new_wv = np.concatenate((spec1.wavelength.value[gdp1],
+                             spec2.wavelength.value[gdp2]))
     uwave = u.Quantity(new_wv, unit=spec1.units['wave'])
-    new_fx = np.concatenate((spec1.flux.value,
-                             spec2.flux.value[gdp] * scale))
+    new_fx = np.concatenate((spec1.flux.value[gdp1],
+                             spec2.flux.value[gdp2] * scale))
     # Error
     if spec1.sig_is_set:
-        new_sig = np.concatenate((spec1.sig, spec2.sig[gdp] * scale))
+        new_sig = np.concatenate((spec1.sig[gdp1], spec2.sig[gdp2] * scale))
     else:
         new_sig = None
 
     # Continuum
     if spec1.co_is_set:
-        new_co = np.concatenate((spec1.co, spec2.co[gdp] * scale))
+        new_co = np.concatenate((spec1.co[gdp1], spec2.co[gdp2] * scale))
     else:
         new_co = None
 
@@ -108,7 +114,7 @@ def splice_two(spec1, spec2, wvmx=None, scale=1., chk_units=True):
     return spec3
 
 
-def collate(spectra):
+def collate(spectra, **kwargs):
     """ Generate a single XSpectrum1D instance containing an array of
     spectra from a list of individual XSpectrum1D spectra.
     Each spectrum is padded with extra pixels so that the
@@ -121,6 +127,8 @@ def collate(spectra):
     ----------
     spectra : list
       of XSpectrum1D
+    **kwargs : optional
+      Passed to the XSpectrum1D object generated
 
     Returns
     -------
@@ -175,15 +183,15 @@ def collate(spectra):
                     co[idx,:xspec.npix] = xspec.co.value
             idx += 1
         # Meta
-        meta['headers'].append(xspec.header)
+        meta['headers'] += xspec.meta['headers']
     # Finish
     new_spec = XSpectrum1D(wave, flux, sig=sig, co=co, units=units.copy(),
-                           masking='edges', meta=meta)
+                           meta=meta, **kwargs)
     # Return
     return new_spec
 
 
-def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
+def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, grow_bad_sig=False, **kwargs):
     """ Rebin a single spectrum in an XSpectrum1D object to a new wavelength array
 
     Uses simple linear interpolation.  The default (and only)
@@ -207,6 +215,8 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
       Rebin continuum if present
     all : bool, optional
       Rebin all spectra in the XSpectrum1D object?
+    grow_bad_sig : bool, optional
+      Allow sig<=0. values and grow them
 
     Returns
     -------
@@ -220,9 +230,9 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
     flux = spec.flux.value
 
     # Deal with nan
-    badf = np.isnan(flux)
+    badf = np.any([np.isnan(flux), np.isinf(flux)], axis=0)
     if np.sum(badf) > 0:
-        warnings.warn("Ignoring pixels with NAN in flux")
+        warnings.warn("Ignoring pixels with NAN or INF in flux")
     gdf = ~badf
     flux = flux[gdf]
 
@@ -231,7 +241,10 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
         sig = spec.sig.value
         bad_sig = sig[gdf] <= 0.
         if np.sum(bad_sig) > 0:
-            raise IOError("Not prepared to handle data with rejected pixels (sig=0).")
+            if not grow_bad_sig:
+                raise IOError("Data contains rejected pixels (sig=0). Use grow_bad_sig to proceed and grow them.")
+        bads = np.any([np.isnan(sig[gdf]), np.isinf(sig[gdf]**2)], axis=0)  # Latter is for way too large values
+        bad_sig[bads] = True
 
     # Endpoints of original pixels
     npix = len(spec.wavelength)
@@ -250,12 +263,13 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
         if not spec.sig_is_set:
             raise IOError("sig must be set to rebin sig")
         var = sig[gdf]**2
+        var[bad_sig] = 0.
     else:
         var = np.ones_like(flux)
 
     # Cumulative Sum
     cumsum = np.cumsum(flux * dwv)
-    cumvar = np.cumsum(var * dwv)
+    cumvar = np.cumsum(var * dwv.value, dtype=np.float64)
 
     # Interpolate (loses the units)
     fcum = interp1d(wvh, cumsum, fill_value=0., bounds_error=False)
@@ -286,8 +300,6 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
 
     # Normalize (preserve counts and flambda)
     new_dwv = bwv - np.roll(bwv, 1)
-    #import pdb
-    # pdb.set_trace()
     new_fx = new_fx / new_dwv[1:]
     # Preserve S/N (crudely)
     med_newdwv = np.median(new_dwv.value)
@@ -296,10 +308,10 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
     # Return new spectrum
     if do_sig:
         # Create new_sig
-        new_sig = np.zeros_like(new_var)
+        new_sig = np.zeros_like(new_var.value)
         gd = new_var > 0.
         new_sig[gd] = np.sqrt(new_var[gd].value)
-        # Deal with bad pixels
+        # Deal with bad pixels (grow_bad_sig should be True)
         bad = np.where(var <= 0.)[0]
         for ibad in bad:
             bad_new = np.where(np.abs(new_wv-spec.wavelength[ibad]) <
@@ -307,6 +319,8 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
             new_sig[bad_new] = 0.
         # Zero out edge pixels -- not to be trusted
         igd = np.where(gd)[0]
+        if len(igd) == 0:  # Should not get here!
+            raise ValueError("Not a single good pixel?!  Something went wrong...")
         new_sig[igd[0]] = 0.
         new_sig[igd[-1]] = 0.
     else:
@@ -334,7 +348,7 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, **kwargs):
     return newspec
 
 
-def rebin_to_rest(spec, zarr, dv, debug=False):
+def rebin_to_rest(spec, zarr, dv, debug=False, **kwargs):
     """ Shuffle an XSpectrum1D dataset to an array of
     observed wavelengths and rebin to dv pixels.
 
@@ -348,6 +362,8 @@ def rebin_to_rest(spec, zarr, dv, debug=False):
       Array of redshifts
     dv : Quantity
       Velocity width of the new pixels
+    **kwargs :
+      Passed to spec.rebin()
 
     Returns
     -------
@@ -382,7 +398,7 @@ def rebin_to_rest(spec, zarr, dv, debug=False):
         # Select
         spec.select = ispec
         # Rebin in obs frame
-        tspec = spec.rebin(new_wv*(1+zarr[ispec]), do_sig=True, masking='none')
+        tspec = spec.rebin(new_wv*(1+zarr[ispec]), do_sig=True, masking='none', **kwargs)
         # Save in rest-frame (worry about flambda)
         f_flux[ispec, :] = tspec.flux.value
         f_sig[ispec, :] = tspec.sig.value

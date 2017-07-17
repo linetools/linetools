@@ -2,8 +2,10 @@
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
-from PyQt4 import QtGui
-from PyQt4 import QtCore
+from PyQt5 import QtGui
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QWidget, QDialog, QLabel, QLineEdit, QListWidget
+from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QAbstractItemView
 
 import numpy as np
 import pdb
@@ -13,13 +15,18 @@ from astropy.table import Table
 from linetools.guis import utils as ltgu
 from linetools.lists.linelist import LineList
 
+try:
+    ustr = unicode
+except NameError:
+    ustr = str
+
 
 # #####
-class PlotLinesWidget(QtGui.QWidget):
+class PlotLinesWidget(QWidget):
     """ Widget to set up spectral lines for plotting
     """
     def __init__(self, parent=None, status=None, init_llist=None, init_z=None,
-                 edit_z=True):
+                 edit_z=True, screen_scale=1.):
         """
         Parameters
         ----------
@@ -30,6 +37,8 @@ class PlotLinesWidget(QtGui.QWidget):
           Initial redshift
         edit_z : bool, optional
           Allow z to be editable
+        screen_scale : float, optional
+          Scale GUI dimensions
 
         Returns
         -------
@@ -42,30 +51,32 @@ class PlotLinesWidget(QtGui.QWidget):
             self.statusBar = status
         if init_z is None:
             init_z = 0.
+        self.scale = screen_scale
 
         # Create a dialog window for redshift
         if edit_z:
-            z_label = QtGui.QLabel('z=')
-            self.zbox = QtGui.QLineEdit()
+            z_label = QLabel('z=')
+            self.zbox = QLineEdit()
             self.zbox.z_frmt = '{:.7f}'
             self.zbox.setText(self.zbox.z_frmt.format(init_z))
-            self.zbox.setMinimumWidth(50)
-            self.connect(self.zbox, QtCore.SIGNAL('editingFinished ()'), self.setz)
+            self.zbox.setMinimumWidth(50*self.scale)
+            self.zbox.textChanged[str].connect(self.setz)
+            #self.connect(self.zbox, QtCore.SIGNAL('editingFinished ()'), self.setz)
         else:
-            z_label = QtGui.QLabel('z={:.7f}'.format(init_z))
+            z_label = QLabel('z={:.7f}'.format(init_z))
 
         # Create the line list
         self.lists = ['None', 'ISM', 'Strong', 'HI', 'Galaxy', 'H2', 'EUV']
         #'grb.lst', 'dla.lst', 'lls.lst', 'subLLS.lst',
 #                      'lyman.lst', 'Dlyman.lst', 'gal_vac.lst', 'ne8.lst',
 #                      'lowz_ovi.lst', 'casbah.lst', 'H2.lst']
-        list_label = QtGui.QLabel('Line Lists:')
-        self.llist_widget = QtGui.QListWidget(self)
+        list_label = QLabel('Line Lists:')
+        self.llist_widget = QListWidget(self)
         for ilist in self.lists:
             self.llist_widget.addItem(ilist)
         self.llist_widget.setCurrentRow(0)
         self.llist_widget.currentItemChanged.connect(self.on_list_change)
-        self.llist_widget.setMaximumHeight(100)
+        self.llist_widget.setMaximumHeight(100*self.scale)
 
         # Input line list?
         if init_llist is None:
@@ -89,7 +100,7 @@ class PlotLinesWidget(QtGui.QWidget):
                 pass
 
         # Layout
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         vbox.addWidget(z_label)
         if edit_z:
             vbox.addWidget(self.zbox)
@@ -97,7 +108,7 @@ class PlotLinesWidget(QtGui.QWidget):
         vbox.addWidget(self.llist_widget)
 
         self.setLayout(vbox)
-        self.setMaximumHeight(200)
+        self.setMaximumHeight(200*self.scale)
 
     def on_list_change(self,curr,prev):
         llist = str(curr.text())
@@ -118,9 +129,14 @@ class PlotLinesWidget(QtGui.QWidget):
                 self.spec_widg.on_draw()
             except AttributeError:
                 return
+            except TypeError:
+                QtCore.pyqtRemoveInputHook()
+                pdb.set_trace()
+                QtCore.pyqtRestoreInputHook()
 
-    def setz(self):
-        sstr = unicode(self.zbox.text())
+    def setz(self, text):
+        self.zbox.setText(text)
+        sstr = ustr(self.zbox.text())
         try:
             self.llist['z'] = float(sstr)
         except ValueError:
@@ -143,14 +159,14 @@ class PlotLinesWidget(QtGui.QWidget):
         except AttributeError:
             return
 
-class SelectLineWidget(QtGui.QDialog):
+class SelectLineWidget(QDialog):
     """ Widget to select a spectral line
     inp: string or dict or Table
       Input line list
 
     15-Dec-2014 by JXP
     """
-    def __init__(self, inp, parent=None):
+    def __init__(self, inp, parent=None, scale=1.):
         super(SelectLineWidget, self).__init__(parent)
 
         # Line list Table
@@ -159,22 +175,22 @@ class SelectLineWidget(QtGui.QDialog):
         else:
             raise ValueError('SelectLineWidget: Wrong type of input')
 
-        self.resize(250, 800)
+        self.resize(250*scale, 800*scale)
 
         # Create the line list
-        line_label = QtGui.QLabel('Lines:')
-        self.lines_widget = QtGui.QListWidget(self)
+        line_label = QLabel('Lines:')
+        self.lines_widget = QListWidget(self)
         self.lines_widget.addItem('None')
         self.lines_widget.setCurrentRow(0)
+        self.line = "None"  # init "selected line" as "None"
 
         # Loop on lines (could put a preferred list first)
         # Sort
         srt = np.argsort(lines['wrest'])
         for ii in srt:
             try:
-                s = '{:s} :: {:.2f} :: {:.3f}'.format(lines['name'][ii], lines['wrest'][ii],
-                                                      lines['f'][ii])
-            except ValueError:  # f-value masked (most likely)
+                s = '{:s} :: {:.2f} :: {:.3f}'.format(lines['name'][ii], lines['wrest'][ii], lines['f'][ii])
+            except (ValueError, TypeError):  # f-value masked (most likely)
                 s = '{:s} :: {:.2f}'.format(lines['name'][ii], lines['wrest'][ii])
             #  is there a column called 'redshift'? (only used in igmguesses for now)
             try:
@@ -188,11 +204,12 @@ class SelectLineWidget(QtGui.QDialog):
         #self.scrollArea = QtGui.QScrollArea()
 
         # Quit
-        qbtn = QtGui.QPushButton('Quit', self)
+        qbtn = QPushButton(self)
+        qbtn.setText('Quit')
         qbtn.clicked.connect(self.close)
 
         # Layout
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         vbox.addWidget(line_label)
         vbox.addWidget(self.lines_widget)
         vbox.addWidget(qbtn)
@@ -205,7 +222,7 @@ class SelectLineWidget(QtGui.QDialog):
         print('You chose: {:s}'.format(curr.text()))
 
 
-class SelectedLinesWidget(QtGui.QWidget):
+class SelectedLinesWidget(QWidget):
     """ Widget to show and enable lines to be selected
     inp : LineList
       Input LineList
@@ -232,9 +249,9 @@ class SelectedLinesWidget(QtGui.QWidget):
         self.plot_widget = plot_widget
 
         # Create the line list
-        line_label = QtGui.QLabel('Lines:')
-        self.lines_widget = QtGui.QListWidget(self)
-        self.lines_widget.setSelectionMode(QtGui.QAbstractItemView.MultiSelection)
+        line_label = QLabel('Lines:')
+        self.lines_widget = QListWidget(self)
+        self.lines_widget.setSelectionMode(QAbstractItemView.MultiSelection)
 
         # Initialize list
         self.item_flg = 0
@@ -262,7 +279,7 @@ class SelectedLinesWidget(QtGui.QWidget):
         self.lines_widget.itemSelectionChanged.connect(self.on_item_change)
 
         # Layout
-        vbox = QtGui.QVBoxLayout()
+        vbox = QVBoxLayout()
         vbox.addWidget(line_label)
         vbox.addWidget(self.lines_widget)
 
@@ -272,7 +289,7 @@ class SelectedLinesWidget(QtGui.QWidget):
         nlin = len(self.lines['wrest'])
         for ii in range(nlin):
             self.lines_widget.addItem('{:s} :: {:.3f} :: {}'.format(self.lines['name'][ii],
-                                                         self.lines['wrest'][ii].value,
+                                                         self.lines['wrest'][ii],
                                                          self.lines['f'][ii]))
 
     def on_item_change(self): #,item):
