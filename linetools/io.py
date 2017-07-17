@@ -122,7 +122,7 @@ def emlines_from_alis_output(alis_file):
     # Generate EmLines
     emlines = []
     for iline in line_dict['lines']:
-        obj = EmLine(iline['wrest'], z=iline['z'], linelist=linelist)
+        obj = EmLine(iline['wrest'], z=iline['z'], linelist=linelist, closest=True)
         # Fill
         try:
             obj.attrib['flux'] = iline['flux']*u.erg/u.s
