@@ -23,7 +23,7 @@ from linetools.isgm.abscomponent import AbsComponent
 from linetools.isgm import utils as ltiu
 from linetools import utils as ltu
 from linetools import line_utils as ltlu
-from linetools.spectralline import AbsLine
+from linetools.spectralline import EmLine
 from linetools import io as lio
 
 # Globals to speed things up
@@ -69,7 +69,7 @@ class EmSystem(object):
 
     @classmethod
     def from_emlines(cls, emlines, vlim=None, **kwargs):
-        """Instantiate from a list of AbsLines
+        """Instantiate from a list of EmLines
 
         Parameters
         ----------
@@ -128,19 +128,38 @@ class EmSystem(object):
 
         Returns
         -------
-        AbsSystem
 
         """
         slf = cls(SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg),
-                  idict['zabs'], idict['vlim']*u.km/u.s, zem=idict['zem'],
-                  name=idict['Name'], **ckwargs)
-        # Other
-        add_other_from_dict(slf, idict)
-        # Components
-        add_comps_from_dict(slf, idict, **kwargs)
-
+                  idict['zem'], vlim=idict['vlim']*u.km/u.s,
+                  name=idict['Name'], em_type=idict['em_type'])
+        # Emission lines
+        em_dict = idict['emlines']
+        for key in em_dict:
+            iline = em_dict[key]
+            obj = EmLine.from_dict(iline)
+            slf.add_emline(obj)
         # Return
         return slf
+
+    @classmethod
+    def from_json(cls, json_file, **kwargs):
+        """ Load from a JSON file (via from_dict)
+
+        Parameters
+        ----------
+        json_file
+        kwargs
+
+        Returns
+        -------
+        AbsSystem
+
+        """
+        idict = ltu.loadjson(json_file)
+        slf = cls.from_dict(idict, **kwargs)
+        return slf
+
 
     def __init__(self, radec, zem, vlim=None, em_type=None, name=None):
 
@@ -187,10 +206,22 @@ class EmSystem(object):
         self.Refs = []
 
     def add_emlines_from_alis(self, alis_file, **kwargs):
-        dum_sys = EmSystem.from_alis(alis_file, (0.,0.))  # Fake coords
+        '''
+        Code assumes the coordinates of the class (i.e. no checking)
+        Parameters
+        ----------
+        alis_file : str
+
+
+
+        Returns
+        -------
+
+        '''
+        dum_sys = EmSystem.from_alis(alis_file, self.coord)
         # Add in lines
         for emline in dum_sys._emlines:
-            self.add_emline(emline, chk_sep=False, **kwargs)
+            self.add_emline(emline, **kwargs)
 
     def add_emline(self, emline, tol=0.2*u.arcsec,
                       chk_sep=True, chk_z=True, overlap_only=False,
@@ -247,7 +278,7 @@ class EmSystem(object):
         if test:
             self._emlines.append(emline)
         else:
-            warnings.warn('Input EmLine with wrest={} does not match AbsSystem rules. Not appending'.format(emline.wrest))
+            warnings.warn('Input EmLine with wrest={} does not match EmSystem rules. Not appending'.format(emline.wrest))
             if not testcoord:
                 warnings.warn('Failed coordinate match')
             if not testcomp:
@@ -449,7 +480,7 @@ class EmSystem(object):
         date = str(datetime.date.today().strftime('%Y-%b-%d'))
         user = getpass.getuser()
         # Generate the dict
-        outdict = dict(Name=self.name, em_type=self.em_type, zabs=self.zabs,
+        outdict = dict(Name=self.name, em_type=self.em_type,
                        vlim=self.vlim.to('km/s').value, zem=self.zem,
                        RA=self.coord.ra.value, DEC=self.coord.dec.value,
                        kin=self.kin, Refs=self.Refs, CreationDate=date,
@@ -457,10 +488,9 @@ class EmSystem(object):
                        user=user
                        )
         outdict['class'] = self.__class__.__name__
-        # Components
-        outdict['components'] = {}
-        for component in self._components:
-            outdict['components'][component.name] = ltu.jsonify(component.to_dict())
+        outdict['emlines'] = {}
+        for iline in self._emlines:
+            outdict['emlines'][iline.wrest.value] = iline.to_dict()
         # Polish
         outdict = ltu.jsonify(outdict)
         # Return
