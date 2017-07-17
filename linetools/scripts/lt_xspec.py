@@ -64,11 +64,6 @@ def main(*args, **kwargs):
             exten = [exten, None]
             file = [file, pargs.splice]
 
-    # Scale
-    if pargs.scale is None:
-        scale = 1.
-    else:
-        scale = pargs.scale
 
     # Read spec keywords
     rsp_kwargs = {}
@@ -78,6 +73,15 @@ def main(*args, **kwargs):
 
     # GUI
     app = QApplication(sys.argv)
+
+    # Scale
+    if pargs.scale is None:
+        # Screen dimensions
+        width = app.desktop().screenGeometry().width()
+        scale = 2. * (width/3200.)
+    else:
+        scale = pargs.scale
+    #
     gui = XSpecGui(file, zsys=zsys, norm=norm, exten=exten,
                    rsp_kwargs=rsp_kwargs, air=pargs.air,
                    screen_scale=scale)
