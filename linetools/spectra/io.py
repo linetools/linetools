@@ -83,7 +83,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
             datfil, chk = chk_for_gz(specfil.strip())
             if chk == 0:
                 raise IOError('File does not exist {}'.format(specfil))
-            hdulist = fits.open(os.path.expanduser(datfil))
+            hdulist = fits.open(os.path.expanduser(datfil), **kwargs)
         elif '.hdf5' in specfil:  # HDF5
             return parse_hdf5(specfil, **kwargs)
         else: #ASCII
@@ -741,7 +741,8 @@ def parse_two_file_format(specfil, hdulist, efil=None, **kwargs):
     # Error file
     if efil is not None:
         efil = os.path.expanduser(efil)
-        sig = fits.getdata(efil)
+        sighdu = fits.open(efil, **kwargs)
+        sig = sighdu[0].data
     else:
         sig = None
 
