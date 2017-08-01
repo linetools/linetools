@@ -26,6 +26,7 @@ def main(*args, **kwargs):
 
     from PyQt5.QtWidgets import QApplication
     from linetools.guis.xabssysgui import XAbsSysGui
+    import warnings
 
     # Normalized?
     norm = True
@@ -48,6 +49,8 @@ def main(*args, **kwargs):
     # Read AbsSystem
     from linetools.isgm.abssystem import GenericAbsSystem
     abs_sys = GenericAbsSystem.from_json(pargs.abssys_file)#, chk_vel=False)
+    if len(abs_sys.list_of_abslines()) == 0:
+        warnings.warn("No absorption lines given.  I hope you intended that to be the case!")
 
     app = QApplication(sys.argv)
 
