@@ -807,7 +807,7 @@ class AbsComponent(object):
         """
         cdict = dict(Zion=self.Zion, zcomp=self.zcomp, vlim=self.vlim.to('km/s').value,
                      Name=self.name,
-                     RA=self.coord.fk5.ra.value, DEC=self.coord.fk5.dec.value,
+                     RA=self.coord.icrs.ra.value, DEC=self.coord.icrs.dec.value,
                      A=self.A, Ej=self.Ej.to('1/cm').value, comment=self.comment,
                      flag_N=self.flag_N, logN=self.logN, sig_logN=self.sig_logN)
         cdict['class'] = self.__class__.__name__
@@ -853,8 +853,8 @@ class AbsComponent(object):
 
     def __repr__(self):
         txt = '<{:s}: {:s} {:s}, Name={:s}, Zion=({:d},{:d}), Ej={:g}, z={:g}, vlim={:g},{:g}'.format(
-            self.__class__.__name__, self.coord.fk5.ra.to_string(unit=u.hour,sep=':', pad=True),
-                self.coord.fk5.dec.to_string(sep=':',pad=True,alwayssign=True), self.name, self.Zion[0], self.Zion[1], self.Ej, self.zcomp, self.vlim[0], self.vlim[1])
+            self.__class__.__name__, self.coord.icrs.ra.to_string(unit=u.hour,sep=':', pad=True),
+                self.coord.icrs.dec.to_string(sep=':',pad=True,alwayssign=True), self.name, self.Zion[0], self.Zion[1], self.Ej, self.zcomp, self.vlim[0], self.vlim[1])
 
         # Column?
         if self.flag_N > 0:
