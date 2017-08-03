@@ -535,7 +535,7 @@ class ExamineSpecWidget(QWidget):
         try:
             print('button={:d}, x={:f}, y={:f}, xdata={:f}, ydata={:g}'.format(
                 event.button, event.x, event.y, event.xdata, event.ydata))
-        except ValueError:
+        except (ValueError, TypeError):
             print('Out of bounds')
             return
         if event.button == 1: # Draw line
