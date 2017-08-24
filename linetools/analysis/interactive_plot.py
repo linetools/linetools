@@ -225,11 +225,12 @@ _        : halve the number of spline knots
 d        : delete the nearest knot
 m        : move the nearest knot
 M        : move the nearest knot, and use a flux median to guess y position
+c        : toggle initial continuum display
 
 q        : quit
 """
     def __init__(self, wa, fl, er, contpoints, co=None,
-                 fig=None, anchor=None):
+                 fig=None, anchor=None, numguesspix=None):
         """ Initialise figure, plots and variables.
         """
 
@@ -277,6 +278,9 @@ q        : quit
         else:
             wmin = wa[0]
             wmax = wa[-1]
+
+        if numguesspix is not None:
+            self.numguesspix = numguesspix
 
         # add extra anchor points so the slopes match at each end of
         # the fitting region.
@@ -352,7 +356,7 @@ q        : quit
         art.append(a0.axvline(wa[i0], color='r', ls='--', lw=2, zorder=10))
         art.append(a0.axvline(wa[i1], color='r', ls='--', lw=2, zorder=10))
         self.artists['indices'] = art
-        a0.plot(wa, self.continuum, color='k', lw=2, ls='dashed', zorder=3)
+        self.artists['initcont'], = a0.plot(wa, self.continuum, color='k', lw=2, ls='dashed', zorder=3)
         self.artists['fl'], = a0.plot(wa, fl, lw=1, color='0.7',
                                       linestyle='steps-mid')
         a0.plot(wa, er, lw=0.5, color='orange')
@@ -449,7 +453,7 @@ q        : quit
             xnew = []
             xnew.extend(np.array(xc[:-1]) + 0.5*np.diff(xc))
             ynew = np.interp(xnew, xc, yc)
-            ynew = [float(local_median(self.wa, self.fl, self.er, xnew[i],
+            ynew = [float(local_median(self.wa, self.fl, self.er, xnew[i], npix=self.numguesspix,
                                        default=ynew[i]))
                     for i in range(len(xnew))]
             # add to contpoints
@@ -484,7 +488,7 @@ q        : quit
                 return
             x = event.xdata
             if not self.contpoints or x not in list(zip(*self.contpoints))[0]:
-                y = local_median(self.wa, self.fl, self.er, x,
+                y = local_median(self.wa, self.fl, self.er, x, npix=self.numguesspix,
                                  default=event.ydata)
                 self.contpoints.append((x, float(y)))
                 self.contpoints.sort()
@@ -532,10 +536,17 @@ q        : quit
             if event.key == 'M' and \
                    (not self.contpoints or
                     x not in list(zip(*self.contpoints))[0]):
-                y = local_median(self.wa, self.fl, self.er, x,
+                y = local_median(self.wa, self.fl, self.er, x, npix=self.numguesspix,
                                  default=event.ydata)
             self.contpoints[ind] = x, float(y)
             self.contpoints.sort()
+            self.update()
+        elif event.key == 'c':
+            # Toggle initial continuum display
+            if self.artists['initcont'].get_visible() is True:
+                self.artists['initcont'].set_visible(False)
+            else:
+                self.artists['initcont'].set_visible(True)
             self.update()
 
         elif event.key == '?':

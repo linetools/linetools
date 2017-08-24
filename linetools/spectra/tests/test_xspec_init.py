@@ -65,7 +65,8 @@ def test_attrib():
     # 
     np.testing.assert_allclose(spec.wvmin.value, 3056.6673905210096)
     np.testing.assert_allclose(spec.wvmax.value, 9205.255609841855)
-    assert spec.npix == 15024
+    #assert spec.npix == 15024 -- With masking on
+    assert spec.npix == 16582
 
 
 def test_masking():
@@ -84,7 +85,7 @@ def test_masking():
     assert len(spec3.wavelength) == len(wave)
 
 def test_co_kludges():
-    spec = XSpectrum1D.from_file(data_path('SDSSJ220248.31+123656.3.fits'))
+    spec = XSpectrum1D.from_file(data_path('SDSSJ220248.31+123656.3.fits'), masking='edges')
     assert spec.co.size == 4599
 
 

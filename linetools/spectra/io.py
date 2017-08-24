@@ -83,7 +83,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
             datfil, chk = chk_for_gz(specfil.strip())
             if chk == 0:
                 raise IOError('File does not exist {}'.format(specfil))
-            hdulist = fits.open(os.path.expanduser(datfil))
+            hdulist = fits.open(os.path.expanduser(datfil), **kwargs)
         elif '.hdf5' in specfil:  # HDF5
             return parse_hdf5(specfil, **kwargs)
         else: #ASCII
@@ -107,7 +107,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
     if is_UVES_popler(head0):
         if debug:
             print('linetools.spectra.io.readspec(): Reading UVES popler format')
-        xspec1d = parse_UVES_popler(hdulist)
+        xspec1d = parse_UVES_popler(hdulist, **kwargs)
 
     elif head0['NAXIS'] == 0:
         # Binary FITS table
@@ -122,7 +122,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
             if debug:
                 print(
   'linetools.spectra.io.readspec(): Assuming flux and err in separate files')
-            xspec1d = parse_two_file_format(specfil, hdulist, efil=efil)
+            xspec1d = parse_two_file_format(specfil, hdulist, efil=efil, **kwargs)
 
         elif hdulist[0].name == 'FLUX':
             if debug:
@@ -458,7 +458,7 @@ def is_UVES_popler(hd):
             return True
     return False
 
-def parse_UVES_popler(hdulist):
+def parse_UVES_popler(hdulist, **kwargs):
     """ Read a spectrum from a UVES_popler-style fits file.
 
     Parameters
@@ -477,7 +477,7 @@ def parse_UVES_popler(hdulist):
     co = hdulist[0].data[3]
     fx = hdulist[0].data[0] * co  #  Flux
     sig = hdulist[0].data[1] * co
-    xspec1d = XSpectrum1D.from_tuple((uwave, fx, sig, co))
+    xspec1d = XSpectrum1D.from_tuple((uwave, fx, sig, co), **kwargs)
     return xspec1d
 
 def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
@@ -520,7 +520,7 @@ def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
                     'er', 'err', 'error', 'sig', 'fluxerror']
     else:
         sig_tags = [sig_tag]
-    sig, sig_tag = get_table_column(sig_tags, hdulist)
+    sig, sig_tag = get_table_column(sig_tags, hdulist, idx=exten)
     if sig is None:
         if ivar_tag is None:
             ivar_tags = ['IVAR', 'IVAR_OPT', 'ivar', 'FLUX_IVAR']
@@ -670,7 +670,7 @@ def parse_hdf5(inp, close=True, **kwargs):
                           meta=meta, units=units, **kwargs)
 
 
-def parse_DESI_brick(hdulist, select=0):
+def parse_DESI_brick(hdulist, select=0, **kwargs):
     """ Read a spectrum from a DESI brick format HDU list
 
     Parameters
@@ -699,11 +699,11 @@ def parse_DESI_brick(hdulist, select=0):
     if wave.shape != fx.shape:
         wave = np.tile(wave, (fx.shape[0],1))
     # Finish
-    xspec1d = XSpectrum1D(wave, fx, sig, select=select)
+    xspec1d = XSpectrum1D(wave, fx, sig, select=select, **kwargs)
     return xspec1d
 
 
-def parse_two_file_format(specfil, hdulist, efil=None):
+def parse_two_file_format(specfil, hdulist, efil=None, **kwargs):
     """ Parse old two file format (one for flux, another for error).
 
     Parameters
@@ -741,7 +741,8 @@ def parse_two_file_format(specfil, hdulist, efil=None):
     # Error file
     if efil is not None:
         efil = os.path.expanduser(efil)
-        sig = fits.getdata(efil)
+        sighdu = fits.open(efil, **kwargs)
+        sig = sighdu[0].data
     else:
         sig = None
 
@@ -762,6 +763,6 @@ def parse_two_file_format(specfil, hdulist, efil=None):
         raise ValueError('DC-FLAG has unusual value {:d}'.format(dc_flag))
 
     # Finish
-    xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, None))
+    xspec1d = XSpectrum1D.from_tuple((wave, fx, sig, None), **kwargs)
 
     return xspec1d

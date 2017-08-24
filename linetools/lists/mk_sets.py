@@ -150,6 +150,8 @@ def add_galaxy_lines(outfil, infil=None, stop=True):
 
     # Read set file
     data = ascii.read(infil, format='fixed_width')
+    # reformat name column to avoid truncation of names
+    data['name'] = data['name'].astype("|S20")
 
     # Read galaxy lines (emission)
     forbidden = llp.read_forbidden()
@@ -190,7 +192,6 @@ def add_xray_lines(outfil, infil=None, stop=True):
     infil : str, optional
       Starting file.  Should use latest llist_vX.X.ascii
     """
-    import pdb
     if infil is None:
         fils = glob.glob(lt_path+'/lists/sets/llist_v*')
         fils.sort()
@@ -212,6 +213,7 @@ def add_xray_lines(outfil, infil=None, stop=True):
             continue
         if np.min(np.abs(row['wrest']-data['wrest'])) > 0.0001:
             tmp_row['wrest'] = row['wrest']
+            import pdb; pdb.set_trace()
             tmp_row['name'] = row['name']
             data.add_row(tmp_row)
 
@@ -221,8 +223,7 @@ def add_xray_lines(outfil, infil=None, stop=True):
     # Write
     print('Make sure you want to do this!')
     if stop:
-        import pdb
-        pdb.set_trace()
+        import pdb; pdb.set_trace()
     data.write(outfil, format='ascii.fixed_width', overwrite=True)
 
 
@@ -232,5 +233,5 @@ if __name__ == '__main__':
     flg += 2**0   # X-ray lines
 
     if flg & (2**0):
-        add_xray_lines('sets/llist_v1.1.ascii')
-
+        add_galaxy_lines('sets/llist_v1.2.ascii')
+        add_xray_lines('sets/llist_v1.2.ascii')

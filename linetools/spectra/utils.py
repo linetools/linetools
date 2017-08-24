@@ -114,7 +114,7 @@ def splice_two(spec1, spec2, wvmx=None, scale=1., chk_units=True):
     return spec3
 
 
-def collate(spectra):
+def collate(spectra, **kwargs):
     """ Generate a single XSpectrum1D instance containing an array of
     spectra from a list of individual XSpectrum1D spectra.
     Each spectrum is padded with extra pixels so that the
@@ -127,6 +127,8 @@ def collate(spectra):
     ----------
     spectra : list
       of XSpectrum1D
+    **kwargs : optional
+      Passed to the XSpectrum1D object generated
 
     Returns
     -------
@@ -184,7 +186,7 @@ def collate(spectra):
         meta['headers'] += xspec.meta['headers']
     # Finish
     new_spec = XSpectrum1D(wave, flux, sig=sig, co=co, units=units.copy(),
-                           masking='edges', meta=meta)
+                           meta=meta, **kwargs)
     # Return
     return new_spec
 
@@ -306,7 +308,7 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, grow_bad_sig=False
     # Return new spectrum
     if do_sig:
         # Create new_sig
-        new_sig = np.zeros_like(new_var)
+        new_sig = np.zeros_like(new_var.value)
         gd = new_var > 0.
         new_sig[gd] = np.sqrt(new_var[gd].value)
         # Deal with bad pixels (grow_bad_sig should be True)

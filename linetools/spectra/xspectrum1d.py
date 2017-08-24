@@ -148,7 +148,7 @@ class XSpectrum1D(object):
         return spec
 
     def __init__(self, wave, flux, sig=None, co=None, units=None, select=0,
-                 meta=None, verbose=False, masking='edges'):
+                 meta=None, verbose=False, masking='none', **kwargs):
         """
         Parameters
         ----------
@@ -181,6 +181,7 @@ class XSpectrum1D(object):
             raise IOError("Invalid masking type.")
         #if (masking != 'None') and (sig is None):
         #    warnings.warn("Must input sig array to use masking")
+        self.masking = masking
 
         # Handle many spectra
         if len(wave.shape) == 1:
@@ -663,7 +664,10 @@ class XSpectrum1D(object):
             from PyQt5.QtWidgets import QApplication
             from linetools.guis.xspecgui import XSpecGui
             app = QApplication(sys.argv)
-            gui = XSpecGui(self)
+            # Scale to pixels on screen
+            width = app.desktop().screenGeometry().width()
+            scale = 2. * (width/3200.)
+            gui = XSpecGui(self, screen_scale=scale)
             gui.show()
             app.exec_()
             return
@@ -766,13 +770,19 @@ class XSpectrum1D(object):
         all : bool, optional
           Rebin all spectra in the XSpectrum1D object?
           Set masking='none' to have the resultant spectra all be regsitered, but note
-             that there will still be masking
+             that there will still be masking unless otherwise specified in kwargs
 
         Returns
         -------
         XSpectrum1D of the rebinned spectrum
         """
         from .utils import rebin, collate
+        #
+        if 'masking' in kwargs:
+            masking = kwargs['masking']
+        else:
+            masking = 'none'
+        #
         if not all:
             new_spec = rebin(self, new_wv, **kwargs)
         else:
@@ -781,7 +791,7 @@ class XSpectrum1D(object):
                 self.select = ii
                 spec_list.append(rebin(self, new_wv, **kwargs))
             # Collate
-            new_spec = collate(spec_list)
+            new_spec = collate(spec_list, masking=masking)
         # Return
         return new_spec
 
@@ -1337,7 +1347,7 @@ class XSpectrum1D(object):
         print('Wrote spectrum to {:s}'.format(outfil))
 
     def fit_continuum(self, knots=None, edges=None, wlim=None, dw=10.,
-                      kind=None, **kwargs):
+                      kind=None, numguesspix=10, **kwargs):
         """ Interactively fit a continuum.
 
         This sets the following attributes
@@ -1366,6 +1376,9 @@ class XSpectrum1D(object):
         kind : {'QSO', None}, optional
           If not None, generate spline knots using
           linetools.analysis.continuum.find_continuum.
+        numguesspix : int, optional
+          Number of pixels included when guessing knot location using flux
+          median ('A' or 'M'); default is 10
         **kwargs : dict
           Other keyword arguments are passed to
           ~linetools.analysis.continuum.find_continuum.  For
@@ -1428,7 +1441,7 @@ class XSpectrum1D(object):
         fig = plt.figure(figsize=(11, 7))
         fig.subplots_adjust(left=0.05, right=0.95, bottom=0.1, top=0.95)
         wrapper = InteractiveCoFit(wa, flux, sig,
-                                   contpoints, co=co_init, fig=fig, anchor=anchor)
+                                   contpoints, co=co_init, fig=fig, anchor=anchor, numguesspix=numguesspix)
 
         # wait until the interactive fitting has finished
         while not wrapper.finished:
