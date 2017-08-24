@@ -485,7 +485,7 @@ class ExamineSpecWidget(QWidget):
                             dline.analy['spec'] = tspec
                             dline.limits.set(iwv)
                             dline.measure_ew()
-                            mssg = 'Using dummy '+ dline.__repr__()
+                            mssg = 'Using dummy '+ dline.__repr__()+' for the calculation.'
                             mssg = mssg + ' ::  Obs EW = {:g} +/- {:g}'.format(
                                 dline.attrib['EW'].to(mAA), dline.attrib['sig_EW'].to(mAA))
                 # Display values
