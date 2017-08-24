@@ -3,8 +3,9 @@
 """
 Show a VelocityPlot to interactively modify lines in an AbsSystem
 """
-import pdb
 import sys
+import pdb
+import warnings
 
 
 # Script to run XAbsSysGui from the command line or ipython
@@ -21,11 +22,14 @@ def main(*args, **kwargs):
     #parser.add_argument("-exten", type=int, help="FITS extension")
     parser.add_argument("--un_norm", help="Spectrum is NOT normalized",
                         action="store_true")
+    parser.add_argument("--chk_z",  help="Check the z limits of your components? [default=False]",
+                        action="store_true")
 
     pargs = parser.parse_args()
 
     from PyQt5.QtWidgets import QApplication
     from linetools.guis.xabssysgui import XAbsSysGui
+    from IPython import embed
 
     # Normalized?
     norm = True
@@ -47,7 +51,9 @@ def main(*args, **kwargs):
 
     # Read AbsSystem
     from linetools.isgm.abssystem import GenericAbsSystem
-    abs_sys = GenericAbsSystem.from_json(pargs.abssys_file)#, chk_vel=False)
+    if not pargs.chk_z:
+        warnings.warn("Not checking your system's velocity limits.  This is the Default but be so warned.")
+    abs_sys = GenericAbsSystem.from_json(pargs.abssys_file, chk_z=pargs.chk_z)
 
     app = QApplication(sys.argv)
 
