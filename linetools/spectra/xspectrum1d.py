@@ -148,7 +148,7 @@ class XSpectrum1D(object):
         return spec
 
     def __init__(self, wave, flux, sig=None, co=None, units=None, select=0,
-                 meta=None, verbose=False, masking='none'):
+                 meta=None, verbose=False, masking='none', **kwargs):
         """
         Parameters
         ----------
@@ -664,7 +664,10 @@ class XSpectrum1D(object):
             from PyQt5.QtWidgets import QApplication
             from linetools.guis.xspecgui import XSpecGui
             app = QApplication(sys.argv)
-            gui = XSpecGui(self)
+            # Scale to pixels on screen
+            width = app.desktop().screenGeometry().width()
+            scale = 2. * (width/3200.)
+            gui = XSpecGui(self, screen_scale=scale)
             gui.show()
             app.exec_()
             return

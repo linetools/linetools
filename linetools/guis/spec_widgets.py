@@ -151,6 +151,7 @@ class ExamineSpecWidget(QWidget):
             spec.airtovac()
         self.orig_spec = spec  # For smoothing
         self.spec = self.orig_spec
+        self.select = spec.select
         self.parent = parent
 
         # determine the filename (if any)
@@ -287,9 +288,11 @@ class ExamineSpecWidget(QWidget):
         ## SMOOTH
         if event.key == 'S':
             self.spec = self.spec.box_smooth(2)
+            self.spec.select = 0  # Only 1 spectrum when you start smoothing
             flg = 1
         if event.key == 'U':
             self.spec = self.orig_spec
+            self.spec.select = self.select
             flg = 1
 
         ## Lya Profiles
@@ -317,6 +320,7 @@ class ExamineSpecWidget(QWidget):
 
         # ANALYSIS:  AODM, EW, Stats, Gaussian
         if event.key in ['N', 'E', '$', 'G']:
+            mssg = ''
             # If column check for line list
             #QtCore.pyqtRemoveInputHook()
             #xdb.set_trace()
@@ -454,7 +458,7 @@ class ExamineSpecWidget(QWidget):
 
                         # AODM
                         #QtCore.pyqtRemoveInputHook()
-                        #xdb.set_trace()
+                        #pdb.set_trace()
                         #QtCore.pyqtRestoreInputHook()
                         aline.measure_aodm()
                         mssg = 'Using '+ aline.__repr__()
@@ -467,6 +471,23 @@ class ExamineSpecWidget(QWidget):
                             mssg = 'Using '+ aline.__repr__()
                             mssg = mssg + ' ::  Rest EW = {:g} +/- {:g}'.format(
                                 aline.attrib['EW'].to(mAA), aline.attrib['sig_EW'].to(mAA))
+                        else:  # Faux Lya line
+                            llist = LineList('ISM')
+                            wrest = 1215.6700*u.AA
+                            wcen = np.mean(iwv)
+                            z = wcen/wrest - 1.
+                            #QtCore.pyqtRemoveInputHook()
+                            #pdb.set_trace()
+                            #QtCore.pyqtRestoreInputHook()
+                            dline = AbsLine(wrest, linelist=llist, z=z.value)
+                            tspec = XSpectrum1D.from_tuple((self.spec.wavelength, self.spec.flux, self.spec.sig))
+                            tspec.normalize(lconti)
+                            dline.analy['spec'] = tspec
+                            dline.limits.set(iwv)
+                            dline.measure_ew()
+                            mssg = 'Using dummy '+ dline.__repr__()+' for the calculation.'
+                            mssg = mssg + ' ::  Obs EW = {:g} +/- {:g}'.format(
+                                dline.attrib['EW'].to(mAA), dline.attrib['sig_EW'].to(mAA))
                 # Display values
                 try:
                     self.statusBar().showMessage(mssg)
@@ -514,7 +535,7 @@ class ExamineSpecWidget(QWidget):
         try:
             print('button={:d}, x={:f}, y={:f}, xdata={:f}, ydata={:g}'.format(
                 event.button, event.x, event.y, event.xdata, event.ydata))
-        except ValueError:
+        except (ValueError, TypeError):
             print('Out of bounds')
             return
         if event.button == 1: # Draw line
@@ -1293,4 +1314,67 @@ class AbsSysWidget(QWidget):
                 linelist=self.linelist))
             #self.add_item(abssys_fil)
         self.on_list_change()
+
+
+
+# #####
+class MultiSpecWidget(QWidget):
+    """ Widget to organize a set of spectra (in one Object, e.g. XSpectrum1D)
+    """
+    def __init__(self, parent, status=None, spec_labels=None, screen_scale=1.):
+        """
+        Parameters
+        ----------
+        parent : Widget parent
+        status : Point to status bar
+        screen_scale : float, optional
+          Scale GUI dimensions
+
+        Returns
+        -------
+
+        """
+        super(MultiSpecWidget, self).__init__(parent)
+
+        # Initialize
+        self.scale = screen_scale
+        self.parent = parent  # Required
+        spec = self.parent.orig_spec
+
+        # Create the list
+        if spec_labels is None:
+            if hasattr(spec, 'labels'):
+                spec_labels = spec.labels
+            else:
+                spec_labels = ['{:d}'.format(ii) for ii in range(spec.nspec)]
+        self.spec_labels = spec_labels
+        list_label = QLabel('Spectrum:')
+        self.mspec_widget = QListWidget(self)
+        for ilbl in self.spec_labels:
+            self.mspec_widget.addItem(ilbl)
+        self.mspec_widget.setCurrentRow(0)
+        self.mspec_widget.currentItemChanged.connect(self.on_list_change)
+        self.mspec_widget.setMaximumHeight(100*self.scale)
+
+        # Layout
+        vbox = QVBoxLayout()
+        vbox.addWidget(list_label)
+        vbox.addWidget(self.mspec_widget)
+
+        self.setLayout(vbox)
+        self.setMaximumHeight(200*self.scale)
+
+    def on_list_change(self,curr,prev):
+        cspec = str(curr.text())
+        chosen = self.spec_labels.index(cspec)
+
+        # Reset items
+        self.parent.spec = self.parent.orig_spec
+        self.parent.spec.select = chosen
+        self.parent.select = chosen
+        # Re-init and draw
+        self.parent.init_spec()
+        self.parent.on_draw()
+
+
 

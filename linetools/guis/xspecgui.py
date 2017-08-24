@@ -61,7 +61,7 @@ class XSpecGui(QMainWindow):
 
         # Grab the pieces and tie together
         self.pltline_widg = ltgl.PlotLinesWidget(status=self.statusBar,
-        init_z=zsys, screen_scale=self.scale)
+            init_z=zsys, screen_scale=self.scale)
         self.pltline_widg.setMaximumWidth(300*self.scale)
 
         # Hook the spec widget to Plot Line
@@ -71,9 +71,15 @@ class XSpecGui(QMainWindow):
                                                 screen_scale=self.scale,
                                                  rsp_kwargs=rsp_kwargs, **kwargs)
         self.pltline_widg.spec_widg = self.spec_widg
+        # Multi spec
+        self.mspec_widg = ltgsp.MultiSpecWidget(self.spec_widg)
+
 
         self.spec_widg.canvas.mpl_connect('button_press_event', self.on_click)
 
+        # Layout
+
+        # Extras
         extras = QWidget()
         extras.setMaximumWidth(130*self.scale)
         vbox = QVBoxLayout()
@@ -81,9 +87,11 @@ class XSpecGui(QMainWindow):
         qbtn.setText('Quit')
         qbtn.clicked.connect(self.quit)
         vbox.addWidget(self.pltline_widg)
+        vbox.addWidget(self.mspec_widg)
         vbox.addWidget(qbtn)
         extras.setLayout(vbox)
 
+        # Main window
         hbox = QHBoxLayout()
         hbox.addWidget(self.spec_widg)
         hbox.addWidget(extras)
