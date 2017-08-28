@@ -19,6 +19,11 @@ from linetools.guis import utils as ltgu
 from linetools.guis import line_widgets as ltgl
 from linetools.guis import spec_widgets as ltgsp
 
+try:
+    basestring
+except NameError:  # For Python 3
+    basestring = str
+
 class XSpecGui(QMainWindow):
     """ GUI to replace XIDL x_specplot (which simulated a GUI by T. Barlow)
     """
@@ -146,13 +151,15 @@ class XSpecGui(QMainWindow):
 
 
 def main(args, **kwargs):
+    from PyQt5.QtWidgets import QApplication
     from linetools.spectra.xspectrum1d import XSpectrum1D
 
     if not isinstance(args,(XSpectrum1D,tuple,basestring)):
         raise IOError("Bad input")
     # Run
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     gui = XSpecGui(args, **kwargs)
     gui.show()
     app.exec_()
     return
+
