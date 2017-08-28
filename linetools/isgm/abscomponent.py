@@ -328,7 +328,7 @@ class AbsComponent(object):
             within `list = LineList('ISM')`.
         init_name : str, optional
             Name of the initial transition used to define the AbsComponent
-        wvlims : Quantity array, optional
+        wvlim : Quantity array, optional
             Observed wavelength limits for AbsLines to be added.
             e.g. [1200, 2000]*u.AA.
         min_Wr : Quantity, optional
@@ -359,12 +359,15 @@ class AbsComponent(object):
 
         # unify output to be always QTable
         if isinstance(transitions, dict):
-            transitions = llist.from_dict_to_qtable(transitions)
+            transitions = llist.from_dict_to_table(transitions)
 
         # check wvlims
         if wvlim is not None:
-            cond = (transitions['wrest']*(1+self.zcomp) >= wvlim[0]) & \
-                   (transitions['wrest']*(1+self.zcomp) <= wvlim[1])
+            # Deal with units
+            wrest = transitions['wrest'].data * transitions['wrest'].unit
+            # Logic
+            cond = (wrest*(1+self.zcomp) >= wvlim[0]) & \
+                   (wrest*(1+self.zcomp) <= wvlim[1])
             transitions = transitions[cond]
 
         # check outputs

@@ -837,7 +837,7 @@ def update_fval(table, verbose=False):
 
     # Now, finally, update
     for row in howk00:
-        mt = np.where( (np.abs(table['wrest']-row['wrest']*u.AA) < 1e-3*u.AA) & 
+        mt = np.where( (np.abs(table['wrest'].data*table['wrest'].unit-row['wrest']*u.AA) < 1e-3*u.AA) &
             (table['Z'] == 26) & (table['ion'] == 2))[0]
         if len(mt) == 0:
             if verbose:
