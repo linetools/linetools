@@ -124,7 +124,7 @@ def radec_to_coord(radec):
             else:
                 DEC = radec[1]
             #
-            coord = SkyCoord(radec[0]+DEC, frame='fk5',
+            coord = SkyCoord(radec[0]+DEC, frame='icrs',
                                   unit=(u.hourangle, u.deg))
         else:
             coord = SkyCoord(ra=radec[0], dec=radec[1], unit='deg')
@@ -138,21 +138,21 @@ def radec_to_coord(radec):
         radec = radec[ii:]
         #
         if ':' in radec:
-            coord = SkyCoord(radec, frame='fk5', unit=(u.hourangle, u.deg))
+            coord = SkyCoord(radec, frame='icrs', unit=(u.hourangle, u.deg))
         else:  # Add in :
             if ('+' in radec) or ('-' in radec):
                 sign = max(radec.find('+'), radec.find('-'))
             else:
                 raise ValueError("radec must include + or - for DEC")
             newradec = (radec[0:2]+':'+radec[2:4]+':'+radec[4:sign+3] +':'+radec[sign+3:sign+5]+':'+radec[sign+5:])
-            coord = SkyCoord(newradec, frame='fk5', unit=(u.hourangle, u.deg))
+            coord = SkyCoord(newradec, frame='icrs', unit=(u.hourangle, u.deg))
     elif isinstance(radec,list):
         clist = []
         for item in radec:
             clist.append(radec_to_coord(item))
         # Convert to SkyCoord array
-        ras = [ii.fk5.ra.value for ii in clist]
-        decs = [ii.fk5.dec.value for ii in clist]
+        ras = [ii.icrs.ra.value for ii in clist]
+        decs = [ii.icrs.dec.value for ii in clist]
         return SkyCoord(ra=ras, dec=decs, unit='deg')
     else:
         raise IOError("Bad input type for radec")
