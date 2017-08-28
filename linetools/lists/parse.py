@@ -547,6 +547,9 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
                 #xdb.set_trace()
                 # Line index
                 elmi.append(kk)
+                # Kludge!!
+                if 'HOLMIUM' in line:
+                    elmc[-1] = 'Ho'
 
             # ISOTOPE and ION
             try: # Deals with bad Byte in Morton00
@@ -626,8 +629,11 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
                         gdZ = gdZ[0]
                     tbl[count]['Z'] = elmZ[gdZ]
                     # Name
-                    tbl[count]['name'] = elmc[gdZ]+ionv[gdi]+' {:d}'.format(
-                        int(tbl[count]['wrest']))
+                    try:
+                        tbl[count]['name'] = elmc[gdZ]+ionv[gdi]+' {:d}'.format(
+                            int(tbl['wrest'][count]))
+                    except UnicodeEncodeError:
+                        pdb.set_trace()
                     # Isotope (Atomic number)
                     if ioni[gdi] == Dline:
                         tbl[count]['Am'] = 2

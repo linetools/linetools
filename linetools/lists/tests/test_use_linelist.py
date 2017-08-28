@@ -98,6 +98,7 @@ def test_strongest_transitions():
     transitions = ism.strongest_transitions('HI',wvlims/(1+z),n_max=5)
     assert transitions is None, error_msg
 
+'''
 def test_available_transitions():
     error_msg = 'Something is wrong in available_transitions()'
     ism = LineList('ISM')
@@ -140,3 +141,4 @@ def test_sortdata():
     assert ism.name[0] == 'HI 1215', error_msg
     ism.sortdata(['rel_strength'])
     assert ism.name[0] == 'CI** 1123b', error_msg
+'''

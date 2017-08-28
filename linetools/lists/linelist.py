@@ -766,6 +766,7 @@ class LineList(object):
         # obtain the strongest available transition of a given unique ion species
         transition_name = []
         strength = []
+        pdb.set_trace()
         for ion in unique_ion_names:  # This loop is necessary to have a non trivial but convenient order in the final output
             aux = self.strongest_transitions(ion, wvlims, n_max=1)  # only the strongest available
 
@@ -794,6 +795,7 @@ class LineList(object):
         # Table unique is now sorted by strength, with only
         # 1 entry per ion species
 
+        pdb.set_trace()
         # Create output data table adding up to n_max_tuple per ion species
         output = Table()
         for i, row in enumerate(unique):
@@ -809,6 +811,7 @@ class LineList(object):
 
         # Deal with output formatting now
         # if len==1 return dict
+        pdb.set_trace()
         if len(output) == 1:
             return self.from_table_to_dict(output)
         else:
