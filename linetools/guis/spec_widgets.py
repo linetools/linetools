@@ -562,7 +562,7 @@ class ExamineSpecWidget(QWidget):
             self.ax.plot(self.spec.wavelength.value, self.spec.flux.value, 'k-',drawstyle='steps-mid')
             try:
                 self.ax.plot(self.spec.wavelength.value, self.spec.sig.value, 'r:')
-            except ValueError:
+            except (ValueError, AttributeError):
                 pass
             self.ax.set_xlabel('Wavelength (Ang)')
             self.ax.set_ylabel('Flux')
