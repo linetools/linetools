@@ -377,7 +377,7 @@ class LineList(object):
             return
 
         # Set ion_name column
-        ion_name = np.array([str(' ')*20]*len(self.name))  # Make a string array or bad things follow..
+        ion_name = np.chararray(len(self.name), itemsize=20)  # Make a string array or bad things follow..
         if self.list in ['HI', 'ISM', 'EUV', 'Strong']:
             #ion_name = [name.split(' ')[0] for name in self.name]  # valid for atomic transitions
             for kk,name in enumerate(self.name):  # valid for atomic transitions
@@ -602,7 +602,7 @@ class LineList(object):
             if len(tbl) > 1:
                 return tbl
             else:  # this should be always len(tbl)==1 because line was found
-                return self.from_table_to_dict(tbl)
+                return lilu.from_table_to_dict(tbl)
 
         else:
             Z = None
@@ -631,7 +631,7 @@ class LineList(object):
                 if len(tbl) > 1:
                     return tbl
                 else:  # this should be always len(tbl)==1 because Z is not None
-                    return self.from_table_to_dict(tbl)
+                    return lilu.from_table_to_dict(tbl)
             else:
                 raise ValueError(
                     'Line {} not found in the LineList: {}'.format(line, self.list))
@@ -703,7 +703,7 @@ class LineList(object):
         elif isinstance(data, dict):  # Only 1 case from a dict format
             return data
         elif np.sum(cond) == 1:  # only 1 case from a Table format
-            return self.from_table_to_dict(data[cond])
+            return lilu.from_table_to_dict(data[cond])
         else:
             # remove transitions out of range
             data = data[cond]
@@ -717,7 +717,7 @@ class LineList(object):
             if n_max is not None:
                 data = data[:n_max]
             if len(data) == 1:  # Only 1 case from a Table format; return a dictionary
-                return self.from_table_to_dict(data)
+                return lilu.from_table_to_dict(data)
             else:
                 return data
 
@@ -805,18 +805,25 @@ class LineList(object):
 
             # need to deal with dict vs Table format now
             if isinstance(aux, dict):
-                aux = self.from_dict_to_table(aux)
+                aux = lilu.from_dict_to_table(aux)
 
             # convert to Table because Table does not like vstack
-            output = vstack([output, aux])
+            if len(output) == 0:
+                output = aux
+            else:
+                pdb.set_trace()
+                tmp = aux.copy()
+                output = vstack([output, aux], join_type='exact')
+            pdb.set_trace()  # Strings are running out of control...
 
         # Deal with output formatting now
         # if len==1 return dict
         if len(output) == 1:
-            return self.from_table_to_dict(output)
+            return lilu.from_table_to_dict(output)
         else:
             return output
 
+    '''
     def from_dict_to_table(self, a):
         """Wrapper to the utility
         This method will be DEPRECATED
@@ -830,6 +837,7 @@ class LineList(object):
         """
         warnings.warn("This from_table_to_dict will be deprecated")
         return lilu.from_table_to_dict(tab)
+    '''
 
     def __getitem__(self, k, tol=1e-3*u.AA):
         """ Passback data as a dict (from the table) for the input line
