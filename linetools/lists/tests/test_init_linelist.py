@@ -14,31 +14,27 @@ from linetools.lists import mk_sets as llmk
 
 
 def test_ism_read_source_catalogues():
-    ism = LineList('ISM', use_ISM_table=False)
+    ism = LineList('ISM')#, use_ISM_table=False)
     np.testing.assert_allclose(ism['HI 1215']['wrest'], 1215.6700*u.AA, rtol=1e-7)
 
 # ISM LineList
 def test_ism():
     ism = LineList('ISM')
-    #
     np.testing.assert_allclose(ism['HI 1215']['wrest'], 1215.6700*u.AA, rtol=1e-7)
 
 # Test update_fval
 def test_updfval():
     ism = LineList('ISM')
-    #
     np.testing.assert_allclose(ism['FeII 1133']['f'], 0.0055)
 
 # Test update_gamma
 def test_updgamma():
     ism = LineList('ISM')
-    #
     np.testing.assert_allclose(ism['HI 1215']['gamma'], 626500000.0/u.s)
 
 # Strong ISM LineList
 def test_strong():
     strng = LineList('Strong')
-    #
     assert len(strng._data) < 200
 
 # Strong ISM LineList
@@ -91,24 +87,18 @@ def test_mk_sets():
     lt_path = imp.find_module('linetools')[1]
     llmk.add_galaxy_lines('tmp.lst', infil=lt_path+'/lists/sets/llist_v0.1.ascii', stop=False)
 
+
 def test_set_extra_columns_to_datatable():
     ism = LineList('ISM')
     # bad calls
-    try:
+    with pytest.raises(ValueError):
         ism.set_extra_columns_to_datatable(abundance_type='incorrect_one')
-    except ValueError:
-        pass
-    try:
-        ism.set_extra_columns_to_datatable(ion_correction='incorrect_one')
-    except ValueError:
-        pass
+    with pytest.raises(ValueError):
+        ism.set_extra_columns_to_datatable(ion_correction='incorrect_one', redo=True)
     # test expected strongest value
-    ism.set_extra_columns_to_datatable(ion_correction='none', abundance_type='solar')
+    ism.set_extra_columns_to_datatable(ion_correction='none', abundance_type='solar', redo=True)
     np.testing.assert_allclose(ism['HI 1215']['rel_strength'], 14.704326420257642)
     tab = ism._data
 
     np.testing.assert_allclose(np.max(tab['rel_strength']), 14.704326420257642)
 
-
-if __name__ == '__main__':
-    ism = LineList('ISM', use_ISM_table=False)

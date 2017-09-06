@@ -435,7 +435,7 @@ def parse_verner96(orig=False, write=False):
             # wrest
             data[kk]['wrest'] = float(line[47:56].strip())
             # name
-            ionnm = ions.ion_name((data[kk]['Z'], data[kk]['ion']))
+            ionnm = ions.ion_to_name((data[kk]['Z'], data[kk]['ion']))
             data[kk]['name'] = '{:s} {:d}'.format(ionnm,
                     int(data[kk]['wrest']))
             # Ej, Ek
@@ -1011,7 +1011,7 @@ def _write_ref_table(outfile=None):
     """
     import warnings
     if outfile is None:
-        outfile = resource_filename('linetools', 'data/lines/full_table.fits')
+        outfile = resource_filename('linetools', 'data/lines/full_table.ascii')
 
     # Define datasets: In order of Priority
     datasets = [parse_morton03, parse_morton00, parse_verner96,
@@ -1022,11 +1022,15 @@ def _write_ref_table(outfile=None):
     # Load
     full_table = load_datasets(datasets)
 
+    # Check the sets file
+    #set_data = read_sets()
+    #pdb.set_trace()
+
     # Write
     warnings.warn("About to overwrite: {:s}".format(outfile))
     warnings.warn("Proceed only if you know what you are doing!")
     pdb.set_trace()
-    full_table.write(outfile, overwrite=True)
+    full_table.write(outfile, format='ascii.ecsv', overwrite=True)
 
 
 if __name__ == '__main__':

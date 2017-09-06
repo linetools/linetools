@@ -10,6 +10,8 @@ except NameError:
 
 import numpy as np
 
+from pkg_resources import resource_filename
+
 from astropy import units as u
 from astropy.units.quantity import Quantity
 from astropy.table import Table, vstack, Column, MaskedColumn
@@ -74,7 +76,8 @@ class LineList(object):
 
     # Init
     def __init__(self, llst_key, verbose=False, closest=False, set_lines=True,
-                 use_ISM_table=True, use_cache=True, sort_by='wrest', redo_extra_columns=False):
+                 use_ISM_table=True, use_cache=True, sort_by='wrest',
+                 redo_extra_columns=False, extras=False):
 
         # Error catching
         if not isinstance(llst_key, basestring):
@@ -87,9 +90,12 @@ class LineList(object):
         self.closest = closest
         self.verbose = verbose
 
+        self.load_data()
+        '''
         if not use_ISM_table or llst_key not in ('ISM', 'HI', 'Strong'):
             # Load Data
             self.load_data(use_cache=use_cache)
+        '''
 
         if set_lines:
             # Set lines for use (from defined LineList)
@@ -106,7 +112,8 @@ class LineList(object):
         self.sort_by = sort_by
         if self._data is not None:
             # redo extra columns?
-            self.set_extra_columns_to_datatable(redo=redo_extra_columns)
+            if extras:
+                self.set_extra_columns_to_datatable(redo=redo_extra_columns)
             # sort the LineList
             self.sortdata(sort_by)
 
@@ -134,6 +141,12 @@ class LineList(object):
         """
         return self._data['ion']
 
+    def load_data(self):
+        data_file = resource_filename('linetools', 'data/lines/full_table.ascii')
+        # Read
+        self._fulltable = Table.read(data_file, format='ascii.ecsv')
+
+    '''
     def load_data(self, use_ISM_table=True, tol=1e-3, use_cache=True):
         """Grab the data for the lines of interest
         Also load into CACHE
@@ -233,6 +246,7 @@ class LineList(object):
             lilp.update_gamma(self._fulltable)
 
         CACHE['full_table'][key] = self._fulltable
+    '''
 
     #####
     def set_lines(self, verbose=True, use_cache=True, use_ISM_table=True):
@@ -327,6 +341,7 @@ class LineList(object):
         #
         self._data = tmp_tab
         CACHE['data'][key] = self._data
+
 
     def set_extra_columns_to_datatable(self, abundance_type='solar', ion_correction='none',
                                        redo=False):
@@ -611,17 +626,17 @@ class LineList(object):
             Ej = self._data['Ej'][idx]  # Energy of lower level
             tbl = self.__getitem__((Z, ie))
             # Make sure the lower energy level is the same too
-            #cond = tbl['Ej'] == Ej
+            cond = tbl['Ej'] == Ej
             #cond = np.array([name1.split(' ')[0] == line for name1 in tbl['name']])
-            pdb.set_trace()
+            #pdb.set_trace()
             tbl = tbl[cond]
             tbl.sort(['Ej','wrest'])
             # For hydrogen/deuterium this contains deuterium/hydrogen;
             # so let's get rid of them
-            #if (line == 'HI') or (line == 'DI'):
-            #    names = np.array(tbl['name'])
-            #    cond = np.array([l.startswith(line) for l in names])
-            #    tbl = tbl[cond]
+            if (line == 'HI') or (line == 'DI'):
+                names = np.array(tbl['name'])
+                cond = np.array([l.startswith(line) for l in names])
+                tbl = tbl[cond]
             if len(tbl) > 1:
                 return tbl
             else:  # this should be always len(tbl)==1 because Z is not None
@@ -804,10 +819,10 @@ class LineList(object):
             if len(output) == 0:
                 output = aux
             else:
-                pdb.set_trace()
+                #pdb.set_trace()
                 tmp = aux.copy()
                 output = vstack([output, aux], join_type='exact')
-            pdb.set_trace()  # Strings are running out of control...
+            #pdb.set_trace()  # Strings are running out of control...
 
         # Deal with output formatting now
         # if len==1 return dict
@@ -816,21 +831,6 @@ class LineList(object):
         else:
             return output
 
-    '''
-    def from_dict_to_table(self, a):
-        """Wrapper to the utility
-        This method will be DEPRECATED
-        """
-        warnings.warn("This dict_to_table method will be deprecated")
-        return lilu.from_dict_to_table(a)
-
-    def from_table_to_dict(self, tab):
-        """Wrapper to the utility
-        This method will be DEPRECATED
-        """
-        warnings.warn("This from_table_to_dict will be deprecated")
-        return lilu.from_table_to_dict(tab)
-    '''
 
     def __getitem__(self, k, tol=1e-3*u.AA):
         """ Passback data as a dict (from the table) for the input line
