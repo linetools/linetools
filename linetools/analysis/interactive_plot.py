@@ -538,6 +538,15 @@ q        : quit
                     x not in list(zip(*self.contpoints))[0]):
                 y = local_median(self.wa, self.fl, self.er, x, npix=self.numguesspix,
                                  default=event.ydata)
+            # Check for duplication
+            xpts, ypts = zip(*self.contpoints)
+            xpts = np.array(xpts)
+            xpts[ind] = x
+            uni = np.unique(xpts)
+            if len(self.contpoints) != len(uni):
+                print("Duplicate x value!  Try another spot")
+                return
+            # Finish
             self.contpoints[ind] = x, float(y)
             self.contpoints.sort()
             self.update()
