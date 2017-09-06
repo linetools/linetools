@@ -789,7 +789,7 @@ class LineList(object):
             raise SyntaxError('min_strength must be a float value')
 
         # Cut on wavelength first!
-        gdwv = (self._data['wrest']>wvlims[0]) & (self._data['wrest'] < wvlims[1])
+        gdwv = (self.wrest>wvlims[0]) & (self.wrest < wvlims[1])
         if np.any(gdwv):
             data = self._data[gdwv]
         else:
