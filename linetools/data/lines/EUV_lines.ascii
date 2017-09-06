@@ -1,9 +1,9 @@
 ; Lines by hand from Tripp list
 ; Will update with atomic data before too long
 ; Ref column added by hand by N. Tejos (Dec 28, 2015)
-|  wrest   |    name     |  f   |   Z | ion | Ref   |
-| 551.3621 |  ArVI  551  | 0.00 |  18 |  6  | Tripp |
-| 562.711  |  NeVI* 562a | 0.00 |  10 |  6  | Tripp |
-| 562.803  |  NeVI* 562b | 0.00 |  10 |  6  | Tripp |
-| 569.758  |  NeV* 659a  | 0.00 |  10 |  5  | Tripp |
-| 569.830  |  NeV* 659b  | 0.00 |  10 |  5  | Tripp |
+ wrest   |    name     |  f   |   Z | ion | Ref   
+551.3621 |  ArVI  551  | 0.00 |  18 |  6  | Tripp 
+562.711  |  NeVI* 562a | 0.00 |  10 |  6  | Tripp 
+562.803  |  NeVI* 562b | 0.00 |  10 |  6  | Tripp 
+569.758  |  NeV* 659a  | 0.00 |  10 |  5  | Tripp
+569.830  |  NeV* 659b  | 0.00 |  10 |  5  | Tripp 

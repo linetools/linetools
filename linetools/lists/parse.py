@@ -151,6 +151,13 @@ def read_H2():
     print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(H2_fil))
     data = Table.read(H2_fil, format='ascii', guess=False, comment=';')
 
+    # Remove
+    data.remove_column('log(w*f)')
+    data.remove_column('#')
+
+    # Rename
+    data.rename_column('gu', 'gk')
+
     # Units
     data['wrest'].unit = u.AA
     data['gamma'].unit = 1./u.s
@@ -188,13 +195,19 @@ def read_CO():
 
     # Units
 
+    # Remove column
+    data.remove_column('lgwf')
+    data.remove_column('id')
+
     # Rename some columns
     data.rename_column('Jp', 'Jj')
     data.rename_column('Jpp', 'Jk')
     data.rename_column('np', 'nj')
     data.rename_column('npp', 'nk')
     data.rename_column('iso', 'Am') # Isotope
-    data.rename_column('wave', 'wrest') 
+    data.rename_column('wave', 'wrest')
+    data.rename_column('gu', 'gk')
+    data.rename_column('label', 'name')
 
     data['wrest'].unit = u.AA
 
@@ -936,6 +949,8 @@ def load_datasets(datasets, tol=1e-3, use_cache=True):
 
     full_table = None
     all_func = []
+    tmp, _ = line_data(1)
+    tkeys = list(tmp.keys())
     # Loop on data sets
     for func in datasets:
         # Query if read already
@@ -943,8 +958,12 @@ def load_datasets(datasets, tol=1e-3, use_cache=True):
             # Read
             table = func()
 
+            # Check keys
+            for key in table.keys():
+                if key not in tkeys:
+                    pdb.set_trace()
+
             # Add extras
-            set_extra_columns_to_datatable(table)
             if full_table is None:
                 full_table = table
             else:
@@ -956,7 +975,6 @@ def load_datasets(datasets, tol=1e-3, use_cache=True):
                     if mt.sum() == 0:
                         newi.append(jj)
                 # Append
-                pdb.set_trace()
                 try:
                     full_table = vstack([full_table, table[newi]])
                 except NotImplementedError:
@@ -981,109 +999,6 @@ def load_datasets(datasets, tol=1e-3, use_cache=True):
 
     # Finish
     return _fulltable
-
-
-def set_extra_columns_to_datatable(data, abundance_type='solar', ion_correction='none',
-                                   redo=False):
-    """Sets new convenient columns to the self._data Table. These will be useful
-    for sorting the underlying data table in convenient ways, e.g. by expected
-    relative strength, abundance, etc.
-
-    * For atomic transitions these new columns include:
-        - `ion_name` : HI, CIII, CIV, etc
-        - `log(w*f)` : np.log10(wrest * fosc)  # in np.log10(AA)
-        - `abundance` : either [`none`, `solar`]
-        - `ion_correction` : [`none`]
-        - `rel_strength` : log(w*f) + abundance + ion_correction
-
-    * For molecules a different approach is used:
-        - `ion_name` : B0-0P, C6-0, etc.
-        - `rel_strength`: We have only three arbitrary levels: [1, 50, 100]
-                100 is for Jk={0,1}
-                50 is for Jk={2,3}
-                1 otherwise
-
-    Parameters
-    ----------
-    abundance_type : str, optional
-        Abundance type. Options are:
-            'solar' : Use Solar Abundance (in log10) as given
-                      by Asplund 2009. (Default)
-            'none' : No abundance given, so this column will
-                     be filled with zeros.
-    ion_correction: str, optional
-        Ionization correction. Options are:
-            'none' : No correction applied, so this column will
-                     be filled with zeros. (Default)
-    redo : bool, optional
-        Remake the extra columns
-
-    Note
-    ----
-    This method is only implemented for the following lists: HI, ISM, EUV, Strong.
-    Partially implemented for: H2.
-
-    """
-    # Set ion_name column
-    names = data['name']
-    ion_name = np.array([' '*20]*len(names)).astype(str)
-    if '(' in names[0]:
-        for kk,name in enumerate(names):  # H2
-            ion_name[kk] = name.split('(')[0]
-    else:
-        for kk,name in enumerate(names):  # valid for atomic transitions
-            ion_name[kk] = name.split(' ')[0]
-    data['ion_name'] = ion_name
-    pdb.set_trace()
-
-    if self.list in ['H2']:
-        # we want Jk to be 1 or 0 first
-        cond = (self._data['Jk'] <= 1)
-        rel_strength = np.where(cond, 100, 1)
-        # second level: Jk = {2,3}
-        cond = (self._data['Jk'] > 1) & (self._data['Jk'] <= 3)
-        rel_strength = np.where(cond, 50, rel_strength)
-        self._data['rel_strength'] = rel_strength
-        return
-
-    # Set QM strength as MaskedColumn (self._data['f'] is MaskedColumn)
-    qm_strength = self._data['f'] * self._data['wrest']
-    qm_strength.name = 'qm_strength'
-    self._data['log(w*f)'] = np.log10(qm_strength)
-    # mask out potential nans
-    cond = np.isnan(self._data['log(w*f)'])
-    self._data['log(w*f)'].mask = np.where(cond, True, self._data['log(w*f)'].mask)
-
-    # Set Abundance
-    if abundance_type not in ['none', 'solar']:
-        raise ValueError('set_extra_columns_to_datatable: `abundance type` '
-                         'has to be either: `none` or `solar`')
-    if abundance_type == 'none':
-        self._data['abundance'] = np.zeros(len(self._data))
-    elif abundance_type == 'solar':
-        from linetools.abund.solar import SolarAbund
-        solar = SolarAbund()
-        abund = np.ma.masked_array(np.zeros(len(self._data)), mask=True)
-        for row in solar._data:
-            Zmt = self._data['Z'] == row['Z']
-            abund[Zmt] = row['Abund']
-            abund.mask[Zmt] = False
-        # Deuterium is special
-        fchar = np.array([ion_name[0] for ion_name in self._data['ion_name'].data])
-        DI = fchar == 'D'
-        abund[DI] = solar['D']
-        # Finish
-        self._data['abundance'] = abund
-
-    # Set ionization correction
-    if ion_correction not in ['none']:
-        raise ValueError('set_extra_columns_to_datatable: `ion_correction` '
-                         'has to be `none`.')
-    if ion_correction == 'none':
-        self._data['ion_correction'] = np.zeros(len(self._data))  # is in log10 scale, so 0 means no-correction
-
-    # Set relative strength in log10 scale
-    self._data['rel_strength'] = self._data['log(w*f)'] + self._data['abundance'] + self._data['ion_correction']
 
 
 def _write_ref_table(outfile=None):
