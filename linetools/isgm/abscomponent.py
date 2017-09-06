@@ -348,7 +348,7 @@ class AbsComponent(object):
 
         """
         # get the transitions from LineList
-        llist = LineList(llist)
+        llist = LineList(llist, extras=True)
         if init_name is None:  # we have to guess it
             if (self.Zion) == (-1, -1):  # molecules
                 # init_name must be in self.attrib (this is a patch)
@@ -768,7 +768,7 @@ class AbsComponent(object):
             vlim = aline.limits.vlim.to('km/s').value
             wvlim = aline.limits.wvlim.to('AA').value
             s += '{:.4f}|{:.4f}|{:.5f}|{:.5f}|'.format(vlim[0], vlim[1], wvlim[0], wvlim[1])
-            s += '{:.8f}|{:s}|{:s}|{:s}'.format(self.zcomp, aline.data['ion_name'], self.reliability, self.comment)  # zcomp again here
+            s += '{:.8f}|{:s}|{:s}|{:s}'.format(self.zcomp, aline.ion_name, self.reliability, self.comment)  # zcomp again here
 
             # if len(self.comment) > 0:
             #     s += '# {:s}'.format(self.comment)

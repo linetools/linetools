@@ -71,3 +71,8 @@ def test_redshift():
     np.testing.assert_allclose(abslin.z, 1.)
     np.testing.assert_allclose(abslin.limits.z, 1.)
     np.testing.assert_allclose(abslin.limits._z, 1.)
+
+def test_attrib():
+    abslin = AbsLine(1215.6700*u.AA)
+    ion_name = abslin.ion_name
+    assert ion_name == 'HI'

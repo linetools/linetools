@@ -67,7 +67,7 @@ def ion_to_name(ion, flg=0, nspace=None):
         elm = ELEMENTS[ion[0]]
         str_elm = elm.symbol
     else:
-        return ion_name( (ion['Z'], ion['ion']) )
+        return ion_to_name((ion['Z'], ion['ion']))
 
     # Ion state
     if flg == 0: # Roman

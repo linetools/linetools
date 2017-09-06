@@ -176,6 +176,9 @@ def read_H2():
     cgroup = Column(np.ones(len(data),dtype='int')*(2**3), name='group')
     data.add_column(cgroup)
 
+    # Reference
+    data['Ref'] = 'Abgrall93' # GRB paper
+
     # Return
     return data
 
@@ -222,6 +225,8 @@ def read_CO():
     # Group
     cgroup = Column(np.ones(len(data),dtype='int')*(2**4), name='group')
     data.add_column(cgroup)
+    # Reference
+    data['Ref'] = 'JXP' # GRB paper
 
     # Return
     return data
@@ -1010,8 +1015,12 @@ def _write_ref_table(outfile=None):
     repository, and then check it in.
     """
     import warnings
+    import datetime
+    import getpass
+    date = str(datetime.date.today().strftime('%Y-%b-%d'))
+    user = getpass.getuser()
     if outfile is None:
-        outfile = resource_filename('linetools', 'data/lines/full_table.ascii')
+        outfile = resource_filename('linetools', 'data/lines/linelist.ascii')
 
     # Define datasets: In order of Priority
     datasets = [parse_morton03, parse_morton00, parse_verner96,
@@ -1026,6 +1035,9 @@ def _write_ref_table(outfile=None):
     #set_data = read_sets()
     #pdb.set_trace()
 
+    # Meta
+    full_table.meta['Creator'] = user
+    full_table.meta['CreationDate'] = date
     # Write
     warnings.warn("About to overwrite: {:s}".format(outfile))
     warnings.warn("Proceed only if you know what you are doing!")

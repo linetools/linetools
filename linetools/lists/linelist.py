@@ -142,7 +142,7 @@ class LineList(object):
         return self._data['ion']
 
     def load_data(self):
-        data_file = resource_filename('linetools', 'data/lines/full_table.ascii')
+        data_file = resource_filename('linetools', 'data/lines/linelist.ascii')
         # Read
         self._fulltable = Table.read(data_file, format='ascii.ecsv')
 
