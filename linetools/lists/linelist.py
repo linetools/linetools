@@ -385,7 +385,7 @@ class LineList(object):
 
         """
         # Avoid redo (especially for caching)
-        if ('ion_name' in self._data.keys()) and (not redo):
+        if ('ion_name' in self._data.keys()) and (redo is False):
             return
 
         if self.list not in ['HI', 'ISM', 'EUV', 'Strong', 'H2']:
@@ -422,8 +422,7 @@ class LineList(object):
 
         # Set Abundance
         if abundance_type not in ['none', 'solar']:
-            raise ValueError('set_extra_columns_to_datatable: `abundance type` '
-                             'has to be either: `none` or `solar`')
+            raise ValueError('set_extra_columns_to_datatable: `abundance type` has to be either: `none` or `solar`')
         if abundance_type == 'none':
             self._data['abundance'] = np.zeros(len(self._data))
         elif abundance_type == 'solar':
