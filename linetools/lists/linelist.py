@@ -486,10 +486,10 @@ class LineList(object):
 
         Parameters
         ----------
-        subset : list or np.ndarray (of Quantity or str)
+        subset : list or Quantity array (of Quantity or str)
             List of wrest or names for lines to use (drawn from current
             LineList object) e.g. (['HI 1215', 'CIV 1548'] or
-            [1215.67 * u.AA, 1548.195 * u.AA])
+            [1215.67, 1548.195] * u.AA
         reset_data : bool, optional
             Reset self._data Table based on the original list at the
             initialization (i.e. the default list). This is useful for
@@ -506,16 +506,23 @@ class LineList(object):
         """
 
         # Check the right format
-        if not isinstance(subset, (list, np.ndarray)):
-            raise ValueError('subset_lines: the input subset must be a list!')
+        if not isinstance(subset, (list, Quantity)):
+            raise ValueError('subset_lines: the input subset must be a list or Quantity array!')
 
         # Reset _data (useful for changing subsets)
         if reset_data:
             self.set_lines(verbose=False)
 
         indices = []
-        if isinstance(subset[0], (float, Quantity)):  # wrest
-            wrest = self._data['wrest'] # Assumes Angstroms
+        if isinstance(subset, Quantity):  # wrest
+            wrest = self._data['wrest'].to('AA').value # Assumes Angstroms
+            # Generate dummy 2D arrays
+            subset2d = np.outer(subset.to('AA').value, np.ones_like(wrest))
+            wrest2d = np.outer(np.ones(len(subset)), wrest)
+            diff = np.abs(subset2d-wrest2d)
+            indices = np.where(diff < 1e-4)[1].tolist()
+
+            '''
             for gdlin in subset:
                 mt = np.where(
                     np.abs(gdlin.to('AA').value - wrest) < 1e-4)[0]
@@ -528,8 +535,16 @@ class LineList(object):
                     if verbose:
                         print(
                             'subset_lines: Did not find {:g} in data Tables'.format(gdlin))
+            '''
         elif isinstance(subset[0], (basestring)):  # Names
-            names = np.array(self._data['name'])
+            # Using sets
+            names = set(self._data['name'])
+            inter = set(subset).intersection(names)
+            # For the indices
+            ind_dict = dict((k,i) for i,k in enumerate(self._data['name']))
+            indices = [ind_dict[x] for x in inter]
+            '''
+            pdb.set_trace()
             for gdlin in subset:
                 mt = np.where(str(gdlin) == names)[0]
                 if len(mt) == 1:
@@ -542,6 +557,7 @@ class LineList(object):
                     if verbose:
                         print(
                             'subset_lines: Did not find {:s} in data Tables'.format(gdlin))
+            '''
         else:
             raise ValueError('Not ready for this `subset` type yet.')
 
@@ -568,7 +584,7 @@ class LineList(object):
         ldict['name'] = 'unknown'
         return ldict
 
-    def all_transitions(self, line):
+    def all_transitions(self, line, debug=False):
         """ Get all the transitions corresponding to an ion species
         as given by `line`. In other words, for a given single
         line transition, this function returns all transitions from
@@ -622,13 +638,13 @@ class LineList(object):
             else:
                 idx = indices[0]
             Z = self._data['Z'][idx]  # atomic number
-            ie = self._data['ion'][idx]  # ionization estate
+            ie = self._data['ion'][idx]  # ionization state
             Ej = self._data['Ej'][idx]  # Energy of lower level
             tbl = self.__getitem__((Z, ie))
             # Make sure the lower energy level is the same too
+            if debug:
+                pdb.set_trace()
             cond = tbl['Ej'] == Ej
-            #cond = np.array([name1.split(' ')[0] == line for name1 in tbl['name']])
-            #pdb.set_trace()
             tbl = tbl[cond]
             tbl.sort(['Ej','wrest'])
             # For hydrogen/deuterium this contains deuterium/hydrogen;
@@ -642,7 +658,8 @@ class LineList(object):
             else:  # this should be always len(tbl)==1 because Z is not None
                 return lilu.from_table_to_dict(tbl)
 
-    def strongest_transitions(self, line, wvlims, n_max=3, verbose=False, debug=False):
+    def strongest_transitions(self, line, wvlims, n_max=3, verbose=False,
+                              data=None, debug=False):
         """ Find the strongest transition for a single ion
         available_transitions() finds those for all ions in a wavelength interval
 
@@ -771,9 +788,24 @@ class LineList(object):
         else:
             raise SyntaxError('min_strength must be a float value')
 
-        # Identify unique ion_names (e.g. HI, CIV, CIII)
-        unique_ion_names = np.unique(self._data['ion_name'])
+        # Cut on wavelength first!
+        gdwv = (self._data['wrest']>wvlims[0]) & (self._data['wrest'] < wvlims[1])
+        if np.any(gdwv):
+            data = self._data[gdwv]
+        else:
+            return None
 
+        # Sort
+        data.sort(['ion_name','rel_strength'])
+        data.reverse()
+
+
+        # Identify unique ion_names (e.g. HI, CIV, CIII)
+        # This is WRONG for FeII*
+        unique_ion_names, idx = np.unique(data['ion_name'], return_index=True)
+        unique = data[idx]
+
+        '''
         # obtain the strongest available transition of a given unique ion species
         transition_name = []
         strength = []
@@ -789,9 +821,11 @@ class LineList(object):
             return None
 
         # create auxiliary Table
+        pdb.set_trace()
         unique = Table()
         unique['name'] = transition_name
         unique['rel_strength'] = strength
+        '''
 
         # get rid of those below the min_strength threshold
         cond = unique['rel_strength'] >= min_strength
@@ -806,23 +840,11 @@ class LineList(object):
         # 1 entry per ion species
 
         # Create output data table adding up to n_max_tuple per ion species
-        output = Table()
-        for i, row in enumerate(unique):
-            name = row['name']
-            aux = self.strongest_transitions(name, wvlims, n_max=n_max_tuple)
-
-            # need to deal with dict vs Table format now
-            if isinstance(aux, dict):
-                aux = lilu.from_dict_to_table(aux)
-
-            # convert to Table because Table does not like vstack
-            if len(output) == 0:
-                output = aux
-            else:
-                #pdb.set_trace()
-                tmp = aux.copy()
-                output = vstack([output, aux], join_type='exact')
-            #pdb.set_trace()  # Strings are running out of control...
+        indices = []
+        for ion_name in unique['ion_name']:
+            mt = np.where(data['ion_name'] == ion_name)[0]
+            indices += mt[0:n_max_tuple].tolist()
+        output = data[np.array(indices)]
 
         # Deal with output formatting now
         # if len==1 return dict
