@@ -37,6 +37,7 @@ def ion_name(ion, flg=0, nspace=None):
     -------
 
     """
+    import pdb; pdb.set_trace()
     warnings.warn("This method will be DEPRECATED.  Use ion_to_name")
     return ion_to_name(ion, flg=flg, nspace=nspace)
 

@@ -8,13 +8,15 @@ if not sys.version_info[0] > 2:
     import codecs
     open = codecs.open
 
+from pkg_resources import resource_filename
+
 from astropy import units as u
 from astropy.units.quantity import Quantity
 from astropy.io import fits, ascii
 from astropy.table import Column, Table, vstack
 
-from ..abund import roman, ions
-from ..abund.elements import ELEMENTS
+from linetools.abund import roman, ions
+from linetools.abund.elements import ELEMENTS
 
 lt_path = imp.find_module('linetools')[1]
 
@@ -88,8 +90,6 @@ def line_data(nrows=1):
     # emission and ISM absorption simultaneously by masking
     # out what does not make sense in one case or the other
     tbl = Table(clms, masked=True)
-    # import pdb
-    # pdb.set_trace()
 
     return ldict, tbl
 
@@ -246,7 +246,7 @@ def read_verner94():
     # name
     names = []
     for row in data:
-        ionnm = ions.ion_name((row['Z'], row['ion']))
+        ionnm = ions.ion_to_name((row['Z'], row['ion']))
         names.append('{:s} {:d}'.format(ionnm, int(row['wrest'])))
     data['name'] = names
     #  Finish
@@ -330,7 +330,7 @@ def read_galabs():
     print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(galabs_fil))
     aux = Table.read(galabs_fil, format='ascii')
 
-    # My table
+    # My table -- insures proper format
     ldict, data = line_data(nrows=len(aux))
 
     # load values using convention names
@@ -404,7 +404,7 @@ def parse_verner96(orig=False, write=False):
     if (len(verner96_tab1) > 0) & (not orig):
         print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
             verner96_tab1[0]))
-        data = Table.read(verner96_tab1[0])
+        data = Table(Table.read(verner96_tab1[0]), masked=True)
     else:
         # File
         verner96_tab1 = lt_path + '/data/lines/verner96_tab1.txt'
@@ -474,7 +474,7 @@ def parse_morton00(orig=False):
     if (len(morton00_tab2) > 0) & (not orig):
         print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
             morton00_tab2[0]))
-        data = Table.read(morton00_tab2[0])
+        data = Table(Table.read(morton00_tab2[0]), masked=True)
     else:
         # File
         morton00_tab2 = lt_path + '/data/lines/morton00_table2.dat'
@@ -511,7 +511,7 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
     if (len(morton03_tab2) > 0) & (not orig):
         print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
             morton03_tab2[0]))
-        data = Table.read(morton03_tab2[0])
+        data = Table(Table.read(morton03_tab2[0]), masked=True)
     else:
         ## Read Table 2
         if tab_fil is None:
@@ -736,6 +736,7 @@ def mktab_morton00(do_this=False, outfil=None):
     outfil : str, optional
       Name of output file.  Defaults to a given value
     """
+    import subprocess
     if not do_this:
         print('mktab_morton00: It is very unlikely you want to do this')
         print('mktab_morton00: Returning...')
@@ -749,12 +750,8 @@ def mktab_morton00(do_this=False, outfil=None):
         outfil = lt_path + '/data/lines/morton00_table2.fits'
     m00.write(outfil, overwrite=True)
     print('mktab_morton00: Wrote {:s}'.format(outfil))
-    #
     print('mktab_morton03: Now compressing...')
-    with open(outfil) as src:
-        with gzip.open(outfil+'.gz', 'wb') as dst:
-            dst.writelines(src)
-    os.unlink(outfil)
+    _ = subprocess.call(['gzip', '-f', outfil])
 
 
 def grab_galaxy_linelists(do_this=False):
@@ -918,51 +915,210 @@ def update_wrest(table, verbose=True):
     table['Ek'][mt[0]] = 52330.33 / u.cm
     '''
 #
+def load_datasets(datasets, tol=1e-3, use_cache=True):
+    """Grab the data for the lines of interest
+    Also load into CACHE
+
+    Parameters
+    ----------
+    use_ISM_table : bool, optional
+    tol : float, optional
+      Tolerance for matching wavelength in AA
+    use_cache : bool, optional
+
+    Returns
+    -------
+
+    """
+    flag_fval = True  # Update f-values?
+    flag_wrest = True  # Update wavelengths?
+    flag_gamma = True  # Update gamma values (recommended)
+
+    full_table = None
+    all_func = []
+    # Loop on data sets
+    for func in datasets:
+        # Query if read already
+        if func not in all_func:
+            # Read
+            table = func()
+
+            # Add extras
+            set_extra_columns_to_datatable(table)
+            if full_table is None:
+                full_table = table
+            else:
+                # Unique values
+                wrest = full_table['wrest']
+                newi = []
+                for jj, row in enumerate(table):
+                    mt = np.abs(row['wrest'] - wrest) < tol
+                    if mt.sum() == 0:
+                        newi.append(jj)
+                # Append
+                pdb.set_trace()
+                try:
+                    full_table = vstack([full_table, table[newi]])
+                except NotImplementedError:
+                    pdb.set_trace()
+            # Save to avoid repeating
+            all_func.append(func)
+
+    # Save
+    _fulltable = full_table.copy()
+
+    # Update wavelength values
+    if flag_wrest:
+        update_wrest(_fulltable)
+
+    # Update f-values (Howk00)
+    if flag_fval:
+        _fulltable = update_fval(_fulltable)
+
+    # Update gamma-values (Mainly HI)
+    if flag_gamma:
+        update_gamma(_fulltable)
+
+    # Finish
+    return _fulltable
 
 
-def _write_ref_ISM_table():
-    """ Write a reference table enabling faster I/O for ISM-related lists
+def set_extra_columns_to_datatable(data, abundance_type='solar', ion_correction='none',
+                                   redo=False):
+    """Sets new convenient columns to the self._data Table. These will be useful
+    for sorting the underlying data table in convenient ways, e.g. by expected
+    relative strength, abundance, etc.
 
+    * For atomic transitions these new columns include:
+        - `ion_name` : HI, CIII, CIV, etc
+        - `log(w*f)` : np.log10(wrest * fosc)  # in np.log10(AA)
+        - `abundance` : either [`none`, `solar`]
+        - `ion_correction` : [`none`]
+        - `rel_strength` : log(w*f) + abundance + ion_correction
+
+    * For molecules a different approach is used:
+        - `ion_name` : B0-0P, C6-0, etc.
+        - `rel_strength`: We have only three arbitrary levels: [1, 50, 100]
+                100 is for Jk={0,1}
+                50 is for Jk={2,3}
+                1 otherwise
+
+    Parameters
+    ----------
+    abundance_type : str, optional
+        Abundance type. Options are:
+            'solar' : Use Solar Abundance (in log10) as given
+                      by Asplund 2009. (Default)
+            'none' : No abundance given, so this column will
+                     be filled with zeros.
+    ion_correction: str, optional
+        Ionization correction. Options are:
+            'none' : No correction applied, so this column will
+                     be filled with zeros. (Default)
+    redo : bool, optional
+        Remake the extra columns
+
+    Note
+    ----
+    This method is only implemented for the following lists: HI, ISM, EUV, Strong.
+    Partially implemented for: H2.
+
+    """
+    # Set ion_name column
+    names = data['name']
+    ion_name = np.array([' '*20]*len(names)).astype(str)
+    if '(' in names[0]:
+        for kk,name in enumerate(names):  # H2
+            ion_name[kk] = name.split('(')[0]
+    else:
+        for kk,name in enumerate(names):  # valid for atomic transitions
+            ion_name[kk] = name.split(' ')[0]
+    data['ion_name'] = ion_name
+    pdb.set_trace()
+
+    if self.list in ['H2']:
+        # we want Jk to be 1 or 0 first
+        cond = (self._data['Jk'] <= 1)
+        rel_strength = np.where(cond, 100, 1)
+        # second level: Jk = {2,3}
+        cond = (self._data['Jk'] > 1) & (self._data['Jk'] <= 3)
+        rel_strength = np.where(cond, 50, rel_strength)
+        self._data['rel_strength'] = rel_strength
+        return
+
+    # Set QM strength as MaskedColumn (self._data['f'] is MaskedColumn)
+    qm_strength = self._data['f'] * self._data['wrest']
+    qm_strength.name = 'qm_strength'
+    self._data['log(w*f)'] = np.log10(qm_strength)
+    # mask out potential nans
+    cond = np.isnan(self._data['log(w*f)'])
+    self._data['log(w*f)'].mask = np.where(cond, True, self._data['log(w*f)'].mask)
+
+    # Set Abundance
+    if abundance_type not in ['none', 'solar']:
+        raise ValueError('set_extra_columns_to_datatable: `abundance type` '
+                         'has to be either: `none` or `solar`')
+    if abundance_type == 'none':
+        self._data['abundance'] = np.zeros(len(self._data))
+    elif abundance_type == 'solar':
+        from linetools.abund.solar import SolarAbund
+        solar = SolarAbund()
+        abund = np.ma.masked_array(np.zeros(len(self._data)), mask=True)
+        for row in solar._data:
+            Zmt = self._data['Z'] == row['Z']
+            abund[Zmt] = row['Abund']
+            abund.mask[Zmt] = False
+        # Deuterium is special
+        fchar = np.array([ion_name[0] for ion_name in self._data['ion_name'].data])
+        DI = fchar == 'D'
+        abund[DI] = solar['D']
+        # Finish
+        self._data['abundance'] = abund
+
+    # Set ionization correction
+    if ion_correction not in ['none']:
+        raise ValueError('set_extra_columns_to_datatable: `ion_correction` '
+                         'has to be `none`.')
+    if ion_correction == 'none':
+        self._data['ion_correction'] = np.zeros(len(self._data))  # is in log10 scale, so 0 means no-correction
+
+    # Set relative strength in log10 scale
+    self._data['rel_strength'] = self._data['log(w*f)'] + self._data['abundance'] + self._data['ion_correction']
+
+
+def _write_ref_table(outfile=None):
+    """ Write a reference table enabling faster I/O for *all* line lists
     For developer use only.
 
     Note that after running this, you need to manually copy the table
     produced to linetools/data/lines/ISM_table.fits inside the github
     repository, and then check it in.
     """
-    from linetools.lists.linelist import LineList
+    import warnings
+    if outfile is None:
+        outfile = resource_filename('linetools', 'data/lines/full_table.fits')
 
-    ism = LineList('ISM', use_ISM_table=False)
-    strong = LineList('Strong', use_ISM_table=False)
-    euv = LineList('EUV', use_ISM_table=False)
-    hi = LineList('HI', use_ISM_table=False)
+    # Define datasets: In order of Priority
+    datasets = [parse_morton03, parse_morton00, parse_verner96,
+                read_verner94, read_euv]  # Morton 2003, Morton 00, Verner 96, Verner 94
+    datasets += [read_H2, read_CO] # H2 (Abrigail), CO (JXP)
+    datasets += [read_forbidden, read_recomb, read_galabs] # Galaxy lines
 
-    # need a Table to write
-    tab = ism._data.copy()
-    tab.sort(('wrest'))
+    # Load
+    full_table = load_datasets(datasets)
 
-    # Using np.in1d doesn't work for some reason. Do it the long way
-    cond = []
-    for table in (strong, euv, hi):
-        igood = []
-        for row in Table(table._data):
-            ind = tab['wrest'].searchsorted(row['wrest'])
-            dw = abs(tab['wrest'][ind] - row['wrest'])
-            if abs(tab['wrest'][ind+1] - row['wrest']) < dw:
-                ind = ind + 1
-            rism = tab[ind]
-            # check this is the right row.
-            if all(row[k] == rism[k] for k in hi._data.colnames if
-                   not hasattr(row[k], 'mask') or not row[k].mask):
-                igood.append(ind)
-            else:
-                raise RuntimeError('No match found!')
+    # Write
+    warnings.warn("About to overwrite: {:s}".format(outfile))
+    warnings.warn("Proceed only if you know what you are doing!")
+    pdb.set_trace()
+    full_table.write(outfile, overwrite=True)
 
-        cond.append(np.zeros(len(tab), dtype=bool))
-        cond[-1][np.array(igood)] = True
 
-    col1 = Column(cond[0], name='is_Strong')
-    col2 = Column(cond[1], name='is_EUV')
-    col3 = Column(cond[2], name='is_HI')
-    tab.add_columns([col1, col2, col3])
+if __name__ == '__main__':
+    # Generate tables
+    #mktab_morton00(do_this=True)
+    # ISM
+    #_write_ref_ISM_table()
+    # Full table
+    _write_ref_table()
 
-    tab.write('ISM_table.fits', overwrite=True)

@@ -104,7 +104,6 @@ class LineList(object):
 
         # Sort
         self.sort_by = sort_by
-        #if (self._data is not None) and (sort_by is not None):
         if self._data is not None:
             # redo extra columns?
             self.set_extra_columns_to_datatable(redo=redo_extra_columns)
@@ -247,6 +246,7 @@ class LineList(object):
         use_ISM_table : bool, optional
           For speed, use a saved ISM table instead of reading from original source files.
         """
+        from pkg_resources import resource_filename
 
         global CACHE
         key = self.list
@@ -254,7 +254,8 @@ class LineList(object):
             self._data = CACHE['data'][key]
             return
         elif use_ISM_table and self.list in ('ISM', 'Strong', 'HI'):
-            data = Table.read(lt_path + '/data/lines/ISM_table.fits')
+            ism_file = resource_filename('linetools', 'data/lines/ISM_table.fits')
+            data = Table.read(ism_file)
             if self.list != 'ISM':
                 cond = data['is_'  + self.list]
                 self._data = data[cond]
@@ -377,13 +378,13 @@ class LineList(object):
             return
 
         # Set ion_name column
-        ion_name = np.chararray(len(self.name), itemsize=20)  # Make a string array or bad things follow..
+        ion_name = np.array([' '*20]*len(self.name)).astype(str)
         if self.list in ['HI', 'ISM', 'EUV', 'Strong']:
-            #ion_name = [name.split(' ')[0] for name in self.name]  # valid for atomic transitions
             for kk,name in enumerate(self.name):  # valid for atomic transitions
                 ion_name[kk] = name.split(' ')[0]
         elif self.list in ['H2']:
-            ion_name = [name.split('(')[0] for name in self.name]  # valid for H2
+            for kk,name in enumerate(self.name):  # H2
+                ion_name[kk] = name.split('(')[0]
         self._data['ion_name'] = ion_name
 
         if self.list in ['H2']:
@@ -413,22 +414,16 @@ class LineList(object):
         elif abundance_type == 'solar':
             from linetools.abund.solar import SolarAbund
             solar = SolarAbund()
-            # abund will be masked array as default (all masked out) in
-            # case an element is not in SolarAbund()
             abund = np.ma.masked_array(np.zeros(len(self._data)), mask=True)
-            for ii in range(len(abund)):
-                ion_name = self._data[ii]['ion_name']
-                ion_Z = self._data[ii]['Z']
-                if ion_name.startswith('DI'): # Deuterium
-                    abund[ii] = solar['D']
-                    abund.mask[ii] = False  # unmask
-                else:
-                    try:
-                        abund[ii] = solar[ion_Z]
-                        abund.mask[ii] = False  # unmask
-                    except ValueError:
-                        pass  # these correspond to elements with no abundance given by solar()
-                              # and so they remain masked
+            for row in solar._data:
+                Zmt = self._data['Z'] == row['Z']
+                abund[Zmt] = row['Abund']
+                abund.mask[Zmt] = False
+            # Deuterium is special
+            fchar = np.array([ion_name[0] for ion_name in self._data['ion_name'].data])
+            DI = fchar == 'D'
+            abund[DI] = solar['D']
+            # Finish
             self._data['abundance'] = abund
 
         # Set ionization correction
@@ -596,7 +591,6 @@ class LineList(object):
         if line == 'unknown':
             return self.unknown_line()
         if self.list in ['H2']:
-
             cond = self._data['ion_name'] == line.split('(')[0]
             tbl = self._data[cond]  # cond is a masked boolean array
             if len(tbl) > 1:
@@ -606,38 +600,36 @@ class LineList(object):
 
         else:
             Z = None
-            for row in self._data:  # is this loop avoidable?
-                name = row['name']
-                # keep only the first part of name in linelist too
-                name = name.split(' ')[0]
-                if name == line:
-                    Z = row['Z']  # atomic number
-                    ie = row['ion']  # ionization estate
-                    Ej = row['Ej']  # Energy of lower level
-                    break
-            if Z is not None:
-                tbl = self.__getitem__((Z, ie))
-                # Make sure the lower energy level is the same too
-                #cond = tbl['Ej'] == Ej
-                cond = np.array([name1.split(' ')[0] == line for name1 in tbl['name']])
-                tbl = tbl[cond]
-                tbl.sort(['Ej','wrest'])
-                # For hydrogen/deuterium this contains deuterium/hydrogen;
-                # so let's get rid of them
-                #if (line == 'HI') or (line == 'DI'):
-                #    names = np.array(tbl['name'])
-                #    cond = np.array([l.startswith(line) for l in names])
-                #    tbl = tbl[cond]
-                if len(tbl) > 1:
-                    return tbl
-                else:  # this should be always len(tbl)==1 because Z is not None
-                    return lilu.from_table_to_dict(tbl)
-            else:
+            indices = np.where(self._data['ion_name'] == line)[0]
+            if len(indices) == 0:
                 raise ValueError(
                     'Line {} not found in the LineList: {}'.format(line, self.list))
+            else:
+                idx = indices[0]
+            Z = self._data['Z'][idx]  # atomic number
+            ie = self._data['ion'][idx]  # ionization estate
+            Ej = self._data['Ej'][idx]  # Energy of lower level
+            tbl = self.__getitem__((Z, ie))
+            # Make sure the lower energy level is the same too
+            #cond = tbl['Ej'] == Ej
+            #cond = np.array([name1.split(' ')[0] == line for name1 in tbl['name']])
+            pdb.set_trace()
+            tbl = tbl[cond]
+            tbl.sort(['Ej','wrest'])
+            # For hydrogen/deuterium this contains deuterium/hydrogen;
+            # so let's get rid of them
+            #if (line == 'HI') or (line == 'DI'):
+            #    names = np.array(tbl['name'])
+            #    cond = np.array([l.startswith(line) for l in names])
+            #    tbl = tbl[cond]
+            if len(tbl) > 1:
+                return tbl
+            else:  # this should be always len(tbl)==1 because Z is not None
+                return lilu.from_table_to_dict(tbl)
 
     def strongest_transitions(self, line, wvlims, n_max=3, verbose=False, debug=False):
-        """ Find the strongest transition for an ion
+        """ Find the strongest transition for a single ion
+        available_transitions() finds those for all ions in a wavelength interval
 
         For a given single line transition, this function returns
         the n_max strongest transitions of the ion species found in
@@ -692,6 +684,7 @@ class LineList(object):
         elif (n_max is not None):
             raise SyntaxError('n_max must be integer or None')
 
+        # Grab all_transitions related to the line
         data = self.all_transitions(line)
         # condition to be within wvrange
         cond = (Quantity(data['wrest']) >= wvlims[0]) & (Quantity(data['wrest']) <= wvlims[1])
@@ -722,7 +715,7 @@ class LineList(object):
                 return data
 
     def available_transitions(self, wvlims, n_max_tuple=None, min_strength=0.):
-        """ Find the strongest transitions in a wavelength interval.
+        """ Find the strongest available transitions in a wavelength interval.
 
         For a given wavelength range, wvlims = (wv_min, wv_max), this
         function retrieves the n_max_tuple strongest transitions per
