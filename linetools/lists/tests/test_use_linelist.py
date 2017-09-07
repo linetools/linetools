@@ -49,7 +49,7 @@ def test_closest():
 
 def test_all_transitions():
     error_msg = 'Something is wrong in all_transitions()'
-    ism = LineList('ISM', extras=True)
+    ism = LineList('ISM')
     #check simple case
     line = 'OVI'
     ovi_transitions = ism.all_transitions(line)
@@ -71,7 +71,7 @@ def test_all_transitions():
     out = ism.all_transitions(1215.6700*u.AA)
     assert len(out) == 30,"wrong line counts" # 30 Lyman series transitions
     #print('test_all_transitions() passed')
-    h2 = LineList('H2', extras=True)
+    h2 = LineList('H2')
     line = 'B19-0P(1)'
     out = h2.all_transitions(line)
     assert len(out) == 7
@@ -101,7 +101,7 @@ def test_strongest_transitions():
 
 def test_available_transitions():
     error_msg = 'Something is wrong in available_transitions()'
-    ism = LineList('ISM', extras=True)
+    ism = LineList('ISM')
     wvlims = (900,1800)*u.AA
     z = 0.1
 
@@ -131,10 +131,10 @@ def test_available_transitions():
     transitions = ism.available_transitions(wvlims/(1+z),n_max_tuple=2)
     assert isinstance(transitions,dict), error_msg
 
-'''
+
 def test_sortdata():  # With extras
     error_msg = 'Something is wrong in sortdata()'
-    ism = LineList('ISM', sort_by='name', extras=True)
+    ism = LineList('ISM', sort_by='name')
     assert ism.name[0] == 'AlII 1670', error_msg
     ism.sortdata('name', reverse=True)
     assert ism.name[0] == 'ZrIII 1798', error_msg
@@ -143,5 +143,4 @@ def test_sortdata():  # With extras
     ism.sortdata(['rel_strength'])
     assert ism.name[0] == 'CI** 1123b', error_msg
 
-'''
 

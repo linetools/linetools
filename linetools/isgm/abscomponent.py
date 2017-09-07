@@ -348,7 +348,7 @@ class AbsComponent(object):
 
         """
         # get the transitions from LineList
-        llist = LineList(llist, extras=True)
+        llist = LineList(llist)
         if init_name is None:  # we have to guess it
             if (self.Zion) == (-1, -1):  # molecules
                 # init_name must be in self.attrib (this is a patch)

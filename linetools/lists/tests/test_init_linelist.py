@@ -32,10 +32,12 @@ def test_updgamma():
     ism = LineList('ISM')
     np.testing.assert_allclose(ism['HI 1215']['gamma'], 626500000.0/u.s)
 
+
 # Strong ISM LineList
 def test_strong():
     strng = LineList('Strong')
     assert len(strng._data) < 200
+
 
 # Strong ISM LineList
 def test_euv():
@@ -97,9 +99,7 @@ def test_set_extra_columns_to_datatable():
     #    ism.set_extra_columns_to_datatable(ion_correction='incorrect_one', redo=True)
     # test expected strongest value
     ism = LineList('ISM')
-    ism.set_extra_columns_to_datatable(ion_correction='none', abundance_type='solar', redo=True)
-    np.testing.assert_allclose(ism['HI 1215']['rel_strength'], 14.704326420257642)
-    tab = ism._data
-
+    #np.testing.assert_allclose(ism['HI 1215']['rel_strength'], 14.704326420257642)  # THIS IS NO LONGER SUPPORTED
+    tab = ism._extra_table
     np.testing.assert_allclose(np.max(tab['rel_strength']), 14.704326420257642)
 

@@ -23,23 +23,6 @@ from linetools.abund.elements import ELEMENTS
 from linetools.abund import roman
 
 ########################## ##########################
-########################## ##########################
-def ion_name(ion, flg=0, nspace=None):
-    """ Wrapper to ion_to_name for backwards compatability
-    WILL BE DEPRECATED
-    Parameters
-    ----------
-    ion
-    flg
-    nspace
-
-    Returns
-    -------
-
-    """
-    import pdb; pdb.set_trace()
-    warnings.warn("This method will be DEPRECATED.  Use ion_to_name")
-    return ion_to_name(ion, flg=flg, nspace=nspace)
 
 def ion_to_name(ion, flg=0, nspace=None):
     """ Convert ion tuple into a string
