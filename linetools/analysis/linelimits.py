@@ -161,8 +161,8 @@ class LineLimits(object):
         # Checks
         if not isinstance(inp, (tuple, list, Quantity)):
             raise IOError("Input must be tuple, list or Quantity.")
-        if np.isclose(self._z, 0.):
-            warnings.warn("Redshift=0.  If this is unexpected, set _z and reset limits")
+        #if np.isclose(self._z, 0.):
+        #    warnings.warn("Redshift=0.  If this is unexpected, set _z and reset limits")
 
         if isinstance(inp[0], float):  # assume zlim
             self._zlim = inp

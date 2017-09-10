@@ -172,7 +172,7 @@ class SpectralLine(object):
         return sline
 
     # Initialize with wavelength
-    def __init__(self, ltype, trans, linelist=None, closest=False, z=0.,
+    def __init__(self, ltype, trans, linelist=None, closest=False, z=None,
                  verbose=True, **kwargs):
 
         # Required
@@ -191,7 +191,10 @@ class SpectralLine(object):
 
         # Fill data
         self.fill_data(trans, linelist=linelist, closest=closest, verbose=verbose)
-        # Limits
+        # Redshift Limits
+        if z is None:
+            warnings.warn("Redshift not input.  Setting to 0 for LineLimits")
+            z=0.
         try:
             zlim = kwargs['zlim']
         except KeyError:
