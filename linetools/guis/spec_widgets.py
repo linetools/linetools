@@ -208,7 +208,7 @@ class ExamineSpecWidget(QWidget):
         self.canvas.setFocusPolicy( QtCore.Qt.ClickFocus )
         self.canvas.setFocus()
         if key_events:
-            self.canvas.mpl_connect('key_press_event', self.on_key)
+            self.canvas.mpl_connect('key_press_event', self.on_key_wrapper)
         self.canvas.mpl_connect('button_press_event', self.on_click)
 
         # Make two plots
@@ -251,6 +251,12 @@ class ExamineSpecWidget(QWidget):
         self.psdict['nav'] = ltgu.navigate(0, 0, init=True)
         # Analysis dict
         self.adict['flg'] = 0  # Column density flag
+
+    def on_key_wrapper(self, event):
+        try:
+            self.on_key(event)
+        except:
+            print("That key stroke generated an error!!")
 
     def on_key(self, event):
         """ Deals with key events
@@ -777,7 +783,7 @@ U         : Indicate as a upper limit
 
         self.canvas.setFocusPolicy( QtCore.Qt.ClickFocus )
         self.canvas.setFocus()
-        self.canvas.mpl_connect('key_press_event', self.on_key)
+        self.canvas.mpl_connect('key_press_event', self.on_key_wrapper)
         self.canvas.mpl_connect('button_press_event', self.on_click)
 
         # Sub_plots (Initial)
@@ -870,8 +876,13 @@ U         : Indicate as a upper limit
             _ = self.abs_lines.pop(idx)
 
     # Key stroke
-    def on_key(self,event):
+    def on_key_wrapper(self,event):
+        try:
+            self.on_key(event)
+        except:
+            print("That key stroke raised an error!")
 
+    def on_key(self,event):
         # Init
         rescale = True
         fig_clear = False

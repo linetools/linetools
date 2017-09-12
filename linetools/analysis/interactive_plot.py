@@ -86,10 +86,14 @@ S,U          Smooth/unsmooth spectrum
         """
         # Requiring inaxes for all of these now
         if (event.key in self.nav_dict['nav']) and event.inaxes:
-            ltgu.navigate(self.nav_dict, event, flux=self.fl, wave=self.wa)
-            self.ax.set_xlim(self.nav_dict['x_minmax'])
-            self.ax.set_ylim(self.nav_dict['y_minmax'])
-            self.fig.canvas.draw()
+            try:
+                ltgu.navigate(self.nav_dict, event, flux=self.fl, wave=self.wa)
+            except KeyError:
+                pass
+            else:
+                self.ax.set_xlim(self.nav_dict['x_minmax'])
+                self.ax.set_ylim(self.nav_dict['y_minmax'])
+                self.fig.canvas.draw()
 
     def on_keypress_smooth(self, event):
         """ Smooth the flux with a gaussian. Requires attributes
@@ -538,6 +542,15 @@ q        : quit
                     x not in list(zip(*self.contpoints))[0]):
                 y = local_median(self.wa, self.fl, self.er, x, npix=self.numguesspix,
                                  default=event.ydata)
+            # Check for duplication
+            xpts, ypts = zip(*self.contpoints)
+            xpts = np.array(xpts)
+            xpts[ind] = x
+            uni = np.unique(xpts)
+            if len(self.contpoints) != len(uni):
+                print("Duplicate x value!  Try another spot")
+                return
+            # Finish
             self.contpoints[ind] = x, float(y)
             self.contpoints.sort()
             self.update()
