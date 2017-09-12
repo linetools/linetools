@@ -204,7 +204,7 @@ Which give us the information of all the 6 transitions of `MgII`::
     262500000.0   0   0   0     1 MgII 2796 35760.848 ... 0.0  12   4   2 262500000.0   --   --
     259500000.0   0   0   0     1 MgII 2803 35669.298 ... 0.0  12   2   2 259500000.0   --   --
 
-In this case ``mgii`` is a QTable because more than 1
+In this case ``mgii`` is a Table because more than 1
 transition was found. In cases were only 1 transition
 exists, the output of `all_transitions()` is a dictionary
 with the same keywords as the columns of ``ism._data`` QTable::

@@ -226,7 +226,7 @@ def read_CO():
     cgroup = Column(np.ones(len(data),dtype='int')*(2**4), name='group')
     data.add_column(cgroup)
     # Reference
-    data['Ref'] = 'JXP' # GRB paper
+    data['Ref'] = 'Prochaska09' # GRB paper
 
     # Return
     return data
@@ -939,7 +939,8 @@ def load_datasets(datasets, tol=1e-3, use_cache=True):
 
     Parameters
     ----------
-    use_ISM_table : bool, optional
+    datasets : list of func
+      Routines to call for generating the dataset
     tol : float, optional
       Tolerance for matching wavelength in AA
     use_cache : bool, optional

@@ -357,7 +357,7 @@ class AbsComponent(object):
                 init_name = ions.ion_to_name(self.Zion, nspace=0)
         transitions = llist.all_transitions(init_name)
 
-        # unify output to be always QTable
+        # unify output to be a Table
         if isinstance(transitions, dict):
             transitions = llist.from_dict_to_table(transitions)
 

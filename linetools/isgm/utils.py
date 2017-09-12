@@ -16,15 +16,13 @@ import warnings
 from astropy import constants as const
 from astropy import units as u
 from astropy.table import Table, QTable
-from astropy.units import Quantity
 from astropy.coordinates import SkyCoord
 
 from linetools.analysis import absline as ltaa
 from linetools.isgm.abscomponent import AbsComponent
-from linetools.spectralline import init_analy
 from linetools.abund.ions import name_to_ion, ion_to_name
 from linetools import utils as ltu
-from linetools.lists.linelist import LineList
+
 
 def chk_components(components, chk_match=False, chk_A_none=False, tol=0.2*u.arcsec):
     """ Performs checks on a list of components
@@ -387,7 +385,6 @@ def table_from_complist(complist):
     tab['reliability'] = [comp.reliability for comp in complist]
 
     return tab
-
 
 
 def iontable_from_components(components, ztbl=None, NHI_obj=None):
