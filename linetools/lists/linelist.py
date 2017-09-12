@@ -60,10 +60,6 @@ class LineList(object):
     verbose : bool, optional
         Give info galore if True
 
-    use_ISM_table : bool [default True]
-        Developer use only. Read from a stored fits table with all ISM
-        transitions, rather than from the original source files.
-
     sort_by : str or list of str, optional
         Keys to sort the underlying data table by. Default is 'wrest'
 
@@ -249,7 +245,7 @@ class LineList(object):
     '''
 
     #####
-    def set_lines(self, verbose=True, use_cache=True, use_ISM_table=True):
+    def set_lines(self, verbose=True, use_cache=True):
         """ Parse the lines of interest
 
         Parameters
@@ -257,28 +253,12 @@ class LineList(object):
         verbose : bool, optional
         use_cache : bool, optional
           cache the linelist for faster repeat performance
-        use_ISM_table : bool, optional
-          For speed, use a saved ISM table instead of reading from original source files.
         """
-        from pkg_resources import resource_filename
-
         global CACHE
         key = self.list
         if use_cache and key in CACHE['data']:
             self._data = CACHE['data'][key]
             return
-        '''
-        elif use_ISM_table and self.list in ('ISM', 'Strong', 'HI'):
-            ism_file = resource_filename('linetools', 'data/lines/ISM_table.fits')
-            data = Table.read(ism_file)
-            if self.list != 'ISM':
-                cond = data['is_'  + self.list]
-                self._data = data[cond]
-            else:
-                self._data = data
-            CACHE['data'][key] = self._data
-            return
-        '''
 
         indices = []
         set_flags = []
@@ -535,7 +515,7 @@ class LineList(object):
 
         indices = []
         if isinstance(subset, Quantity):  # wrest
-            wrest = self._data['wrest'].to('AA').value # Assumes Angstroms
+            wrest = self._data['wrest'].to('AA').value
             # Generate dummy 2D arrays
             subset2d = np.outer(subset.to('AA').value, np.ones_like(wrest))
             wrest2d = np.outer(np.ones(len(subset)), wrest)
