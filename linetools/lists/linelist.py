@@ -483,6 +483,7 @@ class LineList(object):
 
     def subset_lines(self, subset, reset_data=False, verbose=False, sort_by=['wrest']):
         """ Select a user-specific subset of the lines from the LineList
+        Code does *not* raise an error if a requested line is not present
 
         Parameters
         ----------
@@ -521,53 +522,31 @@ class LineList(object):
             wrest2d = np.outer(np.ones(len(subset)), wrest)
             diff = np.abs(subset2d-wrest2d)
             indices = np.where(diff < 1e-4)[1].tolist()
-
-            '''
-            for gdlin in subset:
-                mt = np.where(
-                    np.abs(gdlin.to('AA').value - wrest) < 1e-4)[0]
-                if len(mt) == 1:
-                    indices.append(mt[0])
-                    # import pdb; pdb.set_trace()
-                elif len(mt) > 1:
-                    raise ValueError('There are multiple matches for line {:g} {:s}!'.format(gdlin.value, gdlin.unit))
-                else:
-                    if verbose:
-                        print(
-                            'subset_lines: Did not find {:g} in data Tables'.format(gdlin))
-            '''
         elif isinstance(subset[0], (basestring)):  # Names
             # Using sets
             names = set(self._data['name'])
-            inter = set(subset).intersection(names)
+            inter = set(subset).intersection(names)  # But these aren't ordered the same
             # For the indices
             ind_dict = dict((k,i) for i,k in enumerate(self._data['name']))
             indices = [ind_dict[x] for x in inter]
-            '''
-            pdb.set_trace()
-            for gdlin in subset:
-                mt = np.where(str(gdlin) == names)[0]
-                if len(mt) == 1:
-                    indices.append(mt[0])
-                    # import pdb; pdb.set_trace()
-                elif len(mt) > 1:
-                    raise ValueError(
-                        'Should have been only one line with name {:s}!'.format(str(gdlin)))
-                else:
-                    if verbose:
-                        print(
-                            'subset_lines: Did not find {:s} in data Tables'.format(gdlin))
-            '''
         else:
             raise ValueError('Not ready for this `subset` type yet.')
 
         # Sort
         tmp = self._data[indices]
         # Return LineList object
-        new = LineList(self.list, closest=self.closest, set_lines=False, verbose=self.verbose)
+        new = LineList(self.list, closest=self.closest,
+                       set_lines=False, verbose=self.verbose)
         new._data = tmp
         if sort_by == ['as_given'] or sort_by == 'as_given':
-            pass
+            if isinstance(subset, Quantity):  # wrest
+                pass
+            elif isinstance(subset[0], (basestring)):  # Names
+                isort = []
+                names = list(new._data['name'])
+                for name in subset:
+                    isort.append(names.index(name))
+                new._data = new._data[isort]
         else:
             new.sortdata(sort_by)
 
