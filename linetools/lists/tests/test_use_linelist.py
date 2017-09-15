@@ -27,17 +27,19 @@ def test_lines_from_ion():
 
 def test_subset():
     ism = LineList('ISM')
-    subset = np.array([1215.6700, 1608.4511])*u.AA
-    #pytest.set_trace()
-    ism = ism.subset_lines(subset)
-    assert len(ism._data) == 2
+    subset = [1215.6700, 1608.4511, 1025.7222]*u.AA
+    ism = ism.subset_lines(subset, sort_by='as_given')
+    assert ism._data['name'][1] == 'FeII 1608'
+    assert len(ism._data) == 3
     np.testing.assert_allclose(ism['FeII 1608']['wrest'], 1608.4511*u.AA, rtol=1e-7)
 
     # Now with names
     ism = LineList('ISM')
     subset = ['HI 1215', 'HI 1025', 'CIV 1548']
-    ism = ism.subset_lines(subset)
+    ism = ism.subset_lines(subset, sort_by='as_given')
+    assert ism._data['name'][0] == 'HI 1215'
     np.testing.assert_allclose(ism['HI 1215']['wrest'], 1215.6700*u.AA, rtol=1e-7)
+
 
 def test_closest():
     ism = LineList('ISM')
@@ -45,6 +47,7 @@ def test_closest():
     # 
     line = ism[1250.584*u.AA]  # dict with units
     np.testing.assert_allclose(line['wrest'], 1250.578*u.AA, rtol=1e-7)
+
 
 def test_all_transitions():
     error_msg = 'Something is wrong in all_transitions()'
@@ -63,10 +66,9 @@ def test_all_transitions():
     out = ism.all_transitions(line)
     assert type(out) == dict, error_msg
     #check case of transitions from excited levels
-    line='FeII*'
+    line='FeII* 1618'  # Cannot just use FeII*
     out = ism.all_transitions(line)
-    assert len(out) == 27, "wrong line counts"
-    print(out)
+    assert len(out) == 8, "wrong line counts"
     # wrest
     out = ism.all_transitions(1215.6700*u.AA)
     assert len(out) == 30,"wrong line counts" # 30 Lyman series transitions
@@ -97,6 +99,7 @@ def test_strongest_transitions():
     z = 0.0
     transitions = ism.strongest_transitions('HI',wvlims/(1+z),n_max=5)
     assert transitions is None, error_msg
+
 
 def test_available_transitions():
     error_msg = 'Something is wrong in available_transitions()'
@@ -130,7 +133,8 @@ def test_available_transitions():
     transitions = ism.available_transitions(wvlims/(1+z),n_max_tuple=2)
     assert isinstance(transitions,dict), error_msg
 
-def test_sortdata():
+
+def test_sortdata():  # With extras
     error_msg = 'Something is wrong in sortdata()'
     ism = LineList('ISM', sort_by='name')
     assert ism.name[0] == 'AlII 1670', error_msg
@@ -140,3 +144,5 @@ def test_sortdata():
     assert ism.name[0] == 'HI 1215', error_msg
     ism.sortdata(['rel_strength'])
     assert ism.name[0] == 'CI** 1123b', error_msg
+
+

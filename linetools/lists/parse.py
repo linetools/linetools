@@ -8,13 +8,15 @@ if not sys.version_info[0] > 2:
     import codecs
     open = codecs.open
 
+from pkg_resources import resource_filename
+
 from astropy import units as u
 from astropy.units.quantity import Quantity
 from astropy.io import fits, ascii
 from astropy.table import Column, Table, vstack
 
-from ..abund import roman, ions
-from ..abund.elements import ELEMENTS
+from linetools.abund import roman, ions
+from linetools.abund.elements import ELEMENTS
 
 lt_path = imp.find_module('linetools')[1]
 
@@ -88,8 +90,6 @@ def line_data(nrows=1):
     # emission and ISM absorption simultaneously by masking
     # out what does not make sense in one case or the other
     tbl = Table(clms, masked=True)
-    # import pdb
-    # pdb.set_trace()
 
     return ldict, tbl
 
@@ -151,6 +151,13 @@ def read_H2():
     print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(H2_fil))
     data = Table.read(H2_fil, format='ascii', guess=False, comment=';')
 
+    # Remove
+    data.remove_column('log(w*f)')
+    data.remove_column('#')
+
+    # Rename
+    data.rename_column('gu', 'gk')
+
     # Units
     data['wrest'].unit = u.AA
     data['gamma'].unit = 1./u.s
@@ -168,6 +175,9 @@ def read_H2():
     # Group
     cgroup = Column(np.ones(len(data),dtype='int')*(2**3), name='group')
     data.add_column(cgroup)
+
+    # Reference
+    data['Ref'] = 'Abgrall93' # GRB paper
 
     # Return
     return data
@@ -188,13 +198,19 @@ def read_CO():
 
     # Units
 
+    # Remove column
+    data.remove_column('lgwf')
+    data.remove_column('id')
+
     # Rename some columns
     data.rename_column('Jp', 'Jj')
     data.rename_column('Jpp', 'Jk')
     data.rename_column('np', 'nj')
     data.rename_column('npp', 'nk')
     data.rename_column('iso', 'Am') # Isotope
-    data.rename_column('wave', 'wrest') 
+    data.rename_column('wave', 'wrest')
+    data.rename_column('gu', 'gk')
+    data.rename_column('label', 'name')
 
     data['wrest'].unit = u.AA
 
@@ -209,6 +225,8 @@ def read_CO():
     # Group
     cgroup = Column(np.ones(len(data),dtype='int')*(2**4), name='group')
     data.add_column(cgroup)
+    # Reference
+    data['Ref'] = 'Prochaska09' # GRB paper
 
     # Return
     return data
@@ -246,7 +264,7 @@ def read_verner94():
     # name
     names = []
     for row in data:
-        ionnm = ions.ion_name((row['Z'], row['ion']))
+        ionnm = ions.ion_to_name((row['Z'], row['ion']))
         names.append('{:s} {:d}'.format(ionnm, int(row['wrest'])))
     data['name'] = names
     #  Finish
@@ -330,7 +348,7 @@ def read_galabs():
     print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(galabs_fil))
     aux = Table.read(galabs_fil, format='ascii')
 
-    # My table
+    # My table -- insures proper format
     ldict, data = line_data(nrows=len(aux))
 
     # load values using convention names
@@ -404,7 +422,7 @@ def parse_verner96(orig=False, write=False):
     if (len(verner96_tab1) > 0) & (not orig):
         print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
             verner96_tab1[0]))
-        data = Table.read(verner96_tab1[0])
+        data = Table(Table.read(verner96_tab1[0]), masked=True)
     else:
         # File
         verner96_tab1 = lt_path + '/data/lines/verner96_tab1.txt'
@@ -422,7 +440,7 @@ def parse_verner96(orig=False, write=False):
             # wrest
             data[kk]['wrest'] = float(line[47:56].strip())
             # name
-            ionnm = ions.ion_name((data[kk]['Z'], data[kk]['ion']))
+            ionnm = ions.ion_to_name((data[kk]['Z'], data[kk]['ion']))
             data[kk]['name'] = '{:s} {:d}'.format(ionnm,
                     int(data[kk]['wrest']))
             # Ej, Ek
@@ -474,7 +492,7 @@ def parse_morton00(orig=False):
     if (len(morton00_tab2) > 0) & (not orig):
         print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
             morton00_tab2[0]))
-        data = Table.read(morton00_tab2[0])
+        data = Table(Table.read(morton00_tab2[0]), masked=True)
     else:
         # File
         morton00_tab2 = lt_path + '/data/lines/morton00_table2.dat'
@@ -511,7 +529,7 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
     if (len(morton03_tab2) > 0) & (not orig):
         print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(
             morton03_tab2[0]))
-        data = Table.read(morton03_tab2[0])
+        data = Table(Table.read(morton03_tab2[0]), masked=True)
     else:
         ## Read Table 2
         if tab_fil is None:
@@ -547,6 +565,9 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
                 #xdb.set_trace()
                 # Line index
                 elmi.append(kk)
+                # Kludge!!
+                if 'HOLMIUM' in line:
+                    elmc[-1] = 'Ho'
 
             # ISOTOPE and ION
             try: # Deals with bad Byte in Morton00
@@ -626,8 +647,11 @@ def parse_morton03(orig=False, tab_fil=None, HIcombine=True):
                         gdZ = gdZ[0]
                     tbl[count]['Z'] = elmZ[gdZ]
                     # Name
-                    tbl[count]['name'] = elmc[gdZ]+ionv[gdi]+' {:d}'.format(
-                        int(tbl[count]['wrest']))
+                    try:
+                        tbl[count]['name'] = elmc[gdZ]+ionv[gdi]+' {:d}'.format(
+                            int(tbl['wrest'][count]))
+                    except UnicodeEncodeError:
+                        pdb.set_trace()
                     # Isotope (Atomic number)
                     if ioni[gdi] == Dline:
                         tbl[count]['Am'] = 2
@@ -730,6 +754,7 @@ def mktab_morton00(do_this=False, outfil=None):
     outfil : str, optional
       Name of output file.  Defaults to a given value
     """
+    import subprocess
     if not do_this:
         print('mktab_morton00: It is very unlikely you want to do this')
         print('mktab_morton00: Returning...')
@@ -743,12 +768,8 @@ def mktab_morton00(do_this=False, outfil=None):
         outfil = lt_path + '/data/lines/morton00_table2.fits'
     m00.write(outfil, overwrite=True)
     print('mktab_morton00: Wrote {:s}'.format(outfil))
-    #
     print('mktab_morton03: Now compressing...')
-    with open(outfil) as src:
-        with gzip.open(outfil+'.gz', 'wb') as dst:
-            dst.writelines(src)
-    os.unlink(outfil)
+    _ = subprocess.call(['gzip', '-f', outfil])
 
 
 def grab_galaxy_linelists(do_this=False):
@@ -837,7 +858,7 @@ def update_fval(table, verbose=False):
 
     # Now, finally, update
     for row in howk00:
-        mt = np.where( (np.abs(table['wrest']-row['wrest']*u.AA) < 1e-3*u.AA) & 
+        mt = np.where( (np.abs(table['wrest'].data*table['wrest'].unit-row['wrest']*u.AA) < 1e-3*u.AA) &
             (table['Z'] == 26) & (table['ion'] == 2))[0]
         if len(mt) == 0:
             if verbose:
@@ -912,51 +933,124 @@ def update_wrest(table, verbose=True):
     table['Ek'][mt[0]] = 52330.33 / u.cm
     '''
 #
+def load_datasets(datasets, tol=1e-3, use_cache=True):
+    """Grab the data for the lines of interest
+    Also load into CACHE
+
+    Parameters
+    ----------
+    datasets : list of func
+      Routines to call for generating the dataset
+    tol : float, optional
+      Tolerance for matching wavelength in AA
+    use_cache : bool, optional
+
+    Returns
+    -------
+
+    """
+    flag_fval = True  # Update f-values?
+    flag_wrest = True  # Update wavelengths?
+    flag_gamma = True  # Update gamma values (recommended)
+
+    full_table = None
+    all_func = []
+    tmp, _ = line_data(1)
+    tkeys = list(tmp.keys())
+    # Loop on data sets
+    for func in datasets:
+        # Query if read already
+        if func not in all_func:
+            # Read
+            table = func()
+
+            # Check keys
+            for key in table.keys():
+                if key not in tkeys:
+                    pdb.set_trace()
+
+            # Add extras
+            if full_table is None:
+                full_table = table
+            else:
+                # Unique values
+                wrest = full_table['wrest']
+                newi = []
+                for jj, row in enumerate(table):
+                    mt = np.abs(row['wrest'] - wrest) < tol
+                    if mt.sum() == 0:
+                        newi.append(jj)
+                # Append
+                try:
+                    full_table = vstack([full_table, table[newi]])
+                except NotImplementedError:
+                    pdb.set_trace()
+            # Save to avoid repeating
+            all_func.append(func)
+
+    # Save
+    _fulltable = full_table.copy()
+
+    # Update wavelength values
+    if flag_wrest:
+        update_wrest(_fulltable)
+
+    # Update f-values (Howk00)
+    if flag_fval:
+        _fulltable = update_fval(_fulltable)
+
+    # Update gamma-values (Mainly HI)
+    if flag_gamma:
+        update_gamma(_fulltable)
+
+    # Finish
+    return _fulltable
 
 
-def _write_ref_ISM_table():
-    """ Write a reference table enabling faster I/O for ISM-related lists
-
+def _write_ref_table(outfile=None):
+    """ Write a reference table enabling faster I/O for *all* line lists
     For developer use only.
 
     Note that after running this, you need to manually copy the table
     produced to linetools/data/lines/ISM_table.fits inside the github
     repository, and then check it in.
     """
-    from linetools.lists.linelist import LineList
+    import warnings
+    import datetime
+    import getpass
+    date = str(datetime.date.today().strftime('%Y-%b-%d'))
+    user = getpass.getuser()
+    if outfile is None:
+        outfile = resource_filename('linetools', 'data/lines/linelist.ascii')
 
-    ism = LineList('ISM', use_ISM_table=False)
-    strong = LineList('Strong', use_ISM_table=False)
-    euv = LineList('EUV', use_ISM_table=False)
-    hi = LineList('HI', use_ISM_table=False)
+    # Define datasets: In order of Priority
+    datasets = [parse_morton03, parse_morton00, parse_verner96,
+                read_verner94, read_euv]  # Morton 2003, Morton 00, Verner 96, Verner 94
+    datasets += [read_H2, read_CO] # H2 (Abrigail), CO (JXP)
+    datasets += [read_forbidden, read_recomb, read_galabs] # Galaxy lines
 
-    # need a Table to write
-    tab = ism._data.copy()
-    tab.sort(('wrest'))
+    # Load
+    full_table = load_datasets(datasets)
 
-    # Using np.in1d doesn't work for some reason. Do it the long way
-    cond = []
-    for table in (strong, euv, hi):
-        igood = []
-        for row in Table(table._data):
-            ind = tab['wrest'].searchsorted(row['wrest'])
-            dw = abs(tab['wrest'][ind] - row['wrest'])
-            if abs(tab['wrest'][ind+1] - row['wrest']) < dw:
-                ind = ind + 1
-            rism = tab[ind]
-            # check this is the right row.
-            if all(row[k] == rism[k] for k in hi._data.colnames if
-                   not hasattr(row[k], 'mask') or not row[k].mask):
-                igood.append(ind)
-            else:
-                raise RuntimeError('No match found!')
+    # Check the sets file
+    #set_data = read_sets()
+    #pdb.set_trace()
 
-        cond.append(np.zeros(len(tab), dtype=bool))
-        cond[-1][np.array(igood)] = True
+    # Meta
+    full_table.meta['Creator'] = user
+    full_table.meta['CreationDate'] = date
+    # Write
+    warnings.warn("About to overwrite: {:s}".format(outfile))
+    warnings.warn("Proceed only if you know what you are doing!")
+    pdb.set_trace()
+    full_table.write(outfile, format='ascii.ecsv', overwrite=True)
 
-    col1 = Column(cond[0], name='is_Strong')
-    col2 = Column(cond[1], name='is_EUV')
-    col3 = Column(cond[2], name='is_HI')
-    tab.add_columns([col1, col2, col3])
 
-    tab.write('ISM_table.fits', overwrite=True)
+if __name__ == '__main__':
+    # Generate tables
+    #mktab_morton00(do_this=True)
+    # ISM
+    #_write_ref_ISM_table()
+    # Full table
+    _write_ref_table()
+

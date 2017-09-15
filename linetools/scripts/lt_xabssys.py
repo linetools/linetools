@@ -55,9 +55,12 @@ def main(*args, **kwargs):
 
     # Read AbsSystem
     from linetools.isgm.abssystem import GenericAbsSystem
+    abs_sys = GenericAbsSystem.from_json(pargs.abssys_file)#, chk_vel=False)
     if not pargs.chk_z:
         warnings.warn("Not checking your system's velocity limits.  This is the Default but be so warned.")
     abs_sys = GenericAbsSystem.from_json(pargs.abssys_file, chk_z=pargs.chk_z)
+    if len(abs_sys.list_of_abslines()) == 0:
+        warnings.warn("No absorption lines given.  I hope you intended that to be the case!")
 
     app = QApplication(sys.argv)
 

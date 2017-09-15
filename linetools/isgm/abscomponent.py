@@ -328,7 +328,7 @@ class AbsComponent(object):
             within `list = LineList('ISM')`.
         init_name : str, optional
             Name of the initial transition used to define the AbsComponent
-        wvlims : Quantity array, optional
+        wvlim : Quantity array, optional
             Observed wavelength limits for AbsLines to be added.
             e.g. [1200, 2000]*u.AA.
         min_Wr : Quantity, optional
@@ -357,14 +357,17 @@ class AbsComponent(object):
                 init_name = ions.ion_to_name(self.Zion, nspace=0)
         transitions = llist.all_transitions(init_name)
 
-        # unify output to be always QTable
+        # unify output to be a Table
         if isinstance(transitions, dict):
-            transitions = llist.from_dict_to_qtable(transitions)
+            transitions = llist.from_dict_to_table(transitions)
 
         # check wvlims
         if wvlim is not None:
-            cond = (transitions['wrest']*(1+self.zcomp) >= wvlim[0]) & \
-                   (transitions['wrest']*(1+self.zcomp) <= wvlim[1])
+            # Deal with units
+            wrest = transitions['wrest'].data * transitions['wrest'].unit
+            # Logic
+            cond = (wrest*(1+self.zcomp) >= wvlim[0]) & \
+                   (wrest*(1+self.zcomp) <= wvlim[1])
             transitions = transitions[cond]
 
         # check outputs
@@ -765,7 +768,7 @@ class AbsComponent(object):
             vlim = aline.limits.vlim.to('km/s').value
             wvlim = aline.limits.wvlim.to('AA').value
             s += '{:.4f}|{:.4f}|{:.5f}|{:.5f}|'.format(vlim[0], vlim[1], wvlim[0], wvlim[1])
-            s += '{:.8f}|{:s}|{:s}|{:s}'.format(self.zcomp, aline.data['ion_name'], self.reliability, self.comment)  # zcomp again here
+            s += '{:.8f}|{:s}|{:s}|{:s}'.format(self.zcomp, aline.ion_name, self.reliability, self.comment)  # zcomp again here
 
             # if len(self.comment) > 0:
             #     s += '# {:s}'.format(self.comment)
@@ -807,7 +810,7 @@ class AbsComponent(object):
         """
         cdict = dict(Zion=self.Zion, zcomp=self.zcomp, vlim=self.vlim.to('km/s').value,
                      Name=self.name,
-                     RA=self.coord.fk5.ra.value, DEC=self.coord.fk5.dec.value,
+                     RA=self.coord.icrs.ra.value, DEC=self.coord.icrs.dec.value,
                      A=self.A, Ej=self.Ej.to('1/cm').value, comment=self.comment,
                      flag_N=self.flag_N, logN=self.logN, sig_logN=self.sig_logN)
         cdict['class'] = self.__class__.__name__
@@ -853,8 +856,8 @@ class AbsComponent(object):
 
     def __repr__(self):
         txt = '<{:s}: {:s} {:s}, Name={:s}, Zion=({:d},{:d}), Ej={:g}, z={:g}, vlim={:g},{:g}'.format(
-            self.__class__.__name__, self.coord.fk5.ra.to_string(unit=u.hour,sep=':', pad=True),
-                self.coord.fk5.dec.to_string(sep=':',pad=True,alwayssign=True), self.name, self.Zion[0], self.Zion[1], self.Ej, self.zcomp, self.vlim[0], self.vlim[1])
+            self.__class__.__name__, self.coord.icrs.ra.to_string(unit=u.hour,sep=':', pad=True),
+                self.coord.icrs.dec.to_string(sep=':',pad=True,alwayssign=True), self.name, self.Zion[0], self.Zion[1], self.Ej, self.zcomp, self.vlim[0], self.vlim[1])
 
         # Column?
         if self.flag_N > 0:

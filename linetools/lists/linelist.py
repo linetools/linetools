@@ -10,9 +10,11 @@ except NameError:
 
 import numpy as np
 
+from pkg_resources import resource_filename
+
 from astropy import units as u
 from astropy.units.quantity import Quantity
-from astropy.table import Table, vstack, Column, MaskedColumn
+from astropy.table import Table, hstack
 import warnings
 import pdb
 
@@ -58,14 +60,10 @@ class LineList(object):
     verbose : bool, optional
         Give info galore if True
 
-    use_ISM_table : bool [default True]
-        Developer use only. Read from a stored fits table with all ISM
-        transitions, rather than from the original source files.
-
     sort_by : str or list of str, optional
         Keys to sort the underlying data table by. Default is 'wrest'
 
-    redo_extra_columns : bool, optional
+    redo_extra: bool, optional
         Whether to recalculate extra columns for log(w*f), abundance, and ion_correction.
         Setting this to True is useful if a different abundance, or ionizatation_correction
         is used. Default is False.
@@ -74,7 +72,7 @@ class LineList(object):
 
     # Init
     def __init__(self, llst_key, verbose=False, closest=False, set_lines=True,
-                 use_ISM_table=True, use_cache=True, sort_by='wrest', redo_extra_columns=False):
+                 use_cache=True, sort_by='wrest', redo_extra=False):
 
         # Error catching
         if not isinstance(llst_key, basestring):
@@ -87,15 +85,17 @@ class LineList(object):
         self.closest = closest
         self.verbose = verbose
 
+        # Load Data
+        self.load_data()
+        '''
         if not use_ISM_table or llst_key not in ('ISM', 'HI', 'Strong'):
-            # Load Data
             self.load_data(use_cache=use_cache)
+        '''
 
         if set_lines:
             # Set lines for use (from defined LineList)
             # This sets self._data
-            self.set_lines(use_ISM_table=use_ISM_table, verbose=verbose,
-                           use_cache=use_cache)
+            self.set_lines(verbose=verbose, use_cache=use_cache)
         else:
             self._data = None
 
@@ -104,10 +104,12 @@ class LineList(object):
 
         # Sort
         self.sort_by = sort_by
-        #if (self._data is not None) and (sort_by is not None):
+        # Extras
+        self._extra_table = Table(masked=True)
         if self._data is not None:
             # redo extra columns?
-            self.set_extra_columns_to_datatable(redo=redo_extra_columns)
+            self._extra_table['Id_ex'] = self._data['Id']
+            self.make_extra_table(redo=redo_extra)
             # sort the LineList
             self.sortdata(sort_by)
 
@@ -135,6 +137,12 @@ class LineList(object):
         """
         return self._data['ion']
 
+    def load_data(self):
+        data_file = resource_filename('linetools', 'data/lines/linelist.ascii')
+        # Read
+        self._fulltable = Table.read(data_file, format='ascii.ecsv')
+
+    '''
     def load_data(self, use_ISM_table=True, tol=1e-3, use_cache=True):
         """Grab the data for the lines of interest
         Also load into CACHE
@@ -234,9 +242,10 @@ class LineList(object):
             lilp.update_gamma(self._fulltable)
 
         CACHE['full_table'][key] = self._fulltable
+    '''
 
     #####
-    def set_lines(self, verbose=True, use_cache=True, use_ISM_table=True):
+    def set_lines(self, verbose=True, use_cache=True):
         """ Parse the lines of interest
 
         Parameters
@@ -244,23 +253,11 @@ class LineList(object):
         verbose : bool, optional
         use_cache : bool, optional
           cache the linelist for faster repeat performance
-        use_ISM_table : bool, optional
-          For speed, use a saved ISM table instead of reading from original source files.
         """
-
         global CACHE
         key = self.list
         if use_cache and key in CACHE['data']:
             self._data = CACHE['data'][key]
-            return
-        elif use_ISM_table and self.list in ('ISM', 'Strong', 'HI'):
-            data = Table.read(lt_path + '/data/lines/ISM_table.fits')
-            if self.list != 'ISM':
-                cond = data['is_'  + self.list]
-                self._data = data[cond]
-            else:
-                self._data = data
-            CACHE['data'][key] = self._data
             return
 
         indices = []
@@ -322,14 +319,17 @@ class LineList(object):
         # Parse and sort (consider masking instead)
         tmp_tab = self._fulltable[all_idx]
         tmp_tab.sort('wrest')
+        tmp_tab['Id'] = np.arange(len(tmp_tab)).astype(int)
 
-        #
+        # Finish
         self._data = tmp_tab
         CACHE['data'][key] = self._data
 
-    def set_extra_columns_to_datatable(self, abundance_type='solar', ion_correction='none',
+
+    def make_extra_table(self, abundance_type='solar', ion_correction='none',
                                        redo=False):
-        """Sets new convenient columns to the self._data Table. These will be useful
+        """Build an additional table that is parallel to self._data that
+        includes convenient columns. These will be useful
         for sorting the underlying data table in convenient ways, e.g. by expected
         relative strength, abundance, etc.
 
@@ -369,7 +369,7 @@ class LineList(object):
 
         """
         # Avoid redo (especially for caching)
-        if ('ion_name' in self._data.keys()) and (not redo):
+        if ('ion_name' in self._extra_table.keys()) and (redo is False):
             return
 
         if self.list not in ['HI', 'ISM', 'EUV', 'Strong', 'H2']:
@@ -377,11 +377,14 @@ class LineList(object):
             return
 
         # Set ion_name column
+        ion_name = np.array([' '*20]*len(self.name)).astype(str)
         if self.list in ['HI', 'ISM', 'EUV', 'Strong']:
-            ion_name = [name.split(' ')[0] for name in self.name]  # valid for atomic transitions
+            for kk,name in enumerate(self.name):  # valid for atomic transitions
+                ion_name[kk] = name.split(' ')[0]
         elif self.list in ['H2']:
-            ion_name = [name.split('(')[0] for name in self.name]  # valid for H2
-        self._data['ion_name'] = ion_name
+            for kk,name in enumerate(self.name):  # H2
+                ion_name[kk] = name.split('(')[0]
+        self._extra_table['ion_name'] = ion_name
 
         if self.list in ['H2']:
             # we want Jk to be 1 or 0 first
@@ -390,53 +393,46 @@ class LineList(object):
             # second level: Jk = {2,3}
             cond = (self._data['Jk'] > 1) & (self._data['Jk'] <= 3)
             rel_strength = np.where(cond, 50, rel_strength)
-            self._data['rel_strength'] = rel_strength
+            self._extra_table['rel_strength'] = rel_strength
             return
 
         # Set QM strength as MaskedColumn (self._data['f'] is MaskedColumn)
         qm_strength = self._data['f'] * self._data['wrest']
         qm_strength.name = 'qm_strength'
-        self._data['log(w*f)'] = np.log10(qm_strength)
+        self._extra_table['log(w*f)'] = np.log10(qm_strength)
         # mask out potential nans
-        cond = np.isnan(self._data['log(w*f)'])
-        self._data['log(w*f)'].mask = np.where(cond, True, self._data['log(w*f)'].mask)
+        cond = np.isnan(self._extra_table['log(w*f)'])
+        self._extra_table['log(w*f)'].mask = np.where(cond, True, self._extra_table['log(w*f)'].mask)
 
         # Set Abundance
         if abundance_type not in ['none', 'solar']:
-            raise ValueError('set_extra_columns_to_datatable: `abundance type` '
-                             'has to be either: `none` or `solar`')
+            raise ValueError('set_extra_columns_to_datatable: `abundance type` has to be either: `none` or `solar`')
         if abundance_type == 'none':
-            self._data['abundance'] = np.zeros(len(self._data))
+            self._extra_table['abundance'] = np.zeros(len(self._data))
         elif abundance_type == 'solar':
             from linetools.abund.solar import SolarAbund
             solar = SolarAbund()
-            # abund will be masked array as default (all masked out) in
-            # case an element is not in SolarAbund()
             abund = np.ma.masked_array(np.zeros(len(self._data)), mask=True)
-            for ii in range(len(abund)):
-                ion_name = self._data[ii]['ion_name']
-                ion_Z = self._data[ii]['Z']
-                if ion_name.startswith('DI'): # Deuterium
-                    abund[ii] = solar['D']
-                    abund.mask[ii] = False  # unmask
-                else:
-                    try:
-                        abund[ii] = solar[ion_Z]
-                        abund.mask[ii] = False  # unmask
-                    except ValueError:
-                        pass  # these correspond to elements with no abundance given by solar()
-                              # and so they remain masked
-            self._data['abundance'] = abund
+            for row in solar._data:
+                Zmt = self._data['Z'] == row['Z']
+                abund[Zmt] = row['Abund']
+                abund.mask[Zmt] = False
+            # Deuterium is special
+            fchar = np.array([ion_name[0] for ion_name in self._extra_table['ion_name'].data])
+            DI = fchar == 'D'
+            abund[DI] = solar['D']
+            # Finish
+            self._extra_table['abundance'] = abund
 
         # Set ionization correction
         if ion_correction not in ['none']:
             raise ValueError('set_extra_columns_to_datatable: `ion_correction` '
                              'has to be `none`.')
         if ion_correction == 'none':
-            self._data['ion_correction'] = np.zeros(len(self._data))  # is in log10 scale, so 0 means no-correction
+            self._extra_table['ion_correction'] = np.zeros(len(self._data))  # is in log10 scale, so 0 means no-correction
 
         # Set relative strength in log10 scale
-        self._data['rel_strength'] = self._data['log(w*f)'] + self._data['abundance'] + self._data['ion_correction']
+        self._extra_table['rel_strength'] = self._extra_table['log(w*f)'] + self._extra_table['abundance'] + self._extra_table['ion_correction']
 
     def sortdata(self, keys, reverse=False):
         """Sort the LineList according to a given key or keys.
@@ -460,23 +456,41 @@ class LineList(object):
         if keys[0] == 'as_given':
             return
 
+        # hstack for convenience
+        if len(self._extra_table) == len(self._data):
+            flg_extra = True
+            dkeys = self._data.keys()
+            ekeys = self._extra_table.keys()
+            dtbl = hstack([self._data, self._extra_table], join_type='exact')
+        else:
+            flg_extra = False
+            dtbl = self._data
+
         # sort
-        self._data.sort(keys)
+        dtbl.sort(keys)
 
         # reverse?
         if reverse:
-            self._data.reverse()
+            dtbl.reverse()
         self.sort_by = keys
+
+        # Finish
+        if flg_extra:
+            self._data = dtbl[dkeys]
+            self._extra_table = dtbl[ekeys]
+        else:
+            self._data = dtbl
 
     def subset_lines(self, subset, reset_data=False, verbose=False, sort_by=['wrest']):
         """ Select a user-specific subset of the lines from the LineList
+        Code does *not* raise an error if a requested line is not present
 
         Parameters
         ----------
-        subset : list or np.ndarray (of Quantity or str)
+        subset : list or Quantity array (of Quantity or str)
             List of wrest or names for lines to use (drawn from current
             LineList object) e.g. (['HI 1215', 'CIV 1548'] or
-            [1215.67 * u.AA, 1548.195 * u.AA])
+            [1215.67, 1548.195] * u.AA
         reset_data : bool, optional
             Reset self._data Table based on the original list at the
             initialization (i.e. the default list). This is useful for
@@ -493,52 +507,46 @@ class LineList(object):
         """
 
         # Check the right format
-        if not isinstance(subset, (list, np.ndarray)):
-            raise ValueError('subset_lines: the input subset must be a list!')
+        if not isinstance(subset, (list, Quantity)):
+            raise ValueError('subset_lines: the input subset must be a list or Quantity array!')
 
         # Reset _data (useful for changing subsets)
         if reset_data:
             self.set_lines(verbose=False)
 
         indices = []
-        if isinstance(subset[0], (float, Quantity)):  # wrest
-            wrest = self._data['wrest'] # Assumes Angstroms
-            for gdlin in subset:
-                mt = np.where(
-                    np.abs(gdlin.to('AA').value - wrest) < 1e-4)[0]
-                if len(mt) == 1:
-                    indices.append(mt[0])
-                    # import pdb; pdb.set_trace()
-                elif len(mt) > 1:
-                    raise ValueError('There are multiple matches for line {:g} {:s}!'.format(gdlin.value, gdlin.unit))
-                else:
-                    if verbose:
-                        print(
-                            'subset_lines: Did not find {:g} in data Tables'.format(gdlin))
+        if isinstance(subset, Quantity):  # wrest
+            wrest = self._data['wrest'].to('AA').value
+            # Generate dummy 2D arrays
+            subset2d = np.outer(subset.to('AA').value, np.ones_like(wrest))
+            wrest2d = np.outer(np.ones(len(subset)), wrest)
+            diff = np.abs(subset2d-wrest2d)
+            indices = np.where(diff < 1e-4)[1].tolist()
         elif isinstance(subset[0], (basestring)):  # Names
-            names = np.array(self._data['name'])
-            for gdlin in subset:
-                mt = np.where(str(gdlin) == names)[0]
-                if len(mt) == 1:
-                    indices.append(mt[0])
-                    # import pdb; pdb.set_trace()
-                elif len(mt) > 1:
-                    raise ValueError(
-                        'Should have been only one line with name {:s}!'.format(str(gdlin)))
-                else:
-                    if verbose:
-                        print(
-                            'subset_lines: Did not find {:s} in data Tables'.format(gdlin))
+            # Using sets
+            names = set(self._data['name'])
+            inter = set(subset).intersection(names)  # But these aren't ordered the same
+            # For the indices
+            ind_dict = dict((k,i) for i,k in enumerate(self._data['name']))
+            indices = [ind_dict[x] for x in inter]
         else:
             raise ValueError('Not ready for this `subset` type yet.')
 
         # Sort
         tmp = self._data[indices]
         # Return LineList object
-        new = LineList(self.list, closest=self.closest, set_lines=False, verbose=self.verbose)
+        new = LineList(self.list, closest=self.closest,
+                       set_lines=False, verbose=self.verbose)
         new._data = tmp
         if sort_by == ['as_given'] or sort_by == 'as_given':
-            pass
+            if isinstance(subset, Quantity):  # wrest
+                pass
+            elif isinstance(subset[0], (basestring)):  # Names
+                isort = []
+                names = list(new._data['name'])
+                for name in subset:
+                    isort.append(names.index(name))
+                new._data = new._data[isort]
         else:
             new.sortdata(sort_by)
 
@@ -555,7 +563,7 @@ class LineList(object):
         ldict['name'] = 'unknown'
         return ldict
 
-    def all_transitions(self, line):
+    def all_transitions(self, line, debug=False):
         """ Get all the transitions corresponding to an ion species
         as given by `line`. In other words, for a given single
         line transition, this function returns all transitions from
@@ -593,48 +601,46 @@ class LineList(object):
         if line == 'unknown':
             return self.unknown_line()
         if self.list in ['H2']:
-
-            cond = self._data['ion_name'] == line.split('(')[0]
+            cond = self._extra_table['ion_name'] == line.split('(')[0]
             tbl = self._data[cond]  # cond is a masked boolean array
             if len(tbl) > 1:
                 return tbl
             else:  # this should be always len(tbl)==1 because line was found
-                return self.from_table_to_dict(tbl)
+                return lilu.from_table_to_dict(tbl)
 
         else:
             Z = None
-            for row in self._data:  # is this loop avoidable?
-                name = row['name']
-                # keep only the first part of name in linelist too
-                name = name.split(' ')[0]
-                if name == line:
-                    Z = row['Z']  # atomic number
-                    ie = row['ion']  # ionization estate
-                    Ej = row['Ej']  # Energy of lower level
-                    break
-            if Z is not None:
-                tbl = self.__getitem__((Z, ie))
-                # Make sure the lower energy level is the same too
-                #cond = tbl['Ej'] == Ej
-                cond = np.array([name1.split(' ')[0] == line for name1 in tbl['name']])
-                tbl = tbl[cond]
-                tbl.sort(['Ej','wrest'])
-                # For hydrogen/deuterium this contains deuterium/hydrogen;
-                # so let's get rid of them
-                #if (line == 'HI') or (line == 'DI'):
-                #    names = np.array(tbl['name'])
-                #    cond = np.array([l.startswith(line) for l in names])
-                #    tbl = tbl[cond]
-                if len(tbl) > 1:
-                    return tbl
-                else:  # this should be always len(tbl)==1 because Z is not None
-                    return self.from_table_to_dict(tbl)
-            else:
+            indices = np.where(self._extra_table['ion_name'] == line)[0]
+            if len(indices) == 0:
                 raise ValueError(
                     'Line {} not found in the LineList: {}'.format(line, self.list))
+            else:
+                idx = indices[0]
+            Z = self._data['Z'][idx]  # atomic number
+            ie = self._data['ion'][idx]  # ionization state
+            Ej = self._data['Ej'][idx]  # Energy of lower level
+            tbl = self.__getitem__((Z, ie))
+            # Make sure the lower energy level is the same too
+            if debug:
+                pdb.set_trace()
+            cond = tbl['Ej'] == Ej
+            tbl = tbl[cond]
+            tbl.sort(['Ej','wrest'])
+            # For hydrogen/deuterium this contains deuterium/hydrogen;
+            # so let's get rid of them
+            if (line == 'HI') or (line == 'DI'):
+                names = np.array(tbl['name'])
+                cond = np.array([l.startswith(line) for l in names])
+                tbl = tbl[cond]
+            if len(tbl) > 1:
+                return tbl
+            else:  # this should be always len(tbl)==1 because Z is not None
+                return lilu.from_table_to_dict(tbl)
 
-    def strongest_transitions(self, line, wvlims, n_max=3, verbose=False):
-        """ Find the strongest transition for an ion
+    def strongest_transitions(self, line, wvlims, n_max=3, verbose=False,
+                              debug=False):
+        """ Find the strongest transition for a single ion
+        available_transitions() finds those for all ions in a wavelength interval
 
         For a given single line transition, this function returns
         the n_max strongest transitions of the ion species found in
@@ -689,6 +695,7 @@ class LineList(object):
         elif (n_max is not None):
             raise SyntaxError('n_max must be integer or None')
 
+        # Grab all_transitions related to the line
         data = self.all_transitions(line)
         # condition to be within wvrange
         cond = (Quantity(data['wrest']) >= wvlims[0]) & (Quantity(data['wrest']) <= wvlims[1])
@@ -700,12 +707,13 @@ class LineList(object):
         elif isinstance(data, dict):  # Only 1 case from a dict format
             return data
         elif np.sum(cond) == 1:  # only 1 case from a Table format
-            return self.from_table_to_dict(data[cond])
+            return lilu.from_table_to_dict(data[cond])
         else:
             # remove transitions out of range
             data = data[cond]
             # sort by relative strength
-            sorted_inds = np.argsort(data['rel_strength'])
+            idx = data['Id'].data
+            sorted_inds = np.argsort(self._extra_table['rel_strength'][idx])
             # reverse sorted indices, so strongest get first
             sorted_inds = sorted_inds[::-1]
             # sort using sorted_inds
@@ -714,12 +722,12 @@ class LineList(object):
             if n_max is not None:
                 data = data[:n_max]
             if len(data) == 1:  # Only 1 case from a Table format; return a dictionary
-                return self.from_table_to_dict(data)
+                return lilu.from_table_to_dict(data)
             else:
                 return data
 
     def available_transitions(self, wvlims, n_max_tuple=None, min_strength=0.):
-        """ Find the strongest transitions in a wavelength interval.
+        """ Find the strongest available transitions in a wavelength interval.
 
         For a given wavelength range, wvlims = (wv_min, wv_max), this
         function retrieves the n_max_tuple strongest transitions per
@@ -746,6 +754,7 @@ class LineList(object):
         -------
         dict (if only 1 transition found) or Table (if > 1
         transitions are found) or None (if no transition is found)
+        This is an hstack of self._data and self._extra_table
         """
 
         if self.list not in ['HI', 'ISM', 'EUV', 'Strong']:
@@ -760,9 +769,26 @@ class LineList(object):
         else:
             raise SyntaxError('min_strength must be a float value')
 
-        # Identify unique ion_names (e.g. HI, CIV, CIII)
-        unique_ion_names = np.unique(self._data['ion_name'])
+        # Cut on wavelength first!
+        gdwv = (self.wrest>wvlims[0]) & (self.wrest < wvlims[1])
+        if np.any(gdwv):
+            tmp_data = self._data[gdwv]
+            extras = self._extra_table[gdwv]
+            data = hstack([tmp_data,extras])
+        else:
+            return None
 
+        # Sort
+        data.sort(['ion_name','rel_strength'])
+        data.reverse()
+
+
+        # Identify unique ion_names (e.g. HI, CIV, CIII)
+        # This is WRONG for FeII*
+        unique_ion_names, idx = np.unique(data['ion_name'], return_index=True)
+        unique= data[idx]
+
+        '''
         # obtain the strongest available transition of a given unique ion species
         transition_name = []
         strength = []
@@ -778,13 +804,15 @@ class LineList(object):
             return None
 
         # create auxiliary Table
+        pdb.set_trace()
         unique = Table()
         unique['name'] = transition_name
         unique['rel_strength'] = strength
+        '''
 
         # get rid of those below the min_strength threshold
         cond = unique['rel_strength'] >= min_strength
-        unique = unique[cond]
+        unique = unique[np.where(cond == True)[0]] # Deals with masking
         if len(unique) < 1:
             return None
 
@@ -795,38 +823,19 @@ class LineList(object):
         # 1 entry per ion species
 
         # Create output data table adding up to n_max_tuple per ion species
-        output = Table()
-        for i, row in enumerate(unique):
-            name = row['name']
-            aux = self.strongest_transitions(name, wvlims, n_max=n_max_tuple)
-
-            # need to deal with dict vs Table format now
-            if isinstance(aux, dict):
-                aux = self.from_dict_to_table(aux)
-
-            # convert to Table because Table does not like vstack
-            output = vstack([output, aux])
+        indices = []
+        for ion_name in unique['ion_name']:
+            mt = np.where(data['ion_name'] == ion_name)[0]
+            indices += mt[0:n_max_tuple].tolist()
+        output = data[np.array(indices)]
 
         # Deal with output formatting now
         # if len==1 return dict
         if len(output) == 1:
-            return self.from_table_to_dict(output)
+            return lilu.from_table_to_dict(output)
         else:
             return output
 
-    def from_dict_to_table(self, a):
-        """Wrapper to the utility
-        This method will be DEPRECATED
-        """
-        warnings.warn("This dict_to_table method will be deprecated")
-        return lilu.from_dict_to_table(a)
-
-    def from_table_to_dict(self, tab):
-        """Wrapper to the utility
-        This method will be DEPRECATED
-        """
-        warnings.warn("This from_table_to_dict will be deprecated")
-        return lilu.from_table_to_dict(tab)
 
     def __getitem__(self, k, tol=1e-3*u.AA):
         """ Passback data as a dict (from the table) for the input line

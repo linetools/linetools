@@ -103,7 +103,7 @@ def gaussian_ew(spec, ltype, initial_guesses=None):
     # Use only good values (i.e. with meaningful errors)
     cond = (sig > 0.) & (np.isfinite(sig))
     # Actual fit
-    g = fit_g(g_init, wv[cond], fx[cond], weights=1./sig[cond])
+    g = fit_g(g_init, wv[cond].value, fx[cond].value, weights=1./sig[cond].value)
 
     #Check whether the final fit is sensible
     fit_info = fit_g.fit_info

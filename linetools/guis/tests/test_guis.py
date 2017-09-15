@@ -69,7 +69,7 @@ def test_doublet():
 def test_llist():
     # Init
     idict = ltgu.set_llist('Strong')
-    idict = ltgu.set_llist([1215.670*u.AA])
+    idict = ltgu.set_llist([1215.670]*u.AA)
     assert idict['List'] == 'input.lst'
     idict = ltgu.set_llist('None')
     idict = ltgu.set_llist('OVI')

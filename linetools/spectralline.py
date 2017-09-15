@@ -111,7 +111,11 @@ class SpectralLine(object):
             raise ValueError("Not prepared for type {:s}.".format(idict['ltype']))
         # Check data
         if chk_data:
-            for key in idict['data']:
+            #for key in idict['data']:
+            for key in sline.data.keys():
+                if key not in idict['data'].keys():
+                    warnings.warn("Key {:s} not in your input dict".format(key))
+                    continue
                 if isinstance(idict['data'][key], dict):  # Assume Quantity
                     val = idict['data'][key]['value']
                 else:
@@ -575,6 +579,16 @@ class AbsLine(SpectralLine):
         # need to use super here. (See
         # http://docs.astropy.org/en/stable/development/codeguide.html#super-vs-direct-example)
         super(AbsLine, self).__init__('Abs', trans, **kwargs)
+
+    @property
+    def ion_name(self):
+        """ Return root portion of the name
+        """
+        if '(' in self.data['name']:
+            ion_name = self.data['name'].split('(')[0]
+        else:
+            ion_name = self.data['name'].split(' ')[0]
+        return ion_name
 
     def print_specline_type(self):
         """ Return a string representing the type of vehicle this is."""

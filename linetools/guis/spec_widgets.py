@@ -1117,9 +1117,6 @@ U         : Indicate as a upper limit
                              size='x-small', ha='left')
 
                 # Reset window limits
-                #QtCore.pyqtRemoveInputHook()
-                #pdb.set_trace()
-                #QtCore.pyqtRestoreInputHook()
                 self.ax.set_xlim(self.psdict['x_minmax'])
 
                 # Rescale?
@@ -1142,6 +1139,11 @@ U         : Indicate as a upper limit
 
 
                 clr='black'
+                #if np.abs(absline.wrest.value-1036) < 1.:
+                #    QtCore.pyqtRemoveInputHook()
+                #    pdb.set_trace()
+                #    QtCore.pyqtRestoreInputHook()
+
                 if absline is not None:
                     if absline.limits.is_set():
                         vlim = absline.limits.vlim
