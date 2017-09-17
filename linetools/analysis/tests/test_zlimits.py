@@ -1,4 +1,4 @@
-# Tests of LineLimits class
+# Tests of zLimits class
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 
@@ -7,31 +7,35 @@ import pytest
 
 from astropy import units as u
 
-from linetools.analysis.linelimits import LineLimits
+from linetools.analysis.zlimits import zLimits
 from linetools.spectralline import AbsLine
 
 def test_init():
     # Init
     zlim = (0.999, 1.001)
-    llim = LineLimits(1215.67*u.AA, 1., zlim)
+    llim = zLimits(1., zlim)
+    # Init
+    zlim = (0.999, 1.001)
+    llim = zLimits(1., zlim, wrest=1215.67*u.AA)
     # Test
     with pytest.raises(AttributeError):
         llim.zlim=3
     # AbsLine
     lya = AbsLine('HI 1215')
     z=1.
-    llim = LineLimits.from_specline(lya, z, zlim)
+    zlim = (0.999, 1.001)
+    llim = zLimits.from_specline(lya, z, zlim)
     # Bad zlim
     with pytest.raises(IOError):
-        llim = LineLimits(1215.67*u.AA, 1., (1.1,1.2), chk_z=True)
+        llim = zLimits(1., (1.1,1.2), wrest=1215.67*u.AA, chk_z=True)
     # Null zlim
-    llim = LineLimits(1215.67*u.AA, 1., (1.,1))
+    llim = zLimits(1., (1.,1), wrest=1215.67*u.AA)
     assert llim.is_set() is False
 
 def test_set():
     # Init
     zlim = (0.999, 1.001)
-    llim = LineLimits(1215.67*u.AA, 1., zlim)
+    llim = zLimits(1., zlim, wrest=1215.67*u.AA)
     # Set
     llim.set(zlim)
     np.testing.assert_allclose(llim.wvlim.value, [2430.12433, 2432.55567])
@@ -41,7 +45,7 @@ def test_set():
 
 def test_use():
     # Init
-    llim = LineLimits(1215.67*u.AA, 1., (0.999, 1.001))
+    llim = zLimits(1., (0.999, 1.001), wrest=1215.67*u.AA)
     # Use
     np.testing.assert_allclose(llim.zlim, (0.999, 1.001))
     np.testing.assert_allclose(llim.wvlim.value, [2430.12433, 2432.55567])
@@ -52,7 +56,7 @@ def test_use():
 
 def test_to_dict():
     # Init
-    llim = LineLimits(1215.67*u.AA, 1., (0.999, 1.001))
+    llim = zLimits(1., (0.999, 1.001), wrest=1215.67*u.AA)
     ldict = llim.to_dict()
     for key in ['vlim', 'wrest', 'wvlim', 'z', 'zlim']:
         assert key in ldict.keys()

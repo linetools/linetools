@@ -19,7 +19,7 @@ from astropy.coordinates import SkyCoord
 
 from linetools.analysis import utils as lau
 from linetools.analysis import absline as laa
-from linetools.analysis.linelimits import LineLimits
+from linetools.analysis.zlimits import zLimits
 from linetools.lists.linelist import LineList
 from linetools import utils as ltu
 from linetools.spectra.xspectrum1d import XSpectrum1D
@@ -74,7 +74,7 @@ class SpectralLine(object):
         Analysis inputs (e.g. a spectrum, wavelength limits)
     data : dict
         Line atomic/molecular data (e.g. f-value, A coefficient, Elow)
-    limits : LineLimits
+    limits : zLimits
         Limits including zlim, vlim, wvlim.
     """
 
@@ -164,9 +164,9 @@ class SpectralLine(object):
                 # import pdb; pdb.set_trace()
                 idict['limits']['wrest'] = ltu.jsonify(sline.wrest)
                 idict['limits']['z'] = z
-            sline.limits = LineLimits.from_dict(idict['limits'])
+            sline.limits = zLimits.from_dict(idict['limits'])
         else:
-            sline.limits = LineLimits(sline.wrest, z, [z,z])
+            sline.limits = zLimits(z, [z,z], wrest=sline.wrest)
             if 'vlim' in sline.analy.keys():  # Backwards compatability
                 if sline.analy['vlim'][1] > sline.analy['vlim'][0]:
                     sline.limits.set(sline.analy['vlim'])
@@ -197,14 +197,14 @@ class SpectralLine(object):
         self.fill_data(trans, linelist=linelist, closest=closest, verbose=verbose)
         # Redshift Limits
         if z is None:
-            warnings.warn("Redshift not input.  Setting to 0 for LineLimits")
+            warnings.warn("Redshift not input.  Setting to 0 for zLimits")
             z=0.
         try:
             zlim = kwargs['zlim']
         except KeyError:
             zlim = [z,z]
         if ltype in ['Abs', 'Em']:
-            self.limits = LineLimits.from_specline(self, z, zlim)
+            self.limits = zLimits.from_specline(self, z, zlim)
         else:
             raise ValueError('Not ready to set limits for this type')
 
