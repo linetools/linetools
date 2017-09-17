@@ -16,7 +16,7 @@ import warnings
 from astropy import constants as const
 from astropy import units as u
 from astropy.table import Table, QTable
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, match_coordinates_sky
 
 from linetools.analysis import absline as ltaa
 from linetools.isgm.abscomponent import AbsComponent
@@ -884,5 +884,59 @@ def joebvp_from_components(comp_list, specfile, outfile):
         s = comp.repr_joebvp(specfile, flags=flags, b_default=b_val)  # still, b values from abslines take precedence if they exist
         f.write(s)
     f.close()
+
+
+def unique_components(comps1, comps2, tol=5*u.arcsec):
+    """ Identify which members of comps1 are *not* within
+    comps2, to given tolerances.  Note, that repeats in
+    comps1 are not looked for.
+
+    Unique if any apply (test is done in this order)
+      1) coord.separation > tol
+      2) Z,ion,Ej set is unique
+      3) redshift limits do not overlap
+
+    Parameters
+    ----------
+    comps1 : list of AbsComponent objects
+    comps2 : list of AbsComponent objects
+
+    Returns
+    -------
+    unique : bool array
+      True = members of comps1 that are not currently in comps2
+
+    """
+    c_mks = const.c.to('km/s').value
+    unique = np.array([True]*len(comps1))
+    # Coordinates
+    ras = [icomp.coord.ra.value for icomp in comps1]
+    decs = [icomp.coord.ra.value for icomp in comps1]
+    coords1 = SkyCoord(ra=ras, dec=decs, unit='deg')
+    ras = [icomp.coord.ra.value for icomp in comps2]
+    decs = [icomp.coord.ra.value for icomp in comps2]
+    coords2 = SkyCoord(ra=ras, dec=decs, unit='deg')
+    # Compare
+    idx, d2d, d3d = match_coordinates_sky(coords1, coords2, nthneighbor=1)
+    close_enough = d2d < tol
+    if np.sum(close_enough) == 0:
+        return unique
+    # Next step (Z, ion, Ej)
+    ZiE1 = np.array([(icomp.Zion[0], icomp.Zion[1], icomp.Ej.value) for icomp in comps1])
+    ZiE2 = np.array([(icomp.Zion[0], icomp.Zion[1], icomp.Ej.value) for icomp in comps2])
+    indices = np.where(close_enough)[0]
+    for idx in indices:
+        # Match on coords
+        coord_mt = np.where(coords1[idx].separation(coords2) < tol)[0]
+        # Match on ZiE
+        mtZiE = np.where((ZiE2[coord_mt] == ZiE1[idx]).all(axis=1))[0]
+        if len(mtZiE) > 0: # Lastly redshift
+            for idx2 in coord_mt[mtZiE]:
+                # Comp1 limits
+                comp_vlim_mks = comps1[idx].vlim.to('km/s').value
+                zlim_comp1 = comps1[idx].zcomp + (1 + comps1[idx].zcomp) * (comp_vlim_mks / c_mks)
+            if np.all(zlim_comp1 > np.max(zlim_sys + dz_toler)) or np.all(
+                            zlim_comp < np.min(zlim_sys-dz_toler)):
+            pdb.set_trace()
 
 

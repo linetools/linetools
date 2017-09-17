@@ -19,8 +19,6 @@ from linetools.spectralline import AbsLine
 from linetools.spectra import io as lsio
 from linetools.analysis import absline as ltaa
 from linetools.isgm import utils as ltiu
-# from linetools.lists.linelist import LineList
-import linetools.utils as ltu
 
 import imp, os
 lt_path = imp.find_module('linetools')[1]
@@ -90,6 +88,12 @@ def compare_two_files(file1, file2):
     f1.close()
     f2.close()
 
+def test_unique_comps():
+    # One list of components
+    SiIIcomp,_ = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s)
+    HIcomp,_ = mk_comp('HI')
+    # Run
+    ltiu.unique_components([SiIIcomp], [HIcomp, SiIIcomp])
 
 def test_add_absline():
     abscomp,_ = mk_comp('HI', zcomp=0.)

@@ -72,15 +72,4 @@ def write_comps_to_sys():
     # Write
     gensl.write_json()
 
-# Command line execution
-if __name__ == '__main__':
-
-    flg_tab = 0
-    flg_tab += 2**0  # Comps to System
-
-    # Generate
-    if flg_tab & (2**0):
-        write_comps_to_sys()
-        # WRites to Foo.json
-
 
