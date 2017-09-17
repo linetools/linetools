@@ -93,7 +93,8 @@ def test_unique_comps():
     SiIIcomp,_ = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s)
     HIcomp,_ = mk_comp('HI')
     # Run
-    ltiu.unique_components([SiIIcomp], [HIcomp, SiIIcomp])
+    uniq = ltiu.unique_components([HIcomp, SiIIcomp], [SiIIcomp])
+    assert np.all(uniq == np.array([True,False]))
 
 def test_add_absline():
     abscomp,_ = mk_comp('HI', zcomp=0.)
@@ -235,7 +236,8 @@ def test_complist_from_table_and_table_from_complist():
     tab['vmax'] = [100.] *len(tab) * u.km / u.s
     tab['reliability'] = ['a', 'b', 'b', 'none', 'a']
     complist = ltiu.complist_from_table(tab)
-    assert np.sum(complist[0].vlim == [ -50., 100.] * u.km / u.s) == 2
+    tmp = [-50.,100.]*u.km/u.s
+    assert np.all(np.isclose(complist[0].vlim.value, tmp.value))
     tab2 = ltiu.table_from_complist(complist)
     np.testing.assert_allclose(tab['z_comp'], tab2['z_comp'])
 

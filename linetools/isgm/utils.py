@@ -127,7 +127,7 @@ def build_components_from_abslines(iabslines, clmdict=None, coord=None,
         for iline in lines:
             vmin = min(vmin, iline.limits.vlim[0].value)
             vmax = max(vmax, iline.limits.vlim[1].value)
-        component.vlim = [vmin,vmax]*u.km/u.s
+        component.limits.set([vmin,vmax]*u.km/u.s)
         # Append
         components.append(component)
     # Return
@@ -506,23 +506,25 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
     # Checks
     assert chk_components(components, chk_A_none=True, chk_match=True)
 
-    # Init final component
-    synth_comp = AbsComponent.from_component(components[0], Ntup=(components[0].flag_N, components[0].logN, components[0].sig_logN))
 
     # Meld column densities
+    obj = dict(flag_N=components[0].flag_N, logN=components[0].logN, sig_logN=components[0].sig_logN)
     for comp in components[1:]:
         if comp.flag_N != 0:
-            synth_comp.flag_N, synth_comp.logN, synth_comp.sig_logN = ltaa.sum_logN(synth_comp, comp)
+            obj['flag_N'], obj['logN'], obj['sig_logN'] = ltaa.sum_logN(obj, comp)
 
-    # Meld z, vlim
     # zcomp
     if zcomp is None:
         zcomp = np.mean([comp.zcomp for comp in components])
-    synth_comp.zcomp = zcomp
+
     # Set vlim by min/max  [Using non-relativistic + buffer]
     vmin = u.Quantity([(comp.zcomp-zcomp)/(1+zcomp)*const.c.to('km/s')+comp.vlim[0] for comp in components])
     vmax = u.Quantity([(comp.zcomp-zcomp)/(1+zcomp)*const.c.to('km/s')+comp.vlim[1] for comp in components])
-    synth_comp.vlim = u.Quantity([np.min(vmin)-vbuff, np.max(vmax)+vbuff])
+    vlim = u.Quantity([np.min(vmin)-vbuff, np.max(vmax)+vbuff])
+
+    # Init final component
+    synth_comp = AbsComponent(components[0].coord, components[0].Zion, zcomp,
+                              vlim, Ntup=(obj['flag_N'], obj['logN'], obj['sig_logN']))
 
     # Return
     return synth_comp
@@ -925,18 +927,19 @@ def unique_components(comps1, comps2, tol=5*u.arcsec):
     ZiE1 = np.array([(icomp.Zion[0], icomp.Zion[1], icomp.Ej.value) for icomp in comps1])
     ZiE2 = np.array([(icomp.Zion[0], icomp.Zion[1], icomp.Ej.value) for icomp in comps2])
     indices = np.where(close_enough)[0]
-    for idx in indices:
+    for idx in indices:  # comp1 indices
         # Match on coords
         coord_mt = np.where(coords1[idx].separation(coords2) < tol)[0]
         # Match on ZiE
         mtZiE = np.where((ZiE2[coord_mt] == ZiE1[idx]).all(axis=1))[0]
         if len(mtZiE) > 0: # Lastly redshift
+            zlim_comp1 = comps1[idx].limits.zlim
             for idx2 in coord_mt[mtZiE]:
-                # Comp1 limits
-                comp_vlim_mks = comps1[idx].vlim.to('km/s').value
-                zlim_comp1 = comps1[idx].zcomp + (1 + comps1[idx].zcomp) * (comp_vlim_mks / c_mks)
-            if np.all(zlim_comp1 > np.max(zlim_sys + dz_toler)) or np.all(
-                            zlim_comp < np.min(zlim_sys-dz_toler)):
-            pdb.set_trace()
+                zlim_comp2 = comps2[idx2].limits.zlim
+                # Redshift overlap?
+                if (zlim_comp1[0] < zlim_comp2[1]) & (zlim_comp1[1] > zlim_comp2[0]):
+                    unique[idx] = False
+    # Return
+    return unique
 
 

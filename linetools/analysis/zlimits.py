@@ -24,6 +24,7 @@ class zLimits(object):
     zlim : tuple of floats
       Redshift limits for a line
       Defined as wave/wrest - 1.
+      or
     wvlim : Quantity array, only if _wrest is set
       wavelength limits for the line in observer frame
     vlim : Quantity array
@@ -148,7 +149,7 @@ class zLimits(object):
             return False
 
     def set(self, inp, chk_z=False):#, itype='zlim'):
-        """ Over-ride = to re-init values
+        """ Set (or reset) limits relative to self._z
 
         Parameters
         ----------
@@ -173,14 +174,13 @@ class zLimits(object):
         if isinstance(inp[0], float):  # assume zlim
             self._zlim = inp
         elif isinstance(inp[0], Quantity):  # may be wvlim or vlim
-            try:  # assume wvlim
+            if inp[0].cgs.unit == u.cm:
                 self._zlim = (inp/self._wrest).decompose().to(
                         u.dimensionless_unscaled).value - 1.
-            except UnitConversionError:
-                try:  # assume vlim
-                    self._zlim = ltu.z_from_dv(inp, self._z)
-                except ValueError:
-                    raise IOError("Quantity must be length or speed.")
+            elif inp[0].cgs.unit == u.cm/u.s:
+                self._zlim = ltu.z_from_dv(inp, self._z)
+            else:
+                raise IOError("Quantity must be length or speed.")
         else:
             raise IOError("Input must be floats or Quantities.")
         # Check
