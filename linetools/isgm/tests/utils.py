@@ -50,6 +50,21 @@ def si2_comp(radec):
     #
     return SiII_comp
 
+def oi_comp(radec, vlim=[-250.,80.]*u.km/u.s, z=2.92939):
+    # SiII
+    OItrans = ['OI 1302']
+    abslines = []
+    for trans in OItrans:
+        iline = AbsLine(trans, z=z)
+        iline.attrib['coord'] = radec
+        iline.limits.set(vlim)
+        abslines.append(iline)
+    #
+    OI_comp = AbsComponent.from_abslines(abslines)
+    OI_comp.logN = 15.
+    OI_comp.flag_N = 1
+    #
+    return OI_comp
 
 def make_gensl():
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
