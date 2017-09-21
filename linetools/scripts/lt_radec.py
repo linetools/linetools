@@ -43,11 +43,11 @@ def main(args=None):
     coord = ltu.radec_to_coord(icoord)
 
     # Time to print
-    print('===================================')
+    print('      ')
     print('J{:s}{:s}'.format(coord.ra.to_string(unit=u.hour,sep='',pad=True),
                              coord.dec.to_string(sep='',pad=True,alwayssign=True)))
     print('   ')
-    print('   {:s} {:s}'.format(coord.ra.to_string(unit=u.hour,sep=':',pad=True),
+    print('   {:s} {:s}   (J2000)'.format(coord.ra.to_string(unit=u.hour,sep=':',pad=True),
                              coord.dec.to_string(sep=':',pad=True,alwayssign=True)))
     print('   RA={:f} deg, DEC={:f} deg'.format(coord.ra.deg, coord.dec.deg))
     print('   radec = ({:f},{:f}) deg'.format(coord.ra.deg, coord.dec.deg))
