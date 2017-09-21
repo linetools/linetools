@@ -23,10 +23,10 @@ class zLimits(object):
       Redshift
     zlim : tuple of floats
       Redshift limits for a line
-      Defined as wave/wrest - 1.
-      or
-    wvlim : Quantity array, only if _wrest is set
+    wvlim : Quantity array, optional
       wavelength limits for the line in observer frame
+      This property exists only if _wrest has been set,
+      e.g. from an AbsLine object
     vlim : Quantity array
       velocity limits for the line
     """
@@ -38,6 +38,10 @@ class zLimits(object):
         Parameters
         ----------
         aline : AbsLine
+        z : float
+          Redshift
+        zlim : tuple of floats
+          Redshift limits for a line
         """
         from ..spectralline import AbsLine, EmLine
         if not isinstance(aline, (AbsLine, EmLine)):
@@ -78,7 +82,8 @@ class zLimits(object):
           Defined as wave/wrest - 1.
           Ok to have zlim[1]==zlim[0], but then self.is_set() == False
         wrest : Quantity, optional
-          Rest wavelength.  Used for SpectralLine objects
+          Rest wavelength.  Frequently used with SpectralLine objects
+          This quantity is used to determine wvlim (from zlim)
         """
         # Error checking
         if not isinstance(z, (float,int)):
@@ -150,6 +155,7 @@ class zLimits(object):
 
     def set(self, inp, chk_z=False):#, itype='zlim'):
         """ Set (or reset) limits relative to self._z
+        but does not change self._z
 
         Parameters
         ----------
