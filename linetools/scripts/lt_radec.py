@@ -18,7 +18,7 @@ def parser(options=None):
     import argparse
     # Parse
     parser = argparse.ArgumentParser(
-        description='Print coordinates in several formats from input one.')
+        description='Print coordinates in several formats from input one. [v1.1]')
     parser.add_argument("inp", nargs='?', default=None, help="RA,DEC (e.g. 152.25900,7.22885), JXX (e.g. J100902.16+071343.8)")
     parser.add_argument("--epoch", default=2000., type=float, help="Epoch [Not functional]")
 
@@ -43,10 +43,15 @@ def main(args=None):
     coord = ltu.radec_to_coord(icoord)
 
     # Time to print
+    print('===================================')
     print('J{:s}{:s}'.format(coord.ra.to_string(unit=u.hour,sep='',pad=True),
                              coord.dec.to_string(sep='',pad=True,alwayssign=True)))
+    print('   ')
+    print('   {:s} {:s}'.format(coord.ra.to_string(unit=u.hour,sep=':',pad=True),
+                             coord.dec.to_string(sep=':',pad=True,alwayssign=True)))
     print('   RA={:f} deg, DEC={:f} deg'.format(coord.ra.deg, coord.dec.deg))
     print('   radec = ({:f},{:f}) deg'.format(coord.ra.deg, coord.dec.deg))
+    print('   ')
     print('SDSS finding chart: https://skyserver.sdss.org/dr12/en/tools/chart/navi.aspx?ra={:f}&dec={:f}&opt='.format(coord.ra.deg, coord.dec.deg))
 
 if __name__ == '__main__':
