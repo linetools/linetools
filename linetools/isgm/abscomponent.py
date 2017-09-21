@@ -25,6 +25,7 @@ from linetools.spectralline import AbsLine, SpectralLine
 from linetools.abund import ions
 from linetools import utils as ltu
 from linetools.lists.linelist import LineList
+from linetools.analysis.zlimits import zLimits
 
 # Global import for speed
 c_kms = const.c.to('km/s').value
@@ -207,8 +208,9 @@ class AbsComponent(object):
         # Required
         self.coord = ltu.radec_to_coord(radec)
         self.Zion = Zion
-        self.zcomp = zcomp
-        self.vlim = vlim
+        # Limits
+        zlim = ltu.z_from_dv(vlim, zcomp)
+        self.limits = zLimits(zcomp, zlim.tolist())
 
         # Optional
         self.A = A
@@ -248,6 +250,14 @@ class AbsComponent(object):
 
         # Other
         self._abslines = []
+
+    @property
+    def vlim(self):
+        return self.limits.vlim
+
+    @property
+    def zcomp(self):
+        return self.limits.z
 
     def add_absline(self, absline, tol=0.1*u.arcsec, chk_vel=True,
                     chk_sep=True, vtoler=1., **kwargs):

@@ -15,10 +15,11 @@ from linetools.isgm.abscomponent import AbsComponent
 from linetools.isgm.abssystem import GenericAbsSystem, LymanAbsSystem
 from linetools.isgm import utils as ltiu
 from linetools.spectralline import AbsLine
-from .utils import lyman_comp, si2_comp
+from .utils import lyman_comp, si2_comp, oi_comp
 
 import pdb
 
+radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
@@ -41,7 +42,6 @@ def test_write_json():
 
 def test_init():
     # Simple properties
-    radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
     gensys = GenericAbsSystem(radec, 1.244, [-500,500]*u.km/u.s, NHI=16.)
     # Test
     assert gensys.abs_type == 'Generic'
@@ -60,18 +60,8 @@ def test_init_strradec():
 
 
 def test_one_component():
-    radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
-    # HI Lya, Lyb
-    lya = AbsLine(1215.670*u.AA)
-    lya.analy['vlim'] = [-300.,300.]*u.km/u.s
-    lya.attrib['z'] = 2.92939
-    lya.attrib['N'] = 1e17 /  u.cm**2
-    lyb = AbsLine(1025.7222*u.AA)
-    lyb.analy['vlim'] = [-300.,300.]*u.km/u.s
-    lyb.attrib['z'] = lya.attrib['z']
-    abscomp = AbsComponent.from_abslines([lya,lyb])
-    abscomp.coord = radec
     # Instantiate
+    abscomp = lyman_comp(radec)
     HIsys = LymanAbsSystem.from_components([abscomp])
     # Test
     assert HIsys.abs_type == 'HILyman'
@@ -81,7 +71,6 @@ def test_one_component():
 
 
 def test_multi_components():
-    radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
     # HI
     abscomp = lyman_comp(radec)
     # SiII
@@ -94,33 +83,19 @@ def test_multi_components():
 
 
 def test_add_component():
-    radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
-    # HI Lya, Lyb
-    lya = AbsLine(1215.670*u.AA)
-    lya.analy['vlim'] = [-300.,300.]*u.km/u.s
-    lya.attrib['z'] = 2.92939
-    lya.attrib['N'] = 1e17 /  u.cm**2
-    lyb = AbsLine(1025.7222*u.AA)
-    lyb.analy['vlim'] = [-300.,300.]*u.km/u.s
-    lyb.attrib['z'] = lya.attrib['z']
-    abscomp = AbsComponent.from_abslines([lya,lyb])
-    abscomp.coord = radec
+    abscomp = lyman_comp(radec)
     # Instantiate
     abssys = GenericAbsSystem.from_components([abscomp])
     # New component
-    oi = AbsLine('OI 1302')
-    oi.analy['vlim'] = [-300.,300.]*u.km/u.s
-    oi.attrib['z'] = lya.attrib['z']
-    abscomp2 = AbsComponent.from_abslines([oi])
-    abscomp2.coord = radec
+    oicomp = oi_comp(radec, vlim=[-300.,300.]*u.km/u.s, z=abscomp.zcomp)
     # Standard
-    assert abssys.add_component(abscomp2)
+    assert abssys.add_component(oicomp)
     # Fail
     abssys = GenericAbsSystem.from_components([abscomp])
-    abscomp2.vlim = [-400.,300.]*u.km/u.s
-    assert not abssys.add_component(abscomp2)
+    oicomp2 = oi_comp(radec, vlim=[-400.,300.]*u.km/u.s, z=abscomp.zcomp)
+    assert not abssys.add_component(oicomp2)
     # Overlap
-    assert abssys.add_component(abscomp2, overlap_only=True)
+    assert abssys.add_component(oicomp2, overlap_only=True)
 
 
 def test_build_systems_from_comp():

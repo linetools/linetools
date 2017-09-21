@@ -16,7 +16,7 @@ import warnings
 from astropy import constants as const
 from astropy import units as u
 from astropy.table import Table, QTable
-from astropy.coordinates import SkyCoord
+from astropy.coordinates import SkyCoord, match_coordinates_sky
 
 from linetools.analysis import absline as ltaa
 from linetools.isgm.abscomponent import AbsComponent
@@ -127,7 +127,7 @@ def build_components_from_abslines(iabslines, clmdict=None, coord=None,
         for iline in lines:
             vmin = min(vmin, iline.limits.vlim[0].value)
             vmax = max(vmax, iline.limits.vlim[1].value)
-        component.vlim = [vmin,vmax]*u.km/u.s
+        component.limits.set([vmin,vmax]*u.km/u.s)
         # Append
         components.append(component)
     # Return
@@ -489,7 +489,7 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
     Requires consistent RA/DEC, Zion, Ej, (A; future)
     Is agnostic about z+vlim
     Melds column densities
-    Melds velocities with a small buffer (10 km/s)
+    Melds velocities with an optional buffer
 
     Note: Could make this a way to instantiate AbsComponent
 
@@ -506,23 +506,25 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
     # Checks
     assert chk_components(components, chk_A_none=True, chk_match=True)
 
-    # Init final component
-    synth_comp = AbsComponent.from_component(components[0], Ntup=(components[0].flag_N, components[0].logN, components[0].sig_logN))
 
     # Meld column densities
+    obj = dict(flag_N=components[0].flag_N, logN=components[0].logN, sig_logN=components[0].sig_logN)
     for comp in components[1:]:
         if comp.flag_N != 0:
-            synth_comp.flag_N, synth_comp.logN, synth_comp.sig_logN = ltaa.sum_logN(synth_comp, comp)
+            obj['flag_N'], obj['logN'], obj['sig_logN'] = ltaa.sum_logN(obj, comp)
 
-    # Meld z, vlim
     # zcomp
     if zcomp is None:
         zcomp = np.mean([comp.zcomp for comp in components])
-    synth_comp.zcomp = zcomp
+
     # Set vlim by min/max  [Using non-relativistic + buffer]
     vmin = u.Quantity([(comp.zcomp-zcomp)/(1+zcomp)*const.c.to('km/s')+comp.vlim[0] for comp in components])
     vmax = u.Quantity([(comp.zcomp-zcomp)/(1+zcomp)*const.c.to('km/s')+comp.vlim[1] for comp in components])
-    synth_comp.vlim = u.Quantity([np.min(vmin)-vbuff, np.max(vmax)+vbuff])
+    vlim = u.Quantity([np.min(vmin)-vbuff, np.max(vmax)+vbuff])
+
+    # Init final component
+    synth_comp = AbsComponent(components[0].coord, components[0].Zion, zcomp,
+                              vlim, Ntup=(obj['flag_N'], obj['logN'], obj['sig_logN']))
 
     # Return
     return synth_comp
@@ -884,5 +886,61 @@ def joebvp_from_components(comp_list, specfile, outfile):
         s = comp.repr_joebvp(specfile, flags=flags, b_default=b_val)  # still, b values from abslines take precedence if they exist
         f.write(s)
     f.close()
+
+
+def unique_components(comps1, comps2, tol=5*u.arcsec):
+    """ Identify which AbsComponent members of the comps1 list
+    are *not* within the comps2 list, to given tolerances.
+    Note, AbsComponent objects in the comps1 list are not examined
+    against each other for uniqueness.
+
+    Unique if any apply (test is done in this order)
+      1) coord.separation > tol
+      2) Z,ion,Ej set is unique
+      3) redshift limits do not overlap
+
+    Parameters
+    ----------
+    comps1 : list of AbsComponent objects
+    comps2 : list of AbsComponent objects
+
+    Returns
+    -------
+    unique : bool array
+      True = members of comps1 that are not currently in comps2
+
+    """
+    c_mks = const.c.to('km/s').value
+    unique = np.array([True]*len(comps1))
+    # Coordinates
+    ras = [icomp.coord.ra.value for icomp in comps1]
+    decs = [icomp.coord.ra.value for icomp in comps1]
+    coords1 = SkyCoord(ra=ras, dec=decs, unit='deg')
+    ras = [icomp.coord.ra.value for icomp in comps2]
+    decs = [icomp.coord.ra.value for icomp in comps2]
+    coords2 = SkyCoord(ra=ras, dec=decs, unit='deg')
+    # Compare
+    idx, d2d, d3d = match_coordinates_sky(coords1, coords2, nthneighbor=1)
+    close_enough = d2d < tol
+    if np.sum(close_enough) == 0:
+        return unique
+    # Next step (Z, ion, Ej)
+    ZiE1 = np.array([(icomp.Zion[0], icomp.Zion[1], icomp.Ej.value) for icomp in comps1])
+    ZiE2 = np.array([(icomp.Zion[0], icomp.Zion[1], icomp.Ej.value) for icomp in comps2])
+    indices = np.where(close_enough)[0]
+    for idx in indices:  # comp1 indices
+        # Match on coords
+        coord_mt = np.where(coords1[idx].separation(coords2) < tol)[0]
+        # Match on ZiE
+        mtZiE = np.where((ZiE2[coord_mt] == ZiE1[idx]).all(axis=1))[0]
+        if len(mtZiE) > 0: # Lastly redshift
+            zlim_comp1 = comps1[idx].limits.zlim
+            for idx2 in coord_mt[mtZiE]:
+                zlim_comp2 = comps2[idx2].limits.zlim
+                # Redshift overlap?
+                if (zlim_comp1[0] < zlim_comp2[1]) & (zlim_comp1[1] > zlim_comp2[0]):
+                    unique[idx] = False
+    # Return
+    return unique
 
 
