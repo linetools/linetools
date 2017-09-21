@@ -489,7 +489,7 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
     Requires consistent RA/DEC, Zion, Ej, (A; future)
     Is agnostic about z+vlim
     Melds column densities
-    Melds velocities with a small buffer (10 km/s)
+    Melds velocities with an optional buffer
 
     Note: Could make this a way to instantiate AbsComponent
 
@@ -889,9 +889,10 @@ def joebvp_from_components(comp_list, specfile, outfile):
 
 
 def unique_components(comps1, comps2, tol=5*u.arcsec):
-    """ Identify which members of comps1 are *not* within
-    comps2, to given tolerances.  Note, that repeats in
-    comps1 are not looked for.
+    """ Identify which AbsComponent members of the comps1 list
+    are *not* within the comps2 list, to given tolerances.
+    Note, AbsComponent objects in the comps1 list are examined
+    against each other for uniqueness.
 
     Unique if any apply (test is done in this order)
       1) coord.separation > tol
