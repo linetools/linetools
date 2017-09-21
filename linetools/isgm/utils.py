@@ -891,7 +891,7 @@ def joebvp_from_components(comp_list, specfile, outfile):
 def unique_components(comps1, comps2, tol=5*u.arcsec):
     """ Identify which AbsComponent members of the comps1 list
     are *not* within the comps2 list, to given tolerances.
-    Note, AbsComponent objects in the comps1 list are examined
+    Note, AbsComponent objects in the comps1 list are not examined
     against each other for uniqueness.
 
     Unique if any apply (test is done in this order)

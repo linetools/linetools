@@ -16,6 +16,8 @@ ckms = const.c.to('km/s')
 
 class zLimits(object):
     """ An object for handling the 'limits' of a line
+    The input redshift is not meant to be modified (ever).
+    One should re-instantiate instead.
 
     Properties
     ----------
