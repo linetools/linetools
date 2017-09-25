@@ -162,7 +162,8 @@ def build_components_from_dict(idict, coord=None, **kwargs):
             if isinstance(idict['lines'][key], AbsLine):
                 line = idict['lines'][key]
             elif isinstance(idict['lines'][key], dict):
-                line = AbsLine.from_dict(idict['lines'][key], coord=coord)
+                pdb.set_trace()
+                line = AbsLine.from_dict(idict['lines'][key], coord=coord, **kwargs)
             else:
                 raise IOError("Need those lines")
             if coord is not None:
@@ -508,7 +509,8 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
 
 
     # Meld column densities
-    obj = dict(flag_N=components[0].flag_N, logN=components[0].logN, sig_logN=components[0].sig_logN)
+    obj = dict(flag_N=components[0].flag_N, logN=components[0].logN,
+               sig_logN=components[0].sig_logN)
     for comp in components[1:]:
         if comp.flag_N != 0:
             obj['flag_N'], obj['logN'], obj['sig_logN'] = ltaa.sum_logN(obj, comp)
@@ -524,7 +526,8 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
 
     # Init final component
     synth_comp = AbsComponent(components[0].coord, components[0].Zion, zcomp,
-                              vlim, Ntup=(obj['flag_N'], obj['logN'], obj['sig_logN']))
+                              vlim, Ej=components[0].Ej, stars=components[0].stars,
+                              Ntup=(obj['flag_N'], obj['logN'], obj['sig_logN']))
 
     # Return
     return synth_comp

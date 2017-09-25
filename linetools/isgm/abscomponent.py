@@ -138,7 +138,7 @@ class AbsComponent(object):
         if coord is not None:
             radec = coord
         else:
-            radec = SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg)
+            radec = SkyCoord(ra=idict['RA'], dec=idict['DEC'], unit='deg')
         # Init
         #slf = cls(radec, tuple(idict['Zion']), idict['zcomp'], Quantity(idict['vlim'], unit='km/s'),
 
@@ -158,7 +158,7 @@ class AbsComponent(object):
 
         # Add lines
         for key in idict['lines'].keys():
-            iline = SpectralLine.from_dict(idict['lines'][key], coord=coord, **kwargs)
+            iline = AbsLine.from_dict(idict['lines'][key], coord=coord, **kwargs)
             slf.add_absline(iline, **kwargs)
         # Return
         return slf
@@ -215,6 +215,7 @@ class AbsComponent(object):
         # Optional
         self.A = A
         self.Ej = Ej
+        self.stars = stars
         self.comment = comment
         if Ntup is not None:
             self.flag_N = Ntup[0]
@@ -230,10 +231,11 @@ class AbsComponent(object):
         if (name is None) and (self.Zion != (-1, -1)):
             iname = ions.ion_to_name(self.Zion, nspace=0)
             if self.Ej.value > 0:  # Need to put *'s in name
-                try:
+                if stars is not None:
                     iname += stars
-                except:
-                    raise IOError("Need to provide 'stars' parameter.")
+                else:
+                    warnings.warn("No stars provided.  Adding one because Ej > 0.")
+                    iname += '*'
             self.name = '{:s}_z{:0.5f}'.format(iname, self.zcomp)
         elif (name is None) and (self.Zion == (-1, -1)):
             self.name = 'mol_z{:0.5f}'.format(self.zcomp)
