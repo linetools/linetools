@@ -7,3 +7,4 @@ v1.1
   Adding in X-ray lines to EUV
 v1.2
   Adding some extra forbidden lines for Galaxy (NT Jun 28, 2017)
+  Turned off distracting higher order Balmer lines in Galaxy
