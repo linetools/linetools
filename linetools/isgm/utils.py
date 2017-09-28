@@ -162,7 +162,6 @@ def build_components_from_dict(idict, coord=None, **kwargs):
             if isinstance(idict['lines'][key], AbsLine):
                 line = idict['lines'][key]
             elif isinstance(idict['lines'][key], dict):
-                pdb.set_trace()
                 line = AbsLine.from_dict(idict['lines'][key], coord=coord, **kwargs)
             else:
                 raise IOError("Need those lines")
