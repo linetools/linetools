@@ -180,7 +180,7 @@ class AbsSystem(object):
         return slf
 
     def __init__(self, radec, zabs, vlim, zem=0., abs_type=None,
-                 NHI=0., sig_NHI=np.zeros(2), flag_NHI=0, name=None):
+                 NHI=0., sig_NHI=np.zeros(2), flag_NHI=0, name=None, **kwargs):
 
         self.zabs = zabs
         self.zem = zem

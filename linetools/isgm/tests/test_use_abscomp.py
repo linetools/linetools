@@ -42,6 +42,8 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
         all_trans = ['SiII 1260', 'SiII 1304', 'SiII 1526', 'SiII 1808']
         if add_trans:
             all_trans += ['SiII 1193']
+    elif ctype == 'SiII*':
+        all_trans = ['SiII* 1264', 'SiII* 1533']
     abslines = []
     for trans in all_trans:
         iline = AbsLine(trans, z=zcomp)
@@ -87,6 +89,7 @@ def compare_two_files(file1, file2):
         assert l1 == l2
     f1.close()
     f2.close()
+
 
 def test_unique_comps():
     # One list of components
@@ -307,20 +310,6 @@ def test_cog():
     np.testing.assert_allclose(COG_dict['sig_logN'],0.054323725737309987)
 
 
-def test_synthesize_components():
-    #
-    SiIIcomp1,_ = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s, add_spec=True)
-    SiIIcomp1.synthesize_colm(redo_aodm=True)
-    #
-    SiIIcomp2,_ = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s, add_spec=True)
-    SiIIcomp2.synthesize_colm(redo_aodm=True)
-    #
-    synth_SiII = ltiu.synthesize_components([SiIIcomp1,SiIIcomp2])
-    np.testing.assert_allclose(synth_SiII.logN, 13.862454764546792)
-    np.testing.assert_allclose(synth_SiII.sig_logN, 0.010146946475971825)
-    # Failures
-    pytest.raises(IOError, ltiu.synthesize_components, 1)
-    pytest.raises(IOError, ltiu.synthesize_components, [1,2])
 
 """
 def test_stack_plot():
@@ -488,3 +477,27 @@ def test_group_coincident_components():
     # check output as dictionary
     out = ltiu.group_coincident_components(comp_list, output_type='dict')
     assert isinstance(out, dict)
+
+
+def test_synthesize_components():
+    #
+    SiIIcomp1,_ = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s, add_spec=True)
+    SiIIcomp1.synthesize_colm(redo_aodm=True)
+    #
+    SiIIcomp2,_ = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s, add_spec=True)
+    SiIIcomp2.synthesize_colm(redo_aodm=True)
+    #
+    synth_SiII = ltiu.synthesize_components([SiIIcomp1,SiIIcomp2])
+    np.testing.assert_allclose(synth_SiII.logN, 13.862454764546792)
+    np.testing.assert_allclose(synth_SiII.sig_logN, 0.010146946475971825)
+    # Failures
+    pytest.raises(IOError, ltiu.synthesize_components, 1)
+    pytest.raises(IOError, ltiu.synthesize_components, [1,2])
+    # Now SiII*
+    SiIIscomp1,_ = mk_comp('SiII*',vlim=[-300.,50.]*u.km/u.s, add_spec=True)
+    SiIIscomp1.synthesize_colm(redo_aodm=True)
+    #
+    SiIIscomp2,_ = mk_comp('SiII*',vlim=[50.,300.]*u.km/u.s, add_spec=True)
+    SiIIscomp2.synthesize_colm(redo_aodm=True)
+    synth_SiIIs = ltiu.synthesize_components([SiIIscomp1,SiIIscomp2])
+    assert synth_SiIIs.name.count('*') == 1
