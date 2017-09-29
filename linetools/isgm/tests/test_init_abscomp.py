@@ -20,6 +20,9 @@ def test_init():
     assert abscomp.Zion[0] == 14
     np.testing.assert_allclose(abscomp.zcomp,1.0)
     print(abscomp)
+    # Fine structure
+    comp = AbsComponent((10.0*u.deg, 45*u.deg), (14,2), 1.0, [-300,300]*u.km/u.s, Ej=0.1/u.cm) # need stars!
+    assert comp.name.count('*') == 1
 
 
 def test_init_failures():
@@ -29,8 +32,6 @@ def test_init_failures():
         AbsComponent.from_abslines(['blah'])
     with pytest.raises(IOError):
         AbsComponent.from_component('blah')
-    with pytest.raises(IOError):
-        AbsComponent((10.0*u.deg, 45*u.deg), (14,2), 1.0, [-300,300]*u.km/u.s, Ej=0.1/u.cm) # need stars!
 
 
 def test_init_single_absline():
