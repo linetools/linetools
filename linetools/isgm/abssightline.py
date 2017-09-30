@@ -22,6 +22,7 @@ from astropy.table import Table, Column
 from linetools.spectralline import AbsLine, SpectralLine
 from linetools import utils as ltu
 from linetools.isgm.abscomponent import AbsComponent
+from linetools.isgm.abssystem import AbsSystem
 
 # Global import for speed
 c_kms = const.c.to('km/s').value
@@ -97,6 +98,28 @@ class AbsSightline(object):
             slf.add_component(comp, **kwargs)
         # Return
         return slf
+
+    @classmethod
+    def from_systems(cls,systems, **kwargs):
+        """ Instantiate from a list of AbsSystem objects
+
+        Parameters
+        ----------
+        systems : list
+            list of AbsComponent objects
+
+        """
+        if not isinstance(systems, list):
+            raise IOError("Need a list of AbsSystem objects")
+        if not isinstance(systems[0], AbsSystem):
+            raise IOError('Need an AbsSystem object')
+
+        # Instantiate with coordinates of first system
+        slf = cls(systems[0].coord)
+        slf._abssystems = systems
+        # Return
+        return slf
+
 
     def __init__(self, radec, sl_type=None, em_type=None, comment=None, name=None, **kwargs):
         """  Initiator
