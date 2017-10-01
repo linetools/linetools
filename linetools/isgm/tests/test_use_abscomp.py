@@ -67,11 +67,14 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
 def mk_comptable():
     tab = Table()
     tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
+    tab['Z'] = [1,1,4,14,8]
+    tab['ion'] = [1,1,4,2,6]
     tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
     tab['RA'] = [100.0] * len(tab) * u.deg
     tab['DEC'] = [-0.8] * len(tab) * u.deg
     tab['vmin'] = [-50.] * len(tab) * u.km/u.s
     tab['vmax'] = [100.] * len(tab) * u.km/u.s
+    tab['Ej'] = [0.] *len(tab) / u.cm
     return tab
 
 
@@ -91,199 +94,6 @@ def compare_two_files(file1, file2):
     f2.close()
 
 
-def test_unique_comps():
-    # One list of components
-    SiIIcomp,_ = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s)
-    HIcomp,_ = mk_comp('HI')
-    # Run
-    uniq = ltiu.unique_components([HIcomp, SiIIcomp], [SiIIcomp])
-    assert np.all(uniq == np.array([True,False]))
-
-def test_add_absline():
-    abscomp,_ = mk_comp('HI', zcomp=0.)
-    abscomp.add_absline(AbsLine('HI 972'), chk_sep=False, chk_vel=False)
-    with pytest.raises(ValueError):
-        abscomp.add_absline(AbsLine('HI 949'), vtoler=-10)
-    # failed addition
-    bad_absline = AbsLine('CIV 1550')
-    bad_absline.limits.set([500, 1000]*u.km/u.s)
-    bad_absline.attrib['coord'] = SkyCoord(20,20, unit='deg')
-    abscomp.add_absline(bad_absline)
-
-
-def test_fromtodict():
-    SiIIcomp1,_ = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s, add_spec=True)
-    cdict = SiIIcomp1.to_dict()
-    #
-    assert isinstance(cdict, dict)
-    assert cdict['Zion'] == (14, 2)
-    # And instantiate
-    newcomp = AbsComponent.from_dict(cdict)
-    assert isinstance(newcomp, AbsComponent)
-    newcomp = AbsComponent.from_dict(cdict, coord=SkyCoord(0,0, unit='deg'))
-
-
-def test_build_table():
-    abscomp,_ = mk_comp('HI')
-    # Instantiate
-    comp_tbl = abscomp.build_table()
-    # Test
-    assert isinstance(comp_tbl,QTable)
-    # empty
-    abscomp._abslines = []
-    comp_tbl = abscomp.build_table()
-
-
-def test_synthesize_colm():
-    abscomp,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True,
-                        add_trans=True)
-    # Column
-    abscomp.synthesize_colm(redo_aodm=True)
-    # Test
-    np.testing.assert_allclose(abscomp.logN, 13.594445560856554)
-    # Reset flags (for testing)
-    abscomp2,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True, use_rand=False,
-                         add_trans=True)
-    for iline in abscomp2._abslines:
-        if iline.data['name'] == 'SiII 1260':
-            iline.attrib['flag_N'] = 2
-        elif iline.data['name'] == 'SiII 1808':
-            iline.attrib['flag_N'] = 3
-        elif iline.data['name'] == 'SiII 1193':
-            iline.attrib['flag_N'] = 0
-        else:
-            iline.attrib['flag_N'] = 1
-    abscomp2.synthesize_colm()
-    # Test
-    np.testing.assert_allclose(abscomp2.logN, 13.3)
-    # Another
-    abscomp3,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True, use_rand=False)
-    for iline in abscomp3._abslines:
-        if iline.data['name'] == 'SiII 1260':
-            iline.attrib['flag_N'] = 3
-        elif iline.data['name'] == 'SiII 1808':
-            iline.attrib['flag_N'] = 2
-        else:
-            iline.attrib['flag_N'] = 1
-    abscomp3.synthesize_colm()
-    # Test
-    np.testing.assert_allclose(abscomp3.logN, 13.3)
-    # test error
-    with pytest.raises(IOError):
-        abscomp3.synthesize_colm(overwrite=False)
-    with pytest.raises(ValueError):
-        abscomp3._abslines[0].attrib['N'] = 0 / u.cm / u.cm
-        abscomp3.synthesize_colm(overwrite=True)
-
-
-def test_build_components_from_lines():
-    # Lines
-    abscomp,HIlines = mk_comp('HI')
-    abscomp,SiIIlines = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True)
-    # Components
-    comps = ltiu.build_components_from_abslines([HIlines[0],HIlines[1],SiIIlines[0],SiIIlines[1]])
-    assert len(comps) == 2
-
-
-def test_abscomp_H2():
-    Zion = (-1, -1)  # temporary code for molecules
-    Ntuple = (1, 17, -1)  # initial guess for Ntuple (needs to be given for adding lines from linelist)
-    coord = SkyCoord(0,0, unit='deg')
-    z = 0.212
-    vlim = [-100., 100.] * u.km/u.s
-    comp = AbsComponent(coord, Zion, z, vlim, Ntup=Ntuple)
-    comp.add_abslines_from_linelist(llist='H2', init_name="B19-0P(1)", wvlim=[1100, 5000]*u.AA)
-    assert len(comp._abslines) == 7
-
-
-def test_add_abslines_from_linelist():
-    comp, HIlines = mk_comp('HI')
-    comp._abslines = [] # reset abslines
-    comp.add_abslines_from_linelist(llist='HI')
-    assert len(comp._abslines) == 30
-    comp._abslines = [] # reset
-    comp.add_abslines_from_linelist(llist='HI', wvlim=[4100, 5000]*u.AA)
-    assert len(comp._abslines) == 1
-    # check for no transitions
-    comp._abslines = [] # reset
-    comp.add_abslines_from_linelist(llist='HI', wvlim=[5000, 5100]*u.AA)
-    assert len(comp._abslines) == 0
-    # test min_Wr
-    comp._abslines = [] # reset
-    comp.logN = 13.0
-    comp.add_abslines_from_linelist(llist='HI', min_Wr=0.001*u.AA)
-    assert len(comp._abslines) == 4
-    # test logN not defined
-    comp.logN = 0.0
-    comp._abslines = [] # reset
-    comp.add_abslines_from_linelist(llist='HI', min_Wr=0.001*u.AA)
-
-
-def test_iontable_from_components():
-    # Lines
-    abscomp,HIlines = mk_comp('HI')
-    abscomp,SiIIlines = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True)
-    # Components
-    comps = ltiu.build_components_from_abslines([HIlines[0],HIlines[1],SiIIlines[0],SiIIlines[1]])
-    tbl = ltiu.iontable_from_components(comps)
-    assert len(tbl) == 2
-
-
-def test_complist_from_table_and_table_from_complist():
-    tab = Table()
-    tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
-    tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
-    tab['RA'] = [100.0]*len(tab) * u.deg
-    tab['DEC'] = [-0.8]*len(tab) * u.deg
-    tab['vmin'] = [-50.] *len(tab) * u.km / u.s
-    tab['vmax'] = [100.] *len(tab) * u.km / u.s
-    tab['reliability'] = ['a', 'b', 'b', 'none', 'a']
-    complist = ltiu.complist_from_table(tab)
-    tmp = [-50.,100.]*u.km/u.s
-    assert np.all(np.isclose(complist[0].vlim.value, tmp.value))
-    tab2 = ltiu.table_from_complist(complist)
-    np.testing.assert_allclose(tab['z_comp'], tab2['z_comp'])
-
-    # test other columns
-    tab['logN'] = 13.7
-    tab['sig_logN'] = 0.1
-    tab['flag_logN'] = 1
-    complist = ltiu.complist_from_table(tab)
-    tab2 = ltiu.table_from_complist(complist)
-    np.testing.assert_allclose(tab['logN'], tab2['logN'])
-
-    comp = complist[0]
-    # comment now
-    tab['comment'] = ['good', 'good', 'bad', 'bad', 'This is a longer comment with symbols &*^%$']
-    complist = ltiu.complist_from_table(tab)
-    tab2 = ltiu.table_from_complist(complist)
-    comp = complist[-1]
-    assert comp.comment == 'This is a longer comment with symbols &*^%$'
-    assert tab2['comment'][-1] == comp.comment
-    assert tab2['reliability'][-1] == comp.reliability
-
-    # other naming
-    tab['name'] = tab['ion_name']
-    complist = ltiu.complist_from_table(tab)
-    tab2 = ltiu.table_from_complist(complist)
-    comp = complist[-1]
-    assert comp.name == 'OVI'
-    # other attributes
-    tab['b'] = [10, 10, 20, 10, 60] * u.km / u.s
-    complist = ltiu.complist_from_table(tab)
-    tab2 = ltiu.table_from_complist(complist)
-    comp = complist[-1]
-    assert comp.attrib['b'] == 60*u.km/u.s
-
-    # test errors
-    tab['sig_b'] = [1,2,3,4,5] * u.AA
-    with pytest.raises(IOError):
-        complist = ltiu.complist_from_table(tab) # bad units for sig_b
-    tab = Table()
-    tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
-    tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
-    with pytest.raises(IOError):
-        complist = ltiu.complist_from_table(tab) # not enough mandatory columns
 
 
 def test_get_components_at_z():
@@ -501,3 +311,200 @@ def test_synthesize_components():
     SiIIscomp2.synthesize_colm(redo_aodm=True)
     synth_SiIIs = ltiu.synthesize_components([SiIIscomp1,SiIIscomp2])
     assert synth_SiIIs.name.count('*') == 1
+
+
+def test_unique_comps():
+    # One list of components
+    SiIIcomp,_ = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s)
+    HIcomp,_ = mk_comp('HI')
+    # Run
+    uniq = ltiu.unique_components([HIcomp, SiIIcomp], [SiIIcomp])
+    assert np.all(uniq == np.array([True,False]))
+
+def test_add_absline():
+    abscomp,_ = mk_comp('HI', zcomp=0.)
+    abscomp.add_absline(AbsLine('HI 972'), chk_sep=False, chk_vel=False)
+    with pytest.raises(ValueError):
+        abscomp.add_absline(AbsLine('HI 949'), vtoler=-10)
+    # failed addition
+    bad_absline = AbsLine('CIV 1550')
+    bad_absline.limits.set([500, 1000]*u.km/u.s)
+    bad_absline.attrib['coord'] = SkyCoord(20,20, unit='deg')
+    abscomp.add_absline(bad_absline)
+
+
+def test_fromtodict():
+    SiIIcomp1,_ = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s, add_spec=True)
+    cdict = SiIIcomp1.to_dict()
+    #
+    assert isinstance(cdict, dict)
+    assert cdict['Zion'] == (14, 2)
+    # And instantiate
+    newcomp = AbsComponent.from_dict(cdict)
+    assert isinstance(newcomp, AbsComponent)
+    newcomp = AbsComponent.from_dict(cdict, coord=SkyCoord(0,0, unit='deg'))
+
+
+def test_build_table():
+    abscomp,_ = mk_comp('HI')
+    # Instantiate
+    comp_tbl = abscomp.build_table()
+    # Test
+    assert isinstance(comp_tbl,QTable)
+    # empty
+    abscomp._abslines = []
+    comp_tbl = abscomp.build_table()
+
+
+def test_synthesize_colm():
+    abscomp,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True,
+                        add_trans=True)
+    # Column
+    abscomp.synthesize_colm(redo_aodm=True)
+    # Test
+    np.testing.assert_allclose(abscomp.logN, 13.594445560856554)
+    # Reset flags (for testing)
+    abscomp2,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True, use_rand=False,
+                         add_trans=True)
+    for iline in abscomp2._abslines:
+        if iline.data['name'] == 'SiII 1260':
+            iline.attrib['flag_N'] = 2
+        elif iline.data['name'] == 'SiII 1808':
+            iline.attrib['flag_N'] = 3
+        elif iline.data['name'] == 'SiII 1193':
+            iline.attrib['flag_N'] = 0
+        else:
+            iline.attrib['flag_N'] = 1
+    abscomp2.synthesize_colm()
+    # Test
+    np.testing.assert_allclose(abscomp2.logN, 13.3)
+    # Another
+    abscomp3,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True, use_rand=False)
+    for iline in abscomp3._abslines:
+        if iline.data['name'] == 'SiII 1260':
+            iline.attrib['flag_N'] = 3
+        elif iline.data['name'] == 'SiII 1808':
+            iline.attrib['flag_N'] = 2
+        else:
+            iline.attrib['flag_N'] = 1
+    abscomp3.synthesize_colm()
+    # Test
+    np.testing.assert_allclose(abscomp3.logN, 13.3)
+    # test error
+    with pytest.raises(IOError):
+        abscomp3.synthesize_colm(overwrite=False)
+    with pytest.raises(ValueError):
+        abscomp3._abslines[0].attrib['N'] = 0 / u.cm / u.cm
+        abscomp3.synthesize_colm(overwrite=True)
+
+
+def test_build_components_from_lines():
+    # Lines
+    abscomp,HIlines = mk_comp('HI')
+    abscomp,SiIIlines = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True)
+    # Components
+    comps = ltiu.build_components_from_abslines([HIlines[0],HIlines[1],SiIIlines[0],SiIIlines[1]])
+    assert len(comps) == 2
+
+
+def test_abscomp_H2():
+    Zion = (-1, -1)  # temporary code for molecules
+    Ntuple = (1, 17, -1)  # initial guess for Ntuple (needs to be given for adding lines from linelist)
+    coord = SkyCoord(0,0, unit='deg')
+    z = 0.212
+    vlim = [-100., 100.] * u.km/u.s
+    comp = AbsComponent(coord, Zion, z, vlim, Ntup=Ntuple)
+    comp.add_abslines_from_linelist(llist='H2', init_name="B19-0P(1)", wvlim=[1100, 5000]*u.AA)
+    assert len(comp._abslines) == 7
+
+
+def test_add_abslines_from_linelist():
+    comp, HIlines = mk_comp('HI')
+    comp._abslines = [] # reset abslines
+    comp.add_abslines_from_linelist(llist='HI')
+    assert len(comp._abslines) == 30
+    comp._abslines = [] # reset
+    comp.add_abslines_from_linelist(llist='HI', wvlim=[4100, 5000]*u.AA)
+    assert len(comp._abslines) == 1
+    # check for no transitions
+    comp._abslines = [] # reset
+    comp.add_abslines_from_linelist(llist='HI', wvlim=[5000, 5100]*u.AA)
+    assert len(comp._abslines) == 0
+    # test min_Wr
+    comp._abslines = [] # reset
+    comp.logN = 13.0
+    comp.add_abslines_from_linelist(llist='HI', min_Wr=0.001*u.AA)
+    assert len(comp._abslines) == 4
+    # test logN not defined
+    comp.logN = 0.0
+    comp._abslines = [] # reset
+    comp.add_abslines_from_linelist(llist='HI', min_Wr=0.001*u.AA)
+
+
+def test_iontable_from_components():
+    # Lines
+    abscomp,HIlines = mk_comp('HI')
+    abscomp,SiIIlines = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True)
+    # Components
+    comps = ltiu.build_components_from_abslines([HIlines[0],HIlines[1],SiIIlines[0],SiIIlines[1]])
+    tbl = ltiu.iontable_from_components(comps)
+    assert len(tbl) == 2
+
+
+def test_complist_from_table_and_table_from_complist():
+    tab = Table()
+    tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
+    tab['Z'] = [1,1,4,14,8]
+    tab['ion'] = [1,1,4,2,6]
+    tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
+    tab['RA'] = [100.0]*len(tab) * u.deg
+    tab['DEC'] = [-0.8]*len(tab) * u.deg
+    tab['vmin'] = [-50.] *len(tab) * u.km / u.s
+    tab['vmax'] = [100.] *len(tab) * u.km / u.s
+    tab['Ej'] = [0.] *len(tab) / u.cm
+    tab['reliability'] = ['a', 'b', 'b', 'none', 'a']
+    complist = ltiu.complist_from_table(tab)
+    tmp = [-50.,100.]*u.km/u.s
+    assert np.all(np.isclose(complist[0].vlim.value, tmp.value))
+    tab2 = ltiu.table_from_complist(complist)
+    np.testing.assert_allclose(tab['z_comp'], tab2['z_comp'])
+
+    # test other columns
+    tab['logN'] = 13.7
+    tab['sig_logN'] = 0.1
+    tab['flag_logN'] = 1
+    complist = ltiu.complist_from_table(tab)
+    tab2 = ltiu.table_from_complist(complist)
+    np.testing.assert_allclose(tab['logN'], tab2['logN'])
+
+    # comment now
+    tab['comment'] = ['good', 'good', 'bad', 'bad', 'This is a longer comment with symbols &*^%$']
+    complist = ltiu.complist_from_table(tab)
+    tab2 = ltiu.table_from_complist(complist)
+    comp = complist[-1]
+    assert comp.comment == 'This is a longer comment with symbols &*^%$'
+    assert tab2['comment'][-1] == comp.comment
+    assert tab2['reliability'][-1] == comp.reliability
+
+    # other naming
+    tab['name'] = tab['ion_name']
+    complist = ltiu.complist_from_table(tab)
+    tab2 = ltiu.table_from_complist(complist)
+    comp = complist[-1]
+    assert comp.name == 'OVI'
+    # other attributes
+    tab['b'] = [10, 10, 20, 10, 60] * u.km / u.s
+    complist = ltiu.complist_from_table(tab)
+    tab2 = ltiu.table_from_complist(complist)
+    comp = complist[-1]
+    assert comp.attrib['b'] == 60*u.km/u.s
+
+    # test errors
+    #tab['sig_b'] = [1,2,3,4,5] * u.AA
+    #with pytest.raises(IOError):
+    #    complist = ltiu.complist_from_table(tab) # bad units for sig_b
+    tab = Table()
+    tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
+    tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
+    with pytest.raises(IOError):
+        complist = ltiu.complist_from_table(tab) # not enough mandatory columns

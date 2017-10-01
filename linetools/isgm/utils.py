@@ -288,7 +288,7 @@ def complist_from_table(table):
     tkeys = table.keys()
 
     # mandatory and optional columns
-    min_columns = ['RA', 'DEC', 'ion_name', 'z_comp', 'vmin', 'vmax']
+    min_columns = ['RA', 'DEC', 'ion_name', 'z_comp', 'vmin', 'vmax', 'Z', 'ion', 'Ej']
     special_columns = ['name', 'comment', 'logN', 'sig_logN', 'flag_logN']
     for colname in min_columns:
         if colname not in table.keys():
@@ -347,7 +347,7 @@ def table_from_complist(complist):
     """
     key_order = ['RA', 'DEC', 'name', 'z_comp', 'sig_z', 'Z', 'ion', 'Ej',
                  'vmin', 'vmax','ion_name', 'flag_N', 'logN', 'sig_logN',
-                 'b','sig_b','reliability', 'specfile']
+                 'b','sig_b', 'specfile']
 
     tab = Table()
 
@@ -384,19 +384,19 @@ def table_from_complist(complist):
         try:
             values = [icomp.attrib[attrib] for icomp in complist]
         except KeyError:
-            if attrib in ['specfile']:
-                key_order.pop(key_order.index('specfile'))
-                pass
-            else:
-                values = np.zeros(len(tab))
-        # Quantity
-        if isinstance(values[0], u.Quantity):
-            values = u.Quantity(values)
-        tab[attrib] = values
+            key_order.pop(key_order.index(attrib))
+            pass
+        else:
+            # Quantity
+            if isinstance(values[0], u.Quantity):
+                values = u.Quantity(values)
+            tab[attrib] = values
 
     # Special columns
-    #tab['comment'] = [comp.comment for comp in complist]
-    tab['reliability'] = [comp.reliability for comp in complist]
+    for key in ['comment', 'reliability']:
+        if hasattr(complist[0], key):
+            tab[key] = [getattr(comp, key) for comp in complist]
+            key_order += [key]
 
     assert len(key_order) == len(tab.keys())
     tab = tab[key_order]
