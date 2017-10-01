@@ -6,7 +6,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import pytest
 from astropy import units as u
-from astropy.table import QTable, Table
+from astropy.table import Table
 from astropy.coordinates import SkyCoord
 import numpy as np
 import pdb
@@ -350,7 +350,7 @@ def test_build_table():
     # Instantiate
     comp_tbl = abscomp.build_table()
     # Test
-    assert isinstance(comp_tbl,QTable)
+    assert isinstance(comp_tbl, Table)
     # empty
     abscomp._abslines = []
     comp_tbl = abscomp.build_table()

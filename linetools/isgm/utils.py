@@ -15,7 +15,7 @@ import warnings
 
 from astropy import constants as const
 from astropy import units as u
-from astropy.table import Table, QTable
+from astropy.table import Table
 from astropy.coordinates import SkyCoord, match_coordinates_sky
 
 from linetools.analysis import absline as ltaa
@@ -327,12 +327,14 @@ def table_from_complist(complist):
     """
     Returns a astropy.Table from an input list of AbsComponents. It only
     fills in mandatory and special attributes (see notes below).
-    Information stored in dictionary AbsComp.attrib is ignored.
+    Other information stored in dictionary AbsComp.attrib is ignored.
+
+    Attributes with units are stored in the Table with units
 
     Parameters
     ----------
     complist : list of AbsComponents
-        The initial list of AbsComponents to create the QTable from.
+        The initial list of AbsComponents to create the Table from.
 
     Returns
     -------
@@ -424,6 +426,7 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
     -------
     iontbl : Table
     """
+    warnings.warn("It is likely this method will be Deprecated", DeprecationWarning)
     from collections import OrderedDict
     # Checks
     assert chk_components(components,chk_A_none=True)
@@ -467,7 +470,7 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
         mtZiE = np.where(uZiE == uZiE[uidx])[0]
         comps = [components[ii] for ii in mtZiE]  # Need a list
         synth_comp = synthesize_components(comps, zcomp=ztbl)
-        # Add a row to QTable
+        # Add a row to Table
         row = dict(Z=synth_comp.Zion[0],ion=synth_comp.Zion[1],
                    z=ztbl,
                    Ej=synth_comp.Ej,vmin=synth_comp.vlim[0],

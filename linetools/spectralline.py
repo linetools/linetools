@@ -44,6 +44,7 @@ abs_attrib = {'N': 0./u.cm**2, 'sig_N': 0./u.cm**2, 'flag_N': 0, # Column    ## 
 emiss_attrib = {'flux': 0.*u.erg/u.s, 'sig_flux': 0.*u.erg/u.s, 'flag_flux': 0,
                 }
 
+CACHE_LLIST = None
 
 class SpectralLine(object):
     """ Class for a spectral line. Emission or absorption.
@@ -228,15 +229,20 @@ class SpectralLine(object):
         closest : bool, optional
           Take the closest line to input wavelength? [False]
         """
-
+        global CACHE_LLIST   # Only cached if LineList is *not* input
         # Deal with LineList
         if linelist is None:
-            if self.ltype == 'Abs':
-                llist = LineList('ISM')
-            elif self.ltype == 'Em':
-                llist = LineList('Galaxy')
+            if CACHE_LLIST is not None:
+                llist = CACHE_LLIST
             else:
-                raise ValueError("Not ready for ltype = {:s}".format(self.ltype))
+                if self.ltype == 'Abs':
+                    llist = LineList('ISM')
+                    CACHE_LLIST = llist
+                elif self.ltype == 'Em':
+                    llist = LineList('Galaxy')
+                    CACHE_LLIST = llist
+                else:
+                    raise ValueError("Not ready for ltype = {:s}".format(self.ltype))
         elif isinstance(linelist,basestring):
             llist = LineList(linelist)
         elif isinstance(linelist,LineList):

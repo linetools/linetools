@@ -16,7 +16,7 @@ from astropy import constants as const
 from astropy import units as u
 from astropy.units import Quantity
 from astropy.coordinates import SkyCoord
-from astropy.table import QTable, Column
+from astropy.table import Table, Column
 
 from linetools.spectra.xspectrum1d import XSpectrum1D
 from linetools.analysis import absline as ltaa
@@ -416,18 +416,20 @@ class AbsComponent(object):
             self.add_absline(iline)
 
     def build_table(self):
-        """Generate an astropy QTable out of the abs lines
+        """Generate an astropy Table out of the AbsLine objects
+
         Returns
         -------
         comp_tbl : QTable
         """
         if len(self._abslines) == 0:
             return
-        comp_tbl = QTable()
-        comp_tbl.add_column(Column([iline.wrest.to(u.AA).value for iline in self._abslines]*u.AA, name='wrest'))
-        comp_tbl.add_column(Column([iline.z for iline in self._abslines], name='z'))
+        comp_tbl = Table()
+        comp_tbl['name'] = [iline.name for iline in self._abslines]
+        comp_tbl['wrest'] = u.Quantity([iline.wrest for iline in self._abslines])
+        comp_tbl['z'] = [iline.z for iline in self._abslines]
         for attrib in ['flag_N', 'logN', 'sig_logN']:
-            comp_tbl.add_column(Column([iline.attrib[attrib] for iline in self._abslines], name=attrib))
+            comp_tbl[attrib]  = [iline.attrib[attrib] for iline in self._abslines]
         # Return
         return comp_tbl
 
