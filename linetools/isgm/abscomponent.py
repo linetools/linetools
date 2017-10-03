@@ -451,7 +451,6 @@ class AbsComponent(object):
           COG Doppler parameter (km/s)
         """
         from linetools.analysis import cog as ltcog
-        #reload(ltcog)
         # Redo EWs?
         if redo_EW:
             for aline in self._abslines:
