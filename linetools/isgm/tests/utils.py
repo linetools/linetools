@@ -34,12 +34,12 @@ def lyman_comp(radec, z=2.92939):
     return abscomp
 
 
-def si2_comp(radec):
+def si2_comp(radec, z=2.92939):
     # SiII
     SiIItrans = ['SiII 1260', 'SiII 1304', 'SiII 1526', 'SiII 1808']
     abslines = []
     for trans in SiIItrans:
-        iline = AbsLine(trans, z=2.92939)
+        iline = AbsLine(trans, z=z)
         iline.attrib['coord'] = radec
         iline.limits.set([-250.,80.]*u.km/u.s)
         abslines.append(iline)

@@ -12,6 +12,7 @@ from astropy import units as u
 from astropy.coordinates import SkyCoord
 
 from linetools.isgm.abssightline import GenericAbsSightline
+from linetools.isgm.abssystem import GenericAbsSystem
 from .utils import lyman_comp, si2_comp
 
 
@@ -19,6 +20,21 @@ def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
 
+def test_from_systems():
+    radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
+    # HI
+    lyacomp1 = lyman_comp(radec, z=0.45)
+    lyacomp2 = lyman_comp(radec, z=0.25)
+    # SiII
+    SiII_comp1 = si2_comp(radec, z=0.45)
+    SiII_comp2 = si2_comp(radec, z=0.25)
+    # Instantiate systems
+    sys1 = GenericAbsSystem.from_components([lyacomp1,SiII_comp1])
+    sys2 = GenericAbsSystem.from_components([lyacomp2, SiII_comp2])
+    # Instantiate sightline
+    sl = GenericAbsSightline.from_systems([sys1,sys2])
+    # Test
+    assert len(sl._abssystems) == 2
 
 def test_from_components():
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
