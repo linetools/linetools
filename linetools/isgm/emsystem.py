@@ -1,4 +1,4 @@
-""" Class for  absorption systems
+""" Class for  emission line systems
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -19,7 +19,6 @@ from astropy.table import Table
 from astropy import constants as const
 from astropy.coordinates import SkyCoord
 
-from linetools.isgm.abscomponent import AbsComponent
 from linetools.isgm import utils as ltiu
 from linetools import utils as ltu
 from linetools import line_utils as ltlu
@@ -101,7 +100,7 @@ class EmSystem(object):
 
         Parameters
         ----------
-        alis_file
+        alis_file : .mod ALIS output file
         radec : SkyCoord or tuple of RA,DEC
         kwargs
 
@@ -153,7 +152,7 @@ class EmSystem(object):
 
         Returns
         -------
-        AbsSystem
+        EmSystem
 
         """
         idict = ltu.loadjson(json_file)
@@ -177,7 +176,7 @@ class EmSystem(object):
         else:
             self.name = name
 
-        # Abs type
+        # Em type
         if em_type is None:
             self.em_type = 'NONE'
         else:
@@ -187,7 +186,7 @@ class EmSystem(object):
         self._emlines = []  # List of EmLine objects
 
         # Components
-        #self._components = []  # List of AbsComponent objects
+        #self._components = []  # List of EmComponent objects
 
         # Kinematics
         self.kin = {}
@@ -288,39 +287,39 @@ class EmSystem(object):
         #
         return test
 
-    def chk_emline(self, component):
-        """Additional checks on the component
+#    def chk_emline(self, component):
+#        """Additional checks on the component
 
-        Parameters
-        ----------
-        component : AbsComponent
+#        Parameters
+#        ----------
+#        component : EmComponent
 
-        """
-        return True
+#        """
+#        return True
 
     def fill_ionN(self, **kwargs):
         """ Fills the ionN Table from the list of components
         """
         self._ionN = ltiu.iontable_from_components(self._components, **kwargs)
 
-    def fill_trans(self, **kwargs):
-        """ Fills the ionN Table from the list of components
-        """
-        self._trans = ltlu.transtable_from_speclines(self.list_of_abslines())
+#    def fill_trans(self, **kwargs):
+#        """ Fills the ionN Table from the list of emission lines
+#        """
+#        self._trans = ltlu.transtable_from_speclines(self.list_of_abslines())
 
     def get_emline(self, inp):
-        """ Returns an EmLine from the AbsSystem
+        """ Returns an EmLine from the EmSystem
 
         Parameters
         ----------
         inp : str or Quantity
-          str -- Name of the transition, e.g. 'CII 1334'
-          Quantity -- Rest wavelength of the transition, e.g. 1334.53*u.AA
+          str -- Name of the transition, e.g. 'Halpha'
+          Quantity -- Rest wavelength of the transition, e.g. 6564.61*u.AA
             to 0.01 precision
 
         Returns
         -------
-        absline -- AbsLine object or list of Abslines
+        emline -- EmLine object or list of EmLines
           More than one will be returned if this line exists in
           multiple components.  The returned quantity will then
           be a list instead of a single object
@@ -343,61 +342,61 @@ class EmSystem(object):
         else:
             return [self._emlines[ii] for ii in mt]
 
-    def get_component(self, inp):
-        """ Returns the component related to the given input
+#    def get_component(self, inp):
+#        """ Returns the component related to the given input
         TODO: Need to handle fine-structure lines at some point..
 
-        Parameters
-        ----------
-        inp : tuple or AbsLine
-          tuple -- (Z,ion) integers
-          AbsLine -- actual absorption line object
+#        Parameters
+#        ----------
+#        inp : tuple or AbsLine
+#          tuple -- (Z,ion) integers
+#          AbsLine -- actual absorption line object
 
-        Returns
-        -------
-        component
-        """
-        if isinstance(inp, tuple):
-            # Assume Zion for now, e.g. (26,2)
-            tuples = [comp.Zion for comp in self._components]
-            try:
-                idx = tuples.index(inp)
-            except ValueError:
-                warnings.warn("Input Zion {} is not in any component".format(inp))
-                return None
-            else:
-                return self._components[idx]
-        elif isinstance(inp, AbsLine):
-            return self.get_comp_from_absline(inp)
-        else:
-            raise IOError("Bad input to get_component method")
+#        Returns
+#        -------
+#        component
+#        """
+#        if isinstance(inp, tuple):
+#            # Assume Zion for now, e.g. (26,2)
+#            tuples = [comp.Zion for comp in self._components]
+#            try:
+#                idx = tuples.index(inp)
+#            except ValueError:
+#                warnings.warn("Input Zion {} is not in any component".format(inp))
+#                return None
+#            else:
+#                return self._components[idx]
+#        elif isinstance(inp, AbsLine):
+#            return self.get_comp_from_absline(inp)
+#        else:
+#            raise IOError("Bad input to get_component method")
 
-    def get_comp_from_absline(self, aline):
-        """ Returns the component that holds the input AbsLine
+#    def get_comp_from_absline(self, aline):
+#        """ Returns the component that holds the input AbsLine
 
-        Parameters
-        ----------
-        aline : AbsLine
+#        Parameters
+#        ----------
+#        aline : AbsLine
 
-        Returns
-        -------
-        comp -- AbsComponent object that holds this AbsLine
-        """
-        # Loop on components
-        for comp in self._components:
-            # Is the line present?
-            try:
-                idx = comp._abslines.index(aline)
-            except ValueError:
-                pass
-            else:
-                return comp
-        # Raise error?
-        warnings.warn("Input absorption line is not in any component")
-        return None
+#        Returns
+#        -------
+#        comp -- AbsComponent object that holds this AbsLine
+#        """
+#        # Loop on components
+#        for comp in self._components:
+#            # Is the line present?
+#            try:
+#                idx = comp._abslines.index(aline)
+#            except ValueError:
+#                pass
+#            else:
+#                return comp
+#        # Raise error?
+#        warnings.warn("Input absorption line is not in any component")
+#        return None
 
     def measure_restew(self, spec=None, **kwargs):
-        """ Measure rest-frame EWs for lines in the AbsSystem
+        """ Measure rest-frame EWs for lines in the EmSystem
         Parameters
         ----------
         spec : XSpectrum1D, optional
@@ -473,7 +472,7 @@ class EmSystem(object):
         ltap.stack_plot(self.list_of_abslines(), vlim=vlim, **kwargs)
 
     def to_dict(self):
-        """ Write AbsSystem data to a dict that can be written with JSON
+        """ Write EmSystem data to a dict that can be written with JSON
         """
         import datetime
         import getpass
