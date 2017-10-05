@@ -261,8 +261,10 @@ def complist_from_table(table):
     ----------
     table : Table
         Table with component information (each row must correspond
-        to a component). Each column is expecting a unit when
-        appropriate.
+        to a component).
+        Each column is expecting a unit when appropriate.
+           Units for vmin, vmax are assumed km/s if not given
+           Units for Ej are assumed cm^-1 if not given
 
     Returns
     -------
@@ -271,7 +273,7 @@ def complist_from_table(table):
 
     Notes
     -----
-    Mandatory column names: 'RA', 'DEC', 'ion_name', 'z', 'vmin', 'vmax'
+    Mandatory column names: 'RA', 'DEC', 'ion_name', 'z_comp', 'vmin', 'vmax'
         These column are required.
     Special column names: 'name', 'comment', 'logN', 'sig_logN', 'flag_logN'
         These columns will fill internal attributes when corresponding.
@@ -298,14 +300,18 @@ def complist_from_table(table):
     complist = []
     coords = SkyCoord(ra=table['RA'], dec=table['DEC'], unit='deg')
     for kk,row in enumerate(table):
+        # Setup
         if 'flag_logN' in tkeys:
             Ntuple = (row['flag_logN'], row['logN'], row['sig_logN'])
         else:
             Ntuple = None
+        # Units
+        vmnx = [row['vmin'], row['vmax']]
+        vmnx *= u.km/u.s if table['vmin'].unit is None else table['vmin'].unit
+        Ej = row['Ej'] * (1/u.cm if table['Ej'].unit is None else table['Ej'].unit)
+        #
         abscomp = AbsComponent(coords[kk], (row['Z'], row['ion']),
-                               row['z_comp'], [row['vmin'],row['vmax']]*u.km/u.s,
-                               Ej=row['Ej']/u.cm,
-                               Ntup=Ntuple)
+                               row['z_comp'], vmnx, Ej=Ej, Ntup=Ntuple)
         # Extra attrib
         for key in ['comment', 'name']:
             if key in tkeys:

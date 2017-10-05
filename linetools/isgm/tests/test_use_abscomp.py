@@ -452,6 +452,7 @@ def test_iontable_from_components():
 
 
 def test_complist_from_table_and_table_from_complist():
+    # Setup
     tab = Table()
     tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
     tab['Z'] = [1,1,4,14,8]
@@ -468,6 +469,22 @@ def test_complist_from_table_and_table_from_complist():
     assert np.all(np.isclose(complist[0].vlim.value, tmp.value))
     tab2 = ltiu.table_from_complist(complist)
     np.testing.assert_allclose(tab['z_comp'], tab2['z_comp'])
+
+    # Without units
+    tab = Table()
+    tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
+    tab['Z'] = [1,1,4,14,8]
+    tab['ion'] = [1,1,4,2,6]
+    tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
+    tab['RA'] = [100.0]*len(tab) * u.deg
+    tab['DEC'] = [-0.8]*len(tab) * u.deg
+    tab['vmin'] = [-50.] *len(tab)
+    tab['vmax'] = [100.] *len(tab)
+    tab['Ej'] = [0.] *len(tab)
+    tab['reliability'] = ['a', 'b', 'b', 'none', 'a']
+    complist = ltiu.complist_from_table(tab)
+    assert np.all(np.isclose(complist[0].vlim.value, tmp.value))
+    assert complist[0].Ej.unit == 1/u.cm
 
     # test other columns
     tab['logN'] = 13.7

@@ -65,7 +65,7 @@ from the hard-drive::
 ::::
 
 One may also generate a set of components from a larger
-set of AbsLines::
+list of AbsLines::
 
    complist = ltiu.build_components_from_abslines([lya,lyb,SiIIlines[0],SiIIlines[1]])
 
@@ -183,6 +183,7 @@ You can also create a list of components using an input `astropy.table.Table` ob
    tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
    tab['Z'] = [1,1,4,14,8]
    tab['ion'] = [1,1,4,2,6]
+   tab['Ej'] = [0.,0.,0.,0.,0.]/u.cm
    tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.3]
    tab['logN'] = [12.0, 13.0., 13.0, 14.0, 13.5]
    tab['sig_logN'] = [0.1, 0.12., 0.15, 0.2, 0.1]
@@ -204,7 +205,7 @@ and minimum rest-frame equivalent width::
    for comp in complist:
       comp.add_abslines_from_linelist(llist='ISM', wvlim=wvlim, min_Wr=0.01*u.AA, chk_sep=False)
 
-This will look for transitions in the `LineList('ISM')` object and append those within
+This will look for transitions in the `LineList('ISM')` object and append those
 expected to be within `wvlim`
 to each corresponding AbsComponent in the `complist`. In this example, only
 those AbsLines expected to have rest-frame
