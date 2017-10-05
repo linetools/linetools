@@ -350,7 +350,9 @@ def table_from_complist(complist):
     Notes
     -----
     Mandatory columns: 'RA', 'DEC', 'ion_name', 'z_comp', 'vmin', 'vmax'
-    Special columns: 'name', 'comment', 'logN', 'sig_logN', 'flag_logN'
+    Special columns: 'name', 'comment', 'logN', 'sig_logN', 'flag_logN', 'b',
+      'sig_b', 'specfile'
+      'reliability' is included if provided
     See also complist_from_table()
     """
     key_order = ['RA', 'DEC', 'name', 'z_comp', 'sig_z', 'Z', 'ion', 'Ej',
@@ -369,7 +371,7 @@ def table_from_complist(complist):
     tab['Z'] = [icomp.Zion[0] for icomp in complist]
     tab['ion'] = [icomp.Zion[1] for icomp in complist]
 
-    # . attributes
+    # . attributes (required ones)
     for attrib in ['zcomp', 'Ej', 'flag_N', 'logN', 'sig_logN']:
         values = [getattr(icomp,attrib) for icomp in complist]
         if isinstance(values[0], u.Quantity):
