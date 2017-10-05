@@ -28,7 +28,7 @@ def metallicity(method, emsystem):
     ----------
     method : str
       Name of the method to be applied
-      PG16 --
+      PG16 -- http://adsabs.harvard.edu/cgi-bin/bib_query?arXiv:1601.08217
           Requires Hbeta, [OII], [OIII], [NII], [SII]
           Return r_val and s_val
     emsystem : EmSystem
