@@ -67,6 +67,9 @@ def gaussian_ew(spec, ltype, initial_guesses=None):
     # Grab
     wv,fx,sig = spec
 
+    if ltype == 'Abs':
+        fx = 1.-fx
+
     # dwv
     dwv = wv - np.roll(wv,1)
     dwv[0] = dwv[1]
@@ -91,19 +94,14 @@ def gaussian_ew(spec, ltype, initial_guesses=None):
         raise ValueError('gaussian_ew: Format of the initial_guesses is incorrect')
 
     # Model initialization
-    if ltype == 'Abs':
-        g_init = models.GaussianAbsorption1D(amplitude=amp_init, mean=mean_init, stddev=stddev_init) # This model does not support units
-    elif ltype == 'Emiss':
-        g_init = models.Gaussian1D(amplitude=amp_init, mean=mean_init, stddev=stddev_init) # This model does not support units
-    else:
-        raise ValueError("gaussian_ew: ltype has to be either 'Abs' or 'Emiss'")    
-    
+    g_init = models.Gaussian1D(amplitude=amp_init, mean=mean_init, stddev=stddev_init) # This model does not support units
+
     # Fitting algorithm initialization
     fit_g = fitting.LevMarLSQFitter()
     # Use only good values (i.e. with meaningful errors)
     cond = (sig > 0.) & (np.isfinite(sig))
     # Actual fit
-    g = fit_g(g_init, wv[cond], fx[cond], weights=1./sig[cond])
+    g = fit_g(g_init, wv[cond].value, fx[cond].value, weights=1./sig[cond].value)
 
     #Check whether the final fit is sensible
     fit_info = fit_g.fit_info

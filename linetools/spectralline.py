@@ -19,7 +19,7 @@ from astropy.coordinates import SkyCoord
 
 from linetools.analysis import utils as lau
 from linetools.analysis import absline as laa
-from linetools.analysis.linelimits import LineLimits
+from linetools.analysis.zlimits import zLimits
 from linetools.lists.linelist import LineList
 from linetools import utils as ltu
 from linetools.spectra.xspectrum1d import XSpectrum1D
@@ -74,7 +74,7 @@ class SpectralLine(object):
         Analysis inputs (e.g. a spectrum, wavelength limits)
     data : dict
         Line atomic/molecular data (e.g. f-value, A coefficient, Elow)
-    limits : LineLimits
+    limits : zLimits
         Limits including zlim, vlim, wvlim.
     """
 
@@ -111,7 +111,11 @@ class SpectralLine(object):
             raise ValueError("Not prepared for type {:s}.".format(idict['ltype']))
         # Check data
         if chk_data:
-            for key in idict['data']:
+            #for key in idict['data']:
+            for key in sline.data.keys():
+                if key not in idict['data'].keys():
+                    warnings.warn("Key {:s} not in your input dict".format(key))
+                    continue
                 if isinstance(idict['data'][key], dict):  # Assume Quantity
                     val = idict['data'][key]['value']
                 else:
@@ -160,9 +164,9 @@ class SpectralLine(object):
                 # import pdb; pdb.set_trace()
                 idict['limits']['wrest'] = ltu.jsonify(sline.wrest)
                 idict['limits']['z'] = z
-            sline.limits = LineLimits.from_dict(idict['limits'])
+            sline.limits = zLimits.from_dict(idict['limits'])
         else:
-            sline.limits = LineLimits(sline.wrest, z, [z,z])
+            sline.limits = zLimits(z, [z,z], wrest=sline.wrest)
             if 'vlim' in sline.analy.keys():  # Backwards compatability
                 if sline.analy['vlim'][1] > sline.analy['vlim'][0]:
                     sline.limits.set(sline.analy['vlim'])
@@ -172,7 +176,7 @@ class SpectralLine(object):
         return sline
 
     # Initialize with wavelength
-    def __init__(self, ltype, trans, linelist=None, closest=False, z=0.,
+    def __init__(self, ltype, trans, linelist=None, closest=False, z=None,
                  verbose=True, **kwargs):
 
         # Required
@@ -191,13 +195,16 @@ class SpectralLine(object):
 
         # Fill data
         self.fill_data(trans, linelist=linelist, closest=closest, verbose=verbose)
-        # Limits
+        # Redshift Limits
+        if z is None:
+            warnings.warn("Redshift not input.  Setting to 0 for zLimits")
+            z=0.
         try:
             zlim = kwargs['zlim']
         except KeyError:
             zlim = [z,z]
         if ltype in ['Abs', 'Em']:
-            self.limits = LineLimits.from_specline(self, z, zlim)
+            self.limits = zLimits.from_specline(self, z, zlim)
         else:
             raise ValueError('Not ready to set limits for this type')
 
@@ -572,6 +579,16 @@ class AbsLine(SpectralLine):
         # need to use super here. (See
         # http://docs.astropy.org/en/stable/development/codeguide.html#super-vs-direct-example)
         super(AbsLine, self).__init__('Abs', trans, **kwargs)
+
+    @property
+    def ion_name(self):
+        """ Return root portion of the name
+        """
+        if '(' in self.data['name']:
+            ion_name = self.data['name'].split('(')[0]
+        else:
+            ion_name = self.data['name'].split(' ')[0]
+        return ion_name
 
     def print_specline_type(self):
         """ Return a string representing the type of vehicle this is."""

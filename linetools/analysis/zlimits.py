@@ -1,4 +1,4 @@
-"""Module containing the LineLimits object
+"""Module containing the zLimits object
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
@@ -13,8 +13,11 @@ from linetools import utils as ltu
 
 ckms = const.c.to('km/s')
 
-class LineLimits(object):
+
+class zLimits(object):
     """ An object for handling the 'limits' of a line
+    The input redshift is not meant to be modified (ever).
+    One should re-instantiate instead.
 
     Properties
     ----------
@@ -22,9 +25,10 @@ class LineLimits(object):
       Redshift
     zlim : tuple of floats
       Redshift limits for a line
-      Defined as wave/wrest - 1.
-    wvlim : Quantity array
+    wvlim : Quantity array, optional
       wavelength limits for the line in observer frame
+      This property exists only if _wrest has been set,
+      e.g. from an AbsLine object
     vlim : Quantity array
       velocity limits for the line
     """
@@ -36,12 +40,16 @@ class LineLimits(object):
         Parameters
         ----------
         aline : AbsLine
+        z : float
+          Redshift
+        zlim : tuple of floats
+          Redshift limits for a line
         """
         from ..spectralline import AbsLine, EmLine
         if not isinstance(aline, (AbsLine, EmLine)):
             raise IOError("Input aline must be AbsLine or EmLine")
         #
-        slf = cls(aline.wrest, z, zlim)
+        slf = cls(z, zlim, wrest=aline.wrest)
         return slf
 
     @classmethod
@@ -57,31 +65,36 @@ class LineLimits(object):
         -------
 
         """
-        wrest = ltu.convert_quantity_in_dict(idict['wrest'])
-        slf = cls(wrest, idict['z'], idict['zlim'])
+        try:
+            wrest = ltu.convert_quantity_in_dict(idict['wrest'])
+        except KeyError:
+            wrest = None
+        slf = cls(idict['z'], idict['zlim'], wrest=wrest)
         # Return
         return slf
 
-    def __init__(self, wrest, z, zlim, **kwargs):
+    def __init__(self, z, zlim, wrest=None, **kwargs):
         """
         Parameters
         ----------
-        wrest : Quantity
-          Rest wavelength of the line.
         z : float
           Redshift of the line.
         zlim : tuple or list
           Redshift limits for a line
           Defined as wave/wrest - 1.
           Ok to have zlim[1]==zlim[0], but then self.is_set() == False
+        wrest : Quantity, optional
+          Rest wavelength.  Frequently used with SpectralLine objects
+          This quantity is used to determine wvlim (from zlim)
         """
         # Error checking
         if not isinstance(z, (float,int)):
             raise IOError("Input z must be a float")
         if not isinstance(zlim, (tuple,list)):
             raise IOError("Input zlim must be a tuple or list")
-        if not isinstance(wrest, Quantity):
-            raise IOError("Input wrest must be a quantity")
+        if wrest is not None:
+            if not isinstance(wrest, Quantity):
+                raise IOError("Input wrest must be a quantity")
 
         # Data
         self._data = {}
@@ -124,7 +137,8 @@ class LineLimits(object):
         """ Update all the values
         """
         #self._data['zlim'] = self._zlim
-        self._wvlim = self._wrest*(1+np.array(self._zlim))
+        if self._wrest is not None:
+            self._wvlim = self._wrest*(1+np.array(self._zlim))
         self._vlim = ltu.dv_from_z(self._zlim, self._z)
 
     def is_set(self):
@@ -142,7 +156,8 @@ class LineLimits(object):
             return False
 
     def set(self, inp, chk_z=False):#, itype='zlim'):
-        """ Over-ride = to re-init values
+        """ Set (or reset) limits relative to self._z
+        but does not change self._z
 
         Parameters
         ----------
@@ -161,20 +176,19 @@ class LineLimits(object):
         # Checks
         if not isinstance(inp, (tuple, list, Quantity)):
             raise IOError("Input must be tuple, list or Quantity.")
-        if np.isclose(self._z, 0.):
-            warnings.warn("Redshift=0.  If this is unexpected, set _z and reset limits")
+        #if np.isclose(self._z, 0.):
+        #    warnings.warn("Redshift=0.  If this is unexpected, set _z and reset limits")
 
         if isinstance(inp[0], float):  # assume zlim
             self._zlim = inp
         elif isinstance(inp[0], Quantity):  # may be wvlim or vlim
-            try:  # assume wvlim
+            if inp[0].cgs.unit == u.cm:
                 self._zlim = (inp/self._wrest).decompose().to(
                         u.dimensionless_unscaled).value - 1.
-            except UnitConversionError:
-                try:  # assume vlim
-                    self._zlim = ltu.z_from_dv(inp, self._z)
-                except ValueError:
-                    raise IOError("Quantity must be length or speed.")
+            elif inp[0].cgs.unit == u.cm/u.s:
+                self._zlim = ltu.z_from_dv(inp, self._z)
+            else:
+                raise IOError("Quantity must be length or speed.")
         else:
             raise IOError("Input must be floats or Quantities.")
         # Check
@@ -198,7 +212,8 @@ class LineLimits(object):
         ldict['zlim'] = self.zlim
         for key in ['wvlim', 'vlim', 'wrest']:
             obj = getattr(self, key)
-            ldict[key] = dict(value=obj.value,
+            if obj is not None:
+                ldict[key] = dict(value=obj.value,
                               unit=obj.unit.to_string())
         # Return
         return ldict
@@ -206,10 +221,11 @@ class LineLimits(object):
     def __repr__(self):
         txt = '<{:s}'.format(self.__class__.__name__)
         # wrest
-        txt = txt + ' wrest={:g}'.format(self.wrest)
         txt = txt + ' z={:g}'.format(self.z)
         txt = txt + ' zlim={}'.format(self.zlim)
-        txt = txt + ' wvlim={}'.format(self.wvlim)
+        if self._wrest is not None:
+            txt = txt + ' wrest={:g}'.format(self.wrest)
+            txt = txt + ' wvlim={}'.format(self.wvlim)
         txt = txt + ' vlim={}'.format(self.vlim)
         txt = txt + '>'
         return (txt)

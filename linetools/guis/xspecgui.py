@@ -19,6 +19,11 @@ from linetools.guis import utils as ltgu
 from linetools.guis import line_widgets as ltgl
 from linetools.guis import spec_widgets as ltgsp
 
+try:
+    basestring
+except NameError:  # For Python 3
+    basestring = str
+
 class XSpecGui(QMainWindow):
     """ GUI to replace XIDL x_specplot (which simulated a GUI by T. Barlow)
     """
@@ -61,7 +66,7 @@ class XSpecGui(QMainWindow):
 
         # Grab the pieces and tie together
         self.pltline_widg = ltgl.PlotLinesWidget(status=self.statusBar,
-        init_z=zsys, screen_scale=self.scale)
+            init_z=zsys, screen_scale=self.scale)
         self.pltline_widg.setMaximumWidth(300*self.scale)
 
         # Hook the spec widget to Plot Line
@@ -71,9 +76,15 @@ class XSpecGui(QMainWindow):
                                                 screen_scale=self.scale,
                                                  rsp_kwargs=rsp_kwargs, **kwargs)
         self.pltline_widg.spec_widg = self.spec_widg
+        # Multi spec
+        self.mspec_widg = ltgsp.MultiSpecWidget(self.spec_widg)
+
 
         self.spec_widg.canvas.mpl_connect('button_press_event', self.on_click)
 
+        # Layout
+
+        # Extras
         extras = QWidget()
         extras.setMaximumWidth(130*self.scale)
         vbox = QVBoxLayout()
@@ -81,9 +92,11 @@ class XSpecGui(QMainWindow):
         qbtn.setText('Quit')
         qbtn.clicked.connect(self.quit)
         vbox.addWidget(self.pltline_widg)
+        vbox.addWidget(self.mspec_widg)
         vbox.addWidget(qbtn)
         extras.setLayout(vbox)
 
+        # Main window
         hbox = QHBoxLayout()
         hbox.addWidget(self.spec_widg)
         hbox.addWidget(extras)
@@ -138,13 +151,15 @@ class XSpecGui(QMainWindow):
 
 
 def main(args, **kwargs):
+    from PyQt5.QtWidgets import QApplication
     from linetools.spectra.xspectrum1d import XSpectrum1D
 
     if not isinstance(args,(XSpectrum1D,tuple,basestring)):
         raise IOError("Bad input")
     # Run
-    app = QtGui.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     gui = XSpecGui(args, **kwargs)
     gui.show()
     app.exec_()
     return
+

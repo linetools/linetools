@@ -180,7 +180,7 @@ class AbsSystem(object):
         return slf
 
     def __init__(self, radec, zabs, vlim, zem=0., abs_type=None,
-                 NHI=0., sig_NHI=np.zeros(2), flag_NHI=0, name=None):
+                 NHI=0., sig_NHI=np.zeros(2), flag_NHI=0, name=None, **kwargs):
 
         self.zabs = zabs
         self.zem = zem
@@ -191,8 +191,8 @@ class AbsSystem(object):
         self.coord = ltu.radec_to_coord(radec)
         if name is None:
             self.name = 'J{:s}{:s}_z{:.3f}'.format(
-                    self.coord.fk5.ra.to_string(unit=u.hour,sep='',pad=True),
-                    self.coord.fk5.dec.to_string(sep='',pad=True,alwayssign=True),
+                    self.coord.icrs.ra.to_string(unit=u.hour,sep='',pad=True),
+                    self.coord.icrs.dec.to_string(sep='',pad=True,alwayssign=True),
                     self.zabs)
         else:
             self.name = name
@@ -521,7 +521,7 @@ class AbsSystem(object):
         outdict = dict(Name=self.name, abs_type=self.abs_type, zabs=self.zabs,
                        vlim=self.vlim.to('km/s').value, zem=self.zem,
                        NHI=self.NHI, sig_NHI=self.sig_NHI, flag_NHI=self.flag_NHI,
-                       RA=self.coord.fk5.ra.value, DEC=self.coord.fk5.dec.value,
+                       RA=self.coord.icrs.ra.value, DEC=self.coord.icrs.dec.value,
                        kin=self.kin, Refs=self.Refs, CreationDate=date,
                        ZH=self.ZH, sig_ZH=self.sig_ZH, flag_ZH=self.flag_ZH,
                        user=user
@@ -531,6 +531,9 @@ class AbsSystem(object):
         outdict['components'] = {}
         for component in self._components:
             outdict['components'][component.name] = ltu.jsonify(component.to_dict())
+        # Spectrum file?
+        if hasattr(self, 'spec_file'):
+            outdict['spec_file'] = self.spec_file
         # Polish
         outdict = ltu.jsonify(outdict)
         # Return
@@ -583,11 +586,14 @@ class AbsSystem(object):
 
 
     def __repr__(self):
-        txt = '<{:s}: name={:s} type={:s}, {:s} {:s}, z={:g}, NHI={:g}'.format(
+        txt = '<{:s}: name={:s} type={:s}, {:s} {:s}, z={:g}'.format(
                 self.__class__.__name__, self.name, self.abs_type,
-                self.coord.fk5.ra.to_string(unit=u.hour,sep=':',pad=True),
-                self.coord.fk5.dec.to_string(sep=':',pad=True,alwayssign=True),
-                self.zabs, self.NHI)
+                self.coord.icrs.ra.to_string(unit=u.hour,sep=':',pad=True),
+                self.coord.icrs.dec.to_string(sep=':',pad=True,alwayssign=True),
+                self.zabs)
+        # NHI
+        if self.NHI is not None:
+            txt = txt + ', NHI={:g}'.format(self.NHI)
         # Finish
         txt = txt + '>'
         return (txt)
