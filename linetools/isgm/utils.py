@@ -325,6 +325,10 @@ def complist_from_table(table):
             else:
                 if table[key].unit is not None:
                     abscomp.attrib[key] *= table[key].unit
+                else:
+                    if key in ['b', 'sig_b']:
+                        warnings.warn("No units for 'b'.  Will assume km/s")
+                        abscomp.attrib[key] *= u.km/u.s
         complist.append(abscomp)
     return complist
 
