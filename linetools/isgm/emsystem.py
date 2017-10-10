@@ -287,15 +287,15 @@ class EmSystem(object):
         #
         return test
 
-#    def chk_emline(self, component):
-#        """Additional checks on the component
+    def chk_emline(self, component):
+        """Additional checks on the component
 
-#        Parameters
-#        ----------
-#        component : EmComponent
+        Parameters
+        ----------
+        component : EmComponent
 
-#        """
-#        return True
+        """
+        return True
 
     def fill_ionN(self, **kwargs):
         """ Fills the ionN Table from the list of components
