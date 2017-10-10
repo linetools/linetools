@@ -344,8 +344,6 @@ class EmSystem(object):
 
 #    def get_component(self, inp):
 #        """ Returns the component related to the given input
-        TODO: Need to handle fine-structure lines at some point..
-
 #        Parameters
 #        ----------
 #        inp : tuple or AbsLine
