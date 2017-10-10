@@ -18,6 +18,13 @@ def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
 
+def test_init():
+    coords = ["00:18:59.32 +23:45:40.32"]
+    radec = SkyCoord(coords, unit=(u.hourangle, u.deg))
+
+    emsys = EmSystem((radec), 0.0154)
+    assert np.isclose(emsys.zem, 0.0154)
+
 
 def test_from_alis():
     # Tests from_dict too
