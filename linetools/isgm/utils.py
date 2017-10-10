@@ -15,7 +15,7 @@ import warnings
 
 from astropy import constants as const
 from astropy import units as u
-from astropy.table import Table, QTable
+from astropy.table import Table
 from astropy.coordinates import SkyCoord, match_coordinates_sky
 
 from linetools.analysis import absline as ltaa
@@ -252,6 +252,7 @@ def xhtbl_from_components(components, ztbl=None, NHI_obj=None):
     tbl = Table()
     #
 
+
 def complist_from_table(table):
     """
     Returns a list of AbsComponents from an input astropy.Table.
@@ -260,8 +261,10 @@ def complist_from_table(table):
     ----------
     table : Table
         Table with component information (each row must correspond
-        to a component). Each column is expecting a unit when
-        appropriate.
+        to a component).
+        Each column is expecting a unit when appropriate.
+           Units for vmin, vmax are assumed km/s if not given
+           Units for Ej are assumed cm^-1 if not given
 
     Returns
     -------
@@ -284,57 +287,49 @@ def complist_from_table(table):
 
     """
     # Convert to QTable to handle units in individual entries more easily
-    table = QTable(table)
+    tkeys = table.keys()
 
     # mandatory and optional columns
-    min_columns = ['RA', 'DEC', 'ion_name', 'z_comp', 'vmin', 'vmax']
+    min_columns = ['RA', 'DEC', 'ion_name', 'z_comp', 'vmin', 'vmax', 'Z', 'ion', 'Ej']
     special_columns = ['name', 'comment', 'logN', 'sig_logN', 'flag_logN']
     for colname in min_columns:
         if colname not in table.keys():
             raise IOError('{} is a mandatory column. Please make sure your input table has it.'.format(colname))
 
-    #loop over rows
+    # Generate components -- Should add to linetools.isgm.utils
     complist = []
-    for row in table:
-        # mandatory
-        coord = SkyCoord(row['RA'].to('deg').value, row['DEC'].to('deg').value, unit='deg')  # RA y DEC must both come with units
-        Zion = name_to_ion(row['ion_name'])
-        zcomp = row['z_comp']
-        vlim =[row['vmin'].to('km/s').value, row['vmax'].to('km/s').value] * u.km / u.s  # units are expected here too
-
-        # special columns
-        try:
-            Ntuple = (row['flag_logN'], row['logN'], row['sig_logN'])  # no units expected
-        except KeyError:
+    coords = SkyCoord(ra=table['RA'], dec=table['DEC'], unit='deg')
+    for kk,row in enumerate(table):
+        # Setup
+        if 'flag_logN' in tkeys:
+            Ntuple = (row['flag_logN'], row['logN'], row['sig_logN'])
+        else:
             Ntuple = None
-        try:
-            comment = row['comment']
-        except KeyError:
-            comment = ''
-        try:
-            name = row['name']
-        except KeyError:
-            name = None
-
-        # define the component
-        comp = AbsComponent(coord, Zion, zcomp, vlim, Ntup=Ntuple, comment=comment, name=name)
-
-        # other columns will be filled in comp.attrib dict
-        for colname in table.keys():
-            if (colname not in special_columns) and (colname not in min_columns):
-                kms_cols = ['b', 'sig_b']
-                if colname in kms_cols:  # check units for parameters expected in velocity units
-                    try:
-                        val_aux = row[colname].to('km/s').value * u.km / u.s
-                    except u.UnitConversionError:
-                        raise IOError('If `{}` column is present, it must have velocity units.'.format(colname))
-                    comp.attrib[colname] = val_aux
-                # parameters we do not care about units much
+        # Units
+        vmnx = [row['vmin'], row['vmax']]
+        vmnx *= u.km/u.s if table['vmin'].unit is None else table['vmin'].unit
+        Ej = row['Ej'] * (1/u.cm if table['Ej'].unit is None else table['Ej'].unit)
+        #
+        abscomp = AbsComponent(coords[kk], (row['Z'], row['ion']),
+                               row['z_comp'], vmnx, Ej=Ej, Ntup=Ntuple)
+        # Extra attrib
+        for key in ['comment', 'name']:
+            if key in tkeys:
+                setattr(abscomp, key, row[key])
+        # Other
+        for key in ['sig_z', 'b','sig_b','specfile']:
+            try:
+                abscomp.attrib[key] = row[key]
+            except KeyError:
+                pass
+            else:
+                if table[key].unit is not None:
+                    abscomp.attrib[key] *= table[key].unit
                 else:
-                    comp.attrib[colname] = row[colname]
-
-        # append
-        complist += [comp]
+                    if key in ['b', 'sig_b']:
+                        warnings.warn("No units for 'b'.  Will assume km/s")
+                        abscomp.attrib[key] *= u.km/u.s
+        complist.append(abscomp)
     return complist
 
 
@@ -342,12 +337,14 @@ def table_from_complist(complist):
     """
     Returns a astropy.Table from an input list of AbsComponents. It only
     fills in mandatory and special attributes (see notes below).
-    Information stored in dictionary AbsComp.attrib is ignored.
+    Other information stored in dictionary AbsComp.attrib is ignored.
+
+    Attributes with units are stored in the Table with units
 
     Parameters
     ----------
     complist : list of AbsComponents
-        The initial list of AbsComponents to create the QTable from.
+        The initial list of AbsComponents to create the Table from.
 
     Returns
     -------
@@ -357,32 +354,66 @@ def table_from_complist(complist):
     Notes
     -----
     Mandatory columns: 'RA', 'DEC', 'ion_name', 'z_comp', 'vmin', 'vmax'
-    Special columns: 'name', 'comment', 'logN', 'sig_logN', 'flag_logN'
+    Special columns: 'name', 'comment', 'logN', 'sig_logN', 'flag_logN', 'b',
+      'sig_b', 'specfile'
+      'reliability' is included if provided
     See also complist_from_table()
     """
+    key_order = ['RA', 'DEC', 'name', 'z_comp', 'sig_z', 'Z', 'ion', 'Ej',
+                 'vmin', 'vmax','ion_name', 'flag_N', 'logN', 'sig_logN',
+                 'b','sig_b', 'specfile']
+
     tab = Table()
 
-    # mandatory columns
-    tab['RA'] = [comp.coord.ra.to('deg').value for comp in complist] * u.deg
-    tab['DEC'] = [comp.coord.dec.to('deg').value for comp in complist] * u.deg
-    ion_names = []  # ion_names
+    coords = SkyCoord([icomp.coord for icomp in complist])
+    # Basics
+    tab['RA'] = coords.ra
+    tab['DEC'] = coords.dec
+    tab['name'] = [comp.name for comp in complist]
+    tab['vmin'] = u.Quantity([icomp.vlim[0] for icomp in complist])
+    tab['vmax'] = u.Quantity([icomp.vlim[1] for icomp in complist])
+    tab['Z'] = [icomp.Zion[0] for icomp in complist]
+    tab['ion'] = [icomp.Zion[1] for icomp in complist]
+
+    # . attributes (required ones)
+    for attrib in ['zcomp', 'Ej', 'flag_N', 'logN', 'sig_logN']:
+        values = [getattr(icomp,attrib) for icomp in complist]
+        if isinstance(values[0], u.Quantity):
+            values = u.Quantity(values)
+        tab[attrib] = values
+    # Rename
+    tab.rename_column('zcomp', 'z_comp')
+
+    # Ion names
+    ion_names = []
     for comp in complist:
         if comp.Zion == (-1,-1):
             ion_names += ["Molecule"]
         else:
             ion_names += [ion_to_name(comp.Zion)]
     tab['ion_name'] = ion_names
-    tab['z_comp'] = [comp.zcomp for comp in complist]
-    tab['vmin'] = [comp.vlim[0].value for comp in complist] * comp.vlim.unit
-    tab['vmax'] = [comp.vlim[1].value for comp in complist] * comp.vlim.unit
+
+    # attrib dict
+    for attrib in ['sig_z', 'b', 'sig_b', 'specfile']:
+        try:
+            values = [icomp.attrib[attrib] for icomp in complist]
+        except KeyError:
+            key_order.pop(key_order.index(attrib))
+            pass
+        else:
+            # Quantity
+            if isinstance(values[0], u.Quantity):
+                values = u.Quantity(values)
+            tab[attrib] = values
 
     # Special columns
-    tab['logN'] = [comp.logN for comp in complist]
-    tab['sig_logN'] = [comp.sig_logN for comp in complist]
-    tab['flag_logN'] = [comp.flag_N for comp in complist]
-    tab['comment'] = [comp.comment for comp in complist]
-    tab['name'] = [comp.name for comp in complist]
-    tab['reliability'] = [comp.reliability for comp in complist]
+    for key in ['comment', 'reliability']:
+        if hasattr(complist[0], key):
+            tab[key] = [getattr(comp, key) for comp in complist]
+            key_order += [key]
+
+    assert len(key_order) == len(tab.keys())
+    tab = tab[key_order]
 
     return tab
 
@@ -407,6 +438,7 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
     -------
     iontbl : Table
     """
+    warnings.warn("It is likely this method will be Deprecated", DeprecationWarning)
     from collections import OrderedDict
     # Checks
     assert chk_components(components,chk_A_none=True)
@@ -450,7 +482,7 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
         mtZiE = np.where(uZiE == uZiE[uidx])[0]
         comps = [components[ii] for ii in mtZiE]  # Need a list
         synth_comp = synthesize_components(comps, zcomp=ztbl)
-        # Add a row to QTable
+        # Add a row to Table
         row = dict(Z=synth_comp.Zion[0],ion=synth_comp.Zion[1],
                    z=ztbl,
                    Ej=synth_comp.Ej,vmin=synth_comp.vlim[0],
@@ -916,10 +948,10 @@ def unique_components(comps1, comps2, tol=5*u.arcsec):
     unique = np.array([True]*len(comps1))
     # Coordinates
     ras = [icomp.coord.ra.value for icomp in comps1]
-    decs = [icomp.coord.ra.value for icomp in comps1]
+    decs = [icomp.coord.dec.value for icomp in comps1]
     coords1 = SkyCoord(ra=ras, dec=decs, unit='deg')
     ras = [icomp.coord.ra.value for icomp in comps2]
-    decs = [icomp.coord.ra.value for icomp in comps2]
+    decs = [icomp.coord.dec.value for icomp in comps2]
     coords2 = SkyCoord(ra=ras, dec=decs, unit='deg')
     # Compare
     idx, d2d, d3d = match_coordinates_sky(coords1, coords2, nthneighbor=1)
