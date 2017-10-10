@@ -13,15 +13,14 @@ from astropy.coordinates import SkyCoord
 
 from linetools.isgm.emsystem import EmSystem
 
+coords = ["00:18:59.32 +23:45:40.32"]
+radec = SkyCoord(coords, unit=(u.hourangle, u.deg))
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
 
 def test_init():
-    coords = ["00:18:59.32 +23:45:40.32"]
-    radec = SkyCoord(coords, unit=(u.hourangle, u.deg))
-
     emsys = EmSystem((radec), 0.0154)
     assert np.isclose(emsys.zem, 0.0154)
 
@@ -42,3 +41,11 @@ def test_add_lines_from_alis():
     alisr_file = data_path('spec1d_J0018p2345_KASTr_coadd.mod.out')
     emsys.add_emlines_from_alis(alisr_file, chk_z=False)
     assert len(emsys._emlines) == 13
+
+def test_emsys_to_dict():
+    emsys = EmSystem((radec), 0.0154)
+    todict = emsys.to_dict()
+
+    assert len(todict) == 14
+    np.isclose(todict['RA'][0]) == 4.747166666666666)
+    np.isclose(todict['DEC'][0] == 23.7612)
