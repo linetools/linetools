@@ -29,7 +29,7 @@ Property        Variable   Type           Description
 =============== ========   ============== ============================================
 RA, DEC         radec      tuple or coord RA,DEC in deg or astropy.coordinate
 Z, ion          Zion       tuple          Atomic Number (Z) and ionization state (ion)
-Redshift        z          float          absorption redshift
+Redshift        zcomp      float          Absorption redshift of the component
 Velocity limits vlim       Quantity array -/+ velocity limits of the component
 Energy level    Ej         Quantity       Energy of the level relative to ground
 Isotope         A          int            Atomic Mass number (optional)
@@ -63,6 +63,11 @@ from the hard-drive::
     abscomp = AbsComponent.from_dict(idict)
 
 ::::
+
+One may also generate a set of components from a larger
+list of AbsLines::
+
+   complist = ltiu.build_components_from_abslines([lya,lyb,SiIIlines[0],SiIIlines[1]])
 
 Inspecting
 ==========
@@ -165,20 +170,20 @@ velocities of the input components.::
 
 See the :doc:`AbsComponent_examples` notebook for a complete example.
 
-Generate Multiple Components
-++++++++++++++++++++++++++++
 
-This method generates multiple components from a list of
-AbsLines.::
+Tables
+++++++
 
-   complist = ltiu.build_components_from_abslines([lya,lyb,SiIIlines[0],SiIIlines[1]])
+You can also create a list of components using an input `astropy.table.Table` object
+(mandatory column names are
+`['RA', 'DEC', 'ion_name', 'z_comp', 'vmin', 'vmax', 'Z', 'ion', 'Ej']`)::
 
-You can also create a list of components using an input `astropy.table.QTable` object
-(mandatory column names include: `['RA', 'DEC', 'ion_name', 'z_comp', 'vmin', 'vmax']`)::
-
-   from astropy.table import QTable
-   tab = QTable()
+   from astropy.table import Table
+   tab = Table()
    tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
+   tab['Z'] = [1,1,4,14,8]
+   tab['ion'] = [1,1,4,2,6]
+   tab['Ej'] = [0.,0.,0.,0.,0.]/u.cm
    tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.3]
    tab['logN'] = [12.0, 13.0., 13.0, 14.0, 13.5]
    tab['sig_logN'] = [0.1, 0.12., 0.15, 0.2, 0.1]
@@ -190,19 +195,33 @@ You can also create a list of components using an input `astropy.table.QTable` o
 
    complist = ltiu.complist_from_table(tab)
 
-These components will not have AbsLines defined by default. However, it is very easy to append
-AbsLines to these components for a given observed wavelength and minimum rest-frame equivalent width::
+These components will not have AbsLines defined by default.
+However, it is very easy to append
+AbsLines to these components for a given observed wavelength
+and minimum rest-frame equivalent width::
 
    # add abslines
    wvlim = [1100, 1500]*u.AA
    for comp in complist:
       comp.add_abslines_from_linelist(llist='ISM', wvlim=wvlim, min_Wr=0.01*u.AA, chk_sep=False)
 
-This will look for transitions in the `LineList('ISM')` object and append those within expected to be within `wvlim`
-to each corresponding AbsComponent in the `complist`. In this example, only those AbsLines expected to have rest-frame
-equivalent widths larger than `0.01*u.AA` will be appended, but if you wish to include all of the available AbsLines
-you can set `min_Wr=None`. Here, we have set `chk_sep=False` to avoid checking for coordinates because by construction the
+This will look for transitions in the `LineList('ISM')` object and append those
+expected to be within `wvlim`
+to each corresponding AbsComponent in the `complist`. In this example, only
+those AbsLines expected to have rest-frame
+equivalent widths larger than `0.01*u.AA` will be appended, but if you wish to
+include all of the available AbsLines
+you can set `min_Wr=None`. Here, we have set `chk_sep=False` to avoid checking
+for coordinates because by construction the
 individual AbsLines have the same coordinates as the corresponding AbsComponent.
+
+One can, of course, go the other way and generate a Table
+from a list of components::
+
+    tab2 = ltiu.table_from_complist(complist)
+
+If you wish to write to disk, we recommend that you use
+the *astropy* format: ascii.ecsv
 
 
 Use Components to create a spectrum model

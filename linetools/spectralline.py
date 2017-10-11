@@ -44,6 +44,7 @@ abs_attrib = {'N': 0./u.cm**2, 'sig_N': 0./u.cm**2, 'flag_N': 0, # Column    ## 
 emiss_attrib = {'flux': 0.*u.erg/u.s, 'sig_flux': 0.*u.erg/u.s, 'flag_flux': 0,
                 }
 
+CACHE_LLIST = None
 
 class SpectralLine(object):
     """ Class for a spectral line. Emission or absorption.
@@ -177,8 +178,20 @@ class SpectralLine(object):
 
     # Initialize with wavelength
     def __init__(self, ltype, trans, linelist=None, closest=False, z=None,
-                 verbose=True, **kwargs):
-
+                 verbose=True, use_CACHE=False, **kwargs):
+        """
+        Parameters
+        ----------
+        ltype : str
+        trans : str
+        linelist : LineList, optional
+        closest : bool, optional
+        z : float, optional
+        verbose : bool, optional
+        use_CACHE : bool, optional
+          Use a cache on the LineList?
+        kwargs
+        """
         # Required
         self.ltype = ltype
         if ltype not in ['Abs', 'Em']:
@@ -194,7 +207,8 @@ class SpectralLine(object):
         self.attrib = init_attrib.copy()
 
         # Fill data
-        self.fill_data(trans, linelist=linelist, closest=closest, verbose=verbose)
+        self.fill_data(trans, linelist=linelist, closest=closest, verbose=verbose,
+                       use_CACHE=use_CACHE)
         # Redshift Limits
         if z is None:
             warnings.warn("Redshift not input.  Setting to 0 for zLimits")
@@ -214,7 +228,8 @@ class SpectralLine(object):
         """
         return self.limits.z
 
-    def fill_data(self, trans, linelist=None, closest=False, verbose=True):
+    def fill_data(self, trans, linelist=None, closest=False, verbose=True,
+                  use_CACHE=False):
         """ Fill atomic data and setup analy.
 
         Parameters
@@ -228,15 +243,18 @@ class SpectralLine(object):
         closest : bool, optional
           Take the closest line to input wavelength? [False]
         """
-
+        global CACHE_LLIST   # Only cached if LineList is *not* input
         # Deal with LineList
         if linelist is None:
-            if self.ltype == 'Abs':
-                llist = LineList('ISM')
-            elif self.ltype == 'Em':
-                llist = LineList('Galaxy')
+            if use_CACHE and (CACHE_LLIST is not None):
+                llist = CACHE_LLIST
             else:
-                raise ValueError("Not ready for ltype = {:s}".format(self.ltype))
+                if self.ltype == 'Abs':
+                    llist = LineList('ISM')
+                elif self.ltype == 'Em':
+                    llist = LineList('Galaxy')
+                else:
+                    raise ValueError("Not ready for ltype = {:s}".format(self.ltype))
         elif isinstance(linelist,basestring):
             llist = LineList(linelist)
         elif isinstance(linelist,LineList):
@@ -244,13 +262,17 @@ class SpectralLine(object):
         else:
             raise ValueError('Bad input for linelist')
 
+        # Cache
+        CACHE_LLIST = llist
+
         # Closest?
         llist.closest = closest
 
         # Data
         newline = llist[trans]
         if newline is None:
-            raise ValueError("Transition {} not found in LineList {:s}".format(trans, llist.list))
+            print("Transition {} not found in LineList {:s}".format(trans, llist.list))
+            raise ValueError("You may need to set clear_CACHE_LLIST=True")
         try:
             self.data.update(newline)  # Expected to be a LineList dict object
         except TypeError:
