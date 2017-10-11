@@ -110,7 +110,7 @@ class ExamineSpecWidget(QWidget):
 
         12-Dec-2014 by JXP
     """
-    def __init__(self, ispec, parent=None, status=None, llist=None,
+    def __init__(self, ispec, guessfile=None, voigtsfit=None, parent=None, status=None, llist=None,
                  abs_sys=None, norm=True, second_file=None, zsys=None,
                  key_events=True, vlines=None, plotzero=False, exten=None,
                  xlim=None, ylim=None, rsp_kwargs=None, air=False,
@@ -119,6 +119,11 @@ class ExamineSpecWidget(QWidget):
         Parameters
         ----------
         ispec : XSpectrum1D, tuple of arrays or filename
+        guessfile : str, optional
+          name of the .json file generated with igmguesses
+          if not None - overplot fitted line profiles from igmguesses
+        voigtsfit : list of floats, optional
+          model where lines are fitted with gaussians, generated from igmguesses
         exten : int, optional
           extension for the spectrum in multi-extension FITS file
         parent : Widget parent, optional
@@ -153,6 +158,8 @@ class ExamineSpecWidget(QWidget):
         self.spec = self.orig_spec
         self.select = spec.select
         self.parent = parent
+
+        self.voigtsfit = voigtsfit
 
         # determine the filename (if any)
         if isinstance(ispec, (str, basestring)):
@@ -224,7 +231,7 @@ class ExamineSpecWidget(QWidget):
         self.setLayout(vbox)
 
         # Draw on init
-        self.on_draw()
+        self.on_draw(guessfile=guessfile)  # ,voigtsfit=voigtsfit)
 
     # Setup the spectrum plotting info
     def init_spec(self, xlim=None, ylim=None):
@@ -556,7 +563,7 @@ class ExamineSpecWidget(QWidget):
                 return
 
     # ######
-    def on_draw(self, replot=True, no_draw=False):
+    def on_draw(self, replot=True, no_draw=False, guessfile=None): #,voigtsfit=None):
         """ Redraws the spectrum
         no_draw: bool, optional
           Draw the screen on the canvas?
@@ -639,13 +646,17 @@ class ExamineSpecWidget(QWidget):
                         if lines[jj].analy['do_analysis'] == 0:
                             continue
                         # Paint spectrum red
-                        wvlim = wvobs[jj]*(1 + lines[jj].limits.vlim/const.c.to('km/s'))
+                        #wvlim = wvobs[jj]*(1 + lines[jj].limits.vlim/const.c.to('km/s'))
+                        wvlim = lines[jj].limits.wvlim
                         pix = np.where( (self.spec.wavelength > wvlim[0]) & (self.spec.wavelength < wvlim[1]))[0]
                         self.ax.plot(self.spec.wavelength[pix].value, self.spec.flux[pix].value,
                                      '-',drawstyle='steps-mid', color=clrs[ii])
                         # Label
                         lbl = lines[jj].analy['name']+' z={:g}'.format(abs_sys.zabs)
                         self.ax.text(wvobs[jj].value, ylbl, lbl, color=clrs[ii], rotation=90., size='x-small')
+                if self.voigtsfit is not None:
+                    self.ax.plot(self.orig_spec.wavelength.value, self.voigtsfit, color='blue')
+
             # Analysis? EW, Column
             if self.adict['flg'] == 1:
                 self.ax.plot(self.adict['wv_1'], self.adict['C_1'], 'go')
