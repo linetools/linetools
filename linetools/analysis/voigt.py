@@ -294,7 +294,7 @@ class single_voigt_model(FittableModel):
 
     Need to consider resampling wavelength array
 
-    input: wave array  :: Assumed in Angstroms
+    input: wave array  :: Assumed in Angstroms; needs to be unitless
     output: absorbed, normalized flux
     Parameters: logN,b,z,wrest,f,gamma,fwhm
     '''
@@ -304,7 +304,7 @@ class single_voigt_model(FittableModel):
     # Free parameters (generally)
     logN = Parameter()
     b = Parameter()  # Assumes km/s
-    z  =Parameter()
+    z = Parameter()
 
     # Fixed parameters
     wrest = Parameter(fixed=True)
