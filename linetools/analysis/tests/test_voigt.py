@@ -3,11 +3,46 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import numpy as np
 import pytest
 import pdb
+
 from astropy import units as u
+from astropy import constants as const
 
 from linetools.spectralline import AbsLine
 from linetools.analysis import voigt as lav
 
+c_kms = const.c.to('km/s').value
+
+
+def test_voigt_model():
+    from astropy.modeling import fitting
+    # Wavelength array
+    wave = np.linspace(3644, 3650, 100)*u.AA
+    # HI line
+    abslin = AbsLine(1215.670*u.AA, z=2.)
+    abslin.attrib['N'] = 10**14./u.cm**2
+    abslin.attrib['b'] = 25.*u.km/u.s
+    # Voigt
+    vmodel = abslin.generate_voigt(wave=wave)
+    vmodel.sig = 0.1
+    # Voigt fit
+    abslin.analy['spec'] = vmodel
+    abslin.limits.set([-100.,100]*u.km/u.s)
+    abslin.measure_aodm(normalize=False)  # Sets analysis pixels
+    fitvoigt = lav.single_voigt_model(logN=np.log10(abslin.attrib['N'].value),
+        b=abslin.attrib['b'].value, z=2., wrest=abslin.wrest.value,
+        gamma=abslin.data['gamma'].value,
+        f=abslin.data['f'], fwhm=3.)
+    # Restrict parameter space
+    fitvoigt.logN.min = 12.
+    fitvoigt.b.min = 10.
+    fitvoigt.z.min = 2. + -100. * (1 + 2.) / c_kms
+    fitvoigt.z.max = 2. + 100 * (1 + 2.) / c_kms
+
+    # Fit
+    fitter = fitting.LevMarLSQFitter()
+    parm = fitter(fitvoigt,vmodel.wavelength[abslin.analy['pix']].value,
+                  vmodel.flux[abslin.analy['pix']].value)
+    assert np.abs(parm.logN.value-np.log10(abslin.attrib['N'].value)) < 0.1
 
 def test_voigt_sngl_line():
     # Wavelength array
