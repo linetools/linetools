@@ -236,7 +236,7 @@ with the same keywords as the columns of ``ism._data`` QTable::
     'nj': 0,
     'nk': 0,
     'wrest': <Quantity 977.0201 Angstrom>}
-Alternatively, we could call this method via a tuple (8,6),
+Alternatively, we could call this method via tuple, e.g., (8,6),
 where the first entry is the atomic number (of O) and the second is
 the ionization state (VI) ::
 
