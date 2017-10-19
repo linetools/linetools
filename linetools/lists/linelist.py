@@ -594,12 +594,11 @@ class LineList(object):
 
         if isinstance(line, (str, basestring)):  # Name
             line = line.split(' ')[0]  # keep only the first part of input name
-        elif isinstance(line, Quantity):  # Rest wavelength (with units)
+        elif isinstance(line, (Quantity, tuple)):  # Rest wavelength (with units)
             data = self.__getitem__(line)
+            if isinstance(line, tuple):
+                data=data[0]
             return self.all_transitions(data['name'])
-        elif isinstance(line, tuple): # Zion input
-            data = self.__getitem__(line)
-            return self.all_transitions(data['name'][0].split(' ')[0])
         else:
             raise ValueError('Not prepared for this type.')
 

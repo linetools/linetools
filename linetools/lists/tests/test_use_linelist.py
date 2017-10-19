@@ -72,6 +72,10 @@ def test_all_transitions():
     # wrest
     out = ism.all_transitions(1215.6700*u.AA)
     assert len(out) == 30,"wrong line counts" # 30 Lyman series transitions
+    # tuple
+    line = (12,2)
+    out = ism.all_transitions(line)
+    assert len(out) == 6,"wrong line counts" # 6 MgII transitions
     #print('test_all_transitions() passed')
     h2 = LineList('H2')
     line = 'B19-0P(1)'

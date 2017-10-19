@@ -191,7 +191,7 @@ to a given ion species. This can be achieved by the
     ism = LineList('ISM')
     mgii = ism.all_transitions('MgII')
 
-Which give us the information of all the 6 transitions of `MgII`::
+Which gives us the information of all the 6 transitions of `MgII`::
 
     print(mgii)
          A       el  nj  nk group    name       Ek    ...  Jk  Z   gk  gj    gamma    col0 col6
@@ -204,8 +204,8 @@ Which give us the information of all the 6 transitions of `MgII`::
     262500000.0   0   0   0     1 MgII 2796 35760.848 ... 0.0  12   4   2 262500000.0   --   --
     259500000.0   0   0   0     1 MgII 2803 35669.298 ... 0.0  12   2   2 259500000.0   --   --
 
-In this case ``mgii`` is a Table because more than 1
-transition was found. In cases were only 1 transition
+In this case ``mgii`` is a Table because
+more than 1 transition was found. In cases were only 1 transition
 exists, the output of `all_transitions()` is a dictionary
 with the same keywords as the columns of ``ism._data`` QTable::
 
@@ -236,7 +236,17 @@ with the same keywords as the columns of ``ism._data`` QTable::
     'nj': 0,
     'nk': 0,
     'wrest': <Quantity 977.0201 Angstrom>}
+Alternatively, we could call this method via a tuple (8,6),
+where the first entry is the atomic number (of O) and the second is
+the ionization state (VI) ::
 
+    ovi = ism.all_transitions((8,6))
+    print(ovi['name', 'wrest', 'f'])
+      name     wrest     f
+              Angstrom
+    -------- --------- ------
+    OVI 1031 1031.9261 0.1325
+    OVI 1037 1037.6167 0.0658
 You can also use a rest-frame wavelength to identify the ion species
 of interest::
 
@@ -295,7 +305,7 @@ strength `f`)::
 
 The syntax is the same as for `all_transitions()`. Note that you will
 get the same result if you use ``line='SiII'``, ``line='SiII 1190'``,
-``line='SiII 889'``, or ``line=889.7228*u.AA``. By default `n_max=3`.
+``line='SiII 889'``, ``line=889.7228*u.AA``, or ``line=(8,6)``. By default `n_max=3`.
 Depending on the wavelength range, however, the output may vary::
 
     wvlims = [500, 1100] * u.AA
