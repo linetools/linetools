@@ -18,6 +18,7 @@ from astropy import constants as const
 from astropy import units as u
 
 from linetools import utils as ltu
+from linetools.analysis.absline import linear_clm
 from linetools.isgm.abssystem import GenericAbsSystem
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.spectralline import AbsLine
@@ -52,7 +53,7 @@ def abssys_from_json(filename):
     return abs_sys
 
 
-def read_joebvp(filename, coord, llist=None):
+def read_joebvp(filename, coord, llist=None, specfile=None, chk_vel=False):
     """
     Parameters
     ----------
@@ -60,6 +61,9 @@ def read_joebvp(filename, coord, llist=None):
       joeB VP filename
     coord : SkyCoord
     llist : LineList, optional
+    specfile : str, optional
+    chk_vel : bool, optional
+      Demand that the velocities of a given ion all be the same
 
     Returns
     -------
@@ -72,13 +76,20 @@ def read_joebvp(filename, coord, llist=None):
     comps = []
     # Read
     vp_data = Table.read(filename, format='ascii')
-    nflags, nidx = np.unique(vp_data['nflag'], return_index=True)
+
+    # Subset by zsys + trans
+    lbls = []
+    for izsys, itrans in zip(vp_data['zsys'], vp_data['trans']):
+        lbls.append('{:.6f}_{:s}'.format(izsys, itrans))
+    lbls = np.array(lbls)
+    ulbls = np.unique(lbls)
 
     # Subset by nflag; Build components
-    for nflag in nflags:
-        mt_lines = np.where(vp_data['nflag'] == nflag)[0]
-        if len(np.unique(vp_data['vel'][mt_lines])) != 1:
-            pdb.set_trace()
+    for lbl in ulbls:
+        mt_lines = np.where(lbls == lbl)[0]
+        if chk_vel:
+            if len(np.unique(vp_data['vel'][mt_lines])) != 1:
+                pdb.set_trace()
         z_fit = vp_data['zsys'][mt_lines[0]] + vp_data['vel'][mt_lines[0]] * (1 + vp_data['zsys'][mt_lines[0]]) / ckms
         # Loop on abs lines
         alines = []
@@ -86,7 +97,8 @@ def read_joebvp(filename, coord, llist=None):
             zlim = [vp_data['zsys'][idx] +
                     vp_data[vkey][idx] * (1 + vp_data['zsys'][idx]) / ckms
                     for vkey in ['vlim1', 'vlim2']]
-            absline = AbsLine(vp_data['restwave'][idx] * u.AA, z=z_fit, zlim=zlim, linelist=llist)
+            absline = AbsLine(vp_data['restwave'][idx] * u.AA, z=z_fit,
+                              zlim=zlim, linelist=llist)
             # Add measurements [JB -- Want to capture anything else??]
             absline.attrib['coord'] = coord
             absline.attrib['flag_N'] = 1
@@ -96,7 +108,12 @@ def read_joebvp(filename, coord, llist=None):
             absline.attrib['sig_b'] = vp_data['sigbval'][idx]
             absline.attrib['z'] = z_fit
             absline.attrib['sig_z'] = (1 + vp_data['z_comp'][idx]) * vp_data['sigvel'][idx] / ckms
-            absline.attrib['specfile'] = vp_data['specfile'][idx]
+            if specfile is None:
+                absline.attrib['specfile'] = vp_data['specfile'][idx]
+            else:
+                absline.attrib['specfile'] = specfile
+            # Fill N, sig_N
+            _, _, = linear_clm(absline.attrib)
             alines.append(absline)
         # Component
         stars = '*' * alines[0].ion_name.count('*')

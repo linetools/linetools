@@ -28,6 +28,7 @@ def test_read_joebvp():
     # Test
     assert isinstance(comps, list)
     assert len(comps) == 2
-    assert len(comps[0]._abslines) == 2
+    assert len(comps[1]._abslines) == 2
+    assert comps[1]._abslines[0].attrib['N'].value > 0.
 
 
