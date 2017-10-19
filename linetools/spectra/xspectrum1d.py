@@ -665,8 +665,11 @@ class XSpectrum1D(object):
             from linetools.guis.xspecgui import XSpecGui
             app = QApplication(sys.argv)
             # Scale to pixels on screen
-            width = app.desktop().screenGeometry().width()
-            scale = 2. * (width/3200.)
+            if 'scale' not in kwargs:
+                width = app.desktop().screenGeometry().width()
+                scale = 2. * (width/3200.)
+            else:
+                scale = kwargs['scale']
             gui = XSpecGui(self, screen_scale=scale)
             gui.show()
             app.exec_()

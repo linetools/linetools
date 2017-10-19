@@ -251,6 +251,9 @@ class ExamineSpecWidget(QWidget):
         self.psdict['nav'] = ltgu.navigate(0, 0, init=True)
         # Analysis dict
         self.adict['flg'] = 0  # Column density flag
+        # Redshift
+        if hasattr(self.spec, 'z'):
+            self.parent.pltline_widg.setz(str(self.spec.z[self.select]))
 
     def on_key_wrapper(self, event):
         try:
