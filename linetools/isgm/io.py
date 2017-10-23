@@ -53,14 +53,17 @@ def abssys_from_json(filename):
     return abs_sys
 
 
-def read_joebvp(filename, coord, llist=None, specfile=None, chk_vel=False):
-    """
+def read_joebvp_to_components(filename, coord, llist=None, specfile=None, chk_vel=False):
+    """ Generate a list of AbsComponent objects from a JoeB VP output file
+
     Parameters
     ----------
     filename : str
       joeB VP filename
     coord : SkyCoord
+      QSO sightline
     llist : LineList, optional
+      Used to construct AbsLine objects
     specfile : str, optional
     chk_vel : bool, optional
       Demand that the velocities of a given ion all be the same
@@ -90,7 +93,7 @@ def read_joebvp(filename, coord, llist=None, specfile=None, chk_vel=False):
         if chk_vel:
             if len(np.unique(vp_data['vel'][mt_lines])) != 1:
                 pdb.set_trace()
-        z_fit = vp_data['zsys'][mt_lines[0]] + vp_data['vel'][mt_lines[0]] * (1 + vp_data['zsys'][mt_lines[0]]) / ckms
+        z_fit = ltu.z_from_dv(vp_data['vel'][mt_lines[0]]*u.km/u.s, vp_data['zsys'][mt_lines[0]])
         # Loop on abs lines
         alines = []
         for idx in mt_lines:
@@ -123,7 +126,7 @@ def read_joebvp(filename, coord, llist=None, specfile=None, chk_vel=False):
         # Remove undesired keys
         for key in ['EW', 'sig_EW', 'flag_EW', 'N', 'sig_N']:
             abscomp.attrib.pop(key)
-        # And more
+        # And more required
         for key in ['flag_N', 'logN', 'sig_logN']:
             setattr(abscomp, key, abscomp.attrib[key])
         # Errors must be in first line!
@@ -131,3 +134,37 @@ def read_joebvp(filename, coord, llist=None, specfile=None, chk_vel=False):
         comps.append(abscomp)
     # Finish
     return comps
+
+
+def write_joebvp_from_components(comp_list, specfile, outfile):
+    """ From a given component list, it produces an
+    input file for JOEBVP (Voigt profile fitter).
+
+    Parameters
+    ----------
+    comp_list : list of AbsComponent
+        Input list of components to group
+    specfile : str
+        Name of the spectrum file associated to the components
+        in comp_list
+    outfile : str
+        Name of the output file
+
+    """
+    # Open new file to write out
+    f = open(outfile, 'w')
+
+    # Print header
+    s = 'specfile|restwave|zsys|col|bval|vel|nflag|bflag|vflag|vlim1|vlim2|wobs1|wobs2|z_comp|trans|rely|comment\n'
+    f.write(s)
+
+    # Components
+    for ii, comp in enumerate(comp_list):
+        flags = (ii+2,ii+2,ii+2)
+        try:
+            b_val = comp.attrib['b']
+        except KeyError:
+            b_val = 10*u.km/u.s
+        s = comp.repr_joebvp(specfile, flags=flags, b_default=b_val)  # still, b values from abslines take precedence if they exist
+        f.write(s)
+    f.close()

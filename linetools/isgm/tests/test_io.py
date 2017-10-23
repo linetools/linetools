@@ -9,11 +9,7 @@ import os
 
 from astropy.coordinates import SkyCoord
 
-from linetools.isgm.io import read_joebvp
-
-#import pdb
-#pdb.set_trace()
-# Set of Input lines
+from linetools.isgm.io import read_joebvp_to_components
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
@@ -24,7 +20,7 @@ def test_read_joebvp():
     vp_file = data_path('group_9.VP')
     # Load
     icoord = SkyCoord(ra=12., dec=-12, unit='deg')
-    comps = read_joebvp(vp_file, icoord)
+    comps = read_joebvp_to_components(vp_file, icoord)
     # Test
     assert isinstance(comps, list)
     assert len(comps) == 2
