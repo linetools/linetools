@@ -110,8 +110,7 @@ def read_joebvp_to_components(filename, coord, llist=None, specfile=None, chk_ve
             absline.attrib['b'] = vp_data['bval'][idx]
             absline.attrib['sig_b'] = vp_data['sigbval'][idx]
             absline.attrib['z'] = z_fit
-            # absline.attrib['sig_z'] = (1 + vp_data['z_comp'][idx]) * vp_data['sigvel'][idx] / ckms
-            absline.attrib['sig_z'] = ltu.dz_from_dv(vp_data['sigvel'][idx], vp_data['z_comp'][idx])
+            absline.attrib['sig_z'] = ltu.dz_from_dv(vp_data['sigvel'][idx]*u.km/u.s, vp_data['z_comp'][idx])
             if specfile is None:
                 absline.attrib['specfile'] = vp_data['specfile'][idx]
             else:
