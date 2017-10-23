@@ -65,7 +65,7 @@ class AbsComponent(object):
         A comment, default is ``
     """
     @classmethod
-    def from_abslines(cls, abslines, stars=None, reliability='none', **kwargs):
+    def from_abslines(cls, abslines, stars=None, comment="", reliability='none', **kwargs):
         """Instantiate from a list of AbsLine objects
 
         Parameters
@@ -74,6 +74,9 @@ class AbsComponent(object):
             List of AbsLine objects
         stars : str, optional
             Asterisks to append to the ion name (e.g. fine-structure, CII*)
+        comment : str
+            A comment associated to the resulting AbsComponent
+            Default is `""`
         reliability : str, optional
             Reliability of AbsComponent
                 'a' - reliable
@@ -91,7 +94,7 @@ class AbsComponent(object):
         init_line = abslines[0]
         slf = cls( init_line.attrib['coord'], (init_line.data['Z'],init_line.data['ion']),
                    init_line.z, init_line.limits.vlim,
-                   Ej=init_line.data['Ej'], stars=stars, reliability=reliability)
+                   Ej=init_line.data['Ej'], stars=stars, reliability=reliability, comment=comment)
         slf._abslines.append(init_line)
         # Append with component checking
         if len(abslines) > 1:

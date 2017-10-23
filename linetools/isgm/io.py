@@ -110,7 +110,8 @@ def read_joebvp_to_components(filename, coord, llist=None, specfile=None, chk_ve
             absline.attrib['b'] = vp_data['bval'][idx]
             absline.attrib['sig_b'] = vp_data['sigbval'][idx]
             absline.attrib['z'] = z_fit
-            absline.attrib['sig_z'] = (1 + vp_data['z_comp'][idx]) * vp_data['sigvel'][idx] / ckms
+            # absline.attrib['sig_z'] = (1 + vp_data['z_comp'][idx]) * vp_data['sigvel'][idx] / ckms
+            absline.attrib['sig_z'] = ltu.dz_from_dv(vp_data['sigvel'][idx], vp_data['z_comp'][idx])
             if specfile is None:
                 absline.attrib['specfile'] = vp_data['specfile'][idx]
             else:
@@ -118,9 +119,19 @@ def read_joebvp_to_components(filename, coord, llist=None, specfile=None, chk_ve
             # Fill N, sig_N
             _, _, = linear_clm(absline.attrib)
             alines.append(absline)
-        # Component
+
+        # AbsComponent
         stars = '*' * alines[0].ion_name.count('*')
-        abscomp = AbsComponent.from_abslines(alines, stars=stars)
+        if 'comment' in vp_data.keys():
+            comment = vp_data['comment'][mt_lines[0]]
+        else:
+            comment = ''
+        if 'rely' in vp_data.keys():
+            reliability = vp_data['rely'][mt_lines[0]]
+        else:
+            reliability = 'none'
+        abscomp = AbsComponent.from_abslines(alines, stars=stars, comment=comment, reliability=reliability)
+
         # Add measurements [JB -- Want to capture anything else??]
         abscomp.attrib = alines[0].attrib.copy()
         # Remove undesired keys
