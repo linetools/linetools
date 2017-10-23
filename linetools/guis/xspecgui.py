@@ -75,6 +75,18 @@ class XSpecGui(QMainWindow):
                                                 zsys=zsys, norm=norm, exten=exten,
                                                 screen_scale=self.scale,
                                                  rsp_kwargs=rsp_kwargs, **kwargs)
+        # Reset redshift from spec
+        if zsys is None:
+            if hasattr(self.spec_widg.spec, 'z'):
+                self.pltline_widg.setz(str(self.spec_widg.spec.z[self.spec_widg.select]))
+        # Auto set line list if spec has proper object type
+        if hasattr(self.spec_widg.spec, 'stypes'):
+            if self.spec_widg.spec.stypes[self.spec_widg.select].lower() == 'galaxy':
+                self.pltline_widg.llist = ltgu.set_llist('Galaxy',in_dict=self.pltline_widg.llist)
+                self.pltline_widg.llist['Plot'] = True
+                idx = self.pltline_widg.lists.index(self.pltline_widg.llist['List'])
+                self.pltline_widg.llist_widget.setCurrentRow(idx)
+        #
         self.pltline_widg.spec_widg = self.spec_widg
         # Multi spec
         self.mspec_widg = ltgsp.MultiSpecWidget(self.spec_widg)
@@ -86,7 +98,8 @@ class XSpecGui(QMainWindow):
 
         # Extras
         extras = QWidget()
-        extras.setMaximumWidth(130*self.scale)
+        extras.setMinimumWidth(180*self.scale)
+        extras.setMaximumWidth(280*self.scale)
         vbox = QVBoxLayout()
         qbtn = QPushButton(self)
         qbtn.setText('Quit')

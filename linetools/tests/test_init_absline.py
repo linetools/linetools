@@ -23,7 +23,7 @@ def test_mk_absline():
     np.testing.assert_allclose(abslin.data['f'], 0.4164)
 
     # Init CII 1334 with LineList
-    abslin2 = AbsLine(1334.5323*u.AA, linelist='Strong')
+    abslin2 = AbsLine(1334.5323*u.AA, linelist='Strong', use_CACHE=True)
     np.testing.assert_allclose(abslin2.data['Ek'], 74932.62 / u.cm)
 
     # Init CII 1334 by name
