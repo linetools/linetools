@@ -571,12 +571,14 @@ class LineList(object):
 
         Parameters
         ----------
-        line : str or Quantity
+        line : str or Quantity or tuple
             Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII',
             1215.6700*u.AA). When string contains spaces it only
             considers the first part of it, so 'HI' and 'HI 1215' and
             'HI 1025' are all equivalent. To retrieve an unknown line
             use string 'unknown'.
+
+            If tuple -- Zion, e.g. (6,2)
 
         Returns
         -------
@@ -592,8 +594,10 @@ class LineList(object):
 
         if isinstance(line, (str, basestring)):  # Name
             line = line.split(' ')[0]  # keep only the first part of input name
-        elif isinstance(line, Quantity):  # Rest wavelength (with units)
+        elif isinstance(line, (Quantity, tuple)):  # Rest wavelength (with units)
             data = self.__getitem__(line)
+            if isinstance(line, tuple):
+                data=data[0]
             return self.all_transitions(data['name'])
         else:
             raise ValueError('Not prepared for this type.')
@@ -648,12 +652,15 @@ class LineList(object):
 
         Parameters
         ----------
-        line : str or Quantity
+        line : str or Quantity or tuple
             Name of line. (e.g. 'HI 1215', 'HI', 'CIII', 'SiII',
-            1215.6700 * u.AA)[Note: when string contains spaces it only
+            1215.6700*u.AA). When string contains spaces it only
             considers the first part of it, so 'HI' and 'HI 1215' and
-            'HI 1025' are all equivalent][Note: to retrieve an
-            unknown line use string 'unknown']
+            'HI 1025' are all equivalent. To retrieve an unknown line
+            use string 'unknown'.
+
+            If tuple -- Zion, e.g. (6,2)
+
         wvlims : tuple of Quantity, or Quantity tuple
             Wavelength range, e.g. wvlims = (1100 * u.AA, 3200 * u.AA) or
             wvlims = (1100, 3200) * u.AA
