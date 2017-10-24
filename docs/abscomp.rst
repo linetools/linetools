@@ -149,10 +149,23 @@ Misc
 I/O
 +++
 
-One may generate a *dict* of the key properties of the AbsSystem
+One may generate a *dict* of the key properties of the AbsComponent
 with the to_dict() method::
 
    cdict = component.to_dict()
+
+One may also wish to Voigt profile fit components with one
+of a number of software packages (e.g. ALIS, JoeBVP).  To
+generate an input file for JoeBVP use::
+
+    from linetools.isgm.io import write_joebvp_from_components
+    write_joebvp_from_components(component_list, specfile, 'output_file.ascii')
+
+Similarly, one can generate a list of components from an outputted
+JoeBVP file::
+
+    from linetools.isgm.io import read_joebvp_to_components
+    comp_list = read_joebvp_to_components('joebvp_file.out')
 
 
 Synthesize Components

@@ -3,7 +3,10 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import os
+import numpy as np
 import pdb
+
+from pkg_resources import resource_filename
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord
@@ -11,11 +14,23 @@ from astropy.coordinates import SkyCoord
 from linetools.isgm.abssightline import GenericAbsSightline
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.spectralline import AbsLine
+from linetools.analysis import absline as ltaa
+from linetools.spectra import io as lsio
 
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
+
+def compare_two_files(file1, file2):
+    f1 = open(file1, 'r')
+    f2 = open(file2, 'r')
+    lines1 = f1.readlines()
+    lines2 = f2.readlines()
+    for l1,l2 in zip(lines1,lines2):
+        assert l1 == l2
+    f1.close()
+    f2.close()
 
 
 def lyman_comp(radec, z=2.92939):
@@ -87,4 +102,55 @@ def write_comps_to_sys():
     # Write
     gensl.write_json()
 
+
+def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
+            add_trans=False, zcomp=2.92939, b=20*u.km/u.s):
+    # Read a spectrum Spec
+    if add_spec:
+        spec_file = resource_filename('linetools','/spectra/tests/files/UM184_nF.fits')
+        xspec = lsio.readspec(spec_file)
+    else:
+        xspec = None
+    # AbsLines
+    if ctype == 'HI':
+        all_trans = ['HI 1215', 'HI 1025']
+    elif ctype == 'SiII':
+        all_trans = ['SiII 1260', 'SiII 1304', 'SiII 1526', 'SiII 1808']
+        if add_trans:
+            all_trans += ['SiII 1193']
+    elif ctype == 'SiII*':
+        all_trans = ['SiII* 1264', 'SiII* 1533']
+    abslines = []
+    for trans in all_trans:
+        iline = AbsLine(trans, z=zcomp)
+        if use_rand:
+            rnd = np.random.rand()
+        else:
+            rnd = 0.
+        iline.attrib['logN'] = 13.3 + rnd
+        iline.attrib['sig_logN'] = 0.15
+        iline.attrib['flag_N'] = 1
+        iline.attrib['b'] = b
+        iline.analy['spec'] = xspec
+        iline.limits.set(vlim)
+        _,_ = ltaa.linear_clm(iline.attrib)  # Loads N, sig_N
+        abslines.append(iline)
+    # Component
+    abscomp = AbsComponent.from_abslines(abslines)
+    return abscomp, abslines
+
+
+def mk_comptable():
+    from astropy.table import Table
+    tab = Table()
+    tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
+    tab['Z'] = [1,1,4,14,8]
+    tab['ion'] = [1,1,4,2,6]
+    tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
+    tab['RA'] = [100.0] * len(tab) * u.deg
+    tab['DEC'] = [-0.8] * len(tab) * u.deg
+    tab['vmin'] = [-50.] * len(tab) * u.km/u.s
+    tab['vmax'] = [100.] * len(tab) * u.km/u.s
+    tab['Ej'] = [0.] *len(tab) / u.cm
+    return tab
 

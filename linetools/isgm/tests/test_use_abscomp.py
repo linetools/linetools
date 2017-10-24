@@ -16,9 +16,9 @@ import pdb
 
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.spectralline import AbsLine
-from linetools.spectra import io as lsio
-from linetools.analysis import absline as ltaa
 from linetools.isgm import utils as ltiu
+
+from .utils import mk_comp, mk_comptable
 
 import imp, os
 lt_path = imp.find_module('linetools')[1]
@@ -28,70 +28,10 @@ lt_path = imp.find_module('linetools')[1]
 # Set of Input lines
 
 
-def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
-            add_trans=False, zcomp=2.92939, b=20*u.km/u.s):
-    # Read a spectrum Spec
-    if add_spec:
-        xspec = lsio.readspec(lt_path+'/spectra/tests/files/UM184_nF.fits')
-    else:
-        xspec = None
-    # AbsLines
-    if ctype == 'HI':
-        all_trans = ['HI 1215', 'HI 1025']
-    elif ctype == 'SiII':
-        all_trans = ['SiII 1260', 'SiII 1304', 'SiII 1526', 'SiII 1808']
-        if add_trans:
-            all_trans += ['SiII 1193']
-    elif ctype == 'SiII*':
-        all_trans = ['SiII* 1264', 'SiII* 1533']
-    abslines = []
-    for trans in all_trans:
-        iline = AbsLine(trans, z=zcomp)
-        if use_rand:
-            rnd = np.random.rand()
-        else:
-            rnd = 0.
-        iline.attrib['logN'] = 13.3 + rnd
-        iline.attrib['sig_logN'] = 0.15
-        iline.attrib['flag_N'] = 1
-        iline.attrib['b'] = b
-        iline.analy['spec'] = xspec
-        iline.limits.set(vlim)
-        _,_ = ltaa.linear_clm(iline.attrib)  # Loads N, sig_N
-        abslines.append(iline)
-    # Component
-    abscomp = AbsComponent.from_abslines(abslines)
-    return abscomp, abslines
-
-
-def mk_comptable():
-    tab = Table()
-    tab['ion_name'] = ['HI', 'HI', 'CIV', 'SiII', 'OVI']
-    tab['Z'] = [1,1,4,14,8]
-    tab['ion'] = [1,1,4,2,6]
-    tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
-    tab['RA'] = [100.0] * len(tab) * u.deg
-    tab['DEC'] = [-0.8] * len(tab) * u.deg
-    tab['vmin'] = [-50.] * len(tab) * u.km/u.s
-    tab['vmax'] = [100.] * len(tab) * u.km/u.s
-    tab['Ej'] = [0.] *len(tab) / u.cm
-    return tab
-
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
-
-
-def compare_two_files(file1, file2):
-    f1 = open(file1, 'r')
-    f2 = open(file2, 'r')
-    lines1 = f1.readlines()
-    lines2 = f2.readlines()
-    for l1,l2 in zip(lines1,lines2):
-        assert l1 == l2
-    f1.close()
-    f2.close()
 
 
 
@@ -209,18 +149,6 @@ def test_repr_joebvp():
     assert s == 'test.fits|1215.67000|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4772.06378|4781.62408|2.92939000|HI|none|Something\n' \
                 'test.fits|1025.72220|2.92939000|13.3000|15.0000|0.|2|2|2|-300.0000|300.0000|4026.43132|4034.49783|2.92939000|HI|none|Something\n'
 
-
-def test_complist_to_joebvp():
-    # will write a file in directory ./files/
-    abscomp, HIlines = mk_comp('HI', b=15*u.km/u.s, use_rand=False)
-    comp_list = [abscomp, abscomp]
-    ltiu.joebvp_from_components(comp_list, 'test.fits', data_path('test_joebvp_repr.joebvp'))
-    # now read the output and compare to reference
-    compare_two_files(data_path('test_joebvp_repr.joebvp'), lt_path + '/data/tests/test_joebvp_repr_reference.joebvp')
-    # now add attribute to comp and compare again
-    abscomp.attrib['b'] = 15*u.km/u.s
-    ltiu.joebvp_from_components(comp_list, 'test.fits', data_path('test_joebvp_repr.joebvp'))
-    compare_two_files(data_path('test_joebvp_repr.joebvp'), lt_path + '/data/tests/test_joebvp_repr_reference.joebvp')
 
 
 def test_get_wvobs_chunks():
