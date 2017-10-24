@@ -1,8 +1,24 @@
-0.2 (unreleased)
+0.3 (Unreleased)
 ----------------
 
 Updates
 .......
+
+
+Bug fixes
+.........
+
+
+0.2 (2017-10-24)
+----------------
+
+Updates
+.......
+- Extra features to main Objects like XSpectrum1D, AbsComponent, AbsLine, LineList
+- Added some extra emisison lines to Galaxy LineList
+- Refactor from pyQt4 -> pyQt5
+- Improvements to GUIs and scripts
+- Added EmLine and EmSystem classes
 - LineList.available_transitions() no longer has key argument n_max
 - LineList: extra attributes for transitions added (`ion_name`, `log(w*f)`, `abundance`, `ion_correction`, `rel_strength`)
 - ASCII tables with no header are required to be 4 columns or less for `io.readspec` to work
@@ -17,7 +33,7 @@ Updates
 - Added LineLimits class
 - Added SolarAbund class
 - Added lt_radec and lt_line scripts
-- Added LSF class to handle line-spread-functions. Currently implemented for HST/COS and some HST/STIS configurations.
+- Added LSF class to handle line-spread-functions. Currently implemented for HST/COS and most HST/STIS configurations.
 
 Bug fixes
 .........
