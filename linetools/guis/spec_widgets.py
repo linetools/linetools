@@ -385,13 +385,15 @@ class ExamineSpecWidget(QWidget):
                         sign=1
                     # Amplitude
                     Aguess = np.max(self.spec.flux[pix]-lconti[pix])
-                    Cguess = np.mean(self.spec.wavelength[pix])
+                    Cguess = np.mean(self.spec.wavelength[pix].value)
                     sguess = 0.1*np.abs(self.adict['wv_1']-self.adict['wv_2'])
                     # Fit
                     g_init = models.Gaussian1D(amplitude=Aguess, mean=Cguess, stddev=sguess)
                     fitter = fitting.LevMarLSQFitter()
-                    parm = fitter(g_init, self.spec.wavelength[pix].value,
-                                  sign*(self.spec.flux[pix]-lconti[pix]))
+                    #QtCore.pyqtRemoveInputHook()
+                    #pdb.set_trace()
+                    #QtCore.pyqtRestoreInputHook()
+                    parm = fitter(g_init, self.spec.wavelength[pix].value, sign*(self.spec.flux[pix]-lconti[pix]))
                     # Error
                     var = [fitter.fit_info['param_cov'][ii,ii] for ii in range(3)]
                     sig = np.sqrt(var)  # amplitude, mean, stddev
@@ -420,7 +422,7 @@ class ExamineSpecWidget(QWidget):
                     # Message
                     mssg = 'Gaussian Fit: '
                     mssg = mssg+' ::  Mean={:g}, Amplitude={:g}, sigma={:g}, flux={:g}'.format(
-                            parm.mean.value, parm.amplitude.value, parm.stddev.value, flux)
+                            parm.mean.value*self.spec.wavelength.unit, parm.amplitude.value, parm.stddev.value*self.spec.wavelength.unit, flux)
                     mssg = mssg+' ::  sig(Mean)={:g}, sig(Amplitude)={:g}, sig(sigma)={:g}, sig(flux)={:g}'.format(
                             sig_dict['mean'], sig_dict['amplitude'], sig_dict['stddev'], min(sig_flux1,sig_flux2))
                     mssg = mssg+' :: EW ={:g}'.format(EW)
