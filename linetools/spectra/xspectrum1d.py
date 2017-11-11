@@ -435,11 +435,14 @@ class XSpectrum1D(object):
             gdpx = self.sig > 0.
         else:
             gdpx = np.array([True] * self.wavelength.value.size)
-            #gdpx = np.array([True] * self.data['flux'].size)
         # Fill in attributes
         self._npix = len(self.data['flux'][self.select].compressed())
-        self._wvmin = np.min(self.wavelength[gdpx])
-        self._wvmax = np.max(self.wavelength[gdpx])
+        if np.any(gdpx):
+            self._wvmin = np.min(self.wavelength[gdpx])
+            self._wvmax = np.max(self.wavelength[gdpx])
+        else:
+            self._wvmin = 0.
+            self._wvmax = 0.
 
     #  Add noise
     def add_noise(self, seed=None, s2n=None, rstate=None):
