@@ -51,7 +51,7 @@ def main(args=None):
     elif pargs.llist in ['H2']:
         cols = ['mol', 'name', 'wrest', 'f']
     else:
-        cols = ['name', 'wrest', 'f', 'A']
+        cols = ['name', 'wrest', 'f', 'A', 'Ref']
     # LineList
     llist = LineList(pargs.llist)
     # Redshift?
