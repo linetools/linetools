@@ -21,7 +21,7 @@ def data_path(filename):
 
 def test_aodm_absline():
     # Init CIV 1548
-    abslin = AbsLine(1548.195*u.AA, z=2.9304)
+    abslin = AbsLine('CIV 1548', z=2.9304)
 
     # Set spectrum
     abslin.analy['spec'] = lsio.readspec(data_path('UM184_nF.fits')) # Fumagalli+13 MagE spectrum
@@ -31,7 +31,7 @@ def test_aodm_absline():
     abslin.measure_aodm()
     N, sig_N, flgN = [abslin.attrib[key] for key in ['N','sig_N','flag_N']]
 
-    np.testing.assert_allclose(N.value, 76330670518067.16)
+    np.testing.assert_allclose(N.value, 76369981945649.38)
     assert N.unit == 1/u.cm**2
     assert flgN == 1
 
@@ -41,14 +41,14 @@ def test_aodm_absline():
     #
     abslin.measure_aodm()
     N, sig_N, flgN = [abslin.attrib[key] for key in ['N','sig_N','flag_N']]
-    np.testing.assert_allclose(N.value, 80369217498895.17)
+    np.testing.assert_allclose(N.value, 80410608889125.64)
     return
 
 
 def test_boxew_absline():
     # Text boxcar EW evaluation
         # Init CIV 1548
-    abslin = AbsLine(1548.195*u.AA, z=2.9304)
+    abslin = AbsLine('CIV 1548', z=2.9304)
 
     # Set spectrum
     abslin.analy['spec'] = lsio.readspec(data_path('UM184_nF.fits')) # Fumagalli+13 MagE spectrum
@@ -68,7 +68,7 @@ def test_boxew_absline():
 def test_gaussew_absline():
     # Text Gaussian EW evaluation
     # Init CIV 1548
-    abslin = AbsLine(1548.195*u.AA, z=2.9304)
+    abslin = AbsLine('CIV 1548', z=2.9304)
 
     # Set spectrum
     abslin.analy['spec'] = lsio.readspec(data_path('UM184_nF.fits')) # Fumagalli+13 MagE spectrum
