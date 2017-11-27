@@ -115,7 +115,7 @@ class AbsSightline(object):
             raise IOError('Need an AbsSystem object')
 
         # Instantiate with coordinates of first system
-        slf = cls(systems[0].coord)
+        slf = cls(systems[0].coord,**kwargs)
         slf._abssystems = systems
         # Return
         return slf
