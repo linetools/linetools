@@ -11,7 +11,7 @@ def data_path(filename):
     return os.path.join(data_dir, filename)
 
 def test_stack_plot(show=False):
-    abslin1 = AbsLine(1548.195*u.AA)
+    abslin1 = AbsLine(1548.204*u.AA)
     abslin2 = AbsLine('CIV 1550')
     # no spectrum first
     ltap.stack_plot([abslin1], show=show)

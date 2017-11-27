@@ -923,7 +923,7 @@ def update_wrest(table, verbose=True):
       Data to be updated
     verbose : bool, optional
     """
-
+    pass
     '''
     # TiII line (Morton 2003 vs Weise 2001) 
     # Went back to Morton 2003.  If you go to Weise, you have
