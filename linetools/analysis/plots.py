@@ -14,7 +14,8 @@ import matplotlib.gridspec as gridspec
 import matplotlib as mpl
 
 def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None,
-               ymnx=(-0.1,1.1), figsz=(18,11), return_fig=False, tight_layout=False, add_ew=False):
+               ymnx=(-0.1,1.1), figsz=(18,11), return_fig=False,
+               tight_layout=False, add_ew=False, zref=None):
     """Show a stack plot of the input lines
     Assumes the data are normalized.
     Comments about EW:
@@ -40,6 +41,8 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None
       If True, remove whitespace between panels
     add_ew : bool, optional
       If True, add EW values on the figure
+    zref : float, optional
+      Reference redshift for velocity scale; if None, each AbsLine.z is used
     Returns
     -------
     fig : matplotlib Figure, optional
@@ -81,7 +84,9 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None
         norm_sig = iline.analy['spec'].sig/co
         #
         # Plot
-        velo = iline.analy['spec'].relative_vel((1+iline.z)*iline.wrest)
+        if zref is None:
+            zref = iline.z
+        velo = iline.analy['spec'].relative_vel((1+zref)*iline.wrest)
         ax.plot(velo, norm_flux,  'k-', linestyle='steps-mid')
         ax.plot(velo, norm_sig,  'r:')
         # Lines
