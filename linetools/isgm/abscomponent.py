@@ -34,7 +34,7 @@ c_kms = const.c.to('km/s').value
 init_attrib = {'N': 0./u.cm**2, 'sig_N': 0./u.cm**2, 'flag_N': 0, # Column    ## NOT ENOUGH SPEED-UP
               'logN': 0., 'sig_logN': 0.,
               'b': 0.*u.km/u.s, 'sig_b': 0.*u.km/u.s,  # Doppler
-              'vel': 0*u.km/u.s, 'sig_vel': 0*u.km/s
+              'vel': 0*u.km/u.s, 'sig_vel': 0*u.km/u.s
               }
 
 # Class for Components
