@@ -30,6 +30,13 @@ from linetools.analysis.zlimits import zLimits
 # Global import for speed
 c_kms = const.c.to('km/s').value
 
+# Global initial attrib dict (speeds up performance b/c astropy.Quantity issue?)
+init_attrib = {'N': 0./u.cm**2, 'sig_N': 0./u.cm**2, 'flag_N': 0, # Column    ## NOT ENOUGH SPEED-UP
+              'logN': 0., 'sig_logN': 0.,
+              'b': 0.*u.km/u.s, 'sig_b': 0.*u.km/u.s,  # Doppler
+              'vel': 0*u.km/u.s, 'sig_vel': 0*u.km/s
+              }
+
 # Class for Components
 class AbsComponent(object):
     """
@@ -55,6 +62,8 @@ class AbsComponent(object):
         Atomic mass -- used to distinguish isotopes
     Ej : Quantity
         Energy of lower level (1/cm)
+    attrib : dict
+        Absorption properties (e.g. column, Doppler b, centroid)
     reliability : str, optional
         Reliability of AbsComponent
             'a' - reliable
@@ -251,7 +260,7 @@ class AbsComponent(object):
         self.reliability = reliability
 
         # Potential for attributes
-        self.attrib = dict()
+        self.attrib = init_attrib.copy()
 
         # Other
         self._abslines = []
@@ -263,6 +272,14 @@ class AbsComponent(object):
     @property
     def zcomp(self):
         return self.limits.z
+
+    @property
+    def b(self):
+        return self.attrib['b']
+
+    @property
+    def vel(self):  #velocity centroid
+        return self.attrib['vel']
 
     def add_absline(self, absline, tol=0.1*u.arcsec, chk_vel=True,
                     chk_sep=True, vtoler=1., **kwargs):
