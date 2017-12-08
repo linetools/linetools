@@ -43,6 +43,7 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None
       If True, add EW values on the figure
     zref : float, optional
       Reference redshift for velocity scale; if None, each AbsLine.z is used
+
     Returns
     -------
     fig : matplotlib Figure, optional
