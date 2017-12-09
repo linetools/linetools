@@ -138,7 +138,12 @@ class AbsComponent(object):
             slf.attrib['sig_b'] = medberr * u.km/u.s
             slf.attrib['vel'] = medvel * u.km/u.s
             slf.attrib['velerr'] = medvelerr * u.km / u.s
-        logN,sig_logN  = ltaa.log_clm(slf)
+            logN,sig_logN  = ltaa.log_clm(slf)
+            slf.attrib['logN'] = logN
+            slf.attrib['sig_logN'] = sig_logN
+        else:
+            raise ValueError('The line measurements for the components are'
+                             'not consistent with one another.')
         # Return
         return slf
 
