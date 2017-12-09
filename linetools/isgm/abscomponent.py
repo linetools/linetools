@@ -74,7 +74,8 @@ class AbsComponent(object):
         A comment, default is ``
     """
     @classmethod
-    def from_abslines(cls, abslines, stars=None, comment="", reliability='none', **kwargs):
+    def from_abslines(cls, abslines, stars=None, comment="", reliability='none',
+                      tol=0.01, **kwargs):
         """Instantiate from a list of AbsLine objects
 
         Parameters
@@ -92,7 +93,10 @@ class AbsComponent(object):
                 'b' - possible
                 'c' - uncertain
                 'none' - not defined (default)
+        tol : float, optional
+            Fractional tolerance for line attributes (N,b) to match one another
         """
+        from linetools.analysis import absline as ltaa
         # Check
         if not isinstance(abslines, list):
             raise IOError("Need a list of AbsLine objects")
@@ -109,6 +113,32 @@ class AbsComponent(object):
         if len(abslines) > 1:
             for absline in abslines[1:]:
                 slf.add_absline(absline, **kwargs)
+
+        ### Add attribs to component
+        # First check that the measurements for all the lines match
+        # Grab them all
+        cols = np.array([al.attrib['N'].value for al in abslines])
+        colerrs = np.array([al.attrib['sig_N'].value for al in abslines])
+        bs = np.array([al.attrib['b'].value for al in abslines])
+        berrs = np.array([al.attrib['sig_b'].value for al in abslines])
+        vels = np.array([al.attrib['vel'].value for al in abslines])
+        velerrs = np.array([al.attrib['sig_vel'].value for al in abslines])
+        medcol = np.median(cols)
+        medcolerr = np.median(colerrs)
+        medb = np.median(bs)
+        medberr = np.median(berrs)
+        medvel = np.median(vels)
+        medvelerr = np.median(velerrs)
+        colcrit = all((cols - medcol) / medcol < tol) == True
+        bcrit = all((bs - medb) / medb < tol) == True
+        if bcrit&colcrit:
+            slf.attrib['N']=medcol / u.cm**2
+            slf.attrib['sig_N'] = medcolerr / u.cm ** 2
+            slf.attrib['b'] = medb * u.km/u.s
+            slf.attrib['sig_b'] = medberr * u.km/u.s
+            slf.attrib['vel'] = medvel * u.km/u.s
+            slf.attrib['velerr'] = medvelerr * u.km / u.s
+        logN,sig_logN  = ltaa.log_clm(slf)
         # Return
         return slf
 
