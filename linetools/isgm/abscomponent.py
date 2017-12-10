@@ -142,7 +142,9 @@ class AbsComponent(object):
             slf.attrib['logN'] = logN
             slf.attrib['sig_logN'] = sig_logN
         else:
-            raise ValueError('The line measurements for the components are'
+            print(vels,cols,bs)
+            import pdb; pdb.set_trace()
+            raise ValueError('The line measurements for the components are '
                              'not consistent with one another.')
         # Return
         return slf
