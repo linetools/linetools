@@ -75,7 +75,7 @@ class AbsComponent(object):
     """
     @classmethod
     def from_abslines(cls, abslines, stars=None, comment="", reliability='none',
-                      tol=0.01, **kwargs):
+                      tol=0.01, chk_meas=False, **kwargs):
         """Instantiate from a list of AbsLine objects
 
         Parameters
@@ -93,8 +93,13 @@ class AbsComponent(object):
                 'b' - possible
                 'c' - uncertain
                 'none' - not defined (default)
+        chk_meas : bool, optional
+            If true, require that measurements for lines composing a component
+            have matching values before setting component attribs.
+            Otherwise, throw a warning
         tol : float, optional
             Fractional tolerance for line attributes (N,b) to match one another
+
         """
         from linetools.analysis import absline as ltaa
         # Check
@@ -129,23 +134,32 @@ class AbsComponent(object):
         medberr = np.median(berrs)
         medvel = np.median(vels)
         medvelerr = np.median(velerrs)
-        colcrit = all((cols - medcol) / medcol < tol) == True
-        bcrit = all((bs - medb) / medb < tol) == True
-        if bcrit&colcrit:
-            slf.attrib['N']=medcol / u.cm**2
-            slf.attrib['sig_N'] = medcolerr / u.cm ** 2
-            slf.attrib['b'] = medb * u.km/u.s
-            slf.attrib['sig_b'] = medberr * u.km/u.s
-            slf.attrib['vel'] = medvel * u.km/u.s
-            slf.attrib['velerr'] = medvelerr * u.km / u.s
-            logN,sig_logN  = ltaa.log_clm(slf)
-            slf.attrib['logN'] = logN
-            slf.attrib['sig_logN'] = sig_logN
+        # Perform checks on measurements
+        colcrit = all(np.abs(cols - medcol) / medcol < tol) == True
+        bcrit = all(np.abs(bs - medb) / medb < tol) == True
+        # Set attribs
+        slf.attrib['N'] = medcol / u.cm ** 2
+        slf.attrib['sig_N'] = medcolerr / u.cm ** 2
+        slf.attrib['b'] = medb * u.km / u.s
+        slf.attrib['sig_b'] = medberr * u.km / u.s
+        slf.attrib['vel'] = medvel * u.km / u.s
+        slf.attrib['velerr'] = medvelerr * u.km / u.s
+        logN, sig_logN = ltaa.log_clm(slf.attrib)
+        slf.attrib['logN'] = logN
+        slf.attrib['sig_logN'] = sig_logN
+        # Stop or throw warnings
+        if (bcrit&colcrit):
+            pass
+        elif chk_meas:
+            raise ValueError('The line measurements for the lines in this '
+                             'component are not consistent with one another.')
+            print(slf)
         else:
+            warnings.warn('The line measurements for the lines in this component'
+                          ' are not consistent with one another.')
+            print(slf)
             print(vels,cols,bs)
-            import pdb; pdb.set_trace()
-            raise ValueError('The line measurements for the components are '
-                             'not consistent with one another.')
+
         # Return
         return slf
 
