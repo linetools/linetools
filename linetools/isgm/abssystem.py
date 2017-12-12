@@ -564,6 +564,7 @@ class AbsSystem(object):
         else:
             components = self._components
             self.vlim = get_vmnx(components)  # Using system z
+            
 
     def write_json(self, outfil=None, overwrite=True):
         """ Generate a JSON file from the system
