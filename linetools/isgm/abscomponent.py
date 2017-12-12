@@ -154,7 +154,7 @@ class AbsComponent(object):
             raise ValueError('The line measurements for the lines in this '
                              'component are not consistent with one another.')
             print(slf)
-        else:
+        elif medb != 0: # Empty b-values (upper lims) can throw off bcrit
             warnings.warn('The line measurements for the lines in this component'
                           ' are not consistent with one another.')
             print(slf)
