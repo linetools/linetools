@@ -101,7 +101,7 @@ class AbsSystem(object):
           List of AbsComponent objects
         vlim : list, optional
           Velocity limits for the system
-          If not set, the first components sets vlim
+          If not set, the first component sets vlim
         NHI : float, optional
           Set the NHI value of the system.  If not set,
           the method sums the NHI values of all the HI
