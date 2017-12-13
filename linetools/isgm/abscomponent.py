@@ -329,8 +329,16 @@ class AbsComponent(object):
         return self.attrib['b']
 
     @property
+    def sig_b(self):
+        return self.attrib['sig_b']
+
+    @property
     def vel(self):  #velocity centroid
         return self.attrib['vel']
+
+    @property
+    def sig_vel(self):  #velocity centroid
+        return self.attrib['sig_vel']
 
     def add_absline(self, absline, tol=0.1*u.arcsec, chk_vel=True,
                     chk_sep=True, vtoler=1., **kwargs):

@@ -376,7 +376,8 @@ def table_from_complist(complist):
     tab['ion'] = [icomp.Zion[1] for icomp in complist]
 
     # . attributes (required ones)
-    for attrib in ['zcomp', 'Ej', 'flag_N', 'logN', 'sig_logN']:
+    for attrib in ['zcomp', 'Ej', 'flag_N', 'logN', 'sig_logN',
+                   'b','sig_b','vel','sig_vel']:
         values = [getattr(icomp,attrib) for icomp in complist]
         if isinstance(values[0], u.Quantity):
             values = u.Quantity(values)
