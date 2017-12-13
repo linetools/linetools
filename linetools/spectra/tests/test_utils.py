@@ -12,7 +12,7 @@ from linetools.spectra import utils as lsu
 def test_get_COS_LP_from_date():
     dates_good = ["2009-12-11", "2012-12-12", "2014-06-06",
                   "2017-12-12", Time("2017-12-12")]
-    dates_bad =["2008-10-10", "2012-07-23","2014-02-09", "2017-10-02"]
+    dates_bad =["2008-10-10", "2012-07-23","2014-02-09", "2017-10-02", 1, None]
 
     for date in dates_good:
         lsu.get_COS_LP_from_date(date)
