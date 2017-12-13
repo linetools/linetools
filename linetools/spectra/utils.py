@@ -477,7 +477,7 @@ def get_COS_LP_from_date(date):
     LP2_LP3 = Time("2014-02-09")
     LP3_LP4 = Time("2017-10-02")
 
-    if time < Time("2009-06-01"):
+    if time < Time("2009-08-01"):
         raise ValueError("Date is before HST/COS launch year.")
     elif (time < LP1_LP2):
         return "LP1"
