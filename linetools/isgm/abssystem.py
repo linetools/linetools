@@ -495,8 +495,7 @@ class AbsSystem(object):
             comp.synthesize_colm(**kwargs)
 
     def update_component_vel(self):
-        """Change the velocities of each component to be relative to zsys
-
+        """Change the velocities of each component to rest frame of zsys
         """
         from linetools.analysis.zlimits import zLimits
 
