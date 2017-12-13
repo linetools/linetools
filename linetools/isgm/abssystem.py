@@ -494,6 +494,21 @@ class AbsSystem(object):
         for comp in self._components:
             comp.synthesize_colm(**kwargs)
 
+    def update_component_vel(self):
+        """Change the velocities of each component to be relative to zsys
+
+        """
+        from linetools.analysis.zlimits import zLimits
+
+        for i,comp in enumerate(self._components):
+            dv = ltu.dv_from_z(comp.zcomp, self.zabs)
+            zmin = ltu.z_from_dv(comp.limits.vlim[0]+dv,self.zabs)
+            zmax = ltu.z_from_dv(comp.limits.vlim[1]+dv,self.zabs)
+            newzlim = zLimits(self.zabs, (zmin, zmax))
+            comp.limits = newzlim
+            comp.attrib['vel'] = comp.attrib['vel'] + dv
+
+
     def stack_plot(self, pvlim=None, **kwargs):
         """Show a stack plot of the system, if spec are loaded
         Assumes the data are normalized.

@@ -143,7 +143,7 @@ class AbsComponent(object):
         slf.attrib['b'] = medb * u.km / u.s
         slf.attrib['sig_b'] = medberr * u.km / u.s
         slf.attrib['vel'] = medvel * u.km / u.s
-        slf.attrib['velerr'] = medvelerr * u.km / u.s
+        slf.attrib['sig_vel'] = medvelerr * u.km / u.s
         logN, sig_logN = ltaa.log_clm(slf.attrib)
         slf.attrib['logN'] = logN
         slf.attrib['sig_logN'] = sig_logN
