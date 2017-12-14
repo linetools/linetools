@@ -448,3 +448,48 @@ def smash_spectra(spec, method='average', debug=False):
     # Return
     return new_spec
 
+def get_COS_LP_from_date(date):
+    """Given a date, it returns the corresponding
+    HST/COS Life-time Position (LP)
+
+    Parameters
+    ----------
+    date : string or astropy.time.Time() object
+        Examples:
+            "1983-10-09"
+
+    Returns
+    -------
+    LP : string
+        Either `LP1`, `LP2`, `LP3`, `LP4`
+
+    """
+    from astropy.time import Time
+    if isinstance(date, (basestring, str)):
+        time = Time(date)
+    elif isinstance(date, Time):
+        time = date
+    else:
+        raise ValueError("Wrong format for date, must be either string of astropy.time.Time() object.")
+
+    # LP changes
+    LP1_LP2 = Time("2012-07-23")
+    LP2_LP3 = Time("2014-02-09")
+    LP3_LP4 = Time("2017-10-02")
+
+    if time < Time("2009-08-01"):
+        raise ValueError("Date is before HST/COS launch year.")
+    elif (time < LP1_LP2):
+        return "LP1"
+    elif (time == LP1_LP2):
+        raise ValueError("Date equal to change from LP1 to LP2, LP uncertain. You better check your database.")
+    elif (time < LP2_LP3):
+        return "LP2"
+    elif (time == LP2_LP3):
+        raise ValueError("Date equal to change from LP2 to LP3, LP uncertain. You better check your database.")
+    elif (time < LP3_LP4):
+        return "LP3"
+    elif (time == LP3_LP4):
+        raise ValueError("Date equal to change from LP3 to LP4, LP uncertain. You better check your database.")
+    else:
+        return "LP4"

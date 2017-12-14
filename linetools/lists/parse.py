@@ -367,6 +367,31 @@ def read_galabs():
     return data
 
 
+def read_cashman17():
+    """ read lines from Cashman et al. 2017
+    
+    Returns 
+    -----------
+    Modified table from Cashman et al. 2017
+    """
+    cashman17_fil = lt_path + '/data/lines/cashman17.ascii'
+    print('linetools.lists.parse: Reading linelist --- \n   {:s}'.format(cashman17_fil))
+    data = Table.read(cashman17_fil, format='ascii', guess=False, comment=';',delimiter=',')
+
+    # Remove
+    data.remove_column('lower_LSJ_level')
+    data.remove_column('lower_LSJ_level')
+    data.remove_column('wobs')
+    data.remove_column('log(g*f)')
+    data.remove_column('grade')
+
+    # Units
+    data['wrest'].unit = u.AA
+
+    # Return
+    return data
+
+
 def mask_gal(data, mask_keys=None):
     """Masks linelist attributes for all galaxy lines
 
