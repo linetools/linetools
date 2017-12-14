@@ -218,7 +218,7 @@ class AbsComponent(object):
                   Ej=idict['Ej']/u.cm, A=idict['A'],
                   Ntup = tuple([idict[key] for key in ['flag_N', 'logN', 'sig_logN']]),
                   comment=idict['comment'], name=idict['Name'], reliability=reliability)
-
+        slf.attrib = idict['attrib']
         # Add lines
         for key in idict['lines'].keys():
             iline = AbsLine.from_dict(idict['lines'][key], coord=coord, **kwargs)
@@ -904,7 +904,8 @@ class AbsComponent(object):
                      Name=self.name,
                      RA=self.coord.icrs.ra.value, DEC=self.coord.icrs.dec.value,
                      A=self.A, Ej=self.Ej.to('1/cm').value, comment=self.comment,
-                     flag_N=self.flag_N, logN=self.logN, sig_logN=self.sig_logN)
+                     flag_N=self.flag_N, logN=self.logN, sig_logN=self.sig_logN,
+                     attrib=self.attrib)
         cdict['class'] = self.__class__.__name__
         # AbsLines
         cdict['lines'] = {}
