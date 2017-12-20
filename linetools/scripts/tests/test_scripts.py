@@ -8,6 +8,7 @@ from linetools.scripts.lt_absline import plot_absline
 from linetools.scripts import lt_line
 from linetools.scripts import lt_radec
 from linetools.scripts import lt_solabnd
+from linetools.scripts import lt_get_COS_LP
 
 
 def test_lt_absline():
@@ -33,3 +34,6 @@ def test_lt_solabnd():
     lt_solabnd.main(['Fe'])
     lt_solabnd.main(['-a'])
     lt_solabnd.main(['-a', '--sortZ'])
+
+def test_lt_get_COS_LP():
+    lt_get_COS_LP.main(["2017-10-01"])
