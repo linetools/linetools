@@ -36,4 +36,4 @@ def test_lt_solabnd():
     lt_solabnd.main(['-a', '--sortZ'])
 
 def test_lt_get_COS_LP():
-    lt_get_COS_LP.man("2017-10-01")
+    lt_get_COS_LP.main(["2017-10-01"])
