@@ -235,12 +235,14 @@ class AbsComponent(object):
                   Ej=idict['Ej']/u.cm, A=idict['A'],
                   Ntup = tuple([idict[key] for key in ['flag_N', 'logN', 'sig_logN']]),
                   comment=idict['comment'], name=idict['Name'], reliability=reliability)
-        attrkeys = idict['attrib'].keys()
-        for ak in attrkeys:
-            if isinstance(idict['attrib'][ak],dict):
-                slf.attrib[ak] = ltu.convert_quantity_in_dict(idict['attrib'][ak])
-            else:
-                slf.attrib[ak] = idict['attrib'][ak]
+        # Attributes
+        if 'attrib' in idict.keys():
+            attrkeys = idict['attrib'].keys()
+            for ak in attrkeys:
+                if isinstance(idict['attrib'][ak],dict):
+                    slf.attrib[ak] = ltu.convert_quantity_in_dict(idict['attrib'][ak])
+                else:
+                    slf.attrib[ak] = idict['attrib'][ak]
         # Add lines
         for key in idict['lines'].keys():
             iline = AbsLine.from_dict(idict['lines'][key], coord=coord, **kwargs)
