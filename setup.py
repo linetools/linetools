@@ -106,6 +106,8 @@ entry_points['console_scripts'] = [
     'lt_plot = linetools.scripts.lt_plot:main',
     'lt_radec = linetools.scripts.lt_radec:main',
     'lt_solabnd = linetools.scripts.lt_solabnd:main',
+    'lt_get_COS_LP = linetools.scripts.lt_get_COS_LP:main',
+
 #    'astropy-package-template-example = packagename.example_mod:main',
 ]
 
