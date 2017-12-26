@@ -300,6 +300,33 @@ class AbsSystem(object):
         #
         return test
 
+    def copy(self):
+        """Make a copy of the system
+
+        Returns
+        -------
+        newsys : AbsSystem
+            Copy of current system
+        """
+        newsys = AbsSystem(self.coord, self.zabs, zem=self.zem,
+                           abs_type=self.abs_type, NHI=self.NHI,
+                           sig_NHI=self.sig_NHI, flag_NHI=self.flag_NHI,
+                           name=self.name)
+        newsys._components = [comp.copy() for comp in self._components]
+        newsys.kin = self.kin
+        newsys.ZH = self.ZH
+        newsys.sig_ZH = self.sig_ZH
+        newsys.flag_ZH = self.flag_ZH
+        newsys._EW = self._EW
+        newsys._ionN = self._ionN
+        newsys._trans = self._trans
+        newsys._ionstate = self._ionstate
+        newsys._abund = self._abund
+
+        return newsys
+
+
+
     def chk_component(self, component):
         """Additional checks on the component
 
