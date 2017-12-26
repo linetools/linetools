@@ -140,7 +140,8 @@ def read_joebvp_to_components(filename, coord, llist=None, specfile=None, chk_ve
         for key in ['flag_N', 'logN', 'sig_logN']:
             setattr(abscomp, key, abscomp.attrib[key])
         # Errors must be in first line!
-        assert abscomp.sig_logN > 0.
+        assert abscomp.sig_logN > 0., "AbsComponent has sig_logN=0 {}".format(abscomp)
+
         comps.append(abscomp)
     # Finish
     return comps
