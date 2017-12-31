@@ -32,6 +32,15 @@ def test_init_failures():
         AbsComponent.from_abslines(['blah'])
     with pytest.raises(IOError):
         AbsComponent.from_component('blah')
+    # Inconsistent abslines
+    lya = AbsLine(1215.670*u.AA,z=2.92939)
+    lya.attrib['N'] = 1e12 / u.cm**2
+    lya.attrib['b'] = 30 * u.km/u.s
+    lyb = AbsLine('HI 1025',z=2.92939)
+    lyb.attrib['N'] = 3e12 / u.cm**2
+    lyb.attrib['b'] = 30 * u.km/u.s
+    with pytest.raises(ValueError):
+        AbsComponent.from_abslines([lya,lyb])
 
 
 def test_init_single_absline():
@@ -42,7 +51,6 @@ def test_init_single_absline():
     # Test
     assert abscomp.Zion[0] == 1
     np.testing.assert_allclose(abscomp.zcomp,2.92939)
-    print(abscomp)
 
 
 def test_copy():

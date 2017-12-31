@@ -135,8 +135,14 @@ class AbsComponent(object):
         medvel = np.median(vels)
         medvelerr = np.median(velerrs)
         # Perform checks on measurements
-        colcrit = all(np.abs(cols - medcol) / medcol < tol) is True
-        bcrit = all(np.abs(bs - medb) / medb < tol) is True
+        if medcol == 0.:
+            colcrit = np.all((cols) == 0.)
+        else:
+            colcrit = all(np.abs(cols - medcol) / medcol < tol) is True
+        if medb == 0.:
+            bcrit = np.all((bs) == 0.)
+        else:
+            bcrit = all(np.abs(bs - medb) / medb < tol) is True
         # Set attribs
         slf.attrib['N'] = medcol / u.cm ** 2
         slf.attrib['sig_N'] = medcolerr / u.cm ** 2
@@ -153,29 +159,19 @@ class AbsComponent(object):
         elif chk_meas:
             raise ValueError('The line measurements for the lines in this '
                              'component are not consistent with one another.')
-            print(slf)
         elif medb != 0:
-            # Empty b-values (upper lims) can throw off bcrit (= inf).
-            # These happen normally for nondetections, so ignore.
-            if verbose:
-                warnings.warn('The line measurements for the lines in this component'
+            raise ValueError('The line measurements for the lines in this component'
                               ' are not consistent with one another.')
-                print(slf)
-                print(vels,cols,bs)
         else:
             if verbose:
                 warnings.warn('The line measurements for the lines in this component'
                           ' may not be consistent with one another.')
-                if bcrit:
-                    print('Problem lies in the column density values')
-                    print(cols)
-                elif colcrit:
-                    print('Problem lies in the b values')
-                    print(bs)
-                else:
-                    print('Problems lie in the column densities and b values')
-                    print(cols)
-                    print(bs)
+            if bcrit:
+                raise ValueError('Problem lies in the column density values')
+            elif colcrit:
+                raise ValueError('Problem lies in the b values')
+            else:
+                raise ValueError('Problems lie in the column densities and b values')
 
         # Return
         return slf
