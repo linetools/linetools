@@ -399,10 +399,11 @@ class LineList(object):
         # Set QM strength as MaskedColumn (self._data['f'] is MaskedColumn)
         qm_strength = self._data['f'] * self._data['wrest']
         qm_strength.name = 'qm_strength'
-        self._extra_table['log(w*f)'] = np.log10(qm_strength)
+        self._extra_table['log(w*f)'] = np.zeros_like(qm_strength)
+        gdqm = qm_strength > 0.
+        self._extra_table['log(w*f)'][gdqm] = np.log10(qm_strength[gdqm])
         # mask out potential nans
-        cond = np.isnan(self._extra_table['log(w*f)'])
-        self._extra_table['log(w*f)'].mask = np.where(cond, True, self._extra_table['log(w*f)'].mask)
+        self._extra_table['log(w*f)'].mask = ~gdqm
 
         # Set Abundance
         if abundance_type not in ['none', 'solar']:

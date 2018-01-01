@@ -40,7 +40,7 @@ def test_init_failures():
     lyb.attrib['N'] = 3e12 / u.cm**2
     lyb.attrib['b'] = 30 * u.km/u.s
     with pytest.raises(ValueError):
-        AbsComponent.from_abslines([lya,lyb])
+        AbsComponent.from_abslines([lya,lyb], chk_meas=True)
 
 
 def test_init_single_absline():

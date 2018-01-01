@@ -159,19 +159,16 @@ class AbsComponent(object):
         elif chk_meas:
             raise ValueError('The line measurements for the lines in this '
                              'component are not consistent with one another.')
-        elif medb != 0:
-            raise ValueError('The line measurements for the lines in this component'
-                              ' are not consistent with one another.')
         else:
             if verbose:
                 warnings.warn('The line measurements for the lines in this component'
                           ' may not be consistent with one another.')
-            if bcrit:
-                raise ValueError('Problem lies in the column density values')
-            elif colcrit:
-                raise ValueError('Problem lies in the b values')
-            else:
-                raise ValueError('Problems lie in the column densities and b values')
+                if bcrit:
+                    print('Problem lies in the column density values')
+                elif colcrit:
+                    print('Problem lies in the b values')
+                else:
+                    print('Problems lie in the column densities and b values')
 
         # Return
         return slf
