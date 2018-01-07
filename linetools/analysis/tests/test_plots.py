@@ -19,11 +19,12 @@ def test_stack_plot(show=False):
     spec = ltsio.readspec(data_path('UM184_nF.fits'))  # already normalized
     abslin1.analy['spec'] = spec
     abslin1.analy['wvlim'] = [6079.78, 6168.82]*u.AA
-    abslin1.attrib['z'] = 2.92929
+    abslin1.setz(2.92929)
     ltap.stack_plot([abslin1], show=show)
     # second line
     abslin2.analy['spec'] = spec
     abslin2.analy['wvlim'] = [6079.78, 6168.82]*u.AA
-    abslin2.attrib['z'] = 2.92929
+    abslin2.setz(2.92929)
     ltap.stack_plot([abslin1, abslin2], show=show)
-
+    # now with a zref
+    ltap.stack_plot([abslin1, abslin2], show=show, zref=2.928)
