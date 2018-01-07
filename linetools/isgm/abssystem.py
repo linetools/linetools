@@ -308,13 +308,10 @@ class AbsSystem(object):
         newsys : AbsSystem
             Copy of current system
         """
-        try:
-            newsys = AbsSystem(self.coord, self.zabs, zem=self.zem,
+        newsys = AbsSystem(self.coord, self.zabs, self.vlim, zem=self.zem,
                            abs_type=self.abs_type, NHI=self.NHI,
                            sig_NHI=self.sig_NHI, flag_NHI=self.flag_NHI,
                            name=self.name)
-        except:
-            import pdb; pdb.set_trace()
         newsys._components = [comp.copy() for comp in self._components]
         newsys.kin = self.kin
         newsys.ZH = self.ZH
