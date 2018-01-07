@@ -419,7 +419,7 @@ def table_from_complist(complist):
     return tab
 
 
-def iontable_from_components(components, ztbl=None, NHI_obj=None):
+def iontable_from_components(components, ztbl=None, NHI_obj=None, vrange=None):
     """Generate a Table from a list of components
 
     Method does *not* perform logic on redshifts or vlim.
@@ -434,6 +434,8 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
       Redshift for the table
     NHI_obj : object, optional (with NHI, sig_NHI, flag_NHI attributes)
       If provided, fill HI with NHI, sig_NHI, flag_NHI
+    vrange : Quantity, optional
+      Velocity range of components to sum column densities
 
     Returns
     -------
@@ -477,10 +479,19 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
                       comp.Ej.to('1/cm').value for comp in components])
     uniZi, auidx = np.unique(uZiE, return_index=True)
 
+    # Grab velocities from components
+    compvels = np.array([comp.attrib['vel'] for comp in components])
+
     # Loop
     for uidx in auidx:
-        # Synthesize components with like Zion, Ej
-        mtZiE = np.where(uZiE == uZiE[uidx])[0]
+        # Synthesize components with like Zion, Ej, and in vrange
+        if vrange is not None:
+            vrange=vrange.to(u.km/u.s).value
+            mtZiE = np.where((uZiE == uZiE[uidx]) &
+                             (compvels > vrange[0]) &
+                             (compvels < vrange[1]))[0]
+        else:
+            mtZiE = np.where(uZiE == uZiE[uidx])[0]
         comps = [components[ii] for ii in mtZiE]  # Need a list
         synth_comp = synthesize_components(comps, zcomp=ztbl)
         # Add a row to Table
