@@ -469,7 +469,7 @@ class LSF(object):
                     warnings.warn(
                         "LSF may result from extrapolation outside wavelength range characterized for current grating.")
             else:
-                raise ValueError("wv0 too far outside range of defined LSFs. Perhaps you've chosen the wrong grating?")
+                raise ValueError("wv0={:.2f}A too far outside range of defined LSFs. Perhaps you've chosen the wrong grating?".format(wv0))
         lsf_vals = np.array(lsf_vals)
 
         # normalize
