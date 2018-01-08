@@ -308,7 +308,7 @@ class AbsSystem(object):
         newsys : AbsSystem
             Copy of current system
         """
-        newsys = AbsSystem(self.coord, self.zabs, self.vlim, zem=self.zem,
+        newsys = self.__class__(self.coord, self.zabs, self.vlim, zem=self.zem,
                            abs_type=self.abs_type, NHI=self.NHI,
                            sig_NHI=self.sig_NHI, flag_NHI=self.flag_NHI,
                            name=self.name)
@@ -341,11 +341,12 @@ class AbsSystem(object):
         """
         return True
 
-    def fill_ionN(self, **kwargs):
+    def fill_ionN(self, vrange, **kwargs):
         """ Fills the ionN Table from the list of components
         """
         if len(self._components) > 0:
-            self._ionN = ltiu.iontable_from_components(self._components, **kwargs)
+            self._ionN = ltiu.iontable_from_components(self._components,
+                                                       vrange=vrange, **kwargs)
 
     def fill_trans(self, **kwargs):
         """ Generates a table of transitions

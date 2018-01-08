@@ -480,27 +480,32 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None, vrange=None):
     uniZi, auidx = np.unique(uZiE, return_index=True)
 
     # Grab velocities from components
-    compvels = np.array([comp.attrib['vel'] for comp in components])
+    compvels = np.array([comp.attrib['vel'].value for comp in components])
+    if vrange is not None:
+        vrange = vrange.to(u.km / u.s).value
 
     # Loop
     for uidx in auidx:
         # Synthesize components with like Zion, Ej, and in vrange
         if vrange is not None:
-            vrange=vrange.to(u.km/u.s).value
             mtZiE = np.where((uZiE == uZiE[uidx]) &
                              (compvels > vrange[0]) &
                              (compvels < vrange[1]))[0]
         else:
             mtZiE = np.where(uZiE == uZiE[uidx])[0]
         comps = [components[ii] for ii in mtZiE]  # Need a list
-        synth_comp = synthesize_components(comps, zcomp=ztbl)
-        # Add a row to Table
-        row = dict(Z=synth_comp.Zion[0],ion=synth_comp.Zion[1],
-                   z=ztbl,
-                   Ej=synth_comp.Ej,vmin=synth_comp.vlim[0],
-                   vmax=synth_comp.vlim[1],logN=synth_comp.logN,
-                   flag_N=synth_comp.flag_N,sig_logN=synth_comp.sig_logN)
-        iontbl.add_row(row)
+        if len(comps) > 0:
+            synth_comp = synthesize_components(comps, zcomp=ztbl)
+
+            # Add a row to Table
+            row = dict(Z=synth_comp.Zion[0],ion=synth_comp.Zion[1],
+                       z=ztbl,
+                       Ej=synth_comp.Ej,vmin=synth_comp.vlim[0],
+                       vmax=synth_comp.vlim[1],logN=synth_comp.logN,
+                       flag_N=synth_comp.flag_N,sig_logN=synth_comp.sig_logN)
+            iontbl.add_row(row)
+        else:
+            print('No components found within velocity range found.')
 
     # NHI
     if NHI_obj is not None:
