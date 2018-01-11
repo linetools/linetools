@@ -15,7 +15,7 @@ from abc import ABCMeta
 
 from astropy import units as u
 from astropy.units import Quantity
-from astropy.table import QTable, Table
+from astropy.table import Table
 from astropy import constants as const
 from astropy.coordinates import SkyCoord
 
@@ -215,11 +215,11 @@ class AbsSystem(object):
         self.flag_ZH = 0
 
         # Abundances and Tables
-        self._EW = QTable()
+        self._EW = Table()
         self._ionN = None   # Needs to be None for fill_ion
-        self._trans = QTable()
+        self._trans = Table()
         self._ionstate = {}
-        self._abund = QTable()
+        self._abund = Table()
 
         # Refs (list of references)
         self.Refs = []
