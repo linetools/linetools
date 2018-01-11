@@ -30,6 +30,13 @@ from linetools.analysis.zlimits import zLimits
 # Global import for speed
 c_kms = const.c.to('km/s').value
 
+# Global initial attrib dict (speeds up performance b/c astropy.Quantity issue?)
+init_attrib = {'N': 0./u.cm**2, 'sig_N': 0./u.cm**2, 'flag_N': 0, # Column    ## NOT ENOUGH SPEED-UP
+              'logN': 0., 'sig_logN': 0.,
+              'b': 0.*u.km/u.s, 'sig_b': 0.*u.km/u.s,  # Doppler
+              'vel': 0*u.km/u.s, 'sig_vel': 0*u.km/u.s
+              }
+
 # Class for Components
 class AbsComponent(object):
     """
@@ -55,6 +62,8 @@ class AbsComponent(object):
         Atomic mass -- used to distinguish isotopes
     Ej : Quantity
         Energy of lower level (1/cm)
+    attrib : dict
+        Absorption properties (e.g. column, Doppler b, centroid)
     reliability : str, optional
         Reliability of AbsComponent
             'a' - reliable
@@ -65,7 +74,8 @@ class AbsComponent(object):
         A comment, default is ``
     """
     @classmethod
-    def from_abslines(cls, abslines, stars=None, comment="", reliability='none', **kwargs):
+    def from_abslines(cls, abslines, stars=None, comment="", reliability='none',
+                      tol=0.01, chk_meas=False, verbose=True, **kwargs):
         """Instantiate from a list of AbsLine objects
 
         Parameters
@@ -83,7 +93,15 @@ class AbsComponent(object):
                 'b' - possible
                 'c' - uncertain
                 'none' - not defined (default)
+        chk_meas : bool, optional
+            If true, require that measurements for lines composing a component
+            have matching values before setting component attribs.
+            Otherwise, throw a warning
+        tol : float, optional
+            Fractional tolerance for line attributes (N,b) to match one another
+
         """
+        from linetools.analysis import absline as ltaa
         # Check
         if not isinstance(abslines, list):
             raise IOError("Need a list of AbsLine objects")
@@ -100,6 +118,58 @@ class AbsComponent(object):
         if len(abslines) > 1:
             for absline in abslines[1:]:
                 slf.add_absline(absline, **kwargs)
+
+        ### Add attribs to component
+        # First check that the measurements for all the lines match
+        # Grab them all
+        cols = np.array([al.attrib['N'].value for al in abslines])
+        colerrs = np.array([al.attrib['sig_N'].value for al in abslines])
+        bs = np.array([al.attrib['b'].value for al in abslines])
+        berrs = np.array([al.attrib['sig_b'].value for al in abslines])
+        vels = np.array([al.attrib['vel'].value for al in abslines])
+        velerrs = np.array([al.attrib['sig_vel'].value for al in abslines])
+        medcol = np.median(cols)
+        medcolerr = np.median(colerrs)
+        medb = np.median(bs)
+        medberr = np.median(berrs)
+        medvel = np.median(vels)
+        medvelerr = np.median(velerrs)
+        # Perform checks on measurements
+        if medcol == 0.:
+            colcrit = np.all((cols) == 0.)
+        else:
+            colcrit = all(np.abs(cols - medcol) / medcol < tol) is True
+        if medb == 0.:
+            bcrit = np.all((bs) == 0.)
+        else:
+            bcrit = all(np.abs(bs - medb) / medb < tol) is True
+        # Set attribs
+        slf.attrib['N'] = medcol / u.cm ** 2
+        slf.attrib['sig_N'] = medcolerr / u.cm ** 2
+        slf.attrib['b'] = medb * u.km / u.s
+        slf.attrib['sig_b'] = medberr * u.km / u.s
+        slf.attrib['vel'] = medvel * u.km / u.s
+        slf.attrib['sig_vel'] = medvelerr * u.km / u.s
+        logN, sig_logN = ltaa.log_clm(slf.attrib)
+        slf.attrib['logN'] = logN
+        slf.attrib['sig_logN'] = sig_logN
+        # Stop or throw warnings
+        if (bcrit&colcrit):
+            pass
+        elif chk_meas:
+            raise ValueError('The line measurements for the lines in this '
+                             'component are not consistent with one another.')
+        else:
+            if verbose:
+                warnings.warn('The line measurements for the lines in this component'
+                          ' may not be consistent with one another.')
+                if bcrit:
+                    print('Problem lies in the column density values')
+                elif colcrit:
+                    print('Problem lies in the b values')
+                else:
+                    print('Problems lie in the column densities and b values')
+
         # Return
         return slf
 
@@ -158,7 +228,14 @@ class AbsComponent(object):
                   Ej=idict['Ej']/u.cm, A=idict['A'],
                   Ntup = tuple([idict[key] for key in ['flag_N', 'logN', 'sig_logN']]),
                   comment=idict['comment'], name=idict['Name'], reliability=reliability)
-
+        # Attributes
+        if 'attrib' in idict.keys():
+            attrkeys = idict['attrib'].keys()
+            for ak in attrkeys:
+                if isinstance(idict['attrib'][ak],dict):
+                    slf.attrib[ak] = ltu.convert_quantity_in_dict(idict['attrib'][ak])
+                else:
+                    slf.attrib[ak] = idict['attrib'][ak]
         # Add lines
         for key in idict['lines'].keys():
             iline = AbsLine.from_dict(idict['lines'][key], coord=coord, **kwargs)
@@ -251,7 +328,7 @@ class AbsComponent(object):
         self.reliability = reliability
 
         # Potential for attributes
-        self.attrib = dict()
+        self.attrib = init_attrib.copy()
 
         # Other
         self._abslines = []
@@ -263,6 +340,22 @@ class AbsComponent(object):
     @property
     def zcomp(self):
         return self.limits.z
+
+    @property
+    def b(self):
+        return self.attrib['b']
+
+    @property
+    def sig_b(self):
+        return self.attrib['sig_b']
+
+    @property
+    def vel(self):  #velocity centroid
+        return self.attrib['vel']
+
+    @property
+    def sig_vel(self):  #velocity centroid
+        return self.attrib['sig_vel']
 
     def add_absline(self, absline, tol=0.1*u.arcsec, chk_vel=True,
                     chk_sep=True, vtoler=1., **kwargs):
@@ -828,7 +921,8 @@ class AbsComponent(object):
                      Name=self.name,
                      RA=self.coord.icrs.ra.value, DEC=self.coord.icrs.dec.value,
                      A=self.A, Ej=self.Ej.to('1/cm').value, comment=self.comment,
-                     flag_N=self.flag_N, logN=self.logN, sig_logN=self.sig_logN)
+                     flag_N=self.flag_N, logN=self.logN, sig_logN=self.sig_logN,
+                     attrib=self.attrib)
         cdict['class'] = self.__class__.__name__
         # AbsLines
         cdict['lines'] = {}

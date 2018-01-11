@@ -101,7 +101,7 @@ class AbsSystem(object):
           List of AbsComponent objects
         vlim : list, optional
           Velocity limits for the system
-          If not set, the first components sets vlim
+          If not set, the first component sets vlim
         NHI : float, optional
           Set the NHI value of the system.  If not set,
           the method sums the NHI values of all the HI
@@ -494,6 +494,20 @@ class AbsSystem(object):
         for comp in self._components:
             comp.synthesize_colm(**kwargs)
 
+    def update_component_vel(self):
+        """Change the velocities of each component to rest frame of zsys
+        """
+        from linetools.analysis.zlimits import zLimits
+
+        for i,comp in enumerate(self._components):
+            dv = ltu.dv_from_z(comp.zcomp, self.zabs)
+            zmin = ltu.z_from_dv(comp.limits.vlim[0]+dv,self.zabs)
+            zmax = ltu.z_from_dv(comp.limits.vlim[1]+dv,self.zabs)
+            newzlim = zLimits(self.zabs, (zmin, zmax))
+            comp.limits = newzlim
+            comp.attrib['vel'] = comp.attrib['vel'] + dv
+
+
     def stack_plot(self, pvlim=None, **kwargs):
         """Show a stack plot of the system, if spec are loaded
         Assumes the data are normalized.
@@ -564,6 +578,7 @@ class AbsSystem(object):
         else:
             components = self._components
             self.vlim = get_vmnx(components)  # Using system z
+            
 
     def write_json(self, outfil=None, overwrite=True):
         """ Generate a JSON file from the system
