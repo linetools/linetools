@@ -40,3 +40,6 @@ def test_verner96():
 
 def test_galaxy_lines():
     glx = parse.grab_galaxy_linelists()
+
+def test_read_cashman17():
+    c17 = parse.read_cashman17()

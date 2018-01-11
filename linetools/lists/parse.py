@@ -380,7 +380,6 @@ def read_cashman17():
 
     # Remove
     data.remove_column('lower_LSJ_level')
-    data.remove_column('lower_LSJ_level')
     data.remove_column('wobs')
     data.remove_column('log(g*f)')
     data.remove_column('grade')
