@@ -4,6 +4,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import imp, glob
+import pdb
 import copy
 
 from astropy.io import ascii
@@ -227,11 +228,98 @@ def add_xray_lines(outfil, infil=None, stop=True):
     data.write(outfil, format='ascii.fixed_width', overwrite=True)
 
 
+def add_cashman17(outfil, infil=None, stop=True):
+    """ Pre-pend Cashman+17 lines (as necessary)
+
+    Parameters
+    ----------
+    outfil : str
+      Output file.
+    infil : str, optional
+      Starting file.  Should use latest llist_vX.X.ascii
+    """
+    import pdb
+
+    mt_toler = llp.llist_toler  # THIS IS IMPORTANT
+
+    if infil is None:
+        fils = glob.glob(lt_path+'/lists/sets/llist_v*')
+        fils.sort()
+        infil = fils[-1]  # Should grab the latest
+
+    # Read set file
+    data = ascii.read(infil, format='fixed_width')
+
+    # Read galaxy lines (emission)
+    cashman = llp.read_cashman17()
+
+    # reference row
+    tmp_row = copy.deepcopy(data[0])
+
+    tchr = [row['name'][0:2] for row in data]
+    atchr = np.array(tchr)
+
+    nupdate = 0
+    for row in cashman:
+        # Add if new
+        try:
+            mtch = (np.abs(row['wrest'] - data['wrest']) < mt_toler) & (atchr == row['name'][0:2])
+        except:
+            pdb.set_trace()
+
+        if np.sum(mtch) == 0:
+            tmp_row['wrest'] = row['wrest']
+            tmp_row['name'] = row['name'].replace('_', ' ')
+            tmp_row['fISM'] = 1
+            #print("Adding: {:s}".format(row['name']))
+            tchr += [row['name'][0:2]]
+            atchr = np.array(tchr)
+            data.add_row(tmp_row)
+
+        # update if already there
+        elif np.sum(mtch) == 1:
+            if row['name'][0:2] != 'CI':
+                # get indice and replace values
+                ind = np.where(mtch)[0]
+                print("Updating wavelength: {:s} with {:s}, {:f} {:f}".format(
+                    data['name'][ind][0], row['name'], data['wrest'][ind][0], row['wrest']))
+                data['wrest'][ind] = row['wrest']
+                #data['name'][ind] = row['name']
+                nupdate += 1
+        # this only happens if >1 line exist within 0.0001 Angstroms
+        else:
+            import pdb;pdb.set_trace()
+
+    print("We updated {:d} lines".format(nupdate))
+
+    # Add in SIV 1072 for NT
+    tmp_row['wrest'] = 1072.973
+    tmp_row['name'] = 'SIV 1072'
+    tmp_row['fISM'] = 1
+    data.add_row(tmp_row)
+    tmp_row['wrest'] = 1073.518
+    tmp_row['name'] = 'SIV 1073'
+    tmp_row['fISM'] = 1
+    data.add_row(tmp_row)
+
+    # Sort
+    data.sort('wrest')
+
+    # Write
+    print('Make sure you want to do this!')
+    if stop:
+        import pdb; pdb.set_trace()
+    data.write(outfil, format='ascii.fixed_width', overwrite=True)
+
+
+
+
 # Test
 if __name__ == '__main__':
     flg = 0
     flg += 2**0   # X-ray lines
 
     if flg & (2**0):
-        add_galaxy_lines('sets/llist_v1.2.ascii')
-        add_xray_lines('sets/llist_v1.2.ascii')
+        add_cashman17('sets/llist_v1.3.ascii', infil='sets/llist_v1.2.ascii')
+        #add_galaxy_lines('sets/llist_v1.3.ascii')
+        #add_xray_lines('sets/llist_v1.3.ascii')

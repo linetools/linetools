@@ -20,6 +20,8 @@ from linetools.abund.elements import ELEMENTS
 
 lt_path = imp.find_module('linetools')[1]
 
+llist_toler = 1e-3  # BE VERY CAREFUL ABOUT CHANGING THIS NUMBER!
+
 
 # TODO
 # Ingest AGN lines
@@ -379,7 +381,6 @@ def read_cashman17():
     data = Table.read(cashman17_fil, format='ascii', guess=False, comment=';',delimiter=',')
 
     # Remove
-    data.remove_column('lower_LSJ_level')
     data.remove_column('lower_LSJ_level')
     data.remove_column('wobs')
     data.remove_column('log(g*f)')
@@ -958,7 +959,7 @@ def update_wrest(table, verbose=True):
     table['Ek'][mt[0]] = 52330.33 / u.cm
     '''
 #
-def load_datasets(datasets, tol=1e-3, use_cache=True):
+def load_datasets(datasets, use_cache=True):
     """Grab the data for the lines of interest
     Also load into CACHE
 
@@ -966,8 +967,6 @@ def load_datasets(datasets, tol=1e-3, use_cache=True):
     ----------
     datasets : list of func
       Routines to call for generating the dataset
-    tol : float, optional
-      Tolerance for matching wavelength in AA
     use_cache : bool, optional
 
     Returns
@@ -1002,7 +1001,7 @@ def load_datasets(datasets, tol=1e-3, use_cache=True):
                 wrest = full_table['wrest']
                 newi = []
                 for jj, row in enumerate(table):
-                    mt = np.abs(row['wrest'] - wrest) < tol
+                    mt = np.abs(row['wrest'] - wrest) < llist_toler
                     if mt.sum() == 0:
                         newi.append(jj)
                 # Append
@@ -1049,8 +1048,8 @@ def _write_ref_table(outfile=None):
         outfile = resource_filename('linetools', 'data/lines/linelist.ascii')
 
     # Define datasets: In order of Priority
-    datasets = [parse_morton03, parse_morton00, parse_verner96,
-                read_verner94, read_euv]  # Morton 2003, Morton 00, Verner 96, Verner 94
+    datasets = [read_cashman17, parse_morton03, parse_morton00, parse_verner96,
+                read_verner94, read_euv]  # Cashman 2017, Morton 2003, Morton 00, Verner 96, Verner 94
     datasets += [read_H2, read_CO] # H2 (Abrigail), CO (JXP)
     datasets += [read_forbidden, read_recomb, read_galabs] # Galaxy lines
 

@@ -8,3 +8,5 @@ v1.1
 v1.2
   Adding some extra forbidden lines for Galaxy (NT Jun 28, 2017)
   Turned off distracting higher order Balmer lines in Galaxy
+v1.3
+  Adding SIV 1073 (NT Dec 13, 2017)
