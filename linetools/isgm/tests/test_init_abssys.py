@@ -45,6 +45,7 @@ def test_init():
     gensys = GenericAbsSystem(radec, 1.244, [-500,500]*u.km/u.s, NHI=16.)
     # Test
     assert gensys.abs_type == 'Generic'
+    assert gensys.flag_NHI == 1
     np.testing.assert_allclose(gensys.zabs,1.244)
 
 
