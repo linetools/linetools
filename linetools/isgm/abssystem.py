@@ -180,14 +180,21 @@ class AbsSystem(object):
         return slf
 
     def __init__(self, radec, zabs, vlim, zem=0., abs_type=None,
-                 NHI=0., sig_NHI=np.zeros(2), flag_NHI=0, name=None, **kwargs):
+                 NHI=0., sig_NHI=np.zeros(2), flag_NHI=None, name=None, **kwargs):
 
         self.zabs = zabs
         self.zem = zem
         self.vlim = vlim
         self.NHI = NHI
         self.sig_NHI = sig_NHI
-        self.flag_NHI = flag_NHI
+        # Special handling for the flag as this is often not input with NHI
+        if flag_NHI is None:
+            if NHI > 0.:
+                self.flag_NHI = 1
+            else:
+                self.flag_NHI = 0
+        else:
+            self.flag_NHI = flag_NHI
         self.coord = ltu.radec_to_coord(radec)
         if name is None:
             self.name = 'J{:s}{:s}_z{:.3f}'.format(
