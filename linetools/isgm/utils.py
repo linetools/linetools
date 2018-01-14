@@ -203,6 +203,10 @@ def build_systems_from_components(comps, systype=None, vsys=None, **kwargs):
     abs_systems : list
 
     """
+    # Suppress warnings here as we are expecting quite a few
+    import warnings
+    warnings.filterwarnings("ignore")
+
     if systype is None:
         from linetools.isgm.abssystem import GenericAbsSystem
         systype = GenericAbsSystem

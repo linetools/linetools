@@ -274,7 +274,6 @@ class AbsSystem(object):
         # Coordinates
         if chk_sep:
             testcoord = bool(self.coord.separation(abscomp.coord) < tol)
-            pdb.set_trace()
         else:
             testcoord = True
         # Now redshift/velocity
