@@ -92,7 +92,7 @@ class AbsSystem(object):
         return slf
 
     @classmethod
-    def from_components(cls, components, vlim=None, NHI=None):
+    def from_components(cls, components, vlim=None, NHI=None, s_kwargs=None, c_kwargs=None):
         """Instantiate from a list of AbsComponent objects
 
         Parameters
@@ -106,7 +106,16 @@ class AbsSystem(object):
           Set the NHI value of the system.  If not set,
           the method sums the NHI values of all the HI
           components input (if any)
+        s_kwargs : dict, optional
+          Passed to system Instantiation
+        c_kwargs : dict, optional
+          Passed to add_component
         """
+        # Init
+        if s_kwargs is None:
+            s_kwargs={}
+        if c_kwargs is None:
+            c_kwargs={}
         # Check
         assert ltiu.chk_components(components)
         # Instantiate with the first component
@@ -123,7 +132,7 @@ class AbsSystem(object):
             if NHI > 0.:
                 NHI = np.log10(NHI)
         #
-        slf = cls(init_comp.coord, init_comp.zcomp, vlim, NHI=NHI)
+        slf = cls(init_comp.coord, init_comp.zcomp, vlim, NHI=NHI, **s_kwargs)
         if slf.chk_component(init_comp):
             slf._components.append(init_comp)
         else:
@@ -131,7 +140,7 @@ class AbsSystem(object):
         # Append with component checking
         if len(components) > 1:
             for component in components[1:]:
-                slf.add_component(component)
+                slf.add_component(component, **c_kwargs)
         # Return
         return slf
 
@@ -265,6 +274,7 @@ class AbsSystem(object):
         # Coordinates
         if chk_sep:
             testcoord = bool(self.coord.separation(abscomp.coord) < tol)
+            pdb.set_trace()
         else:
             testcoord = True
         # Now redshift/velocity

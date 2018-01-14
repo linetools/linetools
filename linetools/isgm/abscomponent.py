@@ -75,7 +75,7 @@ class AbsComponent(object):
     """
     @classmethod
     def from_abslines(cls, abslines, stars=None, comment="", reliability='none',
-                      tol=0.01, chk_meas=False, verbose=True, **kwargs):
+                      adopt_median=False, tol=0.01, chk_meas=False, verbose=True, **kwargs):
         """Instantiate from a list of AbsLine objects
 
         Parameters
@@ -93,12 +93,17 @@ class AbsComponent(object):
                 'b' - possible
                 'c' - uncertain
                 'none' - not defined (default)
+        adopt_median : bool, optional
+            Adopt median values for N, b, vel from the AbsLine objects
+            Otherwise, use synthesize_colm for the column densities
         chk_meas : bool, optional
             If true, require that measurements for lines composing a component
             have matching values before setting component attribs.
             Otherwise, throw a warning
         tol : float, optional
             Fractional tolerance for line attributes (N,b) to match one another
+            Only applied if chk_meas=True and adopt_median=True
+        **kwargs -- Passed to add_absline
 
         """
         from linetools.analysis import absline as ltaa
@@ -114,61 +119,65 @@ class AbsComponent(object):
                    init_line.z, init_line.limits.vlim,
                    Ej=init_line.data['Ej'], stars=stars, reliability=reliability, comment=comment)
         slf._abslines.append(init_line)
+
         # Append with component checking
         if len(abslines) > 1:
             for absline in abslines[1:]:
                 slf.add_absline(absline, **kwargs)
 
         ### Add attribs to component
-        # First check that the measurements for all the lines match
-        # Grab them all
-        cols = np.array([al.attrib['N'].value for al in abslines])
-        colerrs = np.array([al.attrib['sig_N'].value for al in abslines])
-        bs = np.array([al.attrib['b'].value for al in abslines])
-        berrs = np.array([al.attrib['sig_b'].value for al in abslines])
-        vels = np.array([al.attrib['vel'].value for al in abslines])
-        velerrs = np.array([al.attrib['sig_vel'].value for al in abslines])
-        medcol = np.median(cols)
-        medcolerr = np.median(colerrs)
-        medb = np.median(bs)
-        medberr = np.median(berrs)
-        medvel = np.median(vels)
-        medvelerr = np.median(velerrs)
-        # Perform checks on measurements
-        if medcol == 0.:
-            colcrit = np.all((cols) == 0.)
+        if adopt_median:
+            # First check that the measurements for all the lines match
+            # Grab them all
+            cols = np.array([al.attrib['N'].value for al in abslines])
+            colerrs = np.array([al.attrib['sig_N'].value for al in abslines])
+            bs = np.array([al.attrib['b'].value for al in abslines])
+            berrs = np.array([al.attrib['sig_b'].value for al in abslines])
+            vels = np.array([al.attrib['vel'].value for al in abslines])
+            velerrs = np.array([al.attrib['sig_vel'].value for al in abslines])
+            medcol = np.median(cols)
+            medcolerr = np.median(colerrs)
+            medb = np.median(bs)
+            medberr = np.median(berrs)
+            medvel = np.median(vels)
+            medvelerr = np.median(velerrs)
+            # Perform checks on measurements
+            if medcol == 0.:
+                colcrit = np.all((cols) == 0.)
+            else:
+                colcrit = all(np.abs(cols - medcol) / medcol < tol) is True
+            if medb == 0.:
+                bcrit = np.all((bs) == 0.)
+            else:
+                bcrit = all(np.abs(bs - medb) / medb < tol) is True
+            # Set attribs
+            slf.attrib['N'] = medcol / u.cm ** 2
+            slf.attrib['sig_N'] = medcolerr / u.cm ** 2
+            slf.attrib['b'] = medb * u.km / u.s
+            slf.attrib['sig_b'] = medberr * u.km / u.s
+            slf.attrib['vel'] = medvel * u.km / u.s
+            slf.attrib['sig_vel'] = medvelerr * u.km / u.s
+            logN, sig_logN = ltaa.log_clm(slf.attrib)
+            slf.attrib['logN'] = logN
+            slf.attrib['sig_logN'] = sig_logN
+            # Stop or throw warnings
+            if (bcrit&colcrit):
+                pass
+            elif chk_meas:
+                raise ValueError('The line measurements for the lines in this '
+                                 'component are not consistent with one another.')
+            else:
+                if verbose:
+                    warnings.warn('The line measurements for the lines in this component'
+                              ' may not be consistent with one another.')
+                    if bcrit:
+                        print('Problem lies in the column density values')
+                    elif colcrit:
+                        print('Problem lies in the b values')
+                    else:
+                        print('Problems lie in the column densities and b values')
         else:
-            colcrit = all(np.abs(cols - medcol) / medcol < tol) is True
-        if medb == 0.:
-            bcrit = np.all((bs) == 0.)
-        else:
-            bcrit = all(np.abs(bs - medb) / medb < tol) is True
-        # Set attribs
-        slf.attrib['N'] = medcol / u.cm ** 2
-        slf.attrib['sig_N'] = medcolerr / u.cm ** 2
-        slf.attrib['b'] = medb * u.km / u.s
-        slf.attrib['sig_b'] = medberr * u.km / u.s
-        slf.attrib['vel'] = medvel * u.km / u.s
-        slf.attrib['sig_vel'] = medvelerr * u.km / u.s
-        logN, sig_logN = ltaa.log_clm(slf.attrib)
-        slf.attrib['logN'] = logN
-        slf.attrib['sig_logN'] = sig_logN
-        # Stop or throw warnings
-        if (bcrit&colcrit):
-            pass
-        elif chk_meas:
-            raise ValueError('The line measurements for the lines in this '
-                             'component are not consistent with one another.')
-        else:
-            if verbose:
-                warnings.warn('The line measurements for the lines in this component'
-                          ' may not be consistent with one another.')
-                if bcrit:
-                    print('Problem lies in the column density values')
-                elif colcrit:
-                    print('Problem lies in the b values')
-                else:
-                    print('Problems lie in the column densities and b values')
+            slf.synthesize_colm()
 
         # Return
         return slf
@@ -671,7 +680,7 @@ class AbsComponent(object):
                 warnings.warn("Absline {} has flag=0.  Hopefully you expected that".format(str(aline)))
                 continue
             # Check N is filled
-            if np.allclose(aline.attrib['N'].value, 0.):
+            if np.isclose(aline.attrib['N'].value, 0.):
                 raise ValueError("Need to set N in attrib.  \n Consider linear_clm in linetools.analysis.absline")
             if aline.attrib['flag_N'] == 1:  # Good value?
                 if self.flag_N == 1:  # Weighted mean
