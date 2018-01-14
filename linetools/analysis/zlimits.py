@@ -133,6 +133,18 @@ class zLimits(object):
         """
         return self._vlim
 
+    @property
+    def vmin(self):
+        """ Return vlim
+        """
+        return self.vlim[0]
+
+    @property
+    def vmax(self):
+        """ Return vlim
+        """
+        return self.vlim[1]
+
     def reset(self):
         """ Update all the values
         """
