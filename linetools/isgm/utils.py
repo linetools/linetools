@@ -70,7 +70,7 @@ def chk_components(components, chk_match=False, chk_A_none=False, tol=0.2*u.arcs
     return tests
 
 
-def build_components_from_abslines(iabslines, clmdict=None, coord=None, synthesize=False,
+def build_components_from_abslines(iabslines, clmdict=None, coord=None,
                                    **kwargs):
     """ Generate a list of AbsComponent from a list of abslines
 
@@ -85,8 +85,6 @@ def build_components_from_abslines(iabslines, clmdict=None, coord=None, synthesi
       If present, build the abslines list from this dict
     coord : SkyCoord, optional
       Required if clmdict is used
-    synthesize : bool, optional
-      Synthesize the column densities?  - May default to True eventually
 
     Returns
     -------
@@ -130,9 +128,6 @@ def build_components_from_abslines(iabslines, clmdict=None, coord=None, synthesi
             vmin = min(vmin, iline.limits.vlim[0].value)
             vmax = max(vmax, iline.limits.vlim[1].value)
         component.limits.set([vmin,vmax]*u.km/u.s)
-        # Synthesize column?
-        if synthesize:
-            component.synthesize_colm()
         # Append
         components.append(component)
     # Return

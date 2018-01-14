@@ -77,6 +77,8 @@ class AbsComponent(object):
     def from_abslines(cls, abslines, stars=None, comment="", reliability='none',
                       adopt_median=False, tol=0.01, chk_meas=False, verbose=True, **kwargs):
         """Instantiate from a list of AbsLine objects
+        If the AbsLine objects contain column density measurements,
+        these will be synthesized in one of two ways (controlled by adopt_median)
 
         Parameters
         ----------
@@ -125,8 +127,10 @@ class AbsComponent(object):
             for absline in abslines[1:]:
                 slf.add_absline(absline, **kwargs)
 
-        ### Add attribs to component
-        if adopt_median:
+        ### Synthesize column density (and more)
+        if not adopt_median:
+            slf.synthesize_colm()
+        else:
             # First check that the measurements for all the lines match
             # Grab them all
             cols = np.array([al.attrib['N'].value for al in abslines])
@@ -176,8 +180,6 @@ class AbsComponent(object):
                         print('Problem lies in the b values')
                     else:
                         print('Problems lie in the column densities and b values')
-        else:
-            slf.synthesize_colm()
 
         # Return
         return slf
