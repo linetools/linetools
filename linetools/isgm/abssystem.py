@@ -292,8 +292,10 @@ class AbsSystem(object):
             testcoord = True
         # Now redshift/velocity
         testz = True
-        if update_vlim:
-            pdb.set_trace()
+        if update_vlim:  # Really zlim
+            zmin = min(self.limits.zlim[0], abscomp.limits.zlim[0])
+            zmax = max(self.limits.zlim[1], abscomp.limits.zlim[1])
+            self.limits.set([zmin,zmax])
         else:
             if chk_z:
                 # Will avoid Quantity for speed
