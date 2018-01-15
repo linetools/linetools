@@ -197,6 +197,7 @@ def build_systems_from_components(comps, systype=None, vsys=None, **kwargs):
       Passed as vtoler to add_component
       The first component will define the system redshift and all others will
       need to lie within vsys of it
+    **kwargs -- Passed to add_component()
 
     Returns
     -------
