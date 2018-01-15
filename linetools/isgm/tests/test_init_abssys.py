@@ -48,6 +48,8 @@ def test_init():
     assert gensys.abs_type == 'Generic'
     assert gensys.flag_NHI == 1
     np.testing.assert_allclose(gensys.zabs,1.244)
+    np.testing.assert_allclose(gensys.vlim.value, [-500,500])
+    #
 
 
 def test_init_strradec():
