@@ -215,7 +215,6 @@ class AbsSystem(object):
         self.flag_ZH = 0
 
         # Abundances and Tables
-        self._EW = QTable()
         self._ionN = None   # Needs to be None for fill_ion
         self._trans = QTable()
         self._ionstate = {}
@@ -317,7 +316,6 @@ class AbsSystem(object):
         newsys.ZH = self.ZH
         newsys.sig_ZH = self.sig_ZH
         newsys.flag_ZH = self.flag_ZH
-        newsys._EW = self._EW
         newsys._ionN = self._ionN
         newsys._trans = self._trans
         newsys._ionstate = self._ionstate
@@ -341,7 +339,7 @@ class AbsSystem(object):
         """
         return True
 
-    def fill_ionN(self, vrange, **kwargs):
+    def fill_ionN(self, vrange=None, **kwargs):
         """ Fills the ionN Table from the list of components
         """
         if len(self._components) > 0:
