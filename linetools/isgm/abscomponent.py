@@ -909,6 +909,7 @@ class AbsComponent(object):
 
     def to_dict(self):
         """ Convert component data to a dict
+        
         Returns
         -------
         cdict : dict
