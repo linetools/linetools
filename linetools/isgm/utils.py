@@ -369,11 +369,15 @@ def table_from_complist(complist):
                  'b','sig_b', 'vel', 'sig_vel','specfile']
 
     tab = Table()
-
+    # Coordinates
     coords = SkyCoord([icomp.coord for icomp in complist])
     # Basics
-    tab['RA'] = coords.ra
+    try:
+        tab['RA'] = coords.ra
+    except:
+        pdb.set_trace()
     tab['DEC'] = coords.dec
+
     tab['comp_name'] = [comp.name for comp in complist]
     tab['vmin'] = u.Quantity([icomp.vlim[0] for icomp in complist])
     tab['vmax'] = u.Quantity([icomp.vlim[1] for icomp in complist])

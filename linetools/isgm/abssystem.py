@@ -353,7 +353,7 @@ class AbsSystem(object):
         """ Fills the ionN Table from the list of components
         """
         if len(self._components) > 0:
-            self._ionN = ltiu.iontable_from_components(self._components, **kwargs)
+            self._ionN = ltiu.table_from_complist(self._components, **kwargs)
 
     def fill_trans(self, **kwargs):
         """ Generates a table of transitions
