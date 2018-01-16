@@ -129,6 +129,8 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
             all_trans += ['SiII 1193']
     elif ctype == 'SiII*':
         all_trans = ['SiII* 1264', 'SiII* 1533']
+    elif ctype == 'SiIII':
+        all_trans = ['SiIII 1206']
     abslines = []
     for trans in all_trans:
         iline = AbsLine(trans, z=zcomp, linelist=ism)

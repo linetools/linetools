@@ -145,7 +145,6 @@ def test_todict():
     assert isinstance(newsys, AbsSystem)
 
 
-@pytest.mark.skipif("sys.version_info >= (3,0)")
 def test_todict_withjson():
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
     # HI Lya, Lyb

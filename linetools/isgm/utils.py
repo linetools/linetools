@@ -338,7 +338,7 @@ def complist_from_table(table):
     return complist
 
 
-def table_from_complist(complist):
+def table_from_complist(complist, NHI_obj=None):
     """
     Returns a astropy.Table from an input list of AbsComponents. It only
     fills in mandatory and special attributes (see notes below).
@@ -350,6 +350,8 @@ def table_from_complist(complist):
     ----------
     complist : list of AbsComponents
         The initial list of AbsComponents to create the Table from.
+    NHI_obj : object, optional (with NHI, sig_NHI, flag_NHI attributes)
+      If provided, fill HI with NHI, sig_NHI, flag_NHI
 
     Returns
     -------
@@ -433,6 +435,24 @@ def table_from_complist(complist):
     tab = tab[key_order]
 
     # May need to add an HI component here as done in the method below
+    if NHI_obj is not None:
+        # Existing row in Table?
+        mt = np.where((tab['Z'] == 1) & (tab['ion']==1))[0]
+        if len(mt) == 1:
+            tab[mt[0]]['logN'] = NHI_obj.NHI
+            tab[mt[0]]['sig_logN'] = np.mean(NHI_obj.sig_NHI) # Allow for two values
+            tab[mt[0]]['flag_N'] = NHI_obj.flag_NHI
+        else: # Add a dummy row
+            tab.add_row(tab[0])
+            tab['logN'][-1] = NHI_obj.NHI
+            tab['sig_logN'][-1] = np.mean(NHI_obj.sig_NHI) # Allow for two values
+            tab['flag_N'][-1] = NHI_obj.flag_NHI
+            #
+            tab['Z'][-1] = 1
+            tab['ion'][-1] = 1
+            tab['Ej'][-1] = 0.
+            tab['ion_name'][-1] = 'HI'
+            tab['comp_name'][-1] = 'HI_z{:0.5f}'.format(tab['z_comp'][-1])
 
     return tab
 

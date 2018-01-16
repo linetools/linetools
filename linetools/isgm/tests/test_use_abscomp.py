@@ -27,6 +27,8 @@ lt_path = imp.find_module('linetools')[1]
 #pdb.set_trace()
 # Set of Input lines
 
+class DummyObj(object):
+    pass
 
 
 def data_path(filename):
@@ -430,6 +432,17 @@ def test_complist_from_table_and_table_from_complist():
     complist = ltiu.complist_from_table(tab)
     tab2 = ltiu.table_from_complist(complist)
     np.testing.assert_allclose(tab['logN'], tab2['logN'])
+
+    # NHI obj
+    SiIIcomp1,_ = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s, add_spec=True)
+    SiIIIcomp1,_ = mk_comp('SiIII',vlim=[-300.,50.]*u.km/u.s, add_spec=True)
+    NHI_obj = DummyObj()
+    NHI_obj.NHI = 21.0
+    NHI_obj.sig_NHI = np.array([0.1,0.1])
+    NHI_obj.flag_NHI = 1
+    tab2b = ltiu.table_from_complist([SiIIcomp1, SiIIIcomp1], NHI_obj=NHI_obj)
+    assert tab2b['Z'][-1] == 1
+    assert tab2b['ion_name'][-1] == 'HI'
 
     # comment now
     tab['comment'] = ['good', 'good', 'bad', 'bad', 'This is a longer comment with symbols &*^%$']
