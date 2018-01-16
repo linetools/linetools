@@ -105,4 +105,5 @@ def test_init_multi_absline():
     abscomp = AbsComponent.from_abslines([lya, lyb])
     # Test
     assert abscomp.flag_N == 1
+    assert abscomp.attrib['sig_logN'].size == 2
     assert np.isclose(abscomp.logN, 12.146128035678238)

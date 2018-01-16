@@ -236,7 +236,7 @@ def test_synthesize_components():
     #
     synth_SiII = ltiu.synthesize_components([SiIIcomp1,SiIIcomp2])
     np.testing.assert_allclose(synth_SiII.logN, 13.862454764546792)
-    np.testing.assert_allclose(synth_SiII.sig_logN, 0.010146946475971825)
+    np.testing.assert_allclose(synth_SiII.sig_logN, np.array([0.010146946475971825]*2))
     # Failures
     pytest.raises(IOError, ltiu.synthesize_components, 1)
     pytest.raises(IOError, ltiu.synthesize_components, [1,2])
@@ -346,7 +346,7 @@ def test_build_components_from_lines():
 
 def test_abscomp_H2():
     Zion = (-1, -1)  # temporary code for molecules
-    Ntuple = (1, 17, -1)  # initial guess for Ntuple (needs to be given for adding lines from linelist)
+    Ntuple = (1, 17, 0.5)  # initial guess for Ntuple (needs to be given for adding lines from linelist)
     coord = SkyCoord(0,0, unit='deg')
     z = 0.212
     vlim = [-100., 100.] * u.km/u.s
@@ -427,7 +427,7 @@ def test_complist_from_table_and_table_from_complist():
 
     # test other columns
     tab['logN'] = 13.7
-    tab['sig_logN'] = 0.1
+    tab['sig_logN'] = np.array([0.1]*2)
     tab['flag_logN'] = 1
     complist = ltiu.complist_from_table(tab)
     tab2 = ltiu.table_from_complist(complist)

@@ -31,8 +31,8 @@ from linetools.analysis.zlimits import zLimits
 c_kms = const.c.to('km/s').value
 
 # Global initial attrib dict (speeds up performance b/c astropy.Quantity issue?)
-init_attrib = {'N': 0./u.cm**2, 'sig_N': 0./u.cm**2, 'flag_N': 0, # Column    ## NOT ENOUGH SPEED-UP
-              'logN': 0., 'sig_logN': 0.,
+init_attrib = {'N': 0./u.cm**2, 'sig_N': [0.,0.]/u.cm**2, 'flag_N': 0, # Column    ## NOT ENOUGH SPEED-UP
+              'logN': 0., 'sig_logN': np.array([0.,0.]),
               'b': 0.*u.km/u.s, 'sig_b': 0.*u.km/u.s,  # Doppler
               'vel': 0*u.km/u.s, 'sig_vel': 0*u.km/u.s
               }
@@ -144,7 +144,7 @@ class AbsComponent(object):
                 vels = np.array([al.attrib['vel'].value for al in abslines])
                 velerrs = np.array([al.attrib['sig_vel'].value for al in abslines])
                 medcol = np.median(cols)
-                medcolerr = np.median(colerrs)
+                medcolerr = np.median(colerrs, axis=1)
                 medb = np.median(bs)
                 medberr = np.median(berrs)
                 medvel = np.median(vels)
@@ -262,7 +262,10 @@ class AbsComponent(object):
             warnings.warn('Overwriting column density attributes (if they existed).', DeprecationWarning)
             slf.attrib['flag_N'] = Ntup[0]
             slf.attrib['logN'] = Ntup[1]
-            slf.attrib['sig_logN'] = Ntup[2]
+            if isinstance(Ntup[2], (list,tuple,np.ndarray)):
+                slf.attrib['sig_logN'] = np.array(Ntup[2])
+            else:
+                slf.attrib['sig_logN'] = np.array([Ntup[2]]*2)
             _, _ = ltaa.linear_clm(slf.attrib)  # Set linear quantities
 
         # Add lines
@@ -314,8 +317,7 @@ class AbsComponent(object):
             (flag_N,logN,sig_logN)
             flag_N : Flag describing N measurement  (0: no info; 1: detection; 2: saturated; 3: non-detection)
             logN : log10 N column density
-            sig_logN : Error in log10 N
-              # TODO FUTURE IMPLEMENTATION WILL REQUIRE 2-element ndarray for sig_logN
+            sig_logN : Error in log10 N.  Two elements are expected but not required
         Ej : Quantity, optional
             Energy of lower level (1/cm)
         stars : str, optional
@@ -349,7 +351,10 @@ class AbsComponent(object):
         if Ntup is not None:
             self.attrib['flag_N'] = Ntup[0]
             self.attrib['logN'] = Ntup[1]
-            self.attrib['sig_logN'] = Ntup[2]
+            if isinstance(Ntup[2], (list,tuple,np.ndarray)):
+                self.attrib['sig_logN'] = np.array(Ntup[2])
+            else:
+                self.attrib['sig_logN'] = np.array([Ntup[2]]*2)
             _, _ = ltaa.linear_clm(self.attrib)  # Set linear quantities
 
         # Name
@@ -736,6 +741,9 @@ class AbsComponent(object):
                 warnings.warn("Absline {} has flag=0.  Hopefully you expected that")
             else:
                 raise ValueError("Bad flag_N value")
+        # Enforce 2-element error arrays
+        if self.attrib['sig_N'].size == 1:
+            self.attrib['sig_N'] = [self.attrib['sig_N'].value]*2 * self.attrib['sig_N'].unit
         # Log values
         if self.flag_N > 0:
             _, _ = ltaa.log_clm(self.attrib)
