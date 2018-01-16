@@ -215,7 +215,10 @@ def jsonify(obj, debug=False):
     elif isinstance(obj, np.string_):
         obj = str(obj)
     elif isinstance(obj, Quantity):
-        obj = dict(value=obj.value, unit=obj.unit.to_string())
+        if obj.size == 1:
+            obj = dict(value=obj.value, unit=obj.unit.to_string())
+        else:
+            obj = dict(value=obj.value.tolist(), unit=obj.unit.to_string())
     elif isinstance(obj, np.ndarray):  # Must come after Quantity
         obj = obj.tolist()
     elif isinstance(obj, dict):
