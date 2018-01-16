@@ -11,6 +11,11 @@ import pytest
 
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.spectralline import AbsLine
+import os
+
+def data_path(filename):
+    data_dir = os.path.join(os.path.dirname(__file__), 'files')
+    return os.path.join(data_dir, filename)
 
 
 def test_init():
@@ -42,6 +47,11 @@ def test_init_failures():
     lyb.attrib['b'] = 30 * u.km/u.s
     with pytest.raises(ValueError):
         AbsComponent.from_abslines([lya,lyb], adopt_median=True, chk_meas=True)
+
+def test_read_from_json():
+    abscomp = AbsComponent.from_json(data_path('old_lya_component.json'))
+    assert np.isclose(abscomp.logN, 17.)
+    assert abscomp.Zion == (1,1)
 
 
 def test_init_single_absline():

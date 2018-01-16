@@ -34,6 +34,13 @@ def data_path(filename):
     return os.path.join(data_dir, filename)
 
 
+def test_write():
+    # Component
+    abscomp,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s)
+    # Write
+    abscomp.write(data_path('tmp.json'))
+    # Read
+    tmpcomp = abscomp.from_json(data_path('tmp.json'))
 
 
 def test_get_components_at_z():
@@ -82,22 +89,22 @@ def test_stack_plot():
 
 
 def test_repr_vpfit():
-    abscomp, HIlines = mk_comp('HI')
+    abscomp, HIlines = mk_comp('HI', use_rand=False)
     s = abscomp.repr_vpfit()
-    assert s == 'HI 2.92939 0.00000 10.00 0.00 0.00 0.00\n'
+    assert s == 'HI 2.92939 0.00000 10.00 0.00 13.30 0.00\n'
 
     s = abscomp.repr_vpfit(b=15*u.km/u.s)
-    assert s == 'HI 2.92939 0.00000 15.00 0.00 0.00 0.00\n'
+    assert s == 'HI 2.92939 0.00000 15.00 0.00 13.30 0.00\n'
 
     abscomp.comment = 'Something'
     s = abscomp.repr_vpfit()
-    assert s == 'HI 2.92939 0.00000 10.00 0.00 0.00 0.00! Something\n'
+    assert s == 'HI 2.92939 0.00000 10.00 0.00 13.30 0.00! Something\n'
     s = abscomp.repr_vpfit(tie_strs=('a', 'b', 'CD'), fix_strs=('', 'f', ''))
-    assert s == 'HI 2.92939a 0.00000 10.00F 0.00 0.00cd 0.00! Something\n'
+    assert s == 'HI 2.92939a 0.00000 10.00F 0.00 13.30cd 0.00! Something\n'
 
-    abscomp, SiIIlines = mk_comp('SiII')
+    abscomp, SiIIlines = mk_comp('SiII', use_rand=False)
     s = abscomp.repr_vpfit()
-    assert s == 'SiII 2.92939 0.00000 10.00 0.00 0.00 0.00\n'
+    assert s == 'SiII 2.92939 0.00000 10.00 0.00 13.30 0.00\n'
 
     # errors
     with pytest.raises(TypeError):
@@ -109,19 +116,19 @@ def test_repr_vpfit():
 
 
 def test_repr_alis():
-    abscomp, HIlines = mk_comp('HI')
+    abscomp, HIlines = mk_comp('HI', use_rand=False)
     s = abscomp.repr_alis()
-    assert s == 'voigt   ion=1H_I 0.00 redshift=2.92939 0.0 1.0E+04\n'
+    assert s == 'voigt   ion=1H_I 13.30 redshift=2.92939 0.0 1.0E+04\n'
 
-    abscomp, SiIIlines = mk_comp('SiII')
+    abscomp, SiIIlines = mk_comp('SiII', use_rand=False)
     s = abscomp.repr_alis(T_kin=10**5*u.K)
-    assert s == 'voigt   ion=28Si_II 0.00 redshift=2.92939 0.0 1.0E+05\n'
+    assert s == 'voigt   ion=28Si_II 13.30 redshift=2.92939 0.0 1.0E+05\n'
 
     abscomp.comment = 'Something'
     s = abscomp.repr_alis()
-    assert s == 'voigt   ion=28Si_II 0.00 redshift=2.92939 0.0 1.0E+04# Something\n'
+    assert s == 'voigt   ion=28Si_II 13.30 redshift=2.92939 0.0 1.0E+04# Something\n'
     s = abscomp.repr_alis(tie_strs=('a', 'b', 'CD',''), fix_strs=('', 'f', '', ''))
-    assert s == 'voigt   ion=28Si_II 0.00a redshift=2.92939F 0.0cd 1.0E+04# Something\n'
+    assert s == 'voigt   ion=28Si_II 13.30a redshift=2.92939F 0.0cd 1.0E+04# Something\n'
 
     # errors
     with pytest.raises(TypeError):
@@ -219,10 +226,10 @@ def test_group_coincident_components():
 
 def test_synthesize_components():
     #
-    SiIIcomp1,_ = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s, add_spec=True)
+    SiIIcomp1,_ = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s, add_spec=True, skip_synth=True)
     SiIIcomp1.synthesize_colm(redo_aodm=True)
     #
-    SiIIcomp2,_ = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s, add_spec=True)
+    SiIIcomp2,_ = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s, add_spec=True, skip_synth=True)
     SiIIcomp2.synthesize_colm(redo_aodm=True)
     #
     synth_SiII = ltiu.synthesize_components([SiIIcomp1,SiIIcomp2])
@@ -232,10 +239,10 @@ def test_synthesize_components():
     pytest.raises(IOError, ltiu.synthesize_components, 1)
     pytest.raises(IOError, ltiu.synthesize_components, [1,2])
     # Now SiII*
-    SiIIscomp1,_ = mk_comp('SiII*',vlim=[-300.,50.]*u.km/u.s, add_spec=True)
+    SiIIscomp1,_ = mk_comp('SiII*',vlim=[-300.,50.]*u.km/u.s, add_spec=True, skip_synth=True)
     SiIIscomp1.synthesize_colm(redo_aodm=True)
     #
-    SiIIscomp2,_ = mk_comp('SiII*',vlim=[50.,300.]*u.km/u.s, add_spec=True)
+    SiIIscomp2,_ = mk_comp('SiII*',vlim=[50.,300.]*u.km/u.s, add_spec=True, skip_synth=True)
     SiIIscomp2.synthesize_colm(redo_aodm=True)
     synth_SiIIs = ltiu.synthesize_components([SiIIscomp1,SiIIscomp2])
     assert synth_SiIIs.name.count('*') == 1
@@ -286,14 +293,14 @@ def test_build_table():
 
 def test_synthesize_colm():
     abscomp,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True,
-                        add_trans=True)
+                        add_trans=True, skip_synth=True)
     # Column
     abscomp.synthesize_colm(redo_aodm=True)
     # Test
     np.testing.assert_allclose(abscomp.logN, 13.594445560856554)
     # Reset flags (for testing)
     abscomp2,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True, use_rand=False,
-                         add_trans=True)
+                         add_trans=True, skip_synth=True)
     for iline in abscomp2._abslines:
         if iline.data['name'] == 'SiII 1260':
             iline.attrib['flag_N'] = 2
@@ -307,7 +314,7 @@ def test_synthesize_colm():
     # Test
     np.testing.assert_allclose(abscomp2.logN, 13.3)
     # Another
-    abscomp3,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True, use_rand=False)
+    abscomp3,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s, add_spec=True, use_rand=False, skip_synth=True)
     for iline in abscomp3._abslines:
         if iline.data['name'] == 'SiII 1260':
             iline.attrib['flag_N'] = 3
@@ -369,6 +376,7 @@ def test_add_abslines_from_linelist():
     comp.add_abslines_from_linelist(llist='HI', min_Wr=0.001*u.AA)
 
 
+''' DEPRECATED
 def test_iontable_from_components():
     # Lines
     abscomp,HIlines = mk_comp('HI')
@@ -377,6 +385,7 @@ def test_iontable_from_components():
     comps = ltiu.build_components_from_abslines([HIlines[0],HIlines[1],SiIIlines[0],SiIIlines[1]])
     tbl = ltiu.iontable_from_components(comps)
     assert len(tbl) == 2
+'''
 
 
 def test_complist_from_table_and_table_from_complist():

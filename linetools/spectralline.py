@@ -137,8 +137,8 @@ class SpectralLine(object):
             elif key == 'spec_file':
                 # spec_file is intended to be the name of the spectrum file
                 # spec is intendended to hold an XSpectrum1D object
-                warnings.warn("You will need to load {:s} into analy['spec'] yourself".format(
-                        idict['analy'][key]))
+                #warnings.warn("You will need to load {:s} into analy['spec'] yourself".format(
+                #        idict['analy'][key]))
                 sline.analy[key] = idict['analy'][key]
             else:
                 sline.analy[key] = idict['analy'][key]

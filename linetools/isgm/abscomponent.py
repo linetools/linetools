@@ -238,10 +238,16 @@ class AbsComponent(object):
             else:
                 reliability = 'none'
 
-        # init
+        # Deprecated column density attributes
+        if 'logN' in idict.keys():
+            warnings.warn('Column density attributes are now Deprecated', DeprecationWarning)
+            print("We will use yours for now..")
+            Ntup = tuple([idict[key] for key in ['flag_N', 'logN', 'sig_logN']])
+        else:
+            Ntup = None
+        # Instantiate
         slf = cls(radec, tuple(idict['Zion']), idict['zcomp'], idict['vlim']*u.km/u.s,
-                  Ej=idict['Ej']/u.cm, A=idict['A'],
-                  Ntup = tuple([idict[key] for key in ['flag_N', 'logN', 'sig_logN']]),
+                  Ej=idict['Ej']/u.cm, A=idict['A'], Ntup=Ntup,
                   comment=idict['comment'], name=idict['Name'], reliability=reliability)
         # Attributes
         if 'attrib' in idict.keys():
@@ -251,12 +257,37 @@ class AbsComponent(object):
                     slf.attrib[ak] = ltu.convert_quantity_in_dict(idict['attrib'][ak])
                 else:
                     slf.attrib[ak] = idict['attrib'][ak]
+        # Deprecated column (again)
+        if Ntup is not None:
+            warnings.warn('Overwriting column density attributes (if they existed).', DeprecationWarning)
+            slf.attrib['flag_N'] = Ntup[0]
+            slf.attrib['logN'] = Ntup[1]
+            slf.attrib['sig_logN'] = Ntup[2]
+            _, _ = ltaa.linear_clm(slf.attrib)  # Set linear quantities
+
         # Add lines
         for key in idict['lines'].keys():
             iline = AbsLine.from_dict(idict['lines'][key], coord=coord, **kwargs)
             slf.add_absline(iline, **kwargs)
         # Return
         return slf
+
+    @classmethod
+    def from_json(cls, json_file, **kwargs):
+        """
+        Parameters
+        ----------
+        json_file : str
+
+        Returns
+        -------
+        AbsComponent
+
+        """
+        # Load dict
+        jdict = ltu.loadjson(json_file)
+        # Instantiate
+        return cls.from_dict(jdict, **kwargs)
 
     def __init__(self, radec, Zion, zcomp, vlim, Ej=0./u.cm, A=None,
                  Ntup=None, comment='', name=None, stars=None, reliability='none'):
@@ -319,7 +350,7 @@ class AbsComponent(object):
             self.attrib['flag_N'] = Ntup[0]
             self.attrib['logN'] = Ntup[1]
             self.attrib['sig_logN'] = Ntup[2]
-            _, _ = ltaa.linear_clm(self._attrib)  # Set linear quantities
+            _, _ = ltaa.linear_clm(self.attrib)  # Set linear quantities
 
         # Name
         if (name is None) and (self.Zion != (-1, -1)):
@@ -494,12 +525,10 @@ class AbsComponent(object):
 
             if min_Wr is not None:
                 # check logN is defined
-                logN = self.logN
-                if logN == 0:
-                    warnings.warn("AbsComponent does not have logN defined. Appending AbsLines "
-                                  "regardless of min_Wr.")
+                if self.logN == 0:
+                    pass
                 else:
-                    N = 10**logN / (u.cm*u.cm)
+                    N = 10.**self.logN / u.cm**2
                     Wr_iline = iline.get_Wr_from_N(N=N)  # valid for the tau0<<1 regime.
                     if Wr_iline < min_Wr:  # do not append
                         continue
@@ -918,7 +947,6 @@ class AbsComponent(object):
                      Name=self.name,
                      RA=self.coord.icrs.ra.value, DEC=self.coord.icrs.dec.value,
                      A=self.A, Ej=self.Ej.to('1/cm').value, comment=self.comment,
-                     flag_N=self.flag_N, logN=self.logN, sig_logN=self.sig_logN,
                      attrib=self.attrib)
         cdict['class'] = self.__class__.__name__
         # AbsLines
@@ -929,6 +957,24 @@ class AbsComponent(object):
         cdict = ltu.jsonify(cdict)
         # Return
         return cdict
+
+    def write(self, outfile, overwrite=True):
+        """ Write to a JSON file
+
+        Parameters
+        ----------
+        outfile : str
+        overwrite : bool, optional
+
+        Returns
+        -------
+
+        """
+        # Generate the dict
+        cdict = self.to_dict()
+        # Write
+        ltu.savejson(outfile, cdict, overwrite=overwrite, easy_to_read=True)
+        print("Wrote AbsComponent to {:s}".format(outfile))
 
     def copy(self):
         """ Generate a copy of itself
