@@ -861,10 +861,17 @@ def update_fval(table, verbose=False):
     #   Morton2003 cites this but uses a different f-value
     imn = np.argmin(np.abs(table['wrest']-1526.707))
     table['f'][imn] = 0.127
+    table['Ref'][imn] = 'Shectman1998'
 
     # Howk 2000 (using Weise 2002 as in Morton for FeII 1142,1143,1144)
     howk00_fil = lt_path + '/data/lines/howk00_table1.ascii'
     howk00 = ascii.read(howk00_fil, comment='#')
+
+    # Jenkins & Tripp (2006, ApJ, 637, 548)
+    imn = np.argmin(np.abs(table['wrest']-1317.217))
+    table['f'][imn] = 0.0571
+    table['Ref'][imn] = 'JT2006'
+
 
     # Dress up
     howk00['wrest'].unit = u.AA
