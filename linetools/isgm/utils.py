@@ -344,7 +344,7 @@ def table_from_complist(complist):
     fills in mandatory and special attributes (see notes below).
     Other information stored in dictionary AbsComp.attrib is ignored.
 
-    Attributes with units are stored in the Table with units
+    Attributes with units are stored in the Table with units.
 
     Parameters
     ----------
