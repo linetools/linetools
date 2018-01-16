@@ -284,7 +284,7 @@ class AbsComponent(object):
             flag_N : Flag describing N measurement  (0: no info; 1: detection; 2: saturated; 3: non-detection)
             logN : log10 N column density
             sig_logN : Error in log10 N
-              # TODO FUTURE IMPLEMENTATION WILL ALLOW FOR 2-element ndarray for sig_logN
+              # TODO FUTURE IMPLEMENTATION WILL REQUIRE 2-element ndarray for sig_logN
         Ej : Quantity, optional
             Energy of lower level (1/cm)
         stars : str, optional
@@ -307,20 +307,19 @@ class AbsComponent(object):
         zlim = ltu.z_from_dv(vlim, zcomp)
         self.limits = zLimits(zcomp, zlim.tolist())
 
+        # Attributes
+        self.attrib = init_attrib.copy()
+
         # Optional
         self.A = A
         self.Ej = Ej
         self.stars = stars
         self.comment = comment
         if Ntup is not None:
-            self.flag_N = Ntup[0]
-            self.logN = Ntup[1]
-            self.sig_logN = Ntup[2]
-            _, _ = ltaa.linear_clm(self)  # Set linear quantities
-        else:
-            self.flag_N = 0
-            self.logN = 0.
-            self.sig_logN = 0.
+            self.attrib['flag_N'] = Ntup[0]
+            self.attrib['logN'] = Ntup[1]
+            self.attrib['sig_logN'] = Ntup[2]
+            _, _ = ltaa.linear_clm(self._attrib)  # Set linear quantities
 
         # Name
         if (name is None) and (self.Zion != (-1, -1)):
@@ -342,10 +341,7 @@ class AbsComponent(object):
             raise ValueError("Input reliability `{}` not valid.".format(reliability))
         self.reliability = reliability
 
-        # Potential for attributes
-        self.attrib = init_attrib.copy()
-
-        # Other
+        # AbsLines
         self._abslines = []
 
     @property
@@ -355,22 +351,6 @@ class AbsComponent(object):
     @property
     def zcomp(self):
         return self.limits.z
-
-    @property
-    def b(self):
-        return self.attrib['b']
-
-    @property
-    def sig_b(self):
-        return self.attrib['sig_b']
-
-    @property
-    def vel(self):  #velocity centroid
-        return self.attrib['vel']
-
-    @property
-    def sig_vel(self):  #velocity centroid
-        return self.attrib['sig_vel']
 
     def add_absline(self, absline, tol=0.1*u.arcsec, chk_vel=True,
                     chk_sep=True, vtoler=1., **kwargs):
@@ -680,7 +660,7 @@ class AbsComponent(object):
             for aline in self._abslines:
                 aline.measure_aodm(**kwargs)
         # Collate
-        self.flag_N = 0
+        self.attrib['flag_N'] = 0
         for aline in self._abslines:
             if aline.attrib['flag_N'] == 0:  # No value
                 warnings.warn("Absline {} has flag=0.  Hopefully you expected that".format(str(aline)))
@@ -695,41 +675,42 @@ class AbsComponent(object):
                     mu = self.N * weight
                     # Update
                     weight += 1./aline.attrib['sig_N']**2
-                    self.N = (mu + aline.attrib['N']/aline.attrib['sig_N']**2) / weight
-                    self.sig_N = np.sqrt(1./weight)
+                    self.attrib['N'] = (mu + aline.attrib['N']/aline.attrib['sig_N']**2) / weight
+                    self.attrib['sig_N'] = np.sqrt(1./weight)
                 else:  # Fill
-                    self.N = aline.attrib['N']
-                    self.sig_N = aline.attrib['sig_N']
-                    self.flag_N = 1
+                    self.attrib['N'] = aline.attrib['N']
+                    self.attrib['sig_N'] = aline.attrib['sig_N']
+                    self.attrib['flag_N'] = 1
             elif aline.attrib['flag_N'] == 2:  # Lower limit
                 if self.flag_N in [0, 3]:
-                    self.N = aline.attrib['N']
-                    self.sig_N = aline.attrib['sig_N']
-                    self.flag_N = 2
+                    self.attrib['N'] = aline.attrib['N']
+                    self.attrib['sig_N'] = aline.attrib['sig_N']
+                    self.attrib['flag_N'] = 2
                 elif self.flag_N == 2:
                     if aline.attrib['N'] > self.N:
-                        self.N = aline.attrib['N']
-                        self.sig_N = aline.attrib['sig_N']
+                        self.attrib['N'] = aline.attrib['N']
+                        self.attrib['sig_N'] = aline.attrib['sig_N']
                 elif self.flag_N == 1:
                     pass
             elif aline.attrib['flag_N'] == 3:  # Upper limit
                 if self.flag_N == 0:
-                    self.N = aline.attrib['N']
-                    self.sig_N = aline.attrib['sig_N']
-                    self.flag_N = 3
+                    self.attrib['N'] = aline.attrib['N']
+                    self.attrib['sig_N'] = aline.attrib['sig_N']
+                    self.attrib['flag_N'] = 3
                 elif self.flag_N in [1, 2]:
                     pass
                 elif self.flag_N == 3:
                     if aline.attrib['N'] < self.N:
-                        self.N = aline.attrib['N']
-                        self.sig_N = aline.attrib['sig_N']
+                        self.attrib['N'] = aline.attrib['N']
+                        self.attrib['sig_N'] = aline.attrib['sig_N']
             elif aline.attrib['flag_N'] == 0:  # No value
                 warnings.warn("Absline {} has flag=0.  Hopefully you expected that")
             else:
                 raise ValueError("Bad flag_N value")
         # Log values
         if self.flag_N > 0:
-            self.logN, self.sig_logN = ltaa.log_clm(self)
+            _, _ = ltaa.log_clm(self.attrib)
+        # Update attributes
 
     def repr_vpfit(self, b=10.*u.km/u.s, tie_strs=('', '', ''), fix_strs=('', '', '')):
         """
@@ -978,6 +959,20 @@ class AbsComponent(object):
         attrib : str
         """
         return getattr(self, attrib)
+
+    def __getattr__(self, key):
+        """ Pull an attribute from the attrib dict
+
+        Parameters
+        ----------
+        key : str
+          Attribute
+
+        Returns
+        -------
+        self.attrib[k]
+        """
+        return self.attrib[key]
 
     def __repr__(self):
         txt = '<{:s}: {:s} {:s}, Name={:s}, Zion=({:d},{:d}), Ej={:g}, z={:g}, vlim={:g},{:g}'.format(
