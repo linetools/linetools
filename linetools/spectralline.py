@@ -212,7 +212,7 @@ class SpectralLine(object):
                        use_CACHE=use_CACHE)
         # Redshift Limits
         if z is None:
-            warnings.warn("Redshift not input.  Setting to 0 for zLimits")
+            #warnings.warn("Redshift not input.  Setting to 0 for zLimits")
             z=0.
         try:
             zlim = kwargs['zlim']

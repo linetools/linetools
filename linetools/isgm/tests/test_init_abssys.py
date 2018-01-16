@@ -6,6 +6,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import os
+import warnings
 
 import pytest
 from astropy import units as u
@@ -45,7 +46,10 @@ def test_init():
     gensys = GenericAbsSystem(radec, 1.244, [-500,500]*u.km/u.s, NHI=16.)
     # Test
     assert gensys.abs_type == 'Generic'
+    assert gensys.flag_NHI == 1
     np.testing.assert_allclose(gensys.zabs,1.244)
+    np.testing.assert_allclose(gensys.vlim.value, [-500,500])
+    #
 
 
 def test_init_strradec():
@@ -93,6 +97,7 @@ def test_add_component():
     # Fail
     abssys = GenericAbsSystem.from_components([abscomp])
     oicomp2 = oi_comp(radec, vlim=[-400.,300.]*u.km/u.s, z=abscomp.zcomp)
+    warnings.filterwarnings("ignore")
     assert not abssys.add_component(oicomp2)
     # Overlap
     assert abssys.add_component(oicomp2, overlap_only=True)

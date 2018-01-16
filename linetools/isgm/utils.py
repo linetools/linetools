@@ -197,12 +197,17 @@ def build_systems_from_components(comps, systype=None, vsys=None, **kwargs):
       Passed as vtoler to add_component
       The first component will define the system redshift and all others will
       need to lie within vsys of it
+    **kwargs -- Passed to add_component()
 
     Returns
     -------
     abs_systems : list
 
     """
+    # Suppress warnings here as we are expecting quite a few
+    import warnings
+    warnings.filterwarnings("ignore")
+
     if systype is None:
         from linetools.isgm.abssystem import GenericAbsSystem
         systype = GenericAbsSystem
@@ -359,17 +364,28 @@ def table_from_complist(complist):
       'reliability' is included if provided
     See also complist_from_table()
     """
-    key_order = ['RA', 'DEC', 'name', 'z_comp', 'sig_z', 'Z', 'ion', 'Ej',
+    key_order = ['RA', 'DEC', 'comp_name', 'z_comp', 'sig_z', 'Z', 'ion', 'Ej',
                  'vmin', 'vmax','ion_name', 'flag_N', 'logN', 'sig_logN',
                  'b','sig_b', 'vel', 'sig_vel','specfile']
 
     tab = Table()
-
+    # Coordinates
     coords = SkyCoord([icomp.coord for icomp in complist])
     # Basics
-    tab['RA'] = coords.ra
-    tab['DEC'] = coords.dec
-    tab['name'] = [comp.name for comp in complist]
+    if hasattr(coords, 'ra'):
+        tab['RA'] = coords.ra
+        tab['DEC'] = coords.dec
+    elif hasattr(coords, 'b'):
+        tab['b_gal'] = coords.b
+        tab['l_gal'] = coords.l
+        # Adjust keys
+        key_order.remove('RA')
+        key_order.remove('DEC')
+        key_order = ['b_gal', 'l_gal'] + key_order
+    else:
+        raise IOError("Not ready for this coords frame: {:s}".format(coords.frame.name))
+
+    tab['comp_name'] = [comp.name for comp in complist]
     tab['vmin'] = u.Quantity([icomp.vlim[0] for icomp in complist])
     tab['vmax'] = u.Quantity([icomp.vlim[1] for icomp in complist])
     tab['Z'] = [icomp.Zion[0] for icomp in complist]
@@ -416,6 +432,8 @@ def table_from_complist(complist):
     assert len(key_order) == len(tab.keys())
     tab = tab[key_order]
 
+    # May need to add an HI component here as done in the method below
+
     return tab
 
 
@@ -440,6 +458,7 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
     iontbl : Table
     """
     warnings.warn("It is likely this method will be Deprecated", DeprecationWarning)
+    warnings.warn("Use table_from_complist instead!!")
     from collections import OrderedDict
     # Checks
     assert chk_components(components,chk_A_none=True)

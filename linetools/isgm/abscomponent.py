@@ -75,8 +75,11 @@ class AbsComponent(object):
     """
     @classmethod
     def from_abslines(cls, abslines, stars=None, comment="", reliability='none',
-                      tol=0.01, chk_meas=False, verbose=True, **kwargs):
+                      skip_synth=False,
+                      adopt_median=False, tol=0.01, chk_meas=False, verbose=True, **kwargs):
         """Instantiate from a list of AbsLine objects
+        If the AbsLine objects contain column density measurements,
+        these will be synthesized in one of two ways (controlled by adopt_median)
 
         Parameters
         ----------
@@ -93,12 +96,19 @@ class AbsComponent(object):
                 'b' - possible
                 'c' - uncertain
                 'none' - not defined (default)
+        skip_synth : bool, optional
+            Skip synthesizing the column densities (and more) of the AbsLine objects
+        adopt_median : bool, optional
+            Adopt median values for N, b, vel from the AbsLine objects
+            Otherwise, use synthesize_colm for the column densities
         chk_meas : bool, optional
             If true, require that measurements for lines composing a component
             have matching values before setting component attribs.
             Otherwise, throw a warning
         tol : float, optional
             Fractional tolerance for line attributes (N,b) to match one another
+            Only applied if chk_meas=True and adopt_median=True
+        **kwargs -- Passed to add_absline
 
         """
         from linetools.analysis import absline as ltaa
@@ -114,61 +124,66 @@ class AbsComponent(object):
                    init_line.z, init_line.limits.vlim,
                    Ej=init_line.data['Ej'], stars=stars, reliability=reliability, comment=comment)
         slf._abslines.append(init_line)
+
         # Append with component checking
         if len(abslines) > 1:
             for absline in abslines[1:]:
                 slf.add_absline(absline, **kwargs)
 
-        ### Add attribs to component
-        # First check that the measurements for all the lines match
-        # Grab them all
-        cols = np.array([al.attrib['N'].value for al in abslines])
-        colerrs = np.array([al.attrib['sig_N'].value for al in abslines])
-        bs = np.array([al.attrib['b'].value for al in abslines])
-        berrs = np.array([al.attrib['sig_b'].value for al in abslines])
-        vels = np.array([al.attrib['vel'].value for al in abslines])
-        velerrs = np.array([al.attrib['sig_vel'].value for al in abslines])
-        medcol = np.median(cols)
-        medcolerr = np.median(colerrs)
-        medb = np.median(bs)
-        medberr = np.median(berrs)
-        medvel = np.median(vels)
-        medvelerr = np.median(velerrs)
-        # Perform checks on measurements
-        if medcol == 0.:
-            colcrit = np.all((cols) == 0.)
-        else:
-            colcrit = all(np.abs(cols - medcol) / medcol < tol) is True
-        if medb == 0.:
-            bcrit = np.all((bs) == 0.)
-        else:
-            bcrit = all(np.abs(bs - medb) / medb < tol) is True
-        # Set attribs
-        slf.attrib['N'] = medcol / u.cm ** 2
-        slf.attrib['sig_N'] = medcolerr / u.cm ** 2
-        slf.attrib['b'] = medb * u.km / u.s
-        slf.attrib['sig_b'] = medberr * u.km / u.s
-        slf.attrib['vel'] = medvel * u.km / u.s
-        slf.attrib['sig_vel'] = medvelerr * u.km / u.s
-        logN, sig_logN = ltaa.log_clm(slf.attrib)
-        slf.attrib['logN'] = logN
-        slf.attrib['sig_logN'] = sig_logN
-        # Stop or throw warnings
-        if (bcrit&colcrit):
-            pass
-        elif chk_meas:
-            raise ValueError('The line measurements for the lines in this '
-                             'component are not consistent with one another.')
-        else:
-            if verbose:
-                warnings.warn('The line measurements for the lines in this component'
-                          ' may not be consistent with one another.')
-                if bcrit:
-                    print('Problem lies in the column density values')
-                elif colcrit:
-                    print('Problem lies in the b values')
+        ### Synthesize column density (and more)
+        if not skip_synth:
+            if not adopt_median:
+                slf.synthesize_colm()
+            else:
+                # First check that the measurements for all the lines match
+                # Grab them all
+                cols = np.array([al.attrib['N'].value for al in abslines])
+                colerrs = np.array([al.attrib['sig_N'].value for al in abslines])
+                bs = np.array([al.attrib['b'].value for al in abslines])
+                berrs = np.array([al.attrib['sig_b'].value for al in abslines])
+                vels = np.array([al.attrib['vel'].value for al in abslines])
+                velerrs = np.array([al.attrib['sig_vel'].value for al in abslines])
+                medcol = np.median(cols)
+                medcolerr = np.median(colerrs)
+                medb = np.median(bs)
+                medberr = np.median(berrs)
+                medvel = np.median(vels)
+                medvelerr = np.median(velerrs)
+                # Perform checks on measurements
+                if medcol == 0.:
+                    colcrit = np.all((cols) == 0.)
                 else:
-                    print('Problems lie in the column densities and b values')
+                    colcrit = all(np.abs(cols - medcol) / medcol < tol) is True
+                if medb == 0.:
+                    bcrit = np.all((bs) == 0.)
+                else:
+                    bcrit = all(np.abs(bs - medb) / medb < tol) is True
+                # Set attribs
+                slf.attrib['N'] = medcol / u.cm ** 2
+                slf.attrib['sig_N'] = medcolerr / u.cm ** 2
+                slf.attrib['b'] = medb * u.km / u.s
+                slf.attrib['sig_b'] = medberr * u.km / u.s
+                slf.attrib['vel'] = medvel * u.km / u.s
+                slf.attrib['sig_vel'] = medvelerr * u.km / u.s
+                logN, sig_logN = ltaa.log_clm(slf.attrib)
+                slf.attrib['logN'] = logN
+                slf.attrib['sig_logN'] = sig_logN
+                # Stop or throw warnings
+                if (bcrit&colcrit):
+                    pass
+                elif chk_meas:
+                    raise ValueError('The line measurements for the lines in this '
+                                     'component are not consistent with one another.')
+                else:
+                    if verbose:
+                        warnings.warn('The line measurements for the lines in this component'
+                                  ' may not be consistent with one another.')
+                        if bcrit:
+                            print('Problem lies in the column density values')
+                        elif colcrit:
+                            print('Problem lies in the b values')
+                        else:
+                            print('Problems lie in the column densities and b values')
 
         # Return
         return slf
@@ -269,7 +284,7 @@ class AbsComponent(object):
             flag_N : Flag describing N measurement  (0: no info; 1: detection; 2: saturated; 3: non-detection)
             logN : log10 N column density
             sig_logN : Error in log10 N
-              # TODO FUTURE IMPLEMENTATION WILL ALLOW FOR 2-element ndarray for sig_logN
+              # TODO FUTURE IMPLEMENTATION WILL REQUIRE 2-element ndarray for sig_logN
         Ej : Quantity, optional
             Energy of lower level (1/cm)
         stars : str, optional
@@ -292,20 +307,19 @@ class AbsComponent(object):
         zlim = ltu.z_from_dv(vlim, zcomp)
         self.limits = zLimits(zcomp, zlim.tolist())
 
+        # Attributes
+        self.attrib = init_attrib.copy()
+
         # Optional
         self.A = A
         self.Ej = Ej
         self.stars = stars
         self.comment = comment
         if Ntup is not None:
-            self.flag_N = Ntup[0]
-            self.logN = Ntup[1]
-            self.sig_logN = Ntup[2]
-            _, _ = ltaa.linear_clm(self)  # Set linear quantities
-        else:
-            self.flag_N = 0
-            self.logN = 0.
-            self.sig_logN = 0.
+            self.attrib['flag_N'] = Ntup[0]
+            self.attrib['logN'] = Ntup[1]
+            self.attrib['sig_logN'] = Ntup[2]
+            _, _ = ltaa.linear_clm(self._attrib)  # Set linear quantities
 
         # Name
         if (name is None) and (self.Zion != (-1, -1)):
@@ -327,10 +341,7 @@ class AbsComponent(object):
             raise ValueError("Input reliability `{}` not valid.".format(reliability))
         self.reliability = reliability
 
-        # Potential for attributes
-        self.attrib = init_attrib.copy()
-
-        # Other
+        # AbsLines
         self._abslines = []
 
     @property
@@ -340,22 +351,6 @@ class AbsComponent(object):
     @property
     def zcomp(self):
         return self.limits.z
-
-    @property
-    def b(self):
-        return self.attrib['b']
-
-    @property
-    def sig_b(self):
-        return self.attrib['sig_b']
-
-    @property
-    def vel(self):  #velocity centroid
-        return self.attrib['vel']
-
-    @property
-    def sig_vel(self):  #velocity centroid
-        return self.attrib['sig_vel']
 
     def add_absline(self, absline, tol=0.1*u.arcsec, chk_vel=True,
                     chk_sep=True, vtoler=1., **kwargs):
@@ -665,13 +660,13 @@ class AbsComponent(object):
             for aline in self._abslines:
                 aline.measure_aodm(**kwargs)
         # Collate
-        self.flag_N = 0
+        self.attrib['flag_N'] = 0
         for aline in self._abslines:
             if aline.attrib['flag_N'] == 0:  # No value
                 warnings.warn("Absline {} has flag=0.  Hopefully you expected that".format(str(aline)))
                 continue
             # Check N is filled
-            if np.allclose(aline.attrib['N'].value, 0.):
+            if np.isclose(aline.attrib['N'].value, 0.):
                 raise ValueError("Need to set N in attrib.  \n Consider linear_clm in linetools.analysis.absline")
             if aline.attrib['flag_N'] == 1:  # Good value?
                 if self.flag_N == 1:  # Weighted mean
@@ -680,41 +675,42 @@ class AbsComponent(object):
                     mu = self.N * weight
                     # Update
                     weight += 1./aline.attrib['sig_N']**2
-                    self.N = (mu + aline.attrib['N']/aline.attrib['sig_N']**2) / weight
-                    self.sig_N = np.sqrt(1./weight)
+                    self.attrib['N'] = (mu + aline.attrib['N']/aline.attrib['sig_N']**2) / weight
+                    self.attrib['sig_N'] = np.sqrt(1./weight)
                 else:  # Fill
-                    self.N = aline.attrib['N']
-                    self.sig_N = aline.attrib['sig_N']
-                    self.flag_N = 1
+                    self.attrib['N'] = aline.attrib['N']
+                    self.attrib['sig_N'] = aline.attrib['sig_N']
+                    self.attrib['flag_N'] = 1
             elif aline.attrib['flag_N'] == 2:  # Lower limit
                 if self.flag_N in [0, 3]:
-                    self.N = aline.attrib['N']
-                    self.sig_N = aline.attrib['sig_N']
-                    self.flag_N = 2
+                    self.attrib['N'] = aline.attrib['N']
+                    self.attrib['sig_N'] = aline.attrib['sig_N']
+                    self.attrib['flag_N'] = 2
                 elif self.flag_N == 2:
                     if aline.attrib['N'] > self.N:
-                        self.N = aline.attrib['N']
-                        self.sig_N = aline.attrib['sig_N']
+                        self.attrib['N'] = aline.attrib['N']
+                        self.attrib['sig_N'] = aline.attrib['sig_N']
                 elif self.flag_N == 1:
                     pass
             elif aline.attrib['flag_N'] == 3:  # Upper limit
                 if self.flag_N == 0:
-                    self.N = aline.attrib['N']
-                    self.sig_N = aline.attrib['sig_N']
-                    self.flag_N = 3
+                    self.attrib['N'] = aline.attrib['N']
+                    self.attrib['sig_N'] = aline.attrib['sig_N']
+                    self.attrib['flag_N'] = 3
                 elif self.flag_N in [1, 2]:
                     pass
                 elif self.flag_N == 3:
                     if aline.attrib['N'] < self.N:
-                        self.N = aline.attrib['N']
-                        self.sig_N = aline.attrib['sig_N']
+                        self.attrib['N'] = aline.attrib['N']
+                        self.attrib['sig_N'] = aline.attrib['sig_N']
             elif aline.attrib['flag_N'] == 0:  # No value
                 warnings.warn("Absline {} has flag=0.  Hopefully you expected that")
             else:
                 raise ValueError("Bad flag_N value")
         # Log values
         if self.flag_N > 0:
-            self.logN, self.sig_logN = ltaa.log_clm(self)
+            _, _ = ltaa.log_clm(self.attrib)
+        # Update attributes
 
     def repr_vpfit(self, b=10.*u.km/u.s, tie_strs=('', '', ''), fix_strs=('', '', '')):
         """
@@ -963,6 +959,20 @@ class AbsComponent(object):
         attrib : str
         """
         return getattr(self, attrib)
+
+    def __getattr__(self, key):
+        """ Pull an attribute from the attrib dict
+
+        Parameters
+        ----------
+        key : str
+          Attribute
+
+        Returns
+        -------
+        self.attrib[k]
+        """
+        return self.attrib[key]
 
     def __repr__(self):
         txt = '<{:s}: {:s} {:s}, Name={:s}, Zion=({:d},{:d}), Ej={:g}, z={:g}, vlim={:g},{:g}'.format(

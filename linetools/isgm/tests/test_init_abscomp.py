@@ -32,7 +32,8 @@ def test_init_failures():
         AbsComponent.from_abslines(['blah'])
     with pytest.raises(IOError):
         AbsComponent.from_component('blah')
-    # Inconsistent abslines
+
+    # Inconsistent abslines with median
     lya = AbsLine(1215.670*u.AA,z=2.92939)
     lya.attrib['N'] = 1e12 / u.cm**2
     lya.attrib['b'] = 30 * u.km/u.s
@@ -40,7 +41,7 @@ def test_init_failures():
     lyb.attrib['N'] = 3e12 / u.cm**2
     lyb.attrib['b'] = 30 * u.km/u.s
     with pytest.raises(ValueError):
-        AbsComponent.from_abslines([lya,lyb], chk_meas=True)
+        AbsComponent.from_abslines([lya,lyb], adopt_median=True, chk_meas=True)
 
 
 def test_init_single_absline():
@@ -81,3 +82,17 @@ def test_init_multi_absline():
     # Test
     assert len(abscomp._abslines) == 2
     np.testing.assert_allclose(abscomp.zcomp,2.92939)
+
+    # With column densities
+    lya.attrib['N'] = 1e12 / u.cm**2
+    lya.attrib['sig_N'] = 1e11 / u.cm**2
+    lya.attrib['flag_N'] = 1
+    lya.attrib['b'] = 30 * u.km/u.s
+    lyb.attrib['N'] = 3e12 / u.cm**2
+    lyb.attrib['sig_N'] = 2e11 / u.cm**2
+    lyb.attrib['flag_N'] = 1
+    lyb.attrib['b'] = 30 * u.km/u.s
+    abscomp = AbsComponent.from_abslines([lya, lyb])
+    # Test
+    assert abscomp.flag_N == 1
+    assert np.isclose(abscomp.logN, 12.146128035678238)

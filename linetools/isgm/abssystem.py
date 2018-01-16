@@ -15,7 +15,7 @@ from abc import ABCMeta
 
 from astropy import units as u
 from astropy.units import Quantity
-from astropy.table import QTable, Table
+from astropy.table import Table
 from astropy import constants as const
 from astropy.coordinates import SkyCoord
 
@@ -25,6 +25,7 @@ from linetools import utils as ltu
 from linetools import line_utils as ltlu
 from linetools.spectralline import AbsLine
 from linetools.abund import ions
+from linetools.analysis.zlimits import zLimits
 
 # Globals to speed things up
 c_mks = const.c.to('km/s').value
@@ -92,7 +93,7 @@ class AbsSystem(object):
         return slf
 
     @classmethod
-    def from_components(cls, components, vlim=None, NHI=None):
+    def from_components(cls, components, vlim=None, NHI=None, s_kwargs=None, c_kwargs=None):
         """Instantiate from a list of AbsComponent objects
 
         Parameters
@@ -106,7 +107,16 @@ class AbsSystem(object):
           Set the NHI value of the system.  If not set,
           the method sums the NHI values of all the HI
           components input (if any)
+        s_kwargs : dict, optional
+          Passed to system Instantiation
+        c_kwargs : dict, optional
+          Passed to add_component
         """
+        # Init
+        if s_kwargs is None:
+            s_kwargs={}
+        if c_kwargs is None:
+            c_kwargs={}
         # Check
         assert ltiu.chk_components(components)
         # Instantiate with the first component
@@ -123,7 +133,7 @@ class AbsSystem(object):
             if NHI > 0.:
                 NHI = np.log10(NHI)
         #
-        slf = cls(init_comp.coord, init_comp.zcomp, vlim, NHI=NHI)
+        slf = cls(init_comp.coord, init_comp.zcomp, vlim, NHI=NHI, **s_kwargs)
         if slf.chk_component(init_comp):
             slf._components.append(init_comp)
         else:
@@ -131,7 +141,7 @@ class AbsSystem(object):
         # Append with component checking
         if len(components) > 1:
             for component in components[1:]:
-                slf.add_component(component)
+                slf.add_component(component, **c_kwargs)
         # Return
         return slf
 
@@ -180,14 +190,23 @@ class AbsSystem(object):
         return slf
 
     def __init__(self, radec, zabs, vlim, zem=0., abs_type=None,
-                 NHI=0., sig_NHI=np.zeros(2), flag_NHI=0, name=None, **kwargs):
+                 NHI=0., sig_NHI=np.zeros(2), flag_NHI=None, name=None, **kwargs):
 
-        self.zabs = zabs
         self.zem = zem
-        self.vlim = vlim
+        # Limits
+        zlim = ltu.z_from_dv(vlim, zabs)
+        self.limits = zLimits(zabs, zlim.tolist())
+        # NHI
         self.NHI = NHI
         self.sig_NHI = sig_NHI
-        self.flag_NHI = flag_NHI
+        # Special handling for the flag as this is often not input with NHI
+        if flag_NHI is None:
+            if NHI > 0.:
+                self.flag_NHI = 1
+            else:
+                self.flag_NHI = 0
+        else:
+            self.flag_NHI = flag_NHI
         self.coord = ltu.radec_to_coord(radec)
         if name is None:
             self.name = 'J{:s}{:s}_z{:.3f}'.format(
@@ -215,17 +234,26 @@ class AbsSystem(object):
         self.flag_ZH = 0
 
         # Abundances and Tables
-        self._EW = QTable()
+        self._EW = Table()
         self._ionN = None   # Needs to be None for fill_ion
-        self._trans = QTable()
+        self._trans = Table()
         self._ionstate = {}
-        self._abund = QTable()
+        self._abund = Table()
 
         # Refs (list of references)
         self.Refs = []
 
+    @property
+    def vlim(self):
+        return self.limits.vlim
+
+    @property
+    def zabs(self):
+        return self.limits.z
+
     def add_component(self, abscomp, tol=0.2*u.arcsec,
                       chk_sep=True, chk_z=True, overlap_only=False,
+                      update_vlim=False,
                       vtoler=1., debug=False, **kwargs):
         """Add an AbsComponent object if it satisfies all of the rules.
 
@@ -247,6 +275,8 @@ class AbsSystem(object):
           Perform standard velocity range test
         overlap_only : bool, optional
           Only require that the components overlap in redshift
+        update_vlim : bool, optional
+          Update the system vlim to allow the new component
         vtoler : float, optional
           Tolerance for velocity in km/s
 
@@ -262,23 +292,28 @@ class AbsSystem(object):
             testcoord = True
         # Now redshift/velocity
         testz = True
-        if chk_z:
-            # Will avoid Quantity for speed
-            comp_vlim_mks = abscomp.vlim.to('km/s').value
-            sys_vlim_mks = self.vlim.to('km/s').value
-            dz_toler = (1 + self.zabs) * vtoler / c_mks
-            zlim_comp = abscomp.zcomp + (1 + abscomp.zcomp) * (comp_vlim_mks / c_mks)
-            zlim_sys = self.zabs + (1 + self.zabs) * (sys_vlim_mks / c_mks)
-            if overlap_only:
-                testz = True
-                if debug:
-                    pdb.set_trace()
-                if np.all(zlim_comp > np.max(zlim_sys + dz_toler)) or np.all(
-                                zlim_comp < np.min(zlim_sys-dz_toler)):
-                    testz = False
-            else:
-                testz = (zlim_comp[0] >= (zlim_sys[0]-dz_toler)) & (
-                    zlim_comp[1] <= (zlim_sys[1]+dz_toler))
+        if update_vlim:  # Really zlim
+            zmin = min(self.limits.zlim[0], abscomp.limits.zlim[0])
+            zmax = max(self.limits.zlim[1], abscomp.limits.zlim[1])
+            self.limits.set([zmin,zmax])
+        else:
+            if chk_z:
+                # Will avoid Quantity for speed
+                comp_vlim_mks = abscomp.vlim.to('km/s').value
+                sys_vlim_mks = self.vlim.to('km/s').value
+                dz_toler = (1 + self.zabs) * vtoler / c_mks
+                zlim_comp = abscomp.zcomp + (1 + abscomp.zcomp) * (comp_vlim_mks / c_mks)
+                zlim_sys = self.zabs + (1 + self.zabs) * (sys_vlim_mks / c_mks)
+                if overlap_only:
+                    testz = True
+                    if debug:
+                        pdb.set_trace()
+                    if np.all(zlim_comp > np.max(zlim_sys + dz_toler)) or np.all(
+                                    zlim_comp < np.min(zlim_sys-dz_toler)):
+                        testz = False
+                else:
+                    testz = (zlim_comp[0] >= (zlim_sys[0]-dz_toler)) & (
+                        zlim_comp[1] <= (zlim_sys[1]+dz_toler))
 
         # Additional checks (specific to AbsSystem type)
         testcomp = self.chk_component(abscomp)
@@ -318,7 +353,7 @@ class AbsSystem(object):
         """ Fills the ionN Table from the list of components
         """
         if len(self._components) > 0:
-            self._ionN = ltiu.iontable_from_components(self._components, **kwargs)
+            self._ionN = ltiu.table_from_complist(self._components, **kwargs)
 
     def fill_trans(self, **kwargs):
         """ Generates a table of transitions
@@ -554,7 +589,7 @@ class AbsSystem(object):
         return outdict
 
     def update_vlim(self, sub_system=None):
-        """ Update vlim in the main or subsystems
+        """ Update vlim in the main or subsystems using the components
 
         Parameters
         ----------
@@ -562,10 +597,10 @@ class AbsSystem(object):
           If provided, apply to given sub-system.  Only used in LLS so far
         """
         def get_vmnx(components):
-            zlim_sys = ltu.z_from_dv(self.vlim, self.zabs, rel=False)
+            zlim_sys = self.limits.zlim # ltu.z_from_dv(self.vlim, self.zabs, rel=False)
             zmin, zmax = zlim_sys
             for component in components:
-                zlim_comp = ltu.z_from_dv(component.vlim, component.zcomp, rel=False)
+                zlim_comp = component.limits.zlim
                 zmin = min(zmin, zlim_comp[0])
                 zmax = max(zmax, zlim_comp[1])
             # Convert back to velocities
@@ -573,11 +608,12 @@ class AbsSystem(object):
 
         # Sub-system?
         if sub_system is not None:
+            pdb.set_trace()  # Not ready for this anymore
             components = self.subsys[sub_system]._components
             self.subsys[sub_system].vlim = get_vmnx(components)
         else:
             components = self._components
-            self.vlim = get_vmnx(components)  # Using system z
+            self.limits.set(get_vmnx(components))  # Using system z
             
 
     def write_json(self, outfil=None, overwrite=True):

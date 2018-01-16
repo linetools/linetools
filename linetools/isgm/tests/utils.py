@@ -39,12 +39,18 @@ def lyman_comp(radec, z=2.92939):
     lya.limits.set([-300.,300.]*u.km/u.s)
     lya.attrib['flag_N'] = 1
     lya.attrib['N'] = 1e17 /  u.cm**2
+    lya.attrib['sig_N'] = 1e16 /  u.cm**2
     lya.attrib['coord'] = radec
+    # Lyb
     lyb = AbsLine(1025.7222*u.AA, z=z)
     lyb.limits.set([-300.,300.]*u.km/u.s)
     lyb.attrib['coord'] = radec
+    lyb.attrib['flag_N'] = 1
+    lyb.attrib['N'] = 1e17 /  u.cm**2
+    lyb.attrib['sig_N'] = 1e16 /  u.cm**2
+    # Build
     abscomp = AbsComponent.from_abslines([lya,lyb])
-    abscomp.synthesize_colm()
+    #abscomp.synthesize_colm()
 
     return abscomp
 
@@ -59,7 +65,7 @@ def si2_comp(radec, z=2.92939):
         iline.limits.set([-250.,80.]*u.km/u.s)
         abslines.append(iline)
     #
-    SiII_comp = AbsComponent.from_abslines(abslines)
+    SiII_comp = AbsComponent.from_abslines(abslines, skip_synth=True)
     SiII_comp.logN = 15.
     SiII_comp.flag_N = 1
     #
@@ -75,7 +81,7 @@ def oi_comp(radec, vlim=[-250.,80.]*u.km/u.s, z=2.92939):
         iline.limits.set(vlim)
         abslines.append(iline)
     #
-    OI_comp = AbsComponent.from_abslines(abslines)
+    OI_comp = AbsComponent.from_abslines(abslines, skip_synth=True)
     OI_comp.logN = 15.
     OI_comp.flag_N = 1
     #

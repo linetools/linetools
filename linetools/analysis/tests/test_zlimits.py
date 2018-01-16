@@ -50,6 +50,8 @@ def test_use():
     np.testing.assert_allclose(llim.zlim, (0.999, 1.001))
     np.testing.assert_allclose(llim.wvlim.value, [2430.12433, 2432.55567])
     np.testing.assert_allclose(llim.vlim.value, [-149.93370, 149.858755])
+    np.testing.assert_allclose(llim.vmin.value, -149.93370)
+    np.testing.assert_allclose(llim.vmax.value, 149.858755)
     assert llim.vlim.unit == u.km/u.s
     # Print
     print(llim)
