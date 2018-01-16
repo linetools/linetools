@@ -372,11 +372,18 @@ def table_from_complist(complist):
     # Coordinates
     coords = SkyCoord([icomp.coord for icomp in complist])
     # Basics
-    try:
+    if hasattr(coords, 'ra'):
         tab['RA'] = coords.ra
-    except:
-        pdb.set_trace()
-    tab['DEC'] = coords.dec
+        tab['DEC'] = coords.dec
+    elif hasattr(coords, 'b'):
+        tab['b_gal'] = coords.b
+        tab['l_gal'] = coords.l
+        # Adjust keys
+        key_order.remove('RA')
+        key_order.remove('DEC')
+        key_order = ['b_gal', 'l_gal'] + key_order
+    else:
+        raise IOError("Not ready for this coords frame: {:s}".format(coords.frame.name))
 
     tab['comp_name'] = [comp.name for comp in complist]
     tab['vmin'] = u.Quantity([icomp.vlim[0] for icomp in complist])
