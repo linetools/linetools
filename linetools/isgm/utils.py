@@ -399,8 +399,6 @@ def table_from_complist(complist, NHI_obj=None):
         values = [getattr(icomp,attrib) for icomp in complist]
         if isinstance(values[0], u.Quantity):
             values = u.Quantity(values)
-        if (attrib == 'sig_logN') & (tab['Z'][0] == 8) & (tab['ion'][0] == 7):
-            pdb.set_trace()
         tab[attrib] = values
     # Rename
     tab.rename_column('zcomp', 'z_comp')

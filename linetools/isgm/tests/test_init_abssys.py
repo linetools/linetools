@@ -31,6 +31,7 @@ def test_from_json():
     # Tests from_dict too
     HIsys = LymanAbsSystem.from_json(data_path('HILya_abssys.json'))
     np.testing.assert_allclose(HIsys.zabs, 2.92939)
+    assert len(HIsys._components[0].sig_logN) == 2
     # Tests ordering
     gensys = GenericAbsSystem.from_json(data_path('generic_abssys.json'))
     np.testing.assert_allclose(gensys._components[0].zcomp, 2.92939)

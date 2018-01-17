@@ -257,6 +257,14 @@ class AbsComponent(object):
                     slf.attrib[ak] = ltu.convert_quantity_in_dict(idict['attrib'][ak])
                 else:
                     slf.attrib[ak] = idict['attrib'][ak]
+                # Insist that error values are 2-elements :: Mainly for older saved files
+                if ak == 'sigN':
+                    if slf.attrib[ak].size == 1:
+                        slf.attrib[ak] = Quantity([slf.attrib[ak].value]*2) * slf.attrib[ak].unit
+                if ak == 'sig_logN':
+                    if isinstance(slf.attrib[ak], (float,int)):
+                        slf.attrib[ak] = np.array([slf.attrib[ak]]*2)
+
         # Deprecated column (again)
         if Ntup is not None:
             warnings.warn('Overwriting column density attributes (if they existed).', DeprecationWarning)
@@ -268,7 +276,7 @@ class AbsComponent(object):
                 slf.attrib['sig_logN'] = np.array([Ntup[2]]*2)
             _, _ = ltaa.linear_clm(slf.attrib)  # Set linear quantities
 
-        # Add lines
+        # Add AbsLine objects
         for key in idict['lines'].keys():
             iline = AbsLine.from_dict(idict['lines'][key], coord=coord, **kwargs)
             slf.add_absline(iline, **kwargs)

@@ -41,9 +41,11 @@ def test_init_failures():
     # Inconsistent abslines with median
     lya = AbsLine(1215.670*u.AA,z=2.92939)
     lya.attrib['N'] = 1e12 / u.cm**2
+    lya.attrib['sig_N'] = [1e11]*2 / u.cm**2
     lya.attrib['b'] = 30 * u.km/u.s
     lyb = AbsLine('HI 1025',z=2.92939)
     lyb.attrib['N'] = 3e12 / u.cm**2
+    lyb.attrib['sig_N'] = [3e11]*2 / u.cm**2
     lyb.attrib['b'] = 30 * u.km/u.s
     with pytest.raises(ValueError):
         AbsComponent.from_abslines([lya,lyb], adopt_median=True, chk_meas=True)
@@ -52,6 +54,8 @@ def test_read_from_json():
     abscomp = AbsComponent.from_json(data_path('old_lya_component.json'))
     assert np.isclose(abscomp.logN, 17.)
     assert abscomp.Zion == (1,1)
+    assert len(abscomp.sig_logN) == 2
+    assert abscomp.sig_N.size == 2
 
 
 def test_init_single_absline():
