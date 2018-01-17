@@ -97,7 +97,7 @@ def log_clm(obj):
     -------
     logN : float
       log10 N
-    sig_logN :float
+    sig_logN : np.ndarray of 2-elements
       Error in log10 N
     """
     # Grab

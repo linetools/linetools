@@ -53,8 +53,7 @@ def cog_plot(COG_dict):
     gdv = COG_dict['redEW'] > 0.
     yerr=(COG_dict['sig_EW'][gdv]/COG_dict['wrest'][gdv])/COG_dict['redEW'][gdv]
     ax.errorbar(np.log10(COG_dict['f'][gdv]*COG_dict['wrest'][gdv].to('cm').value),
-                np.log10(COG_dict['redEW'][gdv]),
-                yerr=yerr, fmt='o')
+                np.log10(COG_dict['redEW'][gdv]), yerr=yerr.value, fmt='o')
     # Upper limit
     upper = COG_dict['redEW'] <= 0.
     ax.scatter(np.log10(COG_dict['f'][upper]*COG_dict['wrest'][upper].to('cm').value),
