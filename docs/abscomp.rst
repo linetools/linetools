@@ -75,11 +75,12 @@ Attributes
 There is a set of default attributes that are initialized at Instantiation
 and kepy in an attrib *dict*.  These are::
 
-    init_attrib = {'N': 0./u.cm**2, 'sig_N': 0./u.cm**2, 'flag_N': 0,
-              'logN': 0., 'sig_logN': 0.,
+    init_attrib = {'N': 0./u.cm**2, 'sig_N': [0.,0.]/u.cm**2, 'flag_N': 0, # Column    ## NOT ENOUGH SPEED-UP
+              'logN': 0., 'sig_logN': np.array([0.,0.]),
               'b': 0.*u.km/u.s, 'sig_b': 0.*u.km/u.s,  # Doppler
               'vel': 0*u.km/u.s, 'sig_vel': 0*u.km/u.s
               }
+
 
 One can access these attributes with standard . syntax, e.g.::
 

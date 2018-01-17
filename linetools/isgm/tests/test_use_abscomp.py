@@ -228,10 +228,10 @@ def test_group_coincident_components():
 
 def test_synthesize_components():
     #
-    SiIIcomp1,_ = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s, add_spec=True, skip_synth=True)
+    SiIIcomp1,_ = mk_comp('SiII',vlim=[-300.,50.]*u.km/u.s, add_spec=True, skip_synth=True, use_rand=False)
     SiIIcomp1.synthesize_colm(redo_aodm=True)
     #
-    SiIIcomp2,_ = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s, add_spec=True, skip_synth=True)
+    SiIIcomp2,_ = mk_comp('SiII',vlim=[50.,300.]*u.km/u.s, add_spec=True, skip_synth=True, use_rand=False)
     SiIIcomp2.synthesize_colm(redo_aodm=True)
     #
     synth_SiII = ltiu.synthesize_components([SiIIcomp1,SiIIcomp2])
@@ -427,7 +427,7 @@ def test_complist_from_table_and_table_from_complist():
 
     # test other columns
     tab['logN'] = 13.7
-    tab['sig_logN'] = np.array([0.1]*2)
+    tab['sig_logN'] = 0.1*np.ones((len(tab),2))
     tab['flag_logN'] = 1
     complist = ltiu.complist_from_table(tab)
     tab2 = ltiu.table_from_complist(complist)

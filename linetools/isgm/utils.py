@@ -600,7 +600,7 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
     # Init final component
     synth_comp = AbsComponent(components[0].coord, components[0].Zion, zcomp,
                               vlim, Ej=components[0].Ej, stars=components[0].stars,
-                              Ntup=(obj['flag_N'], obj['logN'], obj['sig_logN']))
+                              Ntup=(obj['flag_N'], obj['logN'], obj['sig_logN']))  # Should probably set attrib instead
 
     # Return
     return synth_comp

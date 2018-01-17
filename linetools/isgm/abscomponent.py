@@ -674,6 +674,9 @@ class AbsComponent(object):
         Default is to use the current AbsLine values, but the user can
         request that those be re-calculated with AODM.
 
+        Currently, the weighted mean is performed by taking the average
+        error given in sig_N which is a 2-element array.
+
         Parameters
         ----------
         overwrite : bool, optional
@@ -705,12 +708,12 @@ class AbsComponent(object):
             if aline.attrib['flag_N'] == 1:  # Good value?
                 if self.flag_N == 1:  # Weighted mean
                     # Original
-                    weight = 1. / self.sig_N**2
+                    weight = 1. / np.mean(self.sig_N)**2
                     mu = self.N * weight
                     # Update
-                    weight += 1./aline.attrib['sig_N']**2
-                    self.attrib['N'] = (mu + aline.attrib['N']/aline.attrib['sig_N']**2) / weight
-                    self.attrib['sig_N'] = np.sqrt(1./weight)
+                    weight += 1./np.mean(aline.attrib['sig_N'])**2
+                    self.attrib['N'] = (mu + aline.attrib['N']/np.mean(aline.attrib['sig_N'])**2) / weight
+                    self.attrib['sig_N'] = Quantity([np.sqrt(1./weight)]*2)
                 else:  # Fill
                     self.attrib['N'] = aline.attrib['N']
                     self.attrib['sig_N'] = aline.attrib['sig_N']
