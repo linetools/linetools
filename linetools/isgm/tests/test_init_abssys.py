@@ -16,7 +16,7 @@ from linetools.isgm.abscomponent import AbsComponent
 from linetools.isgm.abssystem import GenericAbsSystem, LymanAbsSystem
 from linetools.isgm import utils as ltiu
 from linetools.spectralline import AbsLine
-from .utils import lyman_comp, si2_comp, oi_comp
+from linetools.isgm.tests.utils import lyman_comp, si2_comp, oi_comp
 
 import pdb
 

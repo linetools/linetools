@@ -17,6 +17,7 @@ from astropy import units as u
 from astropy.units import Quantity
 from astropy.coordinates import SkyCoord
 from astropy.table import Table, Column
+from astropy.utils import isiterable
 
 from linetools.spectra.xspectrum1d import XSpectrum1D
 from linetools.analysis import absline as ltaa
@@ -171,20 +172,20 @@ class AbsComponent(object):
                 # Stop or throw warnings
                 if (bcrit&colcrit):
                     pass
-                elif chk_meas:
-                    raise ValueError('The line measurements for the lines in this '
-                                     'component are not consistent with one another.')
                 else:
-                    if verbose:
-                        warnings.warn('The line measurements for the lines in this component'
-                                  ' may not be consistent with one another.')
+                    if verbose or chk_meas:
                         if bcrit:
-                            print('Problem lies in the column density values')
+                            print('A problem lies in the column density values')
                         elif colcrit:
-                            print('Problem lies in the b values')
+                            print('A problem lies in the b values')
                         else:
                             print('Problems lie in the column densities and b values')
-
+                        if chk_meas:
+                            raise ('The line measurements for the lines in this '
+                                         'component are not consistent with one another.')
+                        else:
+                            warnings.warn('The line measurements for the lines in this component'
+                                      ' may not be consistent with one another.')
         # Return
         return slf
 
@@ -258,7 +259,7 @@ class AbsComponent(object):
                 else:
                     slf.attrib[ak] = idict['attrib'][ak]
                 # Insist that error values are 2-elements :: Mainly for older saved files
-                if ak == 'sigN':
+                if ak == 'sig_N':
                     if slf.attrib[ak].size == 1:
                         slf.attrib[ak] = Quantity([slf.attrib[ak].value]*2) * slf.attrib[ak].unit
                 if ak == 'sig_logN':
@@ -270,7 +271,7 @@ class AbsComponent(object):
             warnings.warn('Overwriting column density attributes (if they existed).', DeprecationWarning)
             slf.attrib['flag_N'] = Ntup[0]
             slf.attrib['logN'] = Ntup[1]
-            if isinstance(Ntup[2], (list,tuple,np.ndarray)):
+            if isiterable(Ntup[2]):
                 slf.attrib['sig_logN'] = np.array(Ntup[2])
             else:
                 slf.attrib['sig_logN'] = np.array([Ntup[2]]*2)
@@ -289,6 +290,7 @@ class AbsComponent(object):
         Parameters
         ----------
         json_file : str
+        **kwargs : passed to cls.from_dict()
 
         Returns
         -------
@@ -321,8 +323,8 @@ class AbsComponent(object):
         A : int, optional
             Atomic mass -- used to distinguish isotopes
         Ntup : tuple
-            (int,float,float)
-            (flag_N,logN,sig_logN)
+            (int,float,two-element list,tuple or array)
+            (flag_N, logN, sig_logN)
             flag_N : Flag describing N measurement  (0: no info; 1: detection; 2: saturated; 3: non-detection)
             logN : log10 N column density
             sig_logN : Error in log10 N.  Two elements are expected but not required
@@ -359,7 +361,7 @@ class AbsComponent(object):
         if Ntup is not None:
             self.attrib['flag_N'] = Ntup[0]
             self.attrib['logN'] = Ntup[1]
-            if isinstance(Ntup[2], (list,tuple,np.ndarray)):
+            if isiterable(Ntup[2]):
                 self.attrib['sig_logN'] = np.array(Ntup[2])
             else:
                 self.attrib['sig_logN'] = np.array([Ntup[2]]*2)
@@ -707,7 +709,7 @@ class AbsComponent(object):
         # Collate
         self.attrib['flag_N'] = 0
         for aline in self._abslines:
-            if aline.attrib['flag_N'] == 0:  # No value
+            if self.flag_N == 0:  # No value
                 warnings.warn("Absline {} has flag=0.  Hopefully you expected that".format(str(aline)))
                 continue
             # Check N is filled

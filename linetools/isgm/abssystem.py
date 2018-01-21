@@ -608,7 +608,7 @@ class AbsSystem(object):
 
         # Sub-system?
         if sub_system is not None:
-            pdb.set_trace()  # Not ready for this anymore
+            raise NotImplementedError("Not ready for subsystems anymore")
             components = self.subsys[sub_system]._components
             self.subsys[sub_system].vlim = get_vmnx(components)
         else:

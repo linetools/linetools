@@ -136,7 +136,7 @@ class SpectralLine(object):
                 sline.analy[key] = ltu.convert_quantity_in_dict(idict['analy'][key])
             elif key == 'spec_file':
                 # spec_file is intended to be the name of the spectrum file
-                # spec is intendended to hold an XSpectrum1D object
+                # spec is intended to hold an XSpectrum1D object
                 #warnings.warn("You will need to load {:s} into analy['spec'] yourself".format(
                 #        idict['analy'][key]))
                 sline.analy[key] = idict['analy'][key]

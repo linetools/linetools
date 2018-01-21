@@ -257,6 +257,7 @@ def sum_logN(obj1, obj2):
     obj1 : object
       An object with keys or attributes appropriate for the analysis
       Assumes 'logN' for column and 'sig_logN' for error for now
+      It also assesses via `flag_N' whether the input is a limit (upper/lower) or value.
     obj2 : object
       Another object with keys appropriate for the analysis
 

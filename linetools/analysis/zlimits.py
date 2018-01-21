@@ -135,13 +135,13 @@ class zLimits(object):
 
     @property
     def vmin(self):
-        """ Return vlim
+        """ Return vmin
         """
         return self.vlim[0]
 
     @property
     def vmax(self):
-        """ Return vlim
+        """ Return vmax
         """
         return self.vlim[1]
 

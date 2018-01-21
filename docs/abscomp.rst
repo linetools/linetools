@@ -75,7 +75,7 @@ Attributes
 There is a set of default attributes that are initialized at Instantiation
 and kepy in an attrib *dict*.  These are::
 
-    init_attrib = {'N': 0./u.cm**2, 'sig_N': [0.,0.]/u.cm**2, 'flag_N': 0, # Column    ## NOT ENOUGH SPEED-UP
+    init_attrib = {'N': 0./u.cm**2, 'sig_N': [0.,0.]/u.cm**2, 'flag_N': 0, # Column
               'logN': 0., 'sig_logN': np.array([0.,0.]),
               'b': 0.*u.km/u.s, 'sig_b': 0.*u.km/u.s,  # Doppler
               'vel': 0*u.km/u.s, 'sig_vel': 0*u.km/u.s
@@ -84,7 +84,7 @@ and kepy in an attrib *dict*.  These are::
 
 One can access these attributes with standard . syntax, e.g.::
 
-   logN = abscomp.logN   # This accesses the logN value from the attrib dict
+   logN = abscomp.logN   # This accesses the logN value from the internal attrib dict
 
 Inspecting
 ==========
@@ -126,7 +126,7 @@ Synthesize Columns
 
 
 If one inputs a set of AbsLine(s) with column density measurements,
-the column densities are synthesized at Instantiation unless one
+the column densities are synthesized at instantiation unless one
 sets skip_synth=True.
 
 There are two approaches to synthesis:
@@ -145,6 +145,9 @@ Here is the set of rules:
 2.  If all measurements are a mix of upper and lower limits, take the highest lower limit and flag as a lower limit (*flag_N=2*).
 3.  If one or more measurements are a proper detection, take the weighted mean of these and flag as a detection (*flag_N=1*).
 
+A future implementation will introduce a flag for
+bracketing an upper and lower limit value.
+
 Median
 ------
 
@@ -154,6 +157,10 @@ passes adopt_median=True to the from_abslines() call, e.g.::
 
     abscomp = AbsComponent.from_abslines([lya,lyb], adopt_median=True)
 
+
+The current code computes the median on all input
+values and does not consider the flag_N values for
+the input AbsLine objects.
 
 Curve of Growth
 +++++++++++++++

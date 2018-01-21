@@ -43,6 +43,8 @@ def test_write():
     abscomp.write(data_path('tmp.json'))
     # Read
     tmpcomp = abscomp.from_json(data_path('tmp.json'))
+    assert tmpcomp.flag_N == abscomp.flag_N
+    assert np.isclose(tmpcomp.limits.vmin, abscomp.limits.vmin)
 
 
 def test_get_components_at_z():
