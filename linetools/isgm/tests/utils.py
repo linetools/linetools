@@ -16,6 +16,9 @@ from linetools.isgm.abscomponent import AbsComponent
 from linetools.spectralline import AbsLine
 from linetools.analysis import absline as ltaa
 from linetools.spectra import io as lsio
+from linetools.lists.linelist import LineList
+
+ism = LineList('ISM')
 
 
 def data_path(filename):
@@ -35,16 +38,22 @@ def compare_two_files(file1, file2):
 
 def lyman_comp(radec, z=2.92939):
     # HI Lya, Lyb
-    lya = AbsLine(1215.670*u.AA, z=z)
+    lya = AbsLine(1215.670*u.AA, z=z, linelist=ism)
     lya.limits.set([-300.,300.]*u.km/u.s)
     lya.attrib['flag_N'] = 1
     lya.attrib['N'] = 1e17 /  u.cm**2
+    lya.attrib['sig_N'] = 1e16 /  u.cm**2
     lya.attrib['coord'] = radec
-    lyb = AbsLine(1025.7222*u.AA, z=z)
+    # Lyb
+    lyb = AbsLine(1025.7222*u.AA, z=z, linelist=ism)
     lyb.limits.set([-300.,300.]*u.km/u.s)
     lyb.attrib['coord'] = radec
+    lyb.attrib['flag_N'] = 1
+    lyb.attrib['N'] = 1e17 /  u.cm**2
+    lyb.attrib['sig_N'] = 1e16 /  u.cm**2
+    # Build
     abscomp = AbsComponent.from_abslines([lya,lyb])
-    abscomp.synthesize_colm()
+    #abscomp.synthesize_colm()
 
     return abscomp
 
@@ -54,12 +63,12 @@ def si2_comp(radec, z=2.92939):
     SiIItrans = ['SiII 1260', 'SiII 1304', 'SiII 1526', 'SiII 1808']
     abslines = []
     for trans in SiIItrans:
-        iline = AbsLine(trans, z=z)
+        iline = AbsLine(trans, z=z, linelist=ism)
         iline.attrib['coord'] = radec
         iline.limits.set([-250.,80.]*u.km/u.s)
         abslines.append(iline)
     #
-    SiII_comp = AbsComponent.from_abslines(abslines)
+    SiII_comp = AbsComponent.from_abslines(abslines, skip_synth=True)
     SiII_comp.logN = 15.
     SiII_comp.flag_N = 1
     #
@@ -70,12 +79,12 @@ def oi_comp(radec, vlim=[-250.,80.]*u.km/u.s, z=2.92939):
     OItrans = ['OI 1302']
     abslines = []
     for trans in OItrans:
-        iline = AbsLine(trans, z=z)
+        iline = AbsLine(trans, z=z, linelist=ism)
         iline.attrib['coord'] = radec
         iline.limits.set(vlim)
         abslines.append(iline)
     #
-    OI_comp = AbsComponent.from_abslines(abslines)
+    OI_comp = AbsComponent.from_abslines(abslines, skip_synth=True)
     OI_comp.logN = 15.
     OI_comp.flag_N = 1
     #
@@ -104,7 +113,7 @@ def write_comps_to_sys():
 
 
 def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
-            add_trans=False, zcomp=2.92939, b=20*u.km/u.s):
+            add_trans=False, zcomp=2.92939, b=20*u.km/u.s, **kwargs):
     # Read a spectrum Spec
     if add_spec:
         spec_file = resource_filename('linetools','/spectra/tests/files/UM184_nF.fits')
@@ -120,9 +129,11 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
             all_trans += ['SiII 1193']
     elif ctype == 'SiII*':
         all_trans = ['SiII* 1264', 'SiII* 1533']
+    elif ctype == 'SiIII':
+        all_trans = ['SiIII 1206']
     abslines = []
     for trans in all_trans:
-        iline = AbsLine(trans, z=zcomp)
+        iline = AbsLine(trans, z=zcomp, linelist=ism)
         if use_rand:
             rnd = np.random.rand()
         else:
@@ -136,7 +147,7 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
         _,_ = ltaa.linear_clm(iline.attrib)  # Loads N, sig_N
         abslines.append(iline)
     # Component
-    abscomp = AbsComponent.from_abslines(abslines)
+    abscomp = AbsComponent.from_abslines(abslines, **kwargs)
     return abscomp, abslines
 
 

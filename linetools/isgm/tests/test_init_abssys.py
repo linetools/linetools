@@ -6,6 +6,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 import os
+import warnings
 
 import pytest
 from astropy import units as u
@@ -15,7 +16,7 @@ from linetools.isgm.abscomponent import AbsComponent
 from linetools.isgm.abssystem import GenericAbsSystem, LymanAbsSystem
 from linetools.isgm import utils as ltiu
 from linetools.spectralline import AbsLine
-from .utils import lyman_comp, si2_comp, oi_comp
+from linetools.isgm.tests.utils import lyman_comp, si2_comp, oi_comp
 
 import pdb
 
@@ -30,6 +31,7 @@ def test_from_json():
     # Tests from_dict too
     HIsys = LymanAbsSystem.from_json(data_path('HILya_abssys.json'))
     np.testing.assert_allclose(HIsys.zabs, 2.92939)
+    assert len(HIsys._components[0].sig_logN) == 2
     # Tests ordering
     gensys = GenericAbsSystem.from_json(data_path('generic_abssys.json'))
     np.testing.assert_allclose(gensys._components[0].zcomp, 2.92939)
@@ -45,7 +47,10 @@ def test_init():
     gensys = GenericAbsSystem(radec, 1.244, [-500,500]*u.km/u.s, NHI=16.)
     # Test
     assert gensys.abs_type == 'Generic'
+    assert gensys.flag_NHI == 1
     np.testing.assert_allclose(gensys.zabs,1.244)
+    np.testing.assert_allclose(gensys.vlim.value, [-500,500])
+    #
 
 
 def test_init_strradec():
@@ -93,6 +98,7 @@ def test_add_component():
     # Fail
     abssys = GenericAbsSystem.from_components([abscomp])
     oicomp2 = oi_comp(radec, vlim=[-400.,300.]*u.km/u.s, z=abscomp.zcomp)
+    warnings.filterwarnings("ignore")
     assert not abssys.add_component(oicomp2)
     # Overlap
     assert abssys.add_component(oicomp2, overlap_only=True)

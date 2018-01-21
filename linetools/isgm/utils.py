@@ -197,12 +197,17 @@ def build_systems_from_components(comps, systype=None, vsys=None, **kwargs):
       Passed as vtoler to add_component
       The first component will define the system redshift and all others will
       need to lie within vsys of it
+    **kwargs -- Passed to add_component()
 
     Returns
     -------
     abs_systems : list
 
     """
+    # Suppress warnings here as we are expecting quite a few
+    import warnings
+    warnings.filterwarnings("ignore")
+
     if systype is None:
         from linetools.isgm.abssystem import GenericAbsSystem
         systype = GenericAbsSystem
@@ -333,18 +338,20 @@ def complist_from_table(table):
     return complist
 
 
-def table_from_complist(complist):
+def table_from_complist(complist, NHI_obj=None):
     """
     Returns a astropy.Table from an input list of AbsComponents. It only
     fills in mandatory and special attributes (see notes below).
     Other information stored in dictionary AbsComp.attrib is ignored.
 
-    Attributes with units are stored in the Table with units
+    Attributes with units are stored in the Table with units.
 
     Parameters
     ----------
     complist : list of AbsComponents
         The initial list of AbsComponents to create the Table from.
+    NHI_obj : object, optional (with NHI, sig_NHI, flag_NHI attributes)
+      If provided, fill HI with NHI, sig_NHI, flag_NHI
 
     Returns
     -------
@@ -359,17 +366,28 @@ def table_from_complist(complist):
       'reliability' is included if provided
     See also complist_from_table()
     """
-    key_order = ['RA', 'DEC', 'name', 'z_comp', 'sig_z', 'Z', 'ion', 'Ej',
+    key_order = ['RA', 'DEC', 'comp_name', 'z_comp', 'sig_z', 'Z', 'ion', 'Ej',
                  'vmin', 'vmax','ion_name', 'flag_N', 'logN', 'sig_logN',
                  'b','sig_b', 'vel', 'sig_vel','specfile']
 
     tab = Table()
-
+    # Coordinates
     coords = SkyCoord([icomp.coord for icomp in complist])
     # Basics
-    tab['RA'] = coords.ra
-    tab['DEC'] = coords.dec
-    tab['name'] = [comp.name for comp in complist]
+    if hasattr(coords, 'ra'):
+        tab['RA'] = coords.ra
+        tab['DEC'] = coords.dec
+    elif hasattr(coords, 'b'):
+        tab['b_gal'] = coords.b
+        tab['l_gal'] = coords.l
+        # Adjust keys
+        key_order.remove('RA')
+        key_order.remove('DEC')
+        key_order = ['b_gal', 'l_gal'] + key_order
+    else:
+        raise IOError("Not ready for this coords frame: {:s}".format(coords.frame.name))
+
+    tab['comp_name'] = [comp.name for comp in complist]
     tab['vmin'] = u.Quantity([icomp.vlim[0] for icomp in complist])
     tab['vmax'] = u.Quantity([icomp.vlim[1] for icomp in complist])
     tab['Z'] = [icomp.Zion[0] for icomp in complist]
@@ -416,6 +434,26 @@ def table_from_complist(complist):
     assert len(key_order) == len(tab.keys())
     tab = tab[key_order]
 
+    # May need to add an HI component here as done in the method below
+    if NHI_obj is not None:
+        # Existing row in Table?
+        mt = np.where((tab['Z'] == 1) & (tab['ion']==1))[0]
+        if len(mt) == 1:
+            tab[mt[0]]['logN'] = NHI_obj.NHI
+            tab[mt[0]]['sig_logN'] = np.mean(NHI_obj.sig_NHI) # Allow for two values
+            tab[mt[0]]['flag_N'] = NHI_obj.flag_NHI
+        else: # Add a dummy row
+            tab.add_row(tab[0])
+            tab['logN'][-1] = NHI_obj.NHI
+            tab['sig_logN'][-1] = np.mean(NHI_obj.sig_NHI) # Allow for two values
+            tab['flag_N'][-1] = NHI_obj.flag_NHI
+            #
+            tab['Z'][-1] = 1
+            tab['ion'][-1] = 1
+            tab['Ej'][-1] = 0.
+            tab['ion_name'][-1] = 'HI'
+            tab['comp_name'][-1] = 'HI_z{:0.5f}'.format(tab['z_comp'][-1])
+
     return tab
 
 
@@ -440,6 +478,7 @@ def iontable_from_components(components, ztbl=None, NHI_obj=None):
     iontbl : Table
     """
     warnings.warn("It is likely this method will be Deprecated", DeprecationWarning)
+    warnings.warn("Use table_from_complist instead!!")
     from collections import OrderedDict
     # Checks
     assert chk_components(components,chk_A_none=True)
@@ -559,7 +598,7 @@ def synthesize_components(components, zcomp=None, vbuff=0*u.km/u.s):
     # Init final component
     synth_comp = AbsComponent(components[0].coord, components[0].Zion, zcomp,
                               vlim, Ej=components[0].Ej, stars=components[0].stars,
-                              Ntup=(obj['flag_N'], obj['logN'], obj['sig_logN']))
+                              Ntup=(obj['flag_N'], obj['logN'], obj['sig_logN']))  # Should probably set attrib instead
 
     # Return
     return synth_comp
