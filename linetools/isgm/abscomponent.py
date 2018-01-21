@@ -134,7 +134,7 @@ class AbsComponent(object):
         ### Synthesize column density (and more)
         if not skip_synth:
             if not adopt_median:
-                slf.synthesize_colm()
+                slf.synthesize_colm(**kwargs)
             else:
                 # First check that the measurements for all the lines match
                 # Grab them all
@@ -181,7 +181,7 @@ class AbsComponent(object):
                         else:
                             print('Problems lie in the column densities and b values')
                         if chk_meas:
-                            raise ('The line measurements for the lines in this '
+                            raise ValueError('The line measurements for the lines in this '
                                          'component are not consistent with one another.')
                         else:
                             warnings.warn('The line measurements for the lines in this component'
@@ -679,7 +679,7 @@ class AbsComponent(object):
                     print('Resetting vlim1 from {}'.format(aline))
                 self.vlim[1] = aline.analy['vlim'][1]
 
-    def synthesize_colm(self, overwrite=False, redo_aodm=False, **kwargs):
+    def synthesize_colm(self, overwrite=False, redo_aodm=False, debug=False, **kwargs):
         """Synthesize column density measurements of the component.
         Default is to use the current AbsLine values, but the user can
         request that those be re-calculated with AODM.
@@ -708,8 +708,10 @@ class AbsComponent(object):
                 aline.measure_aodm(**kwargs)
         # Collate
         self.attrib['flag_N'] = 0
+        if debug:
+            pdb.set_trace()
         for aline in self._abslines:
-            if self.flag_N == 0:  # No value
+            if aline.attrib['flag_N'] == 0:  # No value
                 warnings.warn("Absline {} has flag=0.  Hopefully you expected that".format(str(aline)))
                 continue
             # Check N is filled
