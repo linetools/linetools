@@ -333,7 +333,7 @@ def complist_from_table(table):
     return complist
 
 
-def table_from_complist(complist):
+def table_from_complist(complist, summed_ion=False):
     """
     Returns a astropy.Table from an input list of AbsComponents. It only
     fills in mandatory and special attributes (see notes below).
@@ -345,6 +345,7 @@ def table_from_complist(complist):
     ----------
     complist : list of AbsComponents
         The initial list of AbsComponents to create the Table from.
+
 
     Returns
     -------
@@ -359,9 +360,13 @@ def table_from_complist(complist):
       'reliability' is included if provided
     See also complist_from_table()
     """
-    key_order = ['RA', 'DEC', 'name', 'z_comp', 'sig_z', 'Z', 'ion', 'Ej',
-                 'vmin', 'vmax','ion_name', 'flag_N', 'logN', 'sig_logN',
-                 'b','sig_b', 'vel', 'sig_vel','specfile']
+    if summed_ion is True:
+        key_order = ['RA', 'DEC', 'name', 'z_comp', 'sig_z', 'Z', 'ion', 'Ej',
+                     'vmin', 'vmax','ion_name', 'flag_N', 'logN', 'sig_logN',
+                     'b','sig_b', 'vel', 'sig_vel','specfile']
+    else:
+        key_order = ['RA', 'DEC', 'name', 'z_comp', 'sig_z', 'Z', 'ion', 'Ej',
+                     'vmin', 'vmax', 'ion_name', 'flag_N', 'logN', 'sig_logN']
 
     tab = Table()
 
@@ -416,7 +421,15 @@ def table_from_complist(complist):
     assert len(key_order) == len(tab.keys())
     tab = tab[key_order]
 
-    return tab
+    if summed_ion is False:
+        return tab
+    else:
+        ### Perform logic:
+        ###   - find unique ions
+        ###   - select on velocity
+        ###   - synthesize column densities
+        ###   - Create new table and return
+        return tab
 
 
 def iontable_from_components(components, ztbl=None, NHI_obj=None, vrange=None):
