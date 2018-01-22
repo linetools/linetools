@@ -58,7 +58,7 @@ or multiple::
     abscomp = AbsComponent.from_abslines([lya,lyb])
 
 One may also instantiate from a *dict*, usually read
-from the hard-drive::
+from the hard-drive (e.g. a JSON file)::
 
     abscomp = AbsComponent.from_dict(idict)
 
@@ -69,16 +69,33 @@ list of AbsLines::
 
    complist = ltiu.build_components_from_abslines([lya,lyb,SiIIlines[0],SiIIlines[1]])
 
+Attributes
+==========
+
+There is a set of default attributes that are initialized at Instantiation
+and kepy in an attrib *dict*.  These are::
+
+    init_attrib = {'N': 0./u.cm**2, 'sig_N': [0.,0.]/u.cm**2, 'flag_N': 0, # Column
+              'logN': 0., 'sig_logN': np.array([0.,0.]),
+              'b': 0.*u.km/u.s, 'sig_b': 0.*u.km/u.s,  # Doppler
+              'vel': 0*u.km/u.s, 'sig_vel': 0*u.km/u.s
+              }
+
+
+One can access these attributes with standard . syntax, e.g.::
+
+   logN = abscomp.logN   # This accesses the logN value from the internal attrib dict
+
 Inspecting
 ==========
 
 Here are a few simple methods to explore/inspect the class.
 
-Generate a QTable
-+++++++++++++++++
+Generate a Table
+++++++++++++++++
 
 If the class contains one or more AbsLines, you may generate a
-`~astropy.table.QTable` from their attributes and data::
+`~astropy.table.Table` from their attributes and data::
 
     comp_tbl = abscomp.build_table()
 
@@ -107,18 +124,43 @@ Here are some methods related to analysis.
 Synthesize Columns
 ++++++++++++++++++
 
+
 If one inputs a set of AbsLine(s) with column density measurements,
-the synthesize_colm method collates these.  Positive, unsaturated detections
+the column densities are synthesized at instantiation unless one
+sets skip_synth=True.
+
+There are two approaches to synthesis:
+
+Standard
+--------
+
+The default uses the synthesize_colm() method.
+Positive, unsaturated detections
 are combined in a weighted mean whereas limits are compared
 and the most sensitive one is adopted.::
 
-    abscomp.synthesize_colm()
-
 Here is the set of rules:
 
-1.  If all measurements are upper limits, take the lowest value and flag as an upper limit (*flgN=3*).
-2.  If all measurements are a mix of upper and lower limits, take the highest lower limit and flag as a lower limit (*flgN=2*).
-3.  If one or more measurements are a proper detection, take the weighted mean of these and flag as a detection (*flgN=1*).
+1.  If all measurements are upper limits, take the lowest value and flag as an upper limit (*flag_N=3*).
+2.  If all measurements are a mix of upper and lower limits, take the highest lower limit and flag as a lower limit (*flag_N=2*).
+3.  If one or more measurements are a proper detection, take the weighted mean of these and flag as a detection (*flag_N=1*).
+
+A future implementation will introduce a flag for
+bracketing an upper and lower limit value.
+
+Median
+------
+
+Another option for synthesizing the column densities and other attributes
+is to take the median values.  This is performed when one
+passes adopt_median=True to the from_abslines() call, e.g.::
+
+    abscomp = AbsComponent.from_abslines([lya,lyb], adopt_median=True)
+
+
+The current code computes the median on all input
+values and does not consider the flag_N values for
+the input AbsLine objects.
 
 Curve of Growth
 +++++++++++++++

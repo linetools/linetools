@@ -97,7 +97,7 @@ def log_clm(obj):
     -------
     logN : float
       log10 N
-    sig_logN :float
+    sig_logN : np.ndarray of 2-elements
       Error in log10 N
     """
     # Grab
@@ -257,12 +257,15 @@ def sum_logN(obj1, obj2):
     obj1 : object
       An object with keys or attributes appropriate for the analysis
       Assumes 'logN' for column and 'sig_logN' for error for now
+      It also assesses via `flag_N' whether the input is a limit (upper/lower) or value.
     obj2 : object
       Another object with keys appropriate for the analysis
 
     Returns
     -------
-    logN, siglogN
+    flag_N : int
+    logN : float
+    sig_logN : np.ndarray of 2 elements
     """
     # Check
     if not (obj1['flag_N'] in [1, 2, 3]):
@@ -273,13 +276,12 @@ def sum_logN(obj1, obj2):
     flag_N, logN1, sig_logN1 = [obj1[key] for key in ['flag_N','logN','sig_logN']]
     # Sum
     logN = np.log10(np.sum(10.**np.array([obj1['logN'],obj2['logN']])))
-    sig_logN = np.sqrt( np.sum([(obj1['sig_logN']*(10.**obj1['logN']))**2,
-                                (obj2['sig_logN']*(10.**obj2['logN']))**2]))/(10.**logN)
+    sig_logN = np.sqrt(np.sum([(obj1['sig_logN']*(10.**obj1['logN']))**2,
+                                (obj2['sig_logN']*(10.**obj2['logN']))**2],axis=0))/(10.**logN)
     if flag_N in [1,2]: # Detection or saturated
         if obj2['flag_N'] == 2:
             flag_N = 2
         elif obj2['flag_N'] == 3:
-            # No change to logN, only sig_logN
             logN = logN1
     elif flag_N == 3:
         if obj2['flag_N'] in [1,2]:
