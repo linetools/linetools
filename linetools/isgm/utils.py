@@ -338,7 +338,7 @@ def complist_from_table(table):
     return complist
 
 
-def table_from_complist(complist, summed_ion=False, NHI_obj=None):
+def table_from_complist(complist, summed_ion=False, NHI_obj=None, vrange=None):
     """
     Returns a astropy.Table from an input list of AbsComponents. It only
     fills in mandatory and special attributes (see notes below).
@@ -352,6 +352,8 @@ def table_from_complist(complist, summed_ion=False, NHI_obj=None):
         The initial list of AbsComponents to create the Table from.
     NHI_obj : object, optional (with NHI, sig_NHI, flag_NHI attributes)
       If provided, fill HI with NHI, sig_NHI, flag_NHI
+    vrange : Quantity, optional
+      Velocity range of components to sum column densities
 
 
     Returns
@@ -367,7 +369,7 @@ def table_from_complist(complist, summed_ion=False, NHI_obj=None):
       'reliability' is included if provided
     See also complist_from_table()
     """
-    if summed_ion is True:
+    if summed_ion is False:
         key_order = ['RA', 'DEC', 'comp_name', 'z_comp', 'sig_z', 'Z', 'ion', 'Ej',
                      'vmin', 'vmax','ion_name', 'flag_N', 'logN', 'sig_logN',
                      'b','sig_b', 'vel', 'sig_vel','specfile']
@@ -441,16 +443,16 @@ def table_from_complist(complist, summed_ion=False, NHI_obj=None):
 
     # May need to add an HI component here as done in the method below
     if NHI_obj is not None:
-        mt = np.where((tab['Z'] == 1) & (tab['ion']==1))[0]
+        mt = np.where((tab['Z'] == 1) & (tab['ion'] == 1))[0]
         # Existing row in Table?
         if len(mt) == 1:
             tab[mt[0]]['logN'] = NHI_obj.NHI
-            tab[mt[0]]['sig_logN'] = np.mean(NHI_obj.sig_NHI) # Allow for two values
+            tab[mt[0]]['sig_logN'] = np.mean(NHI_obj.sig_NHI)  # Allow for two values
             tab[mt[0]]['flag_N'] = NHI_obj.flag_NHI
-        else: # Add a dummy row
+        else:  # Add a dummy row
             tab.add_row(tab[0])
             tab['logN'][-1] = NHI_obj.NHI
-            tab['sig_logN'][-1] = np.mean(NHI_obj.sig_NHI) # Allow for two values
+            tab['sig_logN'][-1] = np.mean(NHI_obj.sig_NHI)  # Allow for two values
             tab['flag_N'][-1] = NHI_obj.flag_NHI
             tab['Z'][-1] = 1
             tab['ion'][-1] = 1
@@ -458,18 +460,54 @@ def table_from_complist(complist, summed_ion=False, NHI_obj=None):
             tab['ion_name'][-1] = 'HI'
             tab['comp_name'][-1] = 'HI_z{:0.5f}'.format(tab['z_comp'][-1])
 
+
     if summed_ion is False:
         return tab
     else:
         ### Perform logic:
         ###   - find unique ions
-        ###   - select on velocity
-        ###   - synthesize column densities
-        ###   - Create new table and return
-        return tab
-        #
-    return tab
+        # Identify unique Zion, Ej (not ready for A)
+        uqions, uiidx = np.unique(tab['ion_name'], return_index=True)
 
+        ###   - select on velocity
+        # Grab velocities from components
+        compvels = tab['vel']
+        if vrange is not None:
+            vrange = vrange.to(u.km / u.s).value
+
+
+
+        ###   - synthesize column densities
+        # Loop
+        count = 0
+        for i,ui in enumerate(uqions):
+            # Synthesize components with like Zion, Ej, and in vrange
+            if vrange is not None:
+                thesecomps = np.where((tab['ion_name'] == ui) &
+                                 (compvels > vrange[0]) &
+                                 (compvels < vrange[1]))[0]
+            else:
+                thesecomps = np.where(tab['ion_name'] == ui)[0]
+            comps = [complist[ii] for ii in thesecomps]  # Need a list
+            if len(comps) > 0:
+                synth_comp = synthesize_components(comps, zcomp=ztbl)
+
+                # Add a row to Table
+                tab.add_row(tab[thesecomps[0]])
+                tab['logN'][-1] = synth_comp.logN
+                tab['sig_logN'][-1] = synth_comp.sig_logN  # Allow for two values
+                tab['flag_N'][-1] = synth_comp.flag_N
+                tab['vlim'] = synth_comp.vlim.value
+                count += 1
+
+                #tab['comp_name'][-1] = 'HI_z{:0.5f}'.format(tab['z_comp'][-1])
+            else:
+                print('No components found within velocity range found.')
+
+        ###   - Create new table and return
+
+        summed_tab = tab[-count:]
+        return tab, summed_tab
 
 def iontable_from_components(components, ztbl=None, NHI_obj=None, vrange=None):
     """Generate a Table from a list of components
