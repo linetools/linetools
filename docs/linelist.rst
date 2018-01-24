@@ -27,6 +27,7 @@ The following lists are currently avaliable:
 * 'CO' : CO UV band-heads
 * 'EUV' :  Extreme UV lines
 * 'Galaxy' :  Lines typically identified in galaxy spectra
+* 'AGN': Lines tipically identified in AGN spectra
 
 
 Instantiation
