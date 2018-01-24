@@ -282,7 +282,7 @@ class LineList(object):
         elif self.list == 'Galaxy':
             set_flags.append('fgE')
             set_flags.append('fgA')
-        elif self.list == 'AGN'
+        elif self.list == 'AGN':
             set_flags.append('fAGN')
         else:
             raise ValueError(
