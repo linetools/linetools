@@ -55,7 +55,7 @@ class LineList(object):
         * 'CO'      :: CO UV band-heads
         * 'EUV'     :: EUV lines (for CASBAH project);  Limited X-ray lines too
         * 'Galaxy'  :: Lines typically identified in galaxy spectra
-        * 'AGN'     :: Key AGN lines (to be implemented)
+        * 'AGN'     :: Key AGN lines
 
     verbose : bool, optional
         Give info galore if True
@@ -282,6 +282,8 @@ class LineList(object):
         elif self.list == 'Galaxy':
             set_flags.append('fgE')
             set_flags.append('fgA')
+        elif self.list == 'AGN':
+            set_flags.append('fAGN')
         else:
             raise ValueError(
                 'set_lines: Not ready for this: {:s}'.format(self.list))

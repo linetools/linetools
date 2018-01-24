@@ -7,6 +7,7 @@ Updates
 - Added script to get HST/COS life-time position from date
 - Added Cashman+2017 catalog in LineList
 - Significant refactor of AbsComponent
+- LineList "AGN" added
 
 Bug fixes
 .........

@@ -75,6 +75,16 @@ def test_galx():
     np.testing.assert_allclose(galx["Halpha"]['wrest'], 6564.613*u.AA, rtol=1e-5)
 
 
+# AGN LineList
+def test_agn():
+    agn = LineList('AGN')
+    #
+    np.testing.assert_allclose(agn["Halpha"]['wrest'], 6564.613*u.AA, rtol=1e-5)
+    np.testing.assert_allclose(agn["NV 1242"]['wrest'], 1242.804*u.AA, rtol=1e-5)
+
+
+
+
 # Unknown lines
 def test_unknown():
     ism = LineList('ISM')
