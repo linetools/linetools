@@ -338,7 +338,8 @@ def complist_from_table(table):
     return complist
 
 
-def table_from_complist(complist, summed_ion=False, NHI_obj=None, vrange=None):
+def table_from_complist(complist, summed_ion=False, NHI_obj=None, vrange=None,
+                        ztbl=None):
     """
     Returns a astropy.Table from an input list of AbsComponents. It only
     fills in mandatory and special attributes (see notes below).
@@ -354,7 +355,8 @@ def table_from_complist(complist, summed_ion=False, NHI_obj=None, vrange=None):
       If provided, fill HI with NHI, sig_NHI, flag_NHI
     vrange : Quantity, optional
       Velocity range of components to sum column densities
-
+    ztbl : float, optional
+      Redshift to adopt for the table if summed_ion option is used
 
     Returns
     -------
@@ -375,7 +377,8 @@ def table_from_complist(complist, summed_ion=False, NHI_obj=None, vrange=None):
                      'b','sig_b', 'vel', 'sig_vel','specfile']
     else:
         key_order = ['RA', 'DEC', 'comp_name', 'z_comp', 'sig_z', 'Z', 'ion', 'Ej',
-                     'vmin', 'vmax', 'ion_name', 'flag_N', 'logN', 'sig_logN']
+                     'vmin', 'vmax', 'ion_name', 'flag_N', 'logN', 'sig_logN',
+                     'vel','specfile']
 
     tab = Table()
     # Coordinates
@@ -438,7 +441,7 @@ def table_from_complist(complist, summed_ion=False, NHI_obj=None, vrange=None):
             tab[key] = [getattr(comp, key) for comp in complist]
             key_order += [key]
 
-    assert len(key_order) == len(tab.keys())
+    #assert len(key_order) == len(tab.keys()) # We allowed keys to be popped!
     tab = tab[key_order]
 
     # May need to add an HI component here as done in the method below
@@ -497,7 +500,8 @@ def table_from_complist(complist, summed_ion=False, NHI_obj=None, vrange=None):
                 tab['logN'][-1] = synth_comp.logN
                 tab['sig_logN'][-1] = synth_comp.sig_logN  # Allow for two values
                 tab['flag_N'][-1] = synth_comp.flag_N
-                tab['vlim'] = synth_comp.vlim.value
+                tab['vmin'][-1] = synth_comp.vlim.value[0]
+                tab['vmax'][-1] = synth_comp.vlim.value[1]
                 count += 1
 
                 #tab['comp_name'][-1] = 'HI_z{:0.5f}'.format(tab['z_comp'][-1])
@@ -507,6 +511,9 @@ def table_from_complist(complist, summed_ion=False, NHI_obj=None, vrange=None):
         ###   - Create new table and return
 
         summed_tab = tab[-count:]
+        # We needed component velocities for vrange selection, but
+        # they are meaningless for summed ion info
+        summed_tab.remove_column('vel')
         return tab, summed_tab
 
 def iontable_from_components(components, ztbl=None, NHI_obj=None, vrange=None):

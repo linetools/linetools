@@ -379,7 +379,10 @@ class AbsSystem(object):
         """ Fills the ionN Table from the list of components
         """
         if len(self._components) > 0:
-            self._ionN = ltiu.table_from_complist(self._components, **kwargs)
+            _,self._ionN = ltiu.table_from_complist(self._components,
+                                                  summed_ion=True)
+            self._ionN.remove_column('z_comp')
+            self._ionN['z_sys'] = self.zabs
 
     def fill_trans(self, **kwargs):
         """ Generates a table of transitions
