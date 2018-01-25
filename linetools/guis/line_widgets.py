@@ -66,7 +66,7 @@ class PlotLinesWidget(QWidget):
             z_label = QLabel('z={:.7f}'.format(init_z))
 
         # Create the line list
-        self.lists = ['None', 'ISM', 'Strong', 'HI', 'Galaxy', 'H2', 'EUV']
+        self.lists = ['None', 'ISM', 'Strong', 'HI', 'Galaxy', 'AGN', 'H2', 'EUV']
         #'grb.lst', 'dla.lst', 'lls.lst', 'subLLS.lst',
 #                      'lyman.lst', 'Dlyman.lst', 'gal_vac.lst', 'ne8.lst',
 #                      'lowz_ovi.lst', 'casbah.lst', 'H2.lst']
