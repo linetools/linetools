@@ -122,6 +122,7 @@ def build_components_from_abslines(iabslines, clmdict=None, coord=None,
         else:
             stars = None
         component = AbsComponent.from_abslines(lines, stars=stars, **kwargs)
+        pdb.set_trace()
         # Reset vmin, vmax
         vmin,vmax = 9999., -9999.
         for iline in lines:

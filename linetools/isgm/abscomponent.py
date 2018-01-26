@@ -265,6 +265,8 @@ class AbsComponent(object):
                 if ak == 'sig_logN':
                     if isinstance(slf.attrib[ak], (float,int)):
                         slf.attrib[ak] = np.array([slf.attrib[ak]]*2)
+                    elif isinstance(slf.attrib[ak], (list)):
+                        slf.attrib[ak] = np.array(slf.attrib[ak])
 
         # Deprecated column (again)
         if Ntup is not None:
