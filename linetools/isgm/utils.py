@@ -122,7 +122,6 @@ def build_components_from_abslines(iabslines, clmdict=None, coord=None,
         else:
             stars = None
         component = AbsComponent.from_abslines(lines, stars=stars, **kwargs)
-        pdb.set_trace()
         # Reset vmin, vmax
         vmin,vmax = 9999., -9999.
         for iline in lines:
@@ -515,7 +514,7 @@ def table_from_complist(complist, summed_ion=False, NHI_obj=None, vrange=None,
         # We needed component velocities for vrange selection, but
         # they are meaningless for summed ion info
         summed_tab.remove_column('vel')
-        return tab, summed_tab
+        return summed_tab
 
 def iontable_from_components(components, ztbl=None, NHI_obj=None, vrange=None):
     """Generate a Table from a list of components

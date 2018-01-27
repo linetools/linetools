@@ -375,12 +375,16 @@ class AbsSystem(object):
         """
         return True
 
-    def fill_ionN(self, vrange=None, **kwargs):
+    def fill_ionN(self, **kwargs):
         """ Fills the ionN Table from the list of components
+
+        Parameters
+        ----------
+        **kwargs -- Passed to table_from_commplist()
+
         """
         if len(self._components) > 0:
-            _,self._ionN = ltiu.table_from_complist(self._components,
-                                                  summed_ion=True)
+            self._ionN = ltiu.table_from_complist(self._components, **kwargs)
             self._ionN.remove_column('z_comp')
             self._ionN['z_sys'] = self.zabs
 
