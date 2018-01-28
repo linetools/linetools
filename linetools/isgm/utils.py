@@ -473,22 +473,23 @@ def table_from_complist(complist, summed_ion=False, NHI_obj=None, vrange=None,
         uqions, uiidx = np.unique(tab['ion_name'], return_index=True)
 
         ###   - select on velocity
-        # Grab velocities from components
-        compvels = tab['vel']
         if vrange is not None:
             vrange = vrange.to(u.km / u.s).value
-
-
 
         ###   - synthesize column densities
         # Loop
         count = 0
         for i,ui in enumerate(uqions):
+            # Grab velocities from components
+            compvels = tab['vel']
             # Synthesize components with like Zion, Ej, and in vrange
             if vrange is not None:
-                thesecomps = np.where((tab['ion_name'] == ui) &
+                try:
+                    thesecomps = np.where((tab['ion_name'] == ui) &
                                  (compvels > vrange[0]) &
                                  (compvels < vrange[1]))[0]
+                except:
+                    import pdb; pdb.set_trace()
             else:
                 thesecomps = np.where(tab['ion_name'] == ui)[0]
             comps = [complist[ii] for ii in thesecomps]  # Need a list
