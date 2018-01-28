@@ -276,12 +276,6 @@ def sum_logN(obj1, obj2):
     flag_N, logN1, sig_logN1 = [obj1[key] for key in ['flag_N','logN','sig_logN']]
     # Sum
     logN = np.log10(np.sum(10.**np.array([obj1['logN'],obj2['logN']])))
-    # Make sure sig_logN are arrays
-
-    if isinstance(obj1['sig_logN'],list):
-        obj1= np.array(obj1['sig_logN'])
-    if isinstance(obj2['sig_logN'],list):
-        obj2= np.array(obj2['sig_logN'])
     sig_logN = np.sqrt(np.sum([(obj1['sig_logN']*(10.**obj1['logN']))**2,
                                 (obj2['sig_logN']*(10.**obj2['logN']))**2],axis=0))/(10.**logN)
     if flag_N in [1,2]: # Detection or saturated

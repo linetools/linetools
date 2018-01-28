@@ -1016,6 +1016,10 @@ class AbsComponent(object):
             if attr == '_abslines':
                 for iline in self._abslines:
                     abscomp._abslines.append(iline.copy())
+            elif attr == 'attrib':
+                thisattrib = getattr(self,attr)
+                attrcopy = thisattrib.copy()
+                setattr(abscomp, attr, attrcopy)
             else:
                 setattr(abscomp, attr, getattr(self, attr))
         # Return
