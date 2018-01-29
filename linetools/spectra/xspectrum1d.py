@@ -227,8 +227,13 @@ class XSpectrum1D(object):
                             try:
                                 self.data[key][kk][0:gdsigval[0]].mask = True
                             except IndexError:
-                                pdb.set_trace()
-                            self.data[key][kk][gdsigval[-1]+1:].mask = True
+                                if len(gdsigval) == 0:
+                                    warnings.warn("All pixels masked.  Likely a bad spectrum")
+                                    self.data[key][kk][:].mask = True
+                                else:
+                                    pdb.set_trace()
+                            else:
+                                self.data[key][kk][gdsigval[-1]+1:].mask = True
                         elif masking == 'all':
                             self.data[key][kk].mask = badsigval
         else:
@@ -335,7 +340,10 @@ class XSpectrum1D(object):
     def sig_is_set(self):
         """ Returns whether the error array is set
         """
-        if np.isnan(self.data['sig'][self.select].compressed()[0]):
+        tmp = self.data['sig'][self.select].compressed()
+        if len(tmp) == 0:
+            return False  # All pixels masked
+        elif np.isnan(tmp[0]):
             return False
         else:
             return True
