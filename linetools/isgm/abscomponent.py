@@ -145,7 +145,7 @@ class AbsComponent(object):
                 vels = np.array([al.attrib['vel'].value for al in abslines])
                 velerrs = np.array([al.attrib['sig_vel'].value for al in abslines])
                 medcol = np.median(cols)
-                medcolerr = np.median(colerrs, axis=1)
+                medcolerr = np.median(colerrs, axis=0)
                 medb = np.median(bs)
                 medberr = np.median(berrs)
                 medvel = np.median(vels)
@@ -159,6 +159,20 @@ class AbsComponent(object):
                     bcrit = np.all((bs) == 0.)
                 else:
                     bcrit = all(np.abs(bs - medb) / medb < tol) is True
+                # Assign appropriate flag
+                flags = np.array([al.attrib['flag_N'] for al in abslines])
+                if 1 in flags:  # Any of the lines is detected and unsaturated
+                    slf.attrib['flag_N'] = 1
+                elif np.all(flags == 3):  # All of the lines are upper limits
+                    slf.attrib['flag_N'] = 3
+                elif 2 in flags:  # Any of the lines is saturated
+                    slf.attrib['flag_N'] = 2
+                elif np.all(flags == 0):  # Something else, e.g., line not covered
+                    slf.attrib['flag_N'] = 0
+                else:
+                    raise ValueError("AbsLine flag_N values conflict. Cannot"
+                                     " instantiate AbsComponent.")
+
                 # Set attribs
                 slf.attrib['N'] = medcol / u.cm ** 2
                 slf.attrib['sig_N'] = medcolerr / u.cm ** 2
