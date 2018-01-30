@@ -123,11 +123,17 @@ def log_clm(obj):
         sig_N = isig_N.value
 
     # Operate
-    if N <= 0.:
-        logN = 0.
+    # Deal with arrays of column densities and 2-sided limits
+    if (len(np.shape(sig_N))==2) & (len(np.shape(N))==1):
+        logN = np.zeros(len(N))
+        logN[N>=0] = np.log10(N[N>=0])
+        lgvar = ((1.0 / (np.log(10.0)*N[:,np.newaxis]))**2)*sig_N**2
     else:
-        logN = np.log10(N)
-    lgvar = ((1.0 / (np.log(10.0)*N))**2)*sig_N**2
+        if N <= 0.:
+            logN = 0.
+        else:
+            logN = np.log10(N)
+        lgvar = ((1.0 / (np.log(10.0)*N))**2)*sig_N**2
     sig_logN = np.sqrt(lgvar)
 
     # Fill
@@ -177,7 +183,11 @@ def linear_clm(obj):
 
     # Operate
     N = 10**logN / u.cm**2
-    sig_N = sig_logN * np.log(10.) * N
+    # Deal with arrays of column densities and 2-sided limits
+    if (len(np.shape(sig_logN))==2)&(len(np.shape(N))==1):
+        sig_N = np.multiply(sig_logN, np.log(10.) * N[:,np.newaxis])
+    else:
+        sig_N = sig_logN * np.log(10.) * N
 
     # Fill
     try:
