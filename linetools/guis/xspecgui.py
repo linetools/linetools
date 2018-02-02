@@ -152,6 +152,7 @@ class XSpecGui(QMainWindow):
                 self.pltline_widg.llist['List']]._data['wrest'].unit) # spltw[1])  [A bit risky!]
             z = event.xdata/wrest.value - 1.
             self.pltline_widg.llist['z'] = z
+            print("z={:.5f}".format(z))
             self.statusBar().showMessage('z = {:f}'.format(z))
 
             self.pltline_widg.zbox.setText('{:.5f}'.format(self.pltline_widg.llist['z']))

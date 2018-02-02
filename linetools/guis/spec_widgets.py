@@ -93,6 +93,7 @@ class ExSpecDialog(QDialog):
             spltw = quant.split(' ')
             wrest = Quantity(float(spltw[0]), unit=spltw[1])
             z = event.xdata/wrest.value - 1.
+            print("z={:.5f}".format(z))
             self.pltline_widg.llist['z'] = z
 
             self.pltline_widg.zbox.setText('{:.5f}'.format(self.pltline_widg.llist['z']))

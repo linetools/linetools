@@ -335,6 +335,32 @@ class AbsSystem(object):
         #
         return test
 
+    def copy(self):
+        """Make a copy of the system
+
+        Returns
+        -------
+        newsys : AbsSystem
+            Copy of current system
+        """
+        newsys = self.__class__(self.coord, self.zabs, self.vlim, zem=self.zem,
+                           abs_type=self.abs_type, NHI=self.NHI,
+                           sig_NHI=self.sig_NHI, flag_NHI=self.flag_NHI,
+                           name=self.name)
+        newsys._components = [comp.copy() for comp in self._components]
+        newsys.kin = self.kin
+        newsys.ZH = self.ZH
+        newsys.sig_ZH = self.sig_ZH
+        newsys.flag_ZH = self.flag_ZH
+        newsys._ionN = self._ionN
+        newsys._trans = self._trans
+        newsys._ionstate = self._ionstate
+        newsys._abund = self._abund
+
+        return newsys
+
+
+
     def chk_component(self, component):
         """Additional checks on the component
 
@@ -351,9 +377,16 @@ class AbsSystem(object):
 
     def fill_ionN(self, **kwargs):
         """ Fills the ionN Table from the list of components
+
+        Parameters
+        ----------
+        **kwargs -- Passed to table_from_commplist()
+
         """
         if len(self._components) > 0:
             self._ionN = ltiu.table_from_complist(self._components, **kwargs)
+            self._ionN.remove_column('z_comp')
+            self._ionN['z_sys'] = self.zabs
 
     def fill_trans(self, **kwargs):
         """ Generates a table of transitions
@@ -686,6 +719,8 @@ def add_comps_from_dict(slf, idict, skip_components=False, use_coord=False, **kw
     ----------
     slf : AbsSystem, AbsSightline
       Or any object with an add_component() method
+    idict : dict
+      Contains the full system
     skip_components : bool, optional
       If True, absorption components (if any exist) are not loaded from the input dict.
       Use when you are only interested in the global properties of an AbsSystem
