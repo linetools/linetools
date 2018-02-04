@@ -1628,7 +1628,7 @@ class XSpectrum1D(object):
             newdata = self.data[item]
         # Create
         return XSpectrum1D(newdata['wave'], newdata['flux'], newdata['sig'], newdata['co'],
-                           units=self.units, meta=self.meta)
+                           units=self.units, meta=self.meta, masking=self.masking)
 
 
     def __dir__(self):
