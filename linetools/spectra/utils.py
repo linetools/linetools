@@ -177,7 +177,10 @@ def collate(spectra, **kwargs):
             wave[idx,:xspec.npix] = xspec.wavelength.value
             flux[idx,:xspec.npix] = xspec.flux.value
             if flg_sig:
-                sig[idx,:xspec.npix] = xspec.sig.value
+                try:  # This will fail for spectra with fully masked arrays
+                    sig[idx,:xspec.npix] = xspec.sig.value
+                except AttributeError:
+                    sig[idx,:] = 0.
             if flg_co:
                 if xspec.co_is_set:  # Allow for a mix of continua (mainly for specdb)
                     co[idx,:xspec.npix] = xspec.co.value
