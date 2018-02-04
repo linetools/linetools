@@ -164,12 +164,14 @@ class AbsSystem(object):
         return slf
 
     @classmethod
-    def from_dict(cls, idict, use_coord=False, **kwargs):
+    def from_dict(cls, idict, coord=None, **kwargs):
         """ Instantiate from a dict.  Usually read from the hard-drive
 
         Parameters
         ----------
         idict : dict
+        coord : SkyCoord, optional
+          use if input.  Speeds up code when many AbsSystem objects are instantiated
 
         Returns
         -------
@@ -178,8 +180,11 @@ class AbsSystem(object):
         """
         if 'NHI' in idict.keys():
             ckwargs = dict(NHI=idict['NHI'], sig_NHI=idict['sig_NHI'], flag_NHI=idict['flag_NHI'])
-        slf = cls(SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg),
-                  idict['zabs'], idict['vlim']*u.km/u.s, zem=idict['zem'],
+        # Coord
+        if coord is None:
+            coord = SkyCoord(ra=idict['RA']*u.deg, dec=idict['DEC']*u.deg)
+        # Instantiate
+        slf = cls(coord, idict['zabs'], idict['vlim']*u.km/u.s, zem=idict['zem'],
                   name=idict['Name'], **ckwargs)
         # Other
         add_other_from_dict(slf, idict)
