@@ -18,7 +18,7 @@ from linetools.isgm.abscomponent import AbsComponent
 from linetools.spectralline import AbsLine
 from linetools.isgm import utils as ltiu
 
-from .utils import mk_comp, mk_comptable
+from linetools.isgm.tests.utils import mk_comp, mk_comptable
 
 import imp, os
 lt_path = imp.find_module('linetools')[1]
@@ -477,3 +477,11 @@ def test_complist_from_table_and_table_from_complist():
     tab['z_comp'] = [0.05, 0.0999, 0.1, 0.1001, 0.6]
     with pytest.raises(IOError):
         complist = ltiu.complist_from_table(tab) # not enough mandatory columns
+
+
+def test_copy():
+    comp, HIlines = mk_comp('HI')
+    comp2 = comp.copy()
+    comp.logN = 14.6
+    assert comp2.logN != comp.logN
+
