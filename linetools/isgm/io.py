@@ -245,7 +245,7 @@ def write_igmg_from_components(comp_list, specfile, fwhm, outfile='IGM_model.jso
                         spec_file=specfile,
                         fwhm=fwhm, bad_pixels=[],
                         meta={'RA': RA, 'DEC': DEC, 'ALTNAME':'unknown',
-                              'zem': 0., 'Creator': 'linetools from list of components',
+                              'zem': 0., 'Creator': 'linetools from AbsComponent list',
                               'Instrument': 'unknown', 'Date': date, 'JNAME': jname})
 
         for comp in comp_list:
