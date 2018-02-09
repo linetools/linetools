@@ -214,7 +214,12 @@ def read_igmg_to_components(igmguesses_json):
         except:  # is this a H2 line?
             comp = AbsComponent.from_dict(comp_dict, coord=icoord, chk_sep=False, chk_data=False, chk_vel=False, linelist='H2')
         comp_list += [comp]
-    return comp_list
+    # sort list by redshift
+    redshifts = [comp.zcomp for comp in comp_list]
+    inds = np.argsort(redshifts)
+    comp_sorted = list(np.array(comp_list)[inds])
+    #return
+    return comp_sorted
 
 
 def write_igmg_from_components(comp_list, specfile, fwhm, outfile='IGM_model.json'):
@@ -245,7 +250,7 @@ def write_igmg_from_components(comp_list, specfile, fwhm, outfile='IGM_model.jso
                         spec_file=specfile,
                         fwhm=fwhm, bad_pixels=[],
                         meta={'RA': RA, 'DEC': DEC, 'ALTNAME':'unknown',
-                              'zem': 0., 'Creator': 'linetools from AbsComponent list',
+                              'zem': 0., 'Creator': 'linetools.isgm.io.write_igmg_from_components()',
                               'Instrument': 'unknown', 'Date': date, 'JNAME': jname})
 
         for comp in comp_list:
