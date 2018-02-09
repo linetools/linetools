@@ -48,8 +48,7 @@ def test_complist_to_joebvp():
                       resource_filename('linetools', '/data/tests/test_joebvp_repr_reference.joebvp'))
 
 
-# def test_read_write_igmg():
-if 1:
+def test_read_write_igmg():
     # read
     igmg_file = data_path('J1410+2304_model.json')
     comps = ltiio.read_igmg_to_components(igmg_file)
