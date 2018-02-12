@@ -479,9 +479,10 @@ class AbsComponent(object):
             self._abslines.append(absline)
         else:
             warnings.warn("Failed add_absline test")
-            print('Input absline with wrest={:g} at z={:.3f} does not match component rules. Not appending'.format(absline.wrest,
+            print('Input Absline with wrest={:g} at z={:.3f} does not match component rules. Not appending'.format(absline.wrest,
                                                                                                                    absline.z))
             if not testv:
+                # import pdb;pdb.set_trace()
                 print("Absline velocities lie beyond component\n Set chk_vel=False to skip this test.")
             if not testc:
                 print("Absline coordinates do not match. Best to set them")
