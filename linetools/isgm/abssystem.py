@@ -739,11 +739,10 @@ def add_comps_from_dict(slf, idict, skip_components=False, use_coord=False, **kw
     """
     if not skip_components:
         # Components
-        if use_coord:  # Speed up performance
+        if use_coord and ('coord' not in kwargs.keys()):  # Speed up performance
             coord = slf.coord
-        else:
-            coord = None
-        components = ltiu.build_components_from_dict(idict, coord=coord, **kwargs)
+            kwargs['coord'] = coord
+        components = ltiu.build_components_from_dict(idict, **kwargs)
         for component in components:
             # This is to insure the components follow the rules
             slf.add_component(component, **kwargs)
