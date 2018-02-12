@@ -256,7 +256,7 @@ class AbsComponent(object):
         # Deprecated column density attributes
         if 'logN' in idict.keys():
             warnings.warn('Column density attributes are now Deprecated', DeprecationWarning)
-            print("We will use yours for now..")
+            #print("We will use yours for now..")
             Ntup = tuple([idict[key] for key in ['flag_N', 'logN', 'sig_logN']])
         else:
             Ntup = None
