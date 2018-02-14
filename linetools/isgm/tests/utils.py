@@ -31,13 +31,15 @@ def compare_two_files(file1, file2, except_l2_has=None, verbose=False):
     f2 = open(file2, 'r')
     lines1 = f1.readlines()
     lines2 = f2.readlines()
+    q=1
     for l1,l2 in zip(lines1,lines2):
         if except_l2_has is not None:
             if except_l2_has in l2:
                 continue
-        assert l1 == l2, "Line l1 in file1 different than corresponding l2 in file2, details as follows:\n{}different than:\n{}\n".format(l1,l2)
+        assert l1 == l2, "Line {} in file1 different than corresponding {} in file2, details as follows:\n{}different than:\n{}\n".format(q,q,l1,l2)
         if verbose:
             print(l1)
+        q += 1
     f1.close()
     f2.close()
 
