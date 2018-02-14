@@ -36,7 +36,7 @@ def compare_two_files(file1, file2, except_l2_has=None, verbose=False):
         if except_l2_has is not None:
             if except_l2_has in l2:
                 continue
-        assert l1 == l2, "Line {} in file1 different than corresponding {} in file2, details as follows:\n{}different than:\n{}\n".format(q,q,l1,l2)
+        assert l1 == l2, "Line {} in file1 different than corresponding line {} in file2, details as follows:\n{}different than:\n{}\n".format(q,q,l1,l2)
         if verbose:
             print(l1)
         q += 1
