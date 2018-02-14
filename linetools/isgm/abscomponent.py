@@ -243,15 +243,21 @@ class AbsComponent(object):
         else:
             radec = SkyCoord(ra=idict['RA'], dec=idict['DEC'], unit='deg')
         # Init
-        #slf = cls(radec, tuple(idict['Zion']), idict['zcomp'], Quantity(idict['vlim'], unit='km/s'),
+        # slf = cls(radec, tuple(idict['Zion']), idict['zcomp'], Quantity(idict['vlim'], unit='km/s'),
 
         # backwards compatibility
-        for key in ['reliability', 'Reliability']:
-            if key in idict.keys():
-                reliability = idict[key]
-                break
-            else:
-                reliability = 'none'
+        if 'reliability' in idict.keys():
+            reliability = idict['reliability']
+        elif "Reliability" in idict.keys():
+            reliability = idict['Reliability']
+        else:
+            reliability = 'none'
+        # for key in ['reliability', 'Reliability']:
+        #     if key in idict.keys():
+        #         reliability = idict[key]
+        #         break
+        #     else:
+        #         reliability = 'none'
 
         # Deprecated column density attributes
         if 'logN' in idict.keys():
@@ -473,9 +479,10 @@ class AbsComponent(object):
             self._abslines.append(absline)
         else:
             warnings.warn("Failed add_absline test")
-            print('Input absline with wrest={:g} at z={:.3f} does not match component rules. Not appending'.format(absline.wrest,
+            print('Input Absline with wrest={:g} at z={:.3f} does not match component rules. Not appending'.format(absline.wrest,
                                                                                                                    absline.z))
             if not testv:
+                # import pdb;pdb.set_trace()
                 print("Absline velocities lie beyond component\n Set chk_vel=False to skip this test.")
             if not testc:
                 print("Absline coordinates do not match. Best to set them")

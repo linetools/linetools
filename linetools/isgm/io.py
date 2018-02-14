@@ -12,10 +12,12 @@ except NameError:
 import pdb
 import numpy as np
 import warnings
+import json
 
 from astropy.table import Table
 from astropy import constants as const
 from astropy import units as u
+from astropy.coordinates import SkyCoord
 
 from linetools import utils as ltu
 from linetools.analysis.absline import linear_clm
