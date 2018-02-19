@@ -17,7 +17,6 @@ from linetools.spectralline import AbsLine
 from linetools.analysis import absline as ltaa
 from linetools.spectra import io as lsio
 from linetools.lists.linelist import LineList
-from linetools import utils as ltu
 
 ism = LineList('ISM')
 
