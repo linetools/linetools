@@ -29,9 +29,9 @@ To access the abundances, make a new class instance::
 
 Then select the element you want by either its name or atomic number::
 
-  >>> sol['C']
+  >>> sol['C'] # doctest: +NUMBER
   8.43
-  >>> sol[6]
+  >>> sol[6] # doctest: +NUMBER
   8.43
 
 Currently the abundances from Asplund et al. 2009 are available, and
