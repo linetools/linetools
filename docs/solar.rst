@@ -44,5 +44,5 @@ Multiple elements can also be selected::
 
 Element ratios can be accessed using the ``get_ratio`` method::
 
-  >>> print(sol.get_ratio('C/Fe'))
+  >>> print(sol.get_ratio('C/Fe')) # doctest: +SKIP
   0.98
