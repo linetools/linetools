@@ -45,22 +45,35 @@ def between(a, vmin, vmax):
 
 def compare_two_files(file1, file2, except_l2_has=None, verbose=False):
     """ Compare 2 files, line by line
+    Parameters
+    ----------
+    file1 : str
+    file2 : str
+
+    Returns
+    -------
+    test : bool
+      True if all lines are identical
     """
     f1 = open(file1, 'r')
     f2 = open(file2, 'r')
     lines1 = f1.readlines()
     lines2 = f2.readlines()
     q=1
+    test = True
     for l1,l2 in zip(lines1,lines2):
         if except_l2_has is not None:
             if except_l2_has in l2:
                 continue
-        assert l1 == l2, "Line {} in file1 different than corresponding line {} in file2, details as follows:\n{}different than:\n{}\n".format(q,q,l1,l2)
-        if verbose:
-            print(l1)
+        sub_test = l1 == l2
+        test &= sub_test
+        if verbose & (~sub_test):
+            print("Line {} in file1 different than corresponding line {} in file2, details as follows:\n{}different than:\n{}\n".format(q,q,l1,l2))
         q += 1
     f1.close()
     f2.close()
+    # Return
+    return test
 
 
 def compare_two_dict(d1, d2):
