@@ -7,12 +7,14 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import pytest
 import numpy as np
 import os
+from pkg_resources import resource_filename
+
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 import linetools.utils as ltu
 
 def data_path(filename):
-    data_dir = os.path.join(os.path.dirname(__file__), 'files')
+    data_dir = resource_filename('linetools', 'data/tests/')
     return os.path.join(data_dir, filename)
 
 def test_compare_stuff():
