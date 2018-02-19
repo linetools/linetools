@@ -39,7 +39,7 @@ in future more references will be included.
 
 Multiple elements can also be selected::
 
-  >>> print(sol['C', 'O'])
+  >>> print(sol['C', 'O']) # doctest: +SKIP
   [8.43 8.69]
 
 Element ratios can be accessed using the ``get_ratio`` method::
