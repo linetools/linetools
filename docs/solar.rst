@@ -30,9 +30,9 @@ To access the abundances, make a new class instance::
 Then select the element you want by either its name or atomic number::
 
   >>> sol['C']
-  8.4299999999999997
+  8.43
   >>> sol[6]
-  8.4299999999999997
+  8.43
 
 Currently the abundances from Asplund et al. 2009 are available, and
 in future more references will be included.
