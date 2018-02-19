@@ -39,10 +39,10 @@ in future more references will be included.
 
 Multiple elements can also be selected::
 
-  >>> sol['C', 'O']
-  array([ 8.43,  8.69])
+  >>> print(sol['C', 'O'])
+  [ 8.43,  8.69]
 
 Element ratios can be accessed using the ``get_ratio`` method::
 
-  >>> sol.get_ratio('C/Fe')
-  0.97999999999999954
+  >>> print(sol.get_ratio('C/Fe'))
+  0.98
