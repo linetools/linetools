@@ -40,7 +40,7 @@ in future more references will be included.
 Multiple elements can also be selected::
 
   >>> print(sol['C', 'O'])
-  [ 8.43,  8.69]
+  [8.43 8.69]
 
 Element ratios can be accessed using the ``get_ratio`` method::
 
