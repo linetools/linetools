@@ -245,19 +245,13 @@ class AbsComponent(object):
         # Init
         # slf = cls(radec, tuple(idict['Zion']), idict['zcomp'], Quantity(idict['vlim'], unit='km/s'),
 
-        # backwards compatibility
-        if 'reliability' in idict.keys():
-            reliability = idict['reliability']
-        elif "Reliability" in idict.keys():
-            reliability = idict['Reliability']
-        else:
-            reliability = 'none'
-        # for key in ['reliability', 'Reliability']:
-        #     if key in idict.keys():
-        #         reliability = idict[key]
-        #         break
-        #     else:
-        #         reliability = 'none'
+        # For IGMGuesses
+        for key in ['reliability', 'Reliability']:
+            if key in idict.keys():
+                reliability = idict[key]
+                break
+            else:
+                reliability = 'none'
 
         # Deprecated column density attributes
         if 'logN' in idict.keys():

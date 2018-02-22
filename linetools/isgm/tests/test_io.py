@@ -13,8 +13,8 @@ from astropy.coordinates import SkyCoord
 from astropy import units as u
 
 import linetools.isgm.io as ltiio
-
-from linetools.isgm.tests.utils import mk_comp, compare_two_files
+from linetools.isgm.tests.utils import mk_comp
+from linetools import utils as ltu
 
 
 def data_path(filename):
@@ -40,10 +40,10 @@ def test_complist_to_joebvp():
     comp_list = [abscomp, abscomp]
     ltiio.write_joebvp_from_components(comp_list, 'test.fits', data_path('test_joebvp_repr.joebvp'))
     # now read the output and compare to reference
-    compare_two_files(data_path('test_joebvp_repr.joebvp'),
+    ltu.compare_two_files(data_path('test_joebvp_repr.joebvp'),
                       resource_filename('linetools', '/data/tests/test_joebvp_repr_reference.joebvp'))
     # now add attribute to comp and compare again
     abscomp.attrib['b'] = 15*u.km/u.s
     ltiio.write_joebvp_from_components(comp_list, 'test.fits', data_path('test_joebvp_repr.joebvp'))
-    compare_two_files(data_path('test_joebvp_repr.joebvp'),
+    ltu.compare_two_files(data_path('test_joebvp_repr.joebvp'),
                       resource_filename('linetools', '/data/tests/test_joebvp_repr_reference.joebvp'))

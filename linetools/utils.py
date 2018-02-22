@@ -43,6 +43,91 @@ def between(a, vmin, vmax):
     c &= a >= vmin
     return c
 
+def compare_two_files(file1, file2, except_l2_has=None, verbose=False):
+    """ Compare 2 files, line by line
+    Parameters
+    ----------
+    file1 : str
+    file2 : str
+
+    Returns
+    -------
+    test : bool
+      True if all lines are identical
+    """
+    f1 = open(file1, 'r')
+    f2 = open(file2, 'r')
+    lines1 = f1.readlines()
+    lines2 = f2.readlines()
+    q=1
+    test = True
+    for l1,l2 in zip(lines1,lines2):
+        if except_l2_has is not None:
+            if except_l2_has in l2:
+                continue
+        sub_test = l1 == l2
+        test &= sub_test
+        if verbose & (~sub_test):
+            print("Line {} in file1 different than corresponding line {} in file2, details as follows:\n{}different than:\n{}\n".format(q,q,l1,l2))
+        q += 1
+    f1.close()
+    f2.close()
+    # Return
+    return test
+
+
+def compare_two_dict(d1, d2):
+    """ Compare 2 dicts (using code from StackOverflow)
+
+    Parameters
+    ----------
+    d1 : dict
+      Considered the new one
+    d2 : dict
+      Considered the new original
+
+    Returns
+    -------
+    added : set
+       Keys added to d1
+    removed : set
+       Keys removed from d2
+    modified : set
+       Entries that were modified
+    same : set
+      Entries that remained the same
+    """
+    d1_keys = set(d1.keys())
+    d2_keys = set(d2.keys())
+    intersect_keys = d1_keys.intersection(d2_keys)
+    added = d1_keys - d2_keys
+    removed = d2_keys - d1_keys
+    modified = {o: (d1[o], d2[o]) for o in intersect_keys if d1[o] != d2[o]}
+    same = set(o for o in intersect_keys if d1[o] == d2[o])
+    # Return
+    return added, removed, modified, same
+
+
+def compare_two_json(file1, file2):
+    """ Compare the values of 2 JSON files which may have
+    different ordering in the keys
+
+    Parameters
+    ----------
+    file1 : str
+    file2 : str
+
+    Returns
+    -------
+    test : bool
+
+    """
+    j1 = loadjson(file1)
+    j2 = loadjson(file2)
+    #
+    test = j1 == j2
+    return test
+
 
 def convert_quantity_in_dict(idict):
     """ Return a dict where Quantities (usually from a JSON file)

@@ -6,9 +6,29 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import pytest
 import numpy as np
+import os
+from pkg_resources import resource_filename
+
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 import linetools.utils as ltu
+
+def data_path(filename):
+    data_dir = resource_filename('linetools', 'data/tests/')
+    return os.path.join(data_dir, filename)
+
+def test_compare_stuff():
+    # Compare files
+    assert ltu.compare_two_files(data_path('dum_file1.txt'), data_path('dum_file2.txt'))
+    # Compare 2 json files
+    assert ltu.compare_two_json(data_path('dum1.json'), data_path('dum2.json'))
+    # Dicts
+    d1 = ltu.loadjson(data_path('dum1.json'))
+    d3 = ltu.loadjson(data_path('dum3.json'))
+    added, removed, modified, same = ltu.compare_two_dict(d1,d3)
+    assert removed == set('e')
+    for key in ['a','d']:
+        assert key in modified.keys()
 
 
 def test_name_from_coord():
@@ -159,3 +179,4 @@ def test_is_local_minima_maxima():
 
     assert all(np.where(a_lmin)[0] == ind_lmin)
     assert all(np.where(a_lmax)[0] == ind_lmax)
+

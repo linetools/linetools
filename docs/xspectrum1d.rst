@@ -38,7 +38,7 @@ The main attributes of XSpectrum1D are `wavelength`, `flux` and
     >>> sp = XSpectrum1D.from_tuple((wa, fl, sig), verbose=False)
     >>> sp.wavelength # doctest: +SKIP
     <Quantity [ 3000. , 3000.5, 3001. ,..., 6999. , 6999.5, 7000. ] Angstrom>
-    >>> sp.flux
+    >>> sp.flux # doctest: +SKIP
     <Quantity [ 1., 1., 1.,...,  1., 1., 1.]>
     >>> sp.sig # doctest: +SKIP
     <Quantity [ 1., 1., 1.,...,  1., 1., 1.]>
