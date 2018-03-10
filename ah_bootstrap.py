@@ -145,6 +145,11 @@ DIST_NAME = 'astropy-helpers'
 PACKAGE_NAME = 'astropy_helpers'
 UPPER_VERSION_EXCLUSIVE = None
 
+if PY3:
+    UPPER_VERSION_EXCLUSIVE = None
+else:
+    UPPER_VERSION_EXCLUSIVE = '3'
+
 # Defaults for other options
 DOWNLOAD_IF_NEEDED = True
 INDEX_URL = 'https://pypi.python.org/simple'
