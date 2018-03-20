@@ -421,7 +421,7 @@ ELEMENTS = ElementsDict(
         tboil=90.188, tmelt=54.8, density=1.33,
         eleconfig='[He] 2s2 2p4',
         oxistates='-2*, -1',
-        ionenergy=(13.6181, 35.116, 54.934, 54.934, 77.412,
+        ionenergy=(13.6181, 35.116, 54.934, 77.412,
                    113.896, 138.116, 739.315, 871.387, ),
         isotopes={16: Isotope(15.9949146221, 0.99757, 16),
                   17: Isotope(16.9991315, 0.00038, 17),
