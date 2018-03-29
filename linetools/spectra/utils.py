@@ -275,8 +275,8 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, grow_bad_sig=False
     cumvar = np.cumsum(var * dwv.value, dtype=np.float64)
 
     # Interpolate (loses the units)
-    fcum = interp1d(wvh, cumsum, fill_value=0., bounds_error=False)
-    fvar = interp1d(wvh, cumvar, fill_value=0., bounds_error=False)
+    fcum = interp1d(wvh, cumsum, fill_value='extrapolate', bounds_error=False)
+    fvar = interp1d(wvh, cumvar, fill_value='extrapolate', bounds_error=False)
 
     # Endpoints of new pixels
     nnew = len(new_wv)

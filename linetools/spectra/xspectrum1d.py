@@ -783,7 +783,7 @@ class XSpectrum1D(object):
           Rejected pixels are propagated.
         all : bool, optional
           Rebin all spectra in the XSpectrum1D object?
-          Set masking='none' to have the resultant spectra all be regsitered, but note
+          Set masking='none' to have the resultant spectra all be registered, but note
              that there will still be masking unless otherwise specified in kwargs
 
         Returns

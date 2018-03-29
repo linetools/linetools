@@ -93,6 +93,7 @@ def test_voigt_sngl_tau():
     abslin.attrib['b'] = 25.*u.km/u.s
     # Tau
     tau = lav.voigt_from_abslines(wave,abslin,ret='tau')
+    assert not np.any(tau<0)
     np.testing.assert_allclose(tau[imn], 2.9681283001576779)
 
 

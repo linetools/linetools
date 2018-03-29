@@ -489,7 +489,7 @@ def N_from_Wr(Wr, wrest, fosc):
     N = N.to((1/u.cm**2))
     return N
 
-def Wr_from_N_b_transition(N, b, transition, llist='ISM'):
+def Wr_from_N_b_transition(N, b, transition, linelist=None):
     """ For a given transition this function looks
     for the atomic parameters (wa0, fosc, gamma) and returns the
     rest-frame equivalent width for a given N and b. It uses the approximation given by
@@ -506,9 +506,7 @@ def Wr_from_N_b_transition(N, b, transition, llist='ISM'):
     transition : str
         Name of the transition using linetools' naming
         convention, e.g. 'HI 1215'.
-    llist : str
-        Name of the linetools.lists.linelist.LineList
-        object where to look for the transition name.
+    linelist : LineList, optional
         Default is 'ISM', which means the function looks
         within `list = LineList('ISM')`.
 
@@ -522,7 +520,8 @@ def Wr_from_N_b_transition(N, b, transition, llist='ISM'):
     See also Wr_from_N_b()
 
     """
-    linelist = LineList(llist)
+    if linelist is None:
+        linelist = LineList('ISM')
     transition_dict = linelist[transition]
     if transition_dict is None:
         raise ValueError('Transition {:s} not found within LineList {:s}'.format(transition, linelist.list))
@@ -536,7 +535,7 @@ def Wr_from_N_b_transition(N, b, transition, llist='ISM'):
     return Wr_from_N_b(N, b, wrest, fosc, gamma)
 
 
-def Wr_from_N_transition(N, transition, llist='ISM'):
+def Wr_from_N_transition(N, transition, linelist=None):
     """ For a given transition this function looks
     for the atomic parameters (wa0, fosc) and returns the
     rest-frame equivalent width for a given N. It uses the approximation given by
@@ -551,9 +550,7 @@ def Wr_from_N_transition(N, transition, llist='ISM'):
     transition : str
         Name of the transition using linetools' naming
         convention, e.g. 'HI 1215', 'CIV 1550', etc.
-    llist : str
-        Name of the linetools.lists.linelist.LineList
-        object where to look for the transition name.
+    linelist : LineList, optional
         Default is 'ISM', which means the function looks
         within `list = LineList('ISM')`.
 
@@ -567,7 +564,8 @@ def Wr_from_N_transition(N, transition, llist='ISM'):
     See also Wr_from_N(), Wr_from_N_b_transition(), Wr_from_N_b()
 
     """
-    linelist = LineList(llist)
+    if linelist is None:
+        linelist = LineList('ISM')
     transition_dict = linelist[transition]
     if transition_dict is None:
         raise ValueError('Transition {:s} not found within LineList {:s}'.format(transition, linelist.list))
@@ -580,7 +578,7 @@ def Wr_from_N_transition(N, transition, llist='ISM'):
     return Wr_from_N(N, wrest, fosc)
 
 
-def N_from_Wr_transition(Wr, transition, llist='ISM'):
+def N_from_Wr_transition(Wr, transition, linelist=None):
     """ For a given transition this function looks
     for the atomic parameters (wa0, fosc) and returns the
     column density for a given rest-frame equivalent width. It uses
@@ -595,9 +593,7 @@ def N_from_Wr_transition(Wr, transition, llist='ISM'):
     transition : str
         Name of the transition using linetools' naming
         convention, e.g. 'HI 1215', 'CIV 1550', etc.
-    llist : str
-        Name of the linetools.lists.linelist.LineList
-        object where to look for the transition name.
+    linelist : LineList, optional
         Default is 'ISM', which means the function looks
         within `list = LineList('ISM')`.
 
@@ -611,7 +607,8 @@ def N_from_Wr_transition(Wr, transition, llist='ISM'):
     See also Wr_from_N(), Wr_from_N_b_transition(), Wr_from_N_b()
 
     """
-    linelist = LineList(llist)
+    if linelist is None:
+        linelist = LineList('ISM')
     transition_dict = linelist[transition]
     if transition_dict is None:
         raise ValueError('Transition {:s} not found within LineList {:s}'.format(transition, linelist.list))
