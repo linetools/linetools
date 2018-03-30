@@ -268,5 +268,5 @@ def test_smash_spectra(specmr):
     stack = ltsu.smash_spectra(rest_spec, method='average')
     # Test
     assert stack.totpix == 3716
-    np.testing.assert_allclose(stack.flux[1].value, -3.3213510, rtol=1e-5)
+    np.testing.assert_allclose(stack.flux[1].value, -1.097201824, rtol=1e-5)
 
