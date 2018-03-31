@@ -177,7 +177,7 @@ def read_H2():
     data.add_column(cgroup)
 
     # Reference
-    data['Ref'] = 'Abgrall93' # GRB paper
+    data['Ref'] = 'Abgrall93'
 
     # Return
     return data
@@ -895,10 +895,8 @@ def update_fval(table, verbose=False):
         if len(mt) == 0:
             if verbose:
                 print('update_fval: Line {:g} not in your table.'.format(row['wrest']))
-        elif len(mt) == 1:
-            table['f'][mt[0]] = row['f']
         else:
-            raise ValueError('Uh oh')
+            table['f'][mt] = row['f']
 
     ## ##
     # Lines without f-value but of interest
@@ -965,18 +963,13 @@ def update_wrest(table, verbose=True):
     table['Ek'][mt[0]] = 52330.33 / u.cm
     '''
 #
-def load_datasets(datasets, tol=1e-3, use_cache=True):
-    """Grab the data for the lines of interest
-    Also load into CACHE
+def load_datasets(datasets, tol=1e-3):
+    """Load up all the inidividual linelist datasets
 
     Parameters
     ----------
     datasets : list of func
       Routines to call for generating the dataset
-    tol : float, optional
-      Tolerance for matching wavelength in AA
-    use_cache : bool, optional
-
     Returns
     -------
 
@@ -1005,6 +998,7 @@ def load_datasets(datasets, tol=1e-3, use_cache=True):
             if full_table is None:
                 full_table = table
             else:
+                '''
                 # Unique values
                 wrest = full_table['wrest']
                 newi = []
@@ -1013,10 +1007,8 @@ def load_datasets(datasets, tol=1e-3, use_cache=True):
                     if mt.sum() == 0:
                         newi.append(jj)
                 # Append
-                try:
-                    full_table = vstack([full_table, table[newi]])
-                except NotImplementedError:
-                    pdb.set_trace()
+                '''
+                full_table = vstack([full_table, table])
             # Save to avoid repeating
             all_func.append(func)
 

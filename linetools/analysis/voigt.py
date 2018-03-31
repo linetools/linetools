@@ -176,7 +176,8 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'],
         if const.c.to('km/s')*dwave/medwave > minb/10.:
             wmin = np.min(iwave.to('AA').value)
             wmax = np.max(iwave.to('AA').value)
-            nsub = int(np.round( (np.log10(wmax)- np.log10(wmin)) / 1.449E-6)) + 1
+            # Npixels -- Need to cover all the wavelengths (hence +2)
+            nsub = int(np.round( (np.log10(wmax)- np.log10(wmin)) / 1.449E-6)) + 2
             wave = 10.**(np.log10(wmin) + np.arange(nsub)*1.449E-6) * u.AA
             flg_rebin = 1
             warnings.warn('Using a sub-grid wavelength array because the input array is too coarse.')
@@ -211,7 +212,7 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'],
                iline.z, iline.attrib['b'].to('cm/s').value,
                iline.wrest.to('cm').value, iline.data['f'],
                iline.data['gamma'].value]
-        tau += voigt_tau(wavecm, par) 
+        tau += voigt_tau(wavecm, par)
 
     # Only tau?
     if ret == 'tau':
@@ -220,6 +221,7 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'],
             tmodel = XSpectrum1D.from_tuple((wave,tau))
             tmodel = tmodel.rebin(iwave)
             tau = tmodel.flux.value
+            # Insure all tau values are positive
             warnings.warn('Rebinned tau back to your input array.  Reconsider input')
         # Return
         return tau

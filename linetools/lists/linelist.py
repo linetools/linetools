@@ -304,11 +304,12 @@ class LineList(object):
                         indices.append(mt[0])
                     elif len(mt) > 1:
                         #
-                        wmsg = 'WARNING: Multiple lines with wrest={:g}'.format(
-                            set_data['wrest'][igd])
-                        warnings.warn(wmsg)
-                        warnings.warn(
-                            'Taking the first entry. Maybe use higher precision.')
+                        #wmsg = 'WARNING: Multiple lines with wrest={:g}'.format(
+                        #    set_data['wrest'][igd])
+                        #warnings.warn(wmsg)
+                        #warnings.warn(
+                        #    'Taking the first entry. Maybe use higher precision.')
+                        self._fulltable['name'][mt[0]] = set_data['name'][igd]
                         indices.append(mt[0])
                     else:
                         if verbose:

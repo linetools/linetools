@@ -178,20 +178,22 @@ class SpectralLine(object):
         return sline
 
     # Initialize with wavelength
-    def __init__(self, ltype, trans, linelist=None, closest=False, z=None,
+    def __init__(self, ltype, trans, z=None,
                  verbose=True, use_CACHE=False, **kwargs):
         """
         Parameters
         ----------
         ltype : str
         trans : str
-        linelist : LineList, optional
         closest : bool, optional
         z : float, optional
         verbose : bool, optional
         use_CACHE : bool, optional
           Use a cache on the LineList?
-        kwargs
+        kwargs :
+          passed to fill_data
+          includes linelist, closest
+          also used to set zlim
         """
         # Required
         self.ltype = ltype
@@ -208,8 +210,7 @@ class SpectralLine(object):
         self.attrib = init_attrib.copy()
 
         # Fill data
-        self.fill_data(trans, linelist=linelist, closest=closest, verbose=verbose,
-                       use_CACHE=use_CACHE)
+        self.fill_data(trans, verbose=verbose, use_CACHE=use_CACHE, **kwargs)
         # Redshift Limits
         if z is None:
             #warnings.warn("Redshift not input.  Setting to 0 for zLimits")
@@ -230,7 +231,7 @@ class SpectralLine(object):
         return self.limits.z
 
     def fill_data(self, trans, linelist=None, closest=False, verbose=True,
-                  use_CACHE=False):
+                  use_CACHE=False, **kwargs):
         """ Fill atomic data and setup analy.
 
         Parameters
@@ -239,13 +240,15 @@ class SpectralLine(object):
           Either a rest wavelength (e.g. 1215.6700*u.AA) or the name
           of a transition (e.g. 'CIV 1548'). For an unknown transition
           use string 'unknown'.
-        linelist : LineList, optional
+        linelist : str or LineList or list of LineList objects, optional
           Class of linelist or str setting LineList
+          or list of LineList objects
         closest : bool, optional
           Take the closest line to input wavelength? [False]
         """
         global CACHE_LLIST   # Only cached if LineList is *not* input
         # Deal with LineList
+        flg_list = False
         if linelist is None:
             if use_CACHE and (CACHE_LLIST is not None):
                 llist = CACHE_LLIST
@@ -260,17 +263,28 @@ class SpectralLine(object):
             llist = LineList(linelist)
         elif isinstance(linelist,LineList):
             llist = linelist
+        elif isinstance(linelist,list):
+            llist = linelist[0]
+            flg_list = True
         else:
             raise ValueError('Bad input for linelist')
 
         # Cache
         CACHE_LLIST = llist
-
         # Closest?
         llist.closest = closest
 
         # Data
-        newline = llist[trans]
+        if flg_list:  # Allow for a list of LineList
+            for llist in linelist:
+                llist.closest = closest
+                newline = llist[trans]
+                if newline is not None:
+                    break
+        else:
+            newline = llist[trans]
+
+        # Success?
         if newline is None:
             print("Transition {} not found in LineList {:s}".format(trans, llist.list))
             raise ValueError("You may need to set clear_CACHE_LLIST=True")

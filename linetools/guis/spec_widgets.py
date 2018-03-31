@@ -634,9 +634,6 @@ class ExamineSpecWidget(QWidget):
                 for abs_sys in self.abs_sys:
                     ii+=1
                     lines = abs_sys.list_of_abslines()
-                    #QtCore.pyqtRemoveInputHook()
-                    #xdb.set_trace()
-                    #QtCore.pyqtRestoreInputHook()
                     wrest = Quantity([line.wrest for line in lines])
                     wvobs = wrest * (abs_sys.zabs+1)
                     gdwv = np.where( ((wvobs.value+5) > self.psdict['x_minmax'][0]) &  # Buffer for region
@@ -647,7 +644,11 @@ class ExamineSpecWidget(QWidget):
                         # Paint spectrum red
                         wvlim = wvobs[jj]*(1 + lines[jj].limits.vlim/const.c.to('km/s'))
                         pix = np.where( (self.spec.wavelength > wvlim[0]) & (self.spec.wavelength < wvlim[1]))[0]
-                        self.ax.plot(self.spec.wavelength[pix].value, self.spec.flux[pix].value,
+                        #QtCore.pyqtRemoveInputHook()
+                        #import pdb; pdb.set_trace()
+                        #QtCore.pyqtRestoreInputHook()
+                        if len(pix) > 0:
+                            self.ax.plot(self.spec.wavelength[pix].value, self.spec.flux[pix].value,
                                      '-',drawstyle='steps-mid', color=clrs[ii])
                         # Label
                         lbl = lines[jj].analy['name']+' z={:g}'.format(abs_sys.zabs)
