@@ -30,7 +30,7 @@ def test_mk_absline():
     # Init CII 1334 with multiple linelists
     ism = LineList('ISM')
     H2 = LineList('H2')
-    abslin2b = AbsLine(1334.5323*u.AA, linelist=[ism,H2])
+    abslin2b = AbsLine(1334.5323*u.AA, linelist=[H2,ism])
     np.testing.assert_allclose(abslin2.data['Ek'], 74932.62 / u.cm)
 
     # Init CII 1334 by name

@@ -176,6 +176,7 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'],
         if const.c.to('km/s')*dwave/medwave > minb/10.:
             wmin = np.min(iwave.to('AA').value)
             wmax = np.max(iwave.to('AA').value)
+            # Npixels -- Need to cover all the wavelengths (hence +2)
             nsub = int(np.round( (np.log10(wmax)- np.log10(wmin)) / 1.449E-6)) + 2
             wave = 10.**(np.log10(wmin) + np.arange(nsub)*1.449E-6) * u.AA
             flg_rebin = 1
