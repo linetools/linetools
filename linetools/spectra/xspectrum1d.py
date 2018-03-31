@@ -1222,7 +1222,7 @@ class XSpectrum1D(object):
         # import pdb; pdb.set_trace()
         prihdu.header['UNITS'] = json.dumps(d)
 
-        hdu.writeto(outfil, clobber=clobber)
+        hdu.writeto(outfil, overwrite=clobber)
         print('Wrote spectrum to {:s}'.format(outfil))
 
     def add_to_hdf5(self, hdf5, path='/', fill_val=0.):
@@ -1357,7 +1357,7 @@ class XSpectrum1D(object):
         prihdu.header['UNITS'] = json.dumps(d)
 
         # Write
-        hdulist.writeto(outfil, clobber=clobber)
+        hdulist.writeto(outfil, overwrite=clobber)
         print('Wrote spectrum to {:s}'.format(outfil))
 
     def fit_continuum(self, knots=None, edges=None, wlim=None, dw=10.,

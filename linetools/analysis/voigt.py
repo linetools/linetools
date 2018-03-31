@@ -219,7 +219,7 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'],
         if flg_rebin: # Can only occur for single line input
             # Might be better to do in flux space, but small flux values cause trouble
             tmodel = XSpectrum1D.from_tuple((wave,tau))
-            tmodel = tmodel.rebin(iwave)
+            tmodel = tmodel.rebin(iwave, fill_value='extrapolate')
             tau = tmodel.flux.value
             # Insure all tau values are positive
             warnings.warn('Rebinned tau back to your input array.  Reconsider input')
