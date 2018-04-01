@@ -194,7 +194,8 @@ def collate(spectra, **kwargs):
     return new_spec
 
 
-def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, grow_bad_sig=False, **kwargs):
+def rebin(spec, new_wv, do_sig=False, do_co=False, all=False,
+          fill_value=0., grow_bad_sig=False, **kwargs):
     """ Rebin a single spectrum in an XSpectrum1D object to a new wavelength array
 
     Uses simple linear interpolation.  The default (and only)
@@ -210,6 +211,9 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, grow_bad_sig=False
     ----------
     new_wv : Quantity array
       New wavelength array
+    fill_value : float, optional
+      Fill value at the edges
+      Default = 0., but 'extrapolate' may be considered
     do_sig : bool, optional
       Rebin error too (if it exists).
       S/N is only crudely conserved.
@@ -275,8 +279,8 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False, grow_bad_sig=False
     cumvar = np.cumsum(var * dwv.value, dtype=np.float64)
 
     # Interpolate (loses the units)
-    fcum = interp1d(wvh, cumsum, fill_value='extrapolate', bounds_error=False)
-    fvar = interp1d(wvh, cumvar, fill_value='extrapolate', bounds_error=False)
+    fcum = interp1d(wvh, cumsum, fill_value=fill_value, bounds_error=False)
+    fvar = interp1d(wvh, cumvar, fill_value=0., bounds_error=False)
 
     # Endpoints of new pixels
     nnew = len(new_wv)
