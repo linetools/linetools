@@ -987,7 +987,7 @@ class AbsComponent(object):
                      Name=self.name,
                      RA=self.coord.icrs.ra.value, DEC=self.coord.icrs.dec.value,
                      A=self.A, Ej=self.Ej.to('1/cm').value, comment=self.comment,
-                     attrib=self.attrib)
+                     attrib=self.attrib.copy())  # Avoids changing the dict in place
         cdict['class'] = self.__class__.__name__
         # AbsLines
         cdict['lines'] = {}
