@@ -106,7 +106,7 @@ class AbsSightline(object):
         Parameters
         ----------
         systems : list
-            list of AbsComponent objects
+            list of AbsSystem objects
 
         """
         if not isinstance(systems, list):
@@ -121,7 +121,7 @@ class AbsSightline(object):
         return slf
 
 
-    def __init__(self, radec, sl_type=None, em_type=None, comment=None, name=None, **kwargs):
+    def __init__(self, radec, sl_type='', em_type='', comment=None, name=None, **kwargs):
         """  Initiator
 
         Parameters
@@ -221,12 +221,19 @@ class AbsSightline(object):
         for key in all_attr:
             if key in ['coord', '_components']:
                 continue
+            elif key in ['_abssystems']:
+                pass
             else:
                 outdict[key] = getattr(self, key)
         # Components
         outdict['components'] = {}
         for component in self._components:
             outdict['components'][component.name] = ltu.jsonify(component.to_dict())
+        # Systems
+        if self._abssystems is not None:
+            outdict['systems'] = {}
+            for abs_sys in self._abssystems:
+                outdict['systems'][abs_sys.name] = abs_sys.to_dict()
         # Polish
         outdict = ltu.jsonify(outdict)
         # Return
