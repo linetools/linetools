@@ -485,7 +485,6 @@ class AbsComponent(object):
                 print("Absline velocities lie beyond component\n Set chk_vel=False to skip this test.")
             if not testc:
                 print("Absline coordinates do not match. Best to set them")
-            pdb.set_trace()
 
     def add_abslines_from_linelist(self, llist='ISM', init_name=None, wvlim=None, min_Wr=None, **kwargs):
         """
