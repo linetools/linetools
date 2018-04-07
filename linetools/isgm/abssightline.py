@@ -152,7 +152,7 @@ class AbsSightline(object):
         # Others
         self.em_type = em_type
         self.sl_type = sl_type
-        self._abssystems = None  # Saving the namespace for future usage
+        self._abssystems = []  # Saving the namespace for future usage
 
     def add_component(self, abscomp, tol=0.2*u.arcsec,
                       chk_sep=True, debug=False, **kwargs):
@@ -230,7 +230,7 @@ class AbsSightline(object):
         for component in self._components:
             outdict['components'][component.name] = ltu.jsonify(component.to_dict())
         # Systems
-        if self._abssystems is not None:
+        if len(self._abssystems) != 0:
             outdict['systems'] = {}
             for abs_sys in self._abssystems:
                 outdict['systems'][abs_sys.name] = abs_sys.to_dict()

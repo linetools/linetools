@@ -679,22 +679,20 @@ class AbsComponent(object):
             plt.show()
         plt.close()
 
-    def reset_vlim_from_abslines(self, verbose=False):
-        """ Resets the vlim value using the AbsLines
+    def reset_limits_from_abslines(self, verbose=False):
+        """ Reset the limits using the AbsLines
 
         Parameters
         ----------
 
         """
+        zmin = 1e9
+        zmax = -1e9
         for aline in self._abslines:
-            if aline.analy['vlim'][0] < self.vlim[0]:
-                if verbose:
-                    print('Resetting vlim0 from {}'.format(aline))
-                self.vlim[0] = aline.analy['vlim'][0]
-            if aline.analy['vlim'][1] > self.vlim[1]:
-                if verbose:
-                    print('Resetting vlim1 from {}'.format(aline))
-                self.vlim[1] = aline.analy['vlim'][1]
+            zmin = min(zmin, aline.limits.zlim[0])
+            zmax = max(zmax, aline.limits.zlim[1])
+        # Set
+        self.limits.set((zmin,zmax))
 
     def synthesize_colm(self, overwrite=False, redo_aodm=False, debug=False, **kwargs):
         """Synthesize column density measurements of the component.

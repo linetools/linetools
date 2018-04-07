@@ -18,7 +18,7 @@ from linetools.isgm.abscomponent import AbsComponent
 from linetools.spectralline import AbsLine
 from linetools.isgm import utils as ltiu
 
-from linetools.isgm.tests.utils import mk_comp, mk_comptable
+from linetools.isgm.tests.utils import mk_comp, mk_comptable, ism
 
 import imp, os
 lt_path = imp.find_module('linetools')[1]
@@ -35,6 +35,23 @@ def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), 'files')
     return os.path.join(data_dir, filename)
 
+
+def test_rest_limits():
+    SiIItrans = ['SiII 1260', 'SiII 1304']
+    radec = SkyCoord(ra=1., dec=1., unit='deg')
+    abslines = []
+    for kk,trans in enumerate(SiIItrans):
+        iline = AbsLine(trans, z=1., linelist=ism)
+        iline.attrib['coord'] = radec
+        if kk == 0:
+            iline.limits.set([-250.,80.]*u.km/u.s)
+        else:
+            iline.limits.set([-50.,180.]*u.km/u.s)
+        abslines.append(iline)
+    #
+    comp = AbsComponent.from_abslines(abslines, chk_vel=False)
+    comp.reset_limits_from_abslines()
+    assert np.isclose(comp.vlim[1].value, 180.)
 
 def test_write():
     # Component
