@@ -227,15 +227,19 @@ class AbsComponent(object):
                    **kwargs)
 
     @classmethod
-    def from_dict(cls, idict, coord=None, **kwargs):
+    def from_dict(cls, idict, coord=None, skip_abslines=False, **kwargs):
         """ Instantiate from a dict
 
         Parameters
         ----------
         idict : dict
+        skip_abslines : bool, optional
+          Skip loading up the AbsLine objects.
+          Speeds up performance when one only needs the component object
 
         Returns
         -------
+        AbsComponent
 
         """
         if coord is not None:
@@ -294,9 +298,10 @@ class AbsComponent(object):
             _, _ = ltaa.linear_clm(slf.attrib)  # Set linear quantities
 
         # Add AbsLine objects
-        for key in idict['lines'].keys():
-            iline = AbsLine.from_dict(idict['lines'][key], coord=coord, **kwargs)
-            slf.add_absline(iline, **kwargs)
+        if not skip_abslines:
+            for key in idict['lines'].keys():
+                iline = AbsLine.from_dict(idict['lines'][key], coord=coord, **kwargs)
+                slf.add_absline(iline, **kwargs)
         # Return
         return slf
 
@@ -433,7 +438,7 @@ class AbsComponent(object):
              (allows for round-off error)
         chk_sep : bool, optional
           Perform coordinate check (expensive)
-        vtoler : float
+        vtoler : float, optional
           Tolerance for velocity in km/s (must be positive)
         """
         if vtoler < 0:
@@ -458,9 +463,9 @@ class AbsComponent(object):
         if chk_vel:
             dz_toler = (1 + self.zcomp) * vtoler / c_kms  # Avoid Quantity for speed
             zlim_line = absline.limits.zlim  # absline.z + (1 + absline.z) * absline.limits.vlim.to('km/s').value / c_kms
-            zlim_comp = self.zcomp + (1+self.zcomp) * self.vlim.to('km/s').value / c_kms
-            testv = (zlim_line[0] >= (zlim_comp[0] - dz_toler)) & (
-                zlim_line[1] <= (zlim_comp[1] + dz_toler))
+            zlim_comp = self.limits.zlim
+            testv = (zlim_line[0] >= (zlim_comp[0] - dz_toler)) & \
+                    ( zlim_line[1] <= (zlim_comp[1] + dz_toler))
         else:
             testv = True
         # Combine
@@ -480,6 +485,7 @@ class AbsComponent(object):
                 print("Absline velocities lie beyond component\n Set chk_vel=False to skip this test.")
             if not testc:
                 print("Absline coordinates do not match. Best to set them")
+            pdb.set_trace()
 
     def add_abslines_from_linelist(self, llist='ISM', init_name=None, wvlim=None, min_Wr=None, **kwargs):
         """
