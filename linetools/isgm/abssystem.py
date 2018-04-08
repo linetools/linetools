@@ -309,8 +309,8 @@ class AbsSystem(object):
             if chk_z:
                 # Will avoid Quantity for speed
                 dz_toler = (1 + self.zabs) * vtoler / c_mks
-                zlim_comp = abscomp.limits.zlim
-                zlim_sys = self.limits.zlim
+                zlim_comp = np.array(abscomp.limits.zlim)
+                zlim_sys = np.array(self.limits.zlim)
                 if overlap_only:
                     testz = True
                     if debug:
