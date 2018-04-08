@@ -308,11 +308,9 @@ class AbsSystem(object):
         else:
             if chk_z:
                 # Will avoid Quantity for speed
-                comp_vlim_mks = abscomp.vlim.to('km/s').value
-                sys_vlim_mks = self.vlim.to('km/s').value
                 dz_toler = (1 + self.zabs) * vtoler / c_mks
-                zlim_comp = abscomp.zcomp + (1 + abscomp.zcomp) * (comp_vlim_mks / c_mks)
-                zlim_sys = self.zabs + (1 + self.zabs) * (sys_vlim_mks / c_mks)
+                zlim_comp = abscomp.limits.zlim
+                zlim_sys = self.limits.zlim
                 if overlap_only:
                     testz = True
                     if debug:
