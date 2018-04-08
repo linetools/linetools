@@ -629,22 +629,23 @@ class AbsSystem(object):
         return outdict
 
     def update_vlim(self, sub_system=None):
-        """ Update vlim in the main or subsystems using the components
+        """ Update zLimits in the main or subsystems using the components
 
         Parameters
         ----------
         sub_system : str, optional
           If provided, apply to given sub-system.  Only used in LLS so far
+          Not working anymore
         """
-        def get_vmnx(components):
-            zlim_sys = self.limits.zlim # ltu.z_from_dv(self.vlim, self.zabs, rel=False)
+        def get_zmnx(components):
+            zlim_sys = self.limits.zlim  # ltu.z_from_dv(self.vlim, self.zabs, rel=False)
             zmin, zmax = zlim_sys
             for component in components:
                 zlim_comp = component.limits.zlim
                 zmin = min(zmin, zlim_comp[0])
                 zmax = max(zmax, zlim_comp[1])
-            # Convert back to velocities
-            return ltu.dv_from_z([zmin,zmax], self.zabs, rel=False)
+            # Return
+            return zmin, zmax
 
         # Sub-system?
         if sub_system is not None:
@@ -652,8 +653,7 @@ class AbsSystem(object):
             components = self.subsys[sub_system]._components
             self.subsys[sub_system].vlim = get_vmnx(components)
         else:
-            components = self._components
-            self.limits.set(get_vmnx(components))  # Using system z
+            self.limits.set(get_zmnx(self._components))  # Using system z
             
 
     def write_json(self, outfil=None, overwrite=True):
