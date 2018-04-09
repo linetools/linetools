@@ -83,9 +83,11 @@ class XSpecGui(QMainWindow):
         if hasattr(self.spec_widg.spec, 'stypes'):
             if self.spec_widg.spec.stypes[self.spec_widg.select].lower() == 'galaxy':
                 self.pltline_widg.llist = ltgu.set_llist('Galaxy',in_dict=self.pltline_widg.llist)
-                self.pltline_widg.llist['Plot'] = True
-                idx = self.pltline_widg.lists.index(self.pltline_widg.llist['List'])
-                self.pltline_widg.llist_widget.setCurrentRow(idx)
+            elif self.spec_widg.spec.stypes[self.spec_widg.select].lower() == 'absorber':
+                self.pltline_widg.llist = ltgu.set_llist('Strong',in_dict=self.pltline_widg.llist)
+            self.pltline_widg.llist['Plot'] = True
+            idx = self.pltline_widg.lists.index(self.pltline_widg.llist['List'])
+            self.pltline_widg.llist_widget.setCurrentRow(idx)
         #
         self.pltline_widg.spec_widg = self.spec_widg
         # Multi spec

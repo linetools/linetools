@@ -7,6 +7,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import os
 
 import pytest
+from linetools import utils as ltu
 from .utils import make_gensl
 
 
@@ -25,4 +26,5 @@ def test_to_dict():
     gensl = make_gensl()
     # Dict
     gensl_dict = gensl.to_dict()
+    _ = ltu.jsonify(gensl_dict)
     assert gensl_dict['class'] == 'GenericAbsSightline'

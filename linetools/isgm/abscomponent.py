@@ -227,15 +227,19 @@ class AbsComponent(object):
                    **kwargs)
 
     @classmethod
-    def from_dict(cls, idict, coord=None, **kwargs):
+    def from_dict(cls, idict, coord=None, skip_abslines=False, **kwargs):
         """ Instantiate from a dict
 
         Parameters
         ----------
         idict : dict
+        skip_abslines : bool, optional
+          Skip loading up the AbsLine objects.
+          Speeds up performance when one only needs the component object
 
         Returns
         -------
+        AbsComponent
 
         """
         if coord is not None:
@@ -294,9 +298,10 @@ class AbsComponent(object):
             _, _ = ltaa.linear_clm(slf.attrib)  # Set linear quantities
 
         # Add AbsLine objects
-        for key in idict['lines'].keys():
-            iline = AbsLine.from_dict(idict['lines'][key], coord=coord, **kwargs)
-            slf.add_absline(iline, **kwargs)
+        if not skip_abslines:
+            for key in idict['lines'].keys():
+                iline = AbsLine.from_dict(idict['lines'][key], coord=coord, **kwargs)
+                slf.add_absline(iline, **kwargs)
         # Return
         return slf
 
@@ -433,7 +438,7 @@ class AbsComponent(object):
              (allows for round-off error)
         chk_sep : bool, optional
           Perform coordinate check (expensive)
-        vtoler : float
+        vtoler : float, optional
           Tolerance for velocity in km/s (must be positive)
         """
         if vtoler < 0:
@@ -458,9 +463,9 @@ class AbsComponent(object):
         if chk_vel:
             dz_toler = (1 + self.zcomp) * vtoler / c_kms  # Avoid Quantity for speed
             zlim_line = absline.limits.zlim  # absline.z + (1 + absline.z) * absline.limits.vlim.to('km/s').value / c_kms
-            zlim_comp = self.zcomp + (1+self.zcomp) * self.vlim.to('km/s').value / c_kms
-            testv = (zlim_line[0] >= (zlim_comp[0] - dz_toler)) & (
-                zlim_line[1] <= (zlim_comp[1] + dz_toler))
+            zlim_comp = self.limits.zlim
+            testv = (zlim_line[0] >= (zlim_comp[0] - dz_toler)) & \
+                    ( zlim_line[1] <= (zlim_comp[1] + dz_toler))
         else:
             testv = True
         # Combine
@@ -679,22 +684,20 @@ class AbsComponent(object):
             plt.show()
         plt.close()
 
-    def reset_vlim_from_abslines(self, verbose=False):
-        """ Resets the vlim value using the AbsLines
+    def reset_limits_from_abslines(self, verbose=False):
+        """ Reset the limits using the AbsLines
 
         Parameters
         ----------
 
         """
+        zmin = 1e9
+        zmax = -1e9
         for aline in self._abslines:
-            if aline.analy['vlim'][0] < self.vlim[0]:
-                if verbose:
-                    print('Resetting vlim0 from {}'.format(aline))
-                self.vlim[0] = aline.analy['vlim'][0]
-            if aline.analy['vlim'][1] > self.vlim[1]:
-                if verbose:
-                    print('Resetting vlim1 from {}'.format(aline))
-                self.vlim[1] = aline.analy['vlim'][1]
+            zmin = min(zmin, aline.limits.zlim[0])
+            zmax = max(zmax, aline.limits.zlim[1])
+        # Set
+        self.limits.set((zmin,zmax))
 
     def synthesize_colm(self, overwrite=False, redo_aodm=False, debug=False, **kwargs):
         """Synthesize column density measurements of the component.
@@ -987,7 +990,7 @@ class AbsComponent(object):
                      Name=self.name,
                      RA=self.coord.icrs.ra.value, DEC=self.coord.icrs.dec.value,
                      A=self.A, Ej=self.Ej.to('1/cm').value, comment=self.comment,
-                     attrib=self.attrib)
+                     attrib=self.attrib.copy())  # Avoids changing the dict in place
         cdict['class'] = self.__class__.__name__
         # AbsLines
         cdict['lines'] = {}

@@ -11,6 +11,7 @@ from pkg_resources import resource_filename
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 
+from linetools.isgm.abssystem import GenericAbsSystem
 from linetools.isgm.abssightline import GenericAbsSightline
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.spectralline import AbsLine
@@ -89,6 +90,9 @@ def make_gensl():
     # SiII
     SiII_comp = si2_comp(radec)
     gensl = GenericAbsSightline.from_components([abscomp, SiII_comp])
+    # Add a system
+    sys = GenericAbsSystem.from_components([abscomp, SiII_comp])
+    gensl._abssystems = [sys]
     return gensl
 
 

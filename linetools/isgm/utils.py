@@ -418,6 +418,8 @@ def table_from_complist(complist, summed_ion=False, NHI_obj=None, vrange=None,
             ion_names += ["Molecule"]
         else:
             ion_names += [ion_to_name(comp.Zion)]
+        if comp.Ej.value > 0.:  # Slightly kludgy
+            ion_names[-1] += '*'
     tab['ion_name'] = ion_names
 
     # attrib dict
