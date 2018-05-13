@@ -133,6 +133,10 @@ def voigt_from_abslines(iwave, line, fwhm=None, ret=['vmodel'],
     wave : Quantity array
       Observed wavelengths
     line : AbsLine, List of Absline, or array of parameters
+      The following should all have been set:
+        attrib['N']
+        attrib['b']
+        limits.z
     fwhm : float, optional [None]
       FWHM for Gaussian smoothing (pixels)
     ret : list, optional  
