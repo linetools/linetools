@@ -14,6 +14,7 @@ from astropy.table import Table
 import numpy as np
 
 from linetools.lists.linelist import LineList
+from linetools.spectralline import AbsLine
 
 #import pdb
 #pdb.set_trace()
@@ -24,6 +25,12 @@ def test_lines_from_ion():
     # 
     lines = ism[(6,2)]
     assert (1334.5323 in lines['wrest'])
+
+def test_molecules():
+    h2 = LineList('H2')
+    #
+    for kk,name in enumerate(h2.name):
+        lyi = AbsLine(name, linelist=h2)
 
 def test_subset():
     ism = LineList('ISM')
