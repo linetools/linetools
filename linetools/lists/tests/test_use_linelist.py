@@ -31,6 +31,9 @@ def test_molecules():
     #
     for kk,name in enumerate(h2.name):
         lyi = AbsLine(name, linelist=h2)
+    # gamma values
+    h2_B3_0R0 = AbsLine('B3-0R(0)', linelist=h2)
+    assert h2_B3_0R0.data['gamma'].value > 0.
 
 def test_subset():
     ism = LineList('ISM')
