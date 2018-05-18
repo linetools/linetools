@@ -911,7 +911,7 @@ class LineList(object):
                 self.memoize[k] = self._data[mt]
             else:
                 raise ValueError(
-                    '{:s}: Multiple lines in the list'.format(self.__class__))
+                    '{:s}: Multiple lines in the list with your input.  Give a more unique input or change the tol.'.format(self.__class__.__name__))
             # Finish
             tmp = self.memoize[k].copy()
         return tmp

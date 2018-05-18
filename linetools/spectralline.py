@@ -179,7 +179,7 @@ class SpectralLine(object):
 
     # Initialize with wavelength
     def __init__(self, ltype, trans, z=None,
-                 verbose=True, use_CACHE=False, **kwargs):
+                 verbose=True, use_CACHE=False, linelist=None, **kwargs):
         """
         Parameters
         ----------
@@ -190,10 +190,12 @@ class SpectralLine(object):
         verbose : bool, optional
         use_CACHE : bool, optional
           Use a cache on the LineList?
+        linelist : LineList (optional)
+          Defaults to ISM for AbsLine, if not provided
         kwargs :
-          passed to fill_data
-          includes linelist, closest
-          also used to set zlim
+          passed to fill_data()
+            e.g. closest=True
+          also used to set z via zlim=[]
         """
         # Required
         self.ltype = ltype
@@ -210,7 +212,7 @@ class SpectralLine(object):
         self.attrib = init_attrib.copy()
 
         # Fill data
-        self.fill_data(trans, verbose=verbose, use_CACHE=use_CACHE, **kwargs)
+        self.fill_data(trans, verbose=verbose, use_CACHE=use_CACHE, linelist=linelist, **kwargs)
         # Redshift Limits
         if z is None:
             #warnings.warn("Redshift not input.  Setting to 0 for zLimits")

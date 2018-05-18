@@ -934,7 +934,7 @@ def update_gamma(table):
     else:
         if len(HI) > 0:
             # Same kludge as in atom.dat of VPFIT for higher order lines
-            table['gamma'] = table['A']
+            table['gamma'][HI] = table['A'][HI]
             # More accurate for stronger lines (pulled from Morton) [all in units of s^-1]
             gdict = {1215.670: 6.265E+08, 1025.7222: 1.897E+08, # From Morton
                 972.5367: 8.127E+07, 949.7430: 4.204E+07, 937.8034: 2.450E+07}

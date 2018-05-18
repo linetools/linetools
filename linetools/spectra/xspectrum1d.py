@@ -1454,8 +1454,8 @@ class XSpectrum1D(object):
         import matplotlib.pyplot as plt
         fig = plt.figure(figsize=(11, 7))
         fig.subplots_adjust(left=0.05, right=0.95, bottom=0.1, top=0.95)
-        wrapper = InteractiveCoFit(wa, flux, sig,
-                                   contpoints, co=co_init, fig=fig, anchor=anchor, numguesspix=numguesspix)
+        wrapper = InteractiveCoFit(wa, flux, sig, contpoints,
+                                   co=co_init, fig=fig, anchor=anchor, numguesspix=numguesspix)
 
         # wait until the interactive fitting has finished
         while not wrapper.finished:
