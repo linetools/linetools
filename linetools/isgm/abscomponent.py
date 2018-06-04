@@ -532,7 +532,7 @@ class AbsComponent(object):
 
         # unify output to be a Table
         if isinstance(transitions, dict):
-            transitions =ltlu.from_dict_to_table(transitions)
+            transitions = ltlu.from_dict_to_table(transitions)
 
         # check wvlims
         if wvlim is not None:
