@@ -518,6 +518,8 @@ class AbsComponent(object):
         **kwargs are passed to AbsLine.add_absline() method.
 
         """
+        from linetools.lists import utils as ltlu
+
         # get the transitions from LineList
         llist = LineList(llist)
         if init_name is None:  # we have to guess it
@@ -530,7 +532,7 @@ class AbsComponent(object):
 
         # unify output to be a Table
         if isinstance(transitions, dict):
-            transitions = llist.from_dict_to_table(transitions)
+            transitions = ltlu.from_dict_to_table(transitions)
 
         # check wvlims
         if wvlim is not None:
