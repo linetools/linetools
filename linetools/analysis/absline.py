@@ -257,7 +257,7 @@ def photo_cross(Z, ion, E, datfil=None, silent=False):
     return sigma
 
 
-def sum_logN(obj1, obj2, err_lim = None):
+def sum_logN(obj1, obj2, err_lim = 1.5):
     """Add log columns and return value and errors, with logic
 
     Adds two column density objects, taking into account the flags
@@ -282,27 +282,63 @@ def sum_logN(obj1, obj2, err_lim = None):
     """
     # Check
     if not (obj1['flag_N'] in [1, 2, 3]):
-        raise ValueError("flag_N in obj1 must be 1,2,3")
+        warnings.warn("flag_N in obj1 not one of 1,2,3; "
+                      "setting combined flag_N to 0")
+        return 0,obj2['logN'],obj2['sig_logN']
     if not (obj2['flag_N'] in [1, 2, 3]):
-        raise ValueError("flag_N in obj2 must be 1,2,3")
+        warnings.warn("flag_N in obj2 not one of 1,2,3; "
+                      "setting combined flag_N to 0")
+        return 0, obj1['logN'], obj1['sig_logN']
+
     # Unpack Obj1
     flag_N, logN1, sig_logN1 = [obj1[key] for key in ['flag_N','logN','sig_logN']]
     # Sum
     logN = np.log10(np.sum(10.**np.array([obj1['logN'],obj2['logN']])))
     sig_logN = np.sqrt(np.sum([(obj1['sig_logN']*(10.**obj1['logN']))**2,
                                 (obj2['sig_logN']*(10.**obj2['logN']))**2],axis=0))/(10.**logN)
-    if flag_N in [1,2]: # Detection or saturated
-        if obj2['flag_N'] == 2:
+    # Various criteria to check
+    crit_detlolim1 = flag_N in [1,2] # Detection or saturated
+    crit_detlolim2 = obj2['flag_N'] in [1, 2] # Detection or saturated
+    crit_lolim2 = obj2['flag_N'] == 2
+    crit_noerrlim = err_lim is None
+    if crit_noerrlim:
+        crit_gooderr1 = True
+        crit_gooderr2 = True
+    else:
+        crit_gooderr1 = np.max(sig_logN1) < err_lim
+        crit_gooderr2 = np.max(obj2['sig_logN']) < err_lim
+
+    if crit_gooderr1 & crit_gooderr2: # No problematic errors; proceed normally
+        if crit_detlolim1: # Detection or saturated
+            if crit_lolim2:
+                flag_N = 2
+            elif obj2['flag_N'] == 3:
+                logN = logN1
+        elif flag_N == 3:
+            if crit_detlolim2:
+                logN = obj2['logN']
+                flag_N = obj2['flag_N']
+                sig_logN = obj2['sig_logN']
+            else:
+                pass # Take sums
+    elif crit_gooderr1:  # Errors in obj2 fail test
+        logN = logN1
+        if crit_detlolim1:
             flag_N = 2
-        elif obj2['flag_N'] == 3:
-            logN = logN1
-    elif flag_N == 3:
-        if obj2['flag_N'] in [1,2]:
-            logN = obj2['logN']
-            flag_N = obj2['flag_N']
-            sig_logN = obj2['sig_logN']
         else:
-            pass # Take sums
+            warnings.warn('Summed column density invalid due to error criteria.')
+            flag_N = 0
+    elif crit_gooderr2: # Errors in obj1 fail test
+        logN = obj2['logN']
+        if crit_detlolim2:
+            flag_N = 2
+        else:
+            warnings.warn('Summed column density invalid due to error criteria.')
+            flag_N = 0
+    else:  # Both obj1 and obj2 fail test
+        warnings.warn('Neither column density measurement has acceptable errors.')
+        flag_N = 0
+
     # Return
     return flag_N, logN, sig_logN
 
