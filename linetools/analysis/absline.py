@@ -257,7 +257,7 @@ def photo_cross(Z, ion, E, datfil=None, silent=False):
     return sigma
 
 
-def sum_logN(obj1, obj2, err_lim = 1.5):
+def sum_logN(obj1, obj2, err_lim = None):
     """Add log columns and return value and errors, with logic
 
     Adds two column density objects, taking into account the flags
