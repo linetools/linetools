@@ -417,16 +417,28 @@ class ExamineSpecWidget(QWidget):
                     # EW
                     dwv = self.spec.wavelength - np.roll(self.spec.wavelength,1)
                     EW = np.sum((-1*model_Gauss[pix]/lconti[pix]) * np.abs(dwv[pix]))  # Model Gauss is above/below continuum
-                    #QtCore.pyqtRemoveInputHook()
-                    #pdb.set_trace()
-                    #QtCore.pyqtRestoreInputHook()
+
+                    #error estimation
+                    covar_amp_stdev = fitter.fit_info['param_cov'][0,2]
+                    covar_amp_mean = fitter.fit_info['param_cov'][0,1]
+                    covar_mean_stdev = fitter.fit_info['param_cov'][1,2]
+                    sig_EW = EW * np.sqrt(sig_dict['amplitude']**2/(parm.amplitude**2)
+                                          + sig_dict['stddev']**2/(parm.stddev.value**2)
+                                          + 2*covar_amp_stdev/(parm.amplitude.value*parm.stddev.value)
+                                          + 2*covar_amp_mean/(parm.amplitude.value*parm.mean.value)
+                                          + 2*covar_mean_stdev/(parm.stddev.value*parm.mean.value))
+
+                    # QtCore.pyqtRemoveInputHook()
+                    # pdb.set_trace()
+                    # QtCore.pyqtRestoreInputHook()
+
                     # Message
                     mssg = 'Gaussian Fit: '
                     mssg = mssg+' ::  Mean={:g}, Amplitude={:g}, sigma={:g}, flux={:g}'.format(
                             parm.mean.value*self.spec.wavelength.unit, parm.amplitude.value, parm.stddev.value*self.spec.wavelength.unit, flux)
                     mssg = mssg+' ::  sig(Mean)={:g}, sig(Amplitude)={:g}, sig(sigma)={:g}, sig(flux)={:g}'.format(
                             sig_dict['mean'], sig_dict['amplitude'], sig_dict['stddev'], min(sig_flux1,sig_flux2))
-                    mssg = mssg+' :: EW ={:g}'.format(EW)
+                    mssg = mssg+' :: EW ={:g} +- {:g} Angstrom'.format(EW.to('AA').value, sig_EW.to('AA').value)
                 else:
                     aline = None
                     if self.llist['List'] != 'None':
