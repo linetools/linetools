@@ -517,7 +517,7 @@ def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
     if sig_tag is None:
         sig_tags = ['ERROR','ERR','SIGMA_FLUX','ERR_FLUX', 'ENORM', 'FLAM_SIG', 'SIGMA_UP',
                     'ERRSTIS', 'FLUXERR', 'SIGMA', 'sigma', 'sigma_flux',
-                    'er', 'err', 'error', 'sig', 'fluxerror']
+                    'er', 'err', 'error', 'sig', 'fluxerror', 'FLUX_ERROR']
     else:
         sig_tags = [sig_tag]
     sig, sig_tag = get_table_column(sig_tags, hdulist, idx=exten)

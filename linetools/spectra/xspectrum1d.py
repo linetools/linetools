@@ -830,7 +830,7 @@ class XSpectrum1D(object):
         return velo
 
     #  Box car smooth
-    def box_smooth(self, nbox, preserve=True, **kwargs):
+    def box_smooth(self, nbox, preserve=True, scale_sig=True, **kwargs):
         """ Box car smooth the spectrum
 
         Parameters
@@ -840,6 +840,8 @@ class XSpectrum1D(object):
         preserve: bool, optional
           If True, perform a convolution to ensure the new spectrum
           has the same number of pixels as the original.
+        scale_sig : bool, optional
+          If True, scale the smoothed sig array down by np.sqrt(nbox)
         **kwargs: dict
           If preserve=True, these keywords are passed on to
           astropy.convoution.convolve
@@ -853,7 +855,9 @@ class XSpectrum1D(object):
             from astropy.convolution import convolve, Box1DKernel
             new_fx = convolve(self.flux, Box1DKernel(nbox), **kwargs)
             if self.sig_is_set:
-                new_sig = convolve(self.sig, Box1DKernel(nbox), **kwargs) / np.sqrt(nbox)
+                new_sig = convolve(self.sig, Box1DKernel(nbox), **kwargs)
+                if scale_sig:
+                    new_sig /= np.sqrt(nbox)
             else:
                 new_sig = None
             if self.co_is_set:
@@ -876,7 +880,9 @@ class XSpectrum1D(object):
             new_fx = ltu.scipy_rebin(self.flux[orig_pix_trunc], new_npix)
             if self.sig_is_set:
                 new_sig = ltu.scipy_rebin(
-                    self.sig[orig_pix_trunc], new_npix) / np.sqrt(nbox)
+                    self.sig[orig_pix_trunc], new_npix)
+                if scale_sig:
+                    new_sig /= np.sqrt(nbox)
             else:
                 new_sig = None
             if self.co_is_set:
@@ -1454,8 +1460,8 @@ class XSpectrum1D(object):
         import matplotlib.pyplot as plt
         fig = plt.figure(figsize=(11, 7))
         fig.subplots_adjust(left=0.05, right=0.95, bottom=0.1, top=0.95)
-        wrapper = InteractiveCoFit(wa, flux, sig,
-                                   contpoints, co=co_init, fig=fig, anchor=anchor, numguesspix=numguesspix)
+        wrapper = InteractiveCoFit(wa, flux, sig, contpoints,
+                                   co=co_init, fig=fig, anchor=anchor, numguesspix=numguesspix)
 
         # wait until the interactive fitting has finished
         while not wrapper.finished:

@@ -12,7 +12,6 @@ Notebooks
 .. toctree::
    :maxdepth: 1
 
-   Continuum fitting <Interactive_continuum_fitting_example>
    XSpecGui <xspecgui>
    XAbsSysGui <xabssysgui>
 

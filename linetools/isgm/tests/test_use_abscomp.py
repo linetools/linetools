@@ -502,3 +502,13 @@ def test_copy():
     comp.logN = 14.6
     assert comp2.logN != comp.logN
 
+
+def test_add_abslines_from_linelist():
+    # Component
+    abscomp,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s)
+    # Set wavelength (observed) range
+    wvrange = [4674. * u.Angstrom, 4690. * u.Angstrom]
+    # Add a couple absorption lines
+    abscomp.add_abslines_from_linelist(wvlim=wvrange)
+    assert len(abscomp._abslines) == 6
+

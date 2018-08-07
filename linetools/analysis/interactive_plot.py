@@ -301,7 +301,7 @@ q        : quit
         self.indices = i1, i2
         if self.anchor:
             self.anchor_start = wa[i1 - 1], float(co[i1 - 1])
-            self.anchor_end = wa[i2 + 1], float(co[i2 + 1])
+            self.anchor_end = wa[i2], float(co[i2])
         self.contpoints = contpoints
         self.wmin = wmin
         self.wmax = wmax

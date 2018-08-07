@@ -1353,7 +1353,8 @@ class AbsSysWidget(QWidget):
 class MultiSpecWidget(QWidget):
     """ Widget to organize a set of spectra (in one Object, e.g. XSpectrum1D)
     """
-    def __init__(self, parent, status=None, spec_labels=None, screen_scale=1.):
+    def __init__(self, parent, status=None, spec_labels=None, screen_scale=1.,
+                 extra_method=None):
         """
         Parameters
         ----------
@@ -1361,6 +1362,9 @@ class MultiSpecWidget(QWidget):
         status : Point to status bar
         screen_scale : float, optional
           Scale GUI dimensions
+        extra_method : method, optional
+          Extra method to call when select
+          Must be named extra_method.run_with_select()
 
         Returns
         -------
@@ -1371,6 +1375,7 @@ class MultiSpecWidget(QWidget):
         # Initialize
         self.scale = screen_scale
         self.parent = parent  # Required
+        self.extra_method = extra_method
         spec = self.parent.orig_spec
 
         # Create the list
@@ -1407,6 +1412,9 @@ class MultiSpecWidget(QWidget):
         # Re-init and draw
         self.parent.init_spec()
         self.parent.on_draw()
+        # Extra?
+        if self.extra_method is not None:
+            self.extra_method.run_with_select()
 
 
 
