@@ -597,7 +597,10 @@ class AbsSystem(object):
             vlim = pvlim
         else:
             vlim = self.vlim
-        ltap.stack_plot(self.list_of_abslines(), vlim=vlim, **kwargs)
+
+        fig = ltap.stack_plot(self.list_of_abslines(), vlim=vlim, **kwargs)
+        if fig is not None:
+            return fig
 
     def to_dict(self):
         """ Write AbsSystem data to a dict that can be written with JSON
