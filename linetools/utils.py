@@ -49,6 +49,9 @@ def compare_two_files(file1, file2, except_l2_has=None, verbose=False):
     ----------
     file1 : str
     file2 : str
+    except_l2_has : str, optional
+        String in line of file2 that make the test to be skipped
+        Default is None
 
     Returns
     -------
