@@ -658,11 +658,12 @@ class ExamineSpecWidget(QWidget):
                         #wvlim = wvobs[jj]*(1 + lines[jj].limits.vlim/const.c.to('km/s'))
                         wvlim = lines[jj].limits.wvlim
                         pix = np.where( (self.spec.wavelength > wvlim[0]) & (self.spec.wavelength < wvlim[1]))[0]
-                        self.ax.plot(self.spec.wavelength[pix].value, self.spec.flux[pix].value,
-                                     '-',drawstyle='steps-mid', color=clrs[ii])
-                        # Label
-                        lbl = lines[jj].analy['name']+' z={:g}'.format(abs_sys.zabs)
-                        self.ax.text(wvobs[jj].value, ylbl, lbl, color=clrs[ii], rotation=90., size='x-small')
+                        if len(pix) > 0: 
+                            self.ax.plot(self.spec.wavelength[pix].value, self.spec.flux[pix].value,
+                                         '-',drawstyle='steps-mid', color=clrs[ii])
+                            # Label
+                            lbl = lines[jj].analy['name']+' z={:g}'.format(abs_sys.zabs)
+                            self.ax.text(wvobs[jj].value, ylbl, lbl, color=clrs[ii], rotation=90., size='x-small')
                 if self.voigtsfit is not None:
                     self.ax.plot(self.orig_spec.wavelength.value, self.voigtsfit, color='blue')
 
