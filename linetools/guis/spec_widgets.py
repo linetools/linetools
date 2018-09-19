@@ -658,7 +658,7 @@ class ExamineSpecWidget(QWidget):
                         #wvlim = wvobs[jj]*(1 + lines[jj].limits.vlim/const.c.to('km/s'))
                         wvlim = lines[jj].limits.wvlim
                         pix = np.where( (self.spec.wavelength > wvlim[0]) & (self.spec.wavelength < wvlim[1]))[0]
-                        if len(pix) > 0: 
+                        if len(pix) > 0:
                             self.ax.plot(self.spec.wavelength[pix].value, self.spec.flux[pix].value,
                                          '-',drawstyle='steps-mid', color=clrs[ii])
                             # Label
