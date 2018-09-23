@@ -24,6 +24,8 @@ from linetools import utils as ltu
 from linetools.analysis import voigt as lav
 from linetools.isgm.abscomponent import AbsComponent
 from linetools.isgm import utils as ltiu
+from linetools.lists.linelist import LineList
+
 
 
 try:
@@ -43,7 +45,7 @@ class XSpecGui(QMainWindow):
           Input spectrum or spectrum filename.  If tuple then (wave,
           fx), (wave, fx, sig) or (wave, fx, sig, co)
         guessfile : str, optional
-          name of the .json file generated with igmguesses
+          name of the .json file generated with igmguesses GUI in Pyigm (see https://github.com/pyigm/pyigm/blob/master/docs/igmguesses.rst)
           if not None - overplot fitted line profiles from igmguesses
         parent : Widget parent, optional
         zsys : float, optional
@@ -85,10 +87,11 @@ class XSpecGui(QMainWindow):
         voigtsfit = None
         if guessfile is not None:
             # Load
+            ism = LineList('ISM')
             igm_guess = ltu.loadjson(guessfile)
             comps = []
             for key in igm_guess['cmps'].keys():
-                comp = AbsComponent.from_dict(igm_guess['cmps'][key], chk_vel=False)
+                comp = AbsComponent.from_dict(igm_guess['cmps'][key], chk_vel=False, linelist=ism)
                 comps.append(comp)
             abs_sys = ltiu.build_systems_from_components(comps,
                                                          vsys=500. * u.km / u.s)  # ,chk_z=False)  ### 100000.*u.km/u.s   ok
@@ -98,19 +101,13 @@ class XSpecGui(QMainWindow):
             spec, spec_fil = ltgu.read_spec(ispec, exten=exten, norm=norm,
                                             rsp_kwargs=rsp_kwargs)
 
-            voigts = np.asarray([0] * len(spec.wavelength))
+            voigtsfit = np.asarray([0] * len(spec.wavelength))
+            alllines = []
             for iabs_sys in abs_sys:
                 lines = iabs_sys.list_of_abslines()
-                ###
-                for iline in lines:
-                    if iline.analy['do_analysis'] == 0:
-                        continue
-                    if iline.attrib['b'] > 0:
-                        lavfitline = lav.voigt_from_abslines(spec.wavelength, iline, fwhm=3.)
-                        fitflux = lavfitline.flux.value
-                        voigts = voigts + np.asarray([1] * len(voigts)) - fitflux
-            voigts[np.where(voigts > 1)] = 1
-            voigtsfit = np.asarray([1] * len(voigts)) - voigts
+                alllines = alllines + lines
+            if len(alllines) > 0:
+                voigtsfit = lav.voigt_from_abslines(spec.wavelength, alllines, fwhm=3.).flux.value
 
             if not norm:
                 voigtsfit = voigtsfit * spec.co
