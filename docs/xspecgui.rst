@@ -70,8 +70,8 @@ Here are the current command-line options::
     optional arguments:
       -h, --help           show this help message and exit
       -guessfile GUESSFILE, --guessfile GUESSFILE
-                        Igmguesses file, see <https://github.com/pyigm/pyigm/bl
-                        ob/master/docs/igmguesses.rst>
+                        Igmguesses file, see https://github.com/pyigm/pyigm/bl
+                        ob/master/docs/igmguesses.rst
       --zsys ZSYS          System Redshift
       --norm               Show spectrum continuum normalized (if continuum is
                            provided)
