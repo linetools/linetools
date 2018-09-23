@@ -656,7 +656,11 @@ class ExamineSpecWidget(QWidget):
                         if lines[jj].analy['do_analysis'] == 0:
                             continue
                         # Paint spectrum red
-                        wvlim = lines[jj].limits.wvlim
+                        #wvlim = wvobs[jj] * (1 + lines[jj].limits.vlim / const.c.to('km/s'))
+                        if lines[jj].limits.wvlim is not None:
+                            wvlim = lines[jj].limits.wvlim
+                        else:
+                            wvlim = wvobs[jj] * (1 + lines[jj].limits.vlim / const.c.to('km/s'))
                         pix = np.where( (self.spec.wavelength > wvlim[0]) & (self.spec.wavelength < wvlim[1]))[0]
                         # QtCore.pyqtRemoveInputHook()
                         # import pdb; pdb.set_trace()
