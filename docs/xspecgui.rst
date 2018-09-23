@@ -4,7 +4,6 @@ xspec Documentation
 
 :download:`Download <examples/xspecgui.ipynb>` this notebook.
 
-:download:`Download <examples/xspecgui.ipynb>` this notebook.
 
 This ipython Notebook is intended to provide documentation for the
 linetools GUI named XSpecGUI.
@@ -32,6 +31,33 @@ The example spectrum file used below is part of the linetools package.
     import imp
     lt_path = imp.find_module('linetools')[1]
     spec_fil = lt_path+'/spectra/tests/files/PH957_f.fits'
+
+Here is one another example, with guessfile option:
+
+.. code:: python
+
+    from IPython.display import Image
+    Image(filename="images/xspecgui_guesses.png")
+
+.. image:: xspecgui_files/xspecgui_guesses_1_0.png
+
+
+The example spectrum file and the example guesses file used below are part of the linetools package.
+
+.. code:: python
+
+    import imp
+    lt_path = imp.find_module('linetools')[1]
+    spec_fil = lt_path+'/spectra/tests/files/specexample1.fits'
+    guess_fil = lt_path+'/spectra/tests/files/guessexample.json'
+
+The gui could be called as
+
+.. code:: python
+
+    lt_xspec specexample1.fits -guessfile guessexample.json
+
+
 
 Before Launching the GUI
 ------------------------
