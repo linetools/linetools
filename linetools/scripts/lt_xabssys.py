@@ -23,8 +23,6 @@ def main(*args, **kwargs):
     parser.add_argument("--specdb", help="Spectral file is a SPECDB database", action="store_true")
     parser.add_argument("--group", type=str, help="SPECDB group name")
     parser.add_argument("--un_norm", help="Spectrum is NOT normalized", action="store_true")
-    #parser.add_argument("--un_norm", help="Spectrum is NOT normalized",
-    #                    action="store_true")
     parser.add_argument("--chk_z",  help="Check the z limits of your components? [default=False]",
                         action="store_true")
 

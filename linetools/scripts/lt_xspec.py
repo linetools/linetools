@@ -15,7 +15,7 @@ def main(*args, **kwargs):
 
     parser = argparse.ArgumentParser(description='Parser for lt_xspec v1.2; \n Note: Extra arguments are passed to read_spec (e.g. --flux_tag=FX)')
     parser.add_argument("file", type=str, help="Spectral file; specify extension by appending #exten#")
-    parser.add_argument("-guessfile", "--guessfile", type=str, help="Igmguesses file")
+    parser.add_argument("-guessfile", "--guessfile", type=str, help="Igmguesses file, see https://github.com/pyigm/pyigm/blob/master/docs/igmguesses.rst ")
     parser.add_argument("-z", "--zsys", type=float, help="System Redshift")
     parser.add_argument("--norm", help="Show spectrum continuum normalized (if continuum is provided)",
                         action="store_true")

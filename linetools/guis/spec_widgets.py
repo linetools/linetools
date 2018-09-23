@@ -231,7 +231,7 @@ class ExamineSpecWidget(QWidget):
         self.setLayout(vbox)
 
         # Draw on init
-        self.on_draw(guessfile=guessfile)  # ,voigtsfit=voigtsfit)
+        self.on_draw(guessfile=guessfile)
 
     # Setup the spectrum plotting info
     def init_spec(self, xlim=None, ylim=None):
@@ -498,18 +498,19 @@ class ExamineSpecWidget(QWidget):
                             dline.analy['spec'] = tspec
                             dline.limits.set(iwv)
                             dline.measure_ew()
-                            # the same, but for fitted line
-                            dlinef = AbsLine(wrest, linelist=llist, z=z.value)
-                            tspecf = XSpectrum1D.from_tuple((self.spec.wavelength, self.voigtsfit, self.spec.sig))   ## assumig sig(voigts) = sig(spectrum)
-                            tspecf.normalize(lconti)
-                            dlinef.analy['spec'] = tspecf
-                            dlinef.limits.set(iwv)
-                            dlinef.measure_ew()
-                            mssg = 'Using dummy '+ dline.__repr__()+' for the calculation.'
+                            mssg = 'Using dummy ' + dline.__repr__() + ' for the calculation.'
                             mssg = mssg + ' ::  Obs EW = {:g} +/- {:g}'.format(
                                 dline.attrib['EW'].to(mAA), dline.attrib['sig_EW'].to(mAA))
-                            mssg = mssg + ' ::  Fitted Obs EW = {:g} +/- {:g}'.format(
-                            dlinef.attrib['EW'].to(mAA), dlinef.attrib['sig_EW'].to(mAA))
+                            # the same, but for fitted line
+                            if self.voigtsfit is not None:
+                                dlinef = AbsLine(wrest, linelist=llist, z=z.value)
+                                tspecf = XSpectrum1D.from_tuple((self.spec.wavelength, self.voigtsfit, self.spec.sig))   ## assumig sig(voigts) = sig(spectrum)
+                                tspecf.normalize(lconti)
+                                dlinef.analy['spec'] = tspecf
+                                dlinef.limits.set(iwv)
+                                dlinef.measure_ew()
+                                mssg = mssg + ' ::  Fitted Obs EW = {:g} +/- {:g}'.format(
+                                dlinef.attrib['EW'].to(mAA), dlinef.attrib['sig_EW'].to(mAA))
                 # Display values
                 try:
                     self.statusBar().showMessage(mssg)
@@ -572,7 +573,7 @@ class ExamineSpecWidget(QWidget):
                 return
 
     # ######
-    def on_draw(self, replot=True, no_draw=False, guessfile=None): #,voigtsfit=None):
+    def on_draw(self, replot=True, no_draw=False, guessfile=None):
         """ Redraws the spectrum
         no_draw: bool, optional
           Draw the screen on the canvas?
