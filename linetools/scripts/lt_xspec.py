@@ -15,6 +15,7 @@ def main(*args, **kwargs):
 
     parser = argparse.ArgumentParser(description='Parser for lt_xspec v1.2; \n Note: Extra arguments are passed to read_spec (e.g. --flux_tag=FX)')
     parser.add_argument("file", type=str, help="Spectral file; specify extension by appending #exten#")
+    parser.add_argument("-guessfile", "--guessfile", type=str, help="Igmguesses file, see https://github.com/pyigm/pyigm/blob/master/docs/igmguesses.rst ")
     parser.add_argument("-z", "--zsys", type=float, help="System Redshift")
     parser.add_argument("--norm", help="Show spectrum continuum normalized (if continuum is provided)",
                         action="store_true")
@@ -52,6 +53,9 @@ def main(*args, **kwargs):
     # zsys
     zsys = (pargs.zsys if hasattr(pargs, 'zsys') else None)
 
+    # guesses
+    guessfile = (pargs.guessfile if hasattr(pargs, 'guessfile') else None)
+
 
     # Splice?
     if pargs.splice is not None:
@@ -82,7 +86,7 @@ def main(*args, **kwargs):
     else:
         scale = pargs.scale
     #
-    gui = XSpecGui(file, zsys=zsys, norm=norm, exten=exten,
+    gui = XSpecGui(file, guessfile=guessfile, zsys=zsys, norm=norm, exten=exten,
                    rsp_kwargs=rsp_kwargs, air=pargs.air,
                    screen_scale=scale)
     gui.show()
