@@ -20,7 +20,7 @@ def parser(options=None):
     parser = argparse.ArgumentParser(
         description='Print coordinates in several formats from input one. [v1.1]')
     parser.add_argument("inp", nargs='?', default=None, help="RA,DEC (e.g. 152.25900,7.22885), JXX (e.g. J100902.16+071343.8)")
-    parser.add_argument("-g", "--gal", default=False, action='store_true', help="Input is (l,b)")
+    parser.add_argument("-g", "--gal", default=False, action='store_true', help="Input is Galactic l,b in degrees (e.g. 152.332,-32.211)")
     parser.add_argument("--epoch", default=2000., type=float, help="Epoch [Not functional]")
 
     if options is None:
@@ -52,7 +52,7 @@ def main(args=None):
                              coord.icrs.dec.to_string(sep=':',pad=True,alwayssign=True)))
     print('   RA={:f} deg, DEC={:f} deg'.format(coord.icrs.ra.deg, coord.icrs.dec.deg))
     print('   radec = ({:f},{:f}) deg'.format(coord.icrs.ra.deg, coord.icrs.dec.deg))
-    print('   galactic = ({:f},{:f}) deg'.format(coord.galactic.l.deg, coord.galactic.b.deg))
+    print('   Galactic = ({:f},{:f}) deg'.format(coord.galactic.l.deg, coord.galactic.b.deg))
     print('   ')
     print('SDSS finding chart: https://skyserver.sdss.org/dr12/en/tools/chart/navi.aspx?ra={:f}&dec={:f}&opt='.format(coord.icrs.ra.deg, coord.icrs.dec.deg))
 

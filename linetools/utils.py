@@ -193,7 +193,7 @@ def radec_to_coord(radec, gal=False):
         (123.123, 12.1224) -- Assumed deg
         [(123.123, 12.1224), (125.123, 32.1224)]
     gal : bool, optional
-      Input pair of floats are l,b in deg
+      Input pair of floats are (l,b) in deg
 
     Returns
     -------

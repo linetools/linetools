@@ -135,8 +135,9 @@ def test_radeccoord():
     coords = ltu.radec_to_coord(lcoord)
     assert len(coords) == 6
     # Galactic
-    gcoord = ltu.radec_to_coord((280.5,-32.9), gal=True)
+    gcoord = ltu.radec_to_coord((280.5,-32.9), gal=True) # LMC
     assert np.isclose(gcoord.icrs.ra.value, 80.8456130588062)
+    assert np.isclose(gcoord.icrs.dec.value, -69.78267074987376)
 
 
 def test_overlapping_chunks():
