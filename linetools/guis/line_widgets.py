@@ -136,7 +136,7 @@ class PlotLinesWidget(QWidget):
 
     def setz(self, text):
         # make sure z isnt too long for box
-        self.zbox.setText(text[:9])
+        self.zbox.setText(str(text)[:9])
 
         # ensure the input z is a float
         sstr = ustr(self.zbox.text())
