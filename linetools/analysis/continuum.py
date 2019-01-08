@@ -226,7 +226,7 @@ def unmask(masked, indices, wa, fl, er, minpix=3):
             masked[ind1] = False
 
 
-def estimate_continuum(s, knots, indices, masked, ax=None, maxiter=1000,
+def estimate_continuum(s, knots, indices, masked, ax=None, maxiter=100,
                        nsig=1.5, debug=False):
     """ Iterate to estimate the continuum.
     """
@@ -255,7 +255,8 @@ def estimate_continuum(s, knots, indices, masked, ax=None, maxiter=1000,
                 print('No further points masked, stopping')
             break
         if count > maxiter:
-            raise RuntimeError('Exceeded maximum iterations')
+            warnings.warn('Exceeded maximum iterations. Continue at your own risk..')
+            break
 
         count +=1
 
