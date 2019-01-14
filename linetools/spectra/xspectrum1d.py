@@ -10,7 +10,6 @@ import warnings
 
 from astropy import units as u
 from astropy.units import Quantity, UnitBase
-from astropy import constants as const
 from astropy.io import fits
 #from astropy.nddata import StdDevUncertainty
 from astropy.table import QTable, Column, Table
