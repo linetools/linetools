@@ -135,7 +135,10 @@ class PlotLinesWidget(QWidget):
                 QtCore.pyqtRestoreInputHook()
 
     def setz(self, text):
-        self.zbox.setText(text)
+        # make sure z isnt too long for box
+        self.zbox.setText(str(text)[:9])
+
+        # ensure the input z is a float
         sstr = ustr(self.zbox.text())
         try:
             self.llist['z'] = float(sstr)

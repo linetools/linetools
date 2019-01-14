@@ -175,7 +175,7 @@ def name_from_coord(coord, precision=(2,1)):
     return name
 
 
-def radec_to_coord(radec):
+def radec_to_coord(radec, gal=False):
     """ Converts one of many of Celestial Coordinates
     `radec` formats to an astropy SkyCoord object. Assumes
     J2000 equinox.
@@ -192,16 +192,20 @@ def radec_to_coord(radec):
         ('12:45:11','14:45:23')  -- Assumes positive DEC
         (123.123, 12.1224) -- Assumed deg
         [(123.123, 12.1224), (125.123, 32.1224)]
+    gal : bool, optional
+      Input pair of floats are (l,b) in deg
 
     Returns
     -------
     coord : SkyCoord
       Converts to astropy.coordinate.SkyCoord (as needed)
       Returns a SkyCoord array if input is a list
-
-
     """
     from astropy.coordinates import SkyCoord
+    if gal:
+        frame = 'galactic'
+    else:
+        frame = 'icrs'
 
     # RA/DEC
     if isinstance(radec, (tuple)):
@@ -212,10 +216,13 @@ def radec_to_coord(radec):
             else:
                 DEC = radec[1]
             #
-            coord = SkyCoord(radec[0]+DEC, frame='icrs',
+            coord = SkyCoord(radec[0]+DEC, frame=frame,
                                   unit=(u.hourangle, u.deg))
         else:
-            coord = SkyCoord(ra=radec[0], dec=radec[1], unit='deg')
+            if frame == 'galactic':
+                coord = SkyCoord(l=radec[0], b=radec[1], frame=frame, unit='deg')
+            else:
+                coord = SkyCoord(ra=radec[0], dec=radec[1], frame=frame, unit='deg')
     elif isinstance(radec,SkyCoord):
         coord = radec
     elif isinstance(radec,basestring):
@@ -237,7 +244,7 @@ def radec_to_coord(radec):
     elif isinstance(radec,list):
         clist = []
         for item in radec:
-            clist.append(radec_to_coord(item))
+            clist.append(radec_to_coord(item,gal=gal))
         # Convert to SkyCoord array
         ras = [ii.icrs.ra.value for ii in clist]
         decs = [ii.icrs.dec.value for ii in clist]
