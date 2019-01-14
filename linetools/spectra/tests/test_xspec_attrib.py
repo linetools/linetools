@@ -31,7 +31,6 @@ def dummy_spec(wave=None, s2n=10., npix=2000, seed=None):
     -------
     spec : XSpectrum1D
     """
-    s2n = 10.
     if wave is None:
         wave = np.linspace(4000., 5000., npix)
     # Create
