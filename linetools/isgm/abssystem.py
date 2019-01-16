@@ -623,9 +623,10 @@ class AbsSystem(object):
         outdict['components'] = {}
         for component in self._components:
             outdict['components'][component.name] = ltu.jsonify(component.to_dict())
-        # Spectrum file?
-        if hasattr(self, 'spec_file'):
-            outdict['spec_file'] = self.spec_file
+        # Extras
+        for eattr in ['spec_file', 'kin']:
+            if hasattr(self, eattr):
+                outdict[eattr] = getattr(self,eattr)
         # Polish
         outdict = ltu.jsonify(outdict)
         # Return

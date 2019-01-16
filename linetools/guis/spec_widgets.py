@@ -111,7 +111,7 @@ class ExamineSpecWidget(QWidget):
 
         12-Dec-2014 by JXP
     """
-    def __init__(self, ispec, parent=None, status=None, llist=None,
+    def __init__(self, ispec, guessfile=None, voigtsfit=None, parent=None, status=None, llist=None,
                  abs_sys=None, norm=True, second_file=None, zsys=None,
                  key_events=True, vlines=None, plotzero=False, exten=None,
                  xlim=None, ylim=None, rsp_kwargs=None, air=False,
@@ -120,6 +120,11 @@ class ExamineSpecWidget(QWidget):
         Parameters
         ----------
         ispec : XSpectrum1D, tuple of arrays or filename
+        guessfile : str, optional
+          name of the .json file generated with igmguesses
+          if not None - overplot fitted line profiles from igmguesses
+        voigtsfit : list of floats, optional
+          model where lines are fitted with gaussians, generated from igmguesses
         exten : int, optional
           extension for the spectrum in multi-extension FITS file
         parent : Widget parent, optional
@@ -154,6 +159,8 @@ class ExamineSpecWidget(QWidget):
         self.spec = self.orig_spec
         self.select = spec.select
         self.parent = parent
+
+        self.voigtsfit = voigtsfit
 
         # determine the filename (if any)
         if isinstance(ispec, (str, basestring)):
@@ -225,7 +232,7 @@ class ExamineSpecWidget(QWidget):
         self.setLayout(vbox)
 
         # Draw on init
-        self.on_draw()
+        self.on_draw(guessfile=guessfile)
 
     # Setup the spectrum plotting info
     def init_spec(self, xlim=None, ylim=None):
@@ -417,16 +424,28 @@ class ExamineSpecWidget(QWidget):
                     # EW
                     dwv = self.spec.wavelength - np.roll(self.spec.wavelength,1)
                     EW = np.sum((-1*model_Gauss[pix]/lconti[pix]) * np.abs(dwv[pix]))  # Model Gauss is above/below continuum
-                    #QtCore.pyqtRemoveInputHook()
-                    #pdb.set_trace()
-                    #QtCore.pyqtRestoreInputHook()
+
+                    #error estimation
+                    covar_amp_stdev = fitter.fit_info['param_cov'][0,2]
+                    covar_amp_mean = fitter.fit_info['param_cov'][0,1]
+                    covar_mean_stdev = fitter.fit_info['param_cov'][1,2]
+                    sig_EW = EW * np.sqrt(sig_dict['amplitude']**2/(parm.amplitude**2)
+                                          + sig_dict['stddev']**2/(parm.stddev.value**2)
+                                          + 2*covar_amp_stdev/(parm.amplitude.value*parm.stddev.value)
+                                          + 2*covar_amp_mean/(parm.amplitude.value*parm.mean.value)
+                                          + 2*covar_mean_stdev/(parm.stddev.value*parm.mean.value))
+
+                    # QtCore.pyqtRemoveInputHook()
+                    # pdb.set_trace()
+                    # QtCore.pyqtRestoreInputHook()
+
                     # Message
                     mssg = 'Gaussian Fit: '
                     mssg = mssg+' ::  Mean={:g}, Amplitude={:g}, sigma={:g}, flux={:g}'.format(
                             parm.mean.value*self.spec.wavelength.unit, parm.amplitude.value, parm.stddev.value*self.spec.wavelength.unit, flux)
                     mssg = mssg+' ::  sig(Mean)={:g}, sig(Amplitude)={:g}, sig(sigma)={:g}, sig(flux)={:g}'.format(
                             sig_dict['mean'], sig_dict['amplitude'], sig_dict['stddev'], min(sig_flux1,sig_flux2))
-                    mssg = mssg+' :: EW ={:g}'.format(EW)
+                    mssg = mssg+' :: EW ={:g} +- {:g} Angstrom'.format(EW.to('AA').value, sig_EW.to('AA').value)
                 else:
                     aline = None
                     if self.llist['List'] != 'None':
@@ -497,9 +516,19 @@ class ExamineSpecWidget(QWidget):
                             dline.analy['spec'] = tspec
                             dline.limits.set(iwv)
                             dline.measure_ew()
-                            mssg = 'Using dummy '+ dline.__repr__()+' for the calculation.'
+                            mssg = 'Using dummy ' + dline.__repr__() + ' for the calculation.'
                             mssg = mssg + ' ::  Obs EW = {:g} +/- {:g}'.format(
                                 dline.attrib['EW'].to(mAA), dline.attrib['sig_EW'].to(mAA))
+                            # the same, but for fitted line
+                            if self.voigtsfit is not None:
+                                dlinef = AbsLine(wrest, linelist=llist, z=z.value)
+                                tspecf = XSpectrum1D.from_tuple((self.spec.wavelength, self.voigtsfit, self.spec.sig))   ## assumig sig(voigts) = sig(spectrum)
+                                tspecf.normalize(lconti)
+                                dlinef.analy['spec'] = tspecf
+                                dlinef.limits.set(iwv)
+                                dlinef.measure_ew()
+                                mssg = mssg + ' ::  Fitted Obs EW = {:g} +/- {:g}'.format(
+                                dlinef.attrib['EW'].to(mAA), dlinef.attrib['sig_EW'].to(mAA))
                 # Display values
                 try:
                     self.statusBar().showMessage(mssg)
@@ -562,7 +591,7 @@ class ExamineSpecWidget(QWidget):
                 return
 
     # ######
-    def on_draw(self, replot=True, no_draw=False):
+    def on_draw(self, replot=True, no_draw=False, guessfile=None):
         """ Redraws the spectrum
         no_draw: bool, optional
           Draw the screen on the canvas?
@@ -642,7 +671,11 @@ class ExamineSpecWidget(QWidget):
                         if lines[jj].analy['do_analysis'] == 0:
                             continue
                         # Paint spectrum red
-                        wvlim = wvobs[jj]*(1 + lines[jj].limits.vlim/const.c.to('km/s'))
+                        #wvlim = wvobs[jj] * (1 + lines[jj].limits.vlim / const.c.to('km/s'))
+                        if lines[jj].limits.wvlim is not None:
+                            wvlim = lines[jj].limits.wvlim
+                        else:
+                            wvlim = wvobs[jj] * (1 + lines[jj].limits.vlim / const.c.to('km/s'))
                         pix = np.where( (self.spec.wavelength > wvlim[0]) & (self.spec.wavelength < wvlim[1]))[0]
                         #QtCore.pyqtRemoveInputHook()
                         #import pdb; pdb.set_trace()
@@ -653,6 +686,9 @@ class ExamineSpecWidget(QWidget):
                         # Label
                         lbl = lines[jj].analy['name']+' z={:g}'.format(abs_sys.zabs)
                         self.ax.text(wvobs[jj].value, ylbl, lbl, color=clrs[ii], rotation=90., size='x-small')
+                if self.voigtsfit is not None:
+                    self.ax.plot(self.orig_spec.wavelength.value, self.voigtsfit, color='blue')
+
             # Analysis? EW, Column
             if self.adict['flg'] == 1:
                 self.ax.plot(self.adict['wv_1'], self.adict['C_1'], 'go')
