@@ -287,7 +287,7 @@ class AbsComponent(object):
                         slf.attrib[ak] = np.array(slf.attrib[ak])
 
         # Deprecated column (again)
-        if Ntup is not None:
+        if (Ntup is not None) and ('logN' not in idict['attrib'].keys()):
             warnings.warn('Overwriting column density attributes (if they existed).', DeprecationWarning)
             slf.attrib['flag_N'] = Ntup[0]
             slf.attrib['logN'] = Ntup[1]
@@ -295,7 +295,8 @@ class AbsComponent(object):
                 slf.attrib['sig_logN'] = np.array(Ntup[2])
             else:
                 slf.attrib['sig_logN'] = np.array([Ntup[2]]*2)
-            _, _ = ltaa.linear_clm(slf.attrib)  # Set linear quantities
+        # set linear quantities in column density
+        _, _ = ltaa.linear_clm(slf.attrib)
 
         # Add AbsLine objects
         if not skip_abslines:
