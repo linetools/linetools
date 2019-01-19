@@ -444,7 +444,7 @@ class ExamineSpecWidget(QWidget):
                     mssg = mssg+' ::  Mean={:g}, Amplitude={:g}, sigma={:g}, flux={:g}'.format(
                             parm.mean.value*self.spec.wavelength.unit, parm.amplitude.value, parm.stddev.value*self.spec.wavelength.unit, flux)
                     mssg = mssg+' ::  sig(Mean)={:g}, sig(Amplitude)={:g}, sig(sigma)={:g}, sig(flux)={:g}'.format(
-                            sig_dict['mean'], sig_dict['amplitude'], sig_dict['stddev'], min(sig_flux1,sig_flux2))
+                            sig_dict['mean'], sig_dict['amplitude'], sig_dict['stddev'], min(sig_flux1, sig_flux2))
                     mssg = mssg+' :: EW ={:g} +- {:g} Angstrom'.format(EW.to('AA').value, sig_EW.to('AA').value)
                 else:
                     aline = None

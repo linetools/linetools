@@ -201,6 +201,12 @@ Plot GUI.
 Simple Analysis
 ---------------
 
+Basic Statistics
+~~~~~~~~~~~~~~~~
+You can obtain the MEAN, MEDIAN and S/N of a spectral region, by clicking
+the "$" keystroke twice encompassing the region of interest.
+
+
 Gaussian Fit
 ~~~~~~~~~~~~
 
