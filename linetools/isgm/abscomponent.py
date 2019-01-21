@@ -999,9 +999,8 @@ class AbsComponent(object):
         cdict['lines'] = {}
         for iline in self._abslines:
             cdict['lines'][iline.wrest.value] = iline.to_dict()
-
         # set linear quantities in column density
-         _, _ = ltaa.linear_clm(cdict['attrib'])
+        _, _ = ltaa.linear_clm(cdict['attrib'])
 
         # Polish
         cdict = ltu.jsonify(cdict)
