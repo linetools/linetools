@@ -32,7 +32,7 @@ This enables interactive fitting of the unabsorbed continuum for a
 spectrum. A series of 'knot' positions are estimated, and these are
 then joined with a spline to produce a continuum. Spline points can be
 interactively added, deleted or moved to improve the continuum. See
-the notebook for an example.
+the notebook for an example or use the lt_continuumfit script directly.
 
 XSpecGUI
 ========
