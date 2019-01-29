@@ -287,7 +287,7 @@ class AbsComponent(object):
                         slf.attrib[ak] = np.array(slf.attrib[ak])
 
         # Deprecated column (again)
-        if (Ntup is not None) and ('logN' not in idict['attrib'].keys()):
+        if (Ntup is not None):
             warnings.warn('Overwriting column density attributes (if they existed).', DeprecationWarning)
             slf.attrib['flag_N'] = Ntup[0]
             slf.attrib['logN'] = Ntup[1]
