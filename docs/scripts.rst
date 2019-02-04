@@ -171,13 +171,16 @@ lt_continuumfit
 
 Launch the GUI to continuum fit a spectrum.
 If a redshift is supplied by zsys, then the
-script assumes this is a QSO.::
+script assumes this is a QSO.  Enables spectra
+to be read in via a `specdb <https://specdb.readthedocs.io/en/latest/>`__ file
+which then requires specdb be installed.::
 
    lt_continuumfit input_file output_filename --redshift 0.867
 
 Here is the current usage message::
 
-    usage: lt_continuumfit [-h] [--redshift REDSHIFT] [--wchunk WCHUNK]
+    usage: lt_continuumfit [-h] [--redshift REDSHIFT] [--wchunk WCHUNK] [--native]
+                           [--specdb SPECDB]
                            file outfil
 
     GUI to fit a continuum to a spectrum
@@ -191,3 +194,7 @@ Here is the current usage message::
       -h, --help           show this help message and exit
       --redshift REDSHIFT  Redshift of the Source
       --wchunk WCHUNK      Width of a 'chunk' (Ang)
+      --native             Do not mask input spectrum
+      --specdb SPECDB      Input file is specdb. Input (ra,dec,group) in this
+                           order without spaces
+

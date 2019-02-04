@@ -19,12 +19,13 @@ def main(*args, **kwargs):
     parser.add_argument("--redshift", type=float, help="Redshift of the Source")
     parser.add_argument("--wchunk", type=float, help="Width of a 'chunk' (Ang)")
     parser.add_argument("--native", default=True, action='store_true', help="Do not mask input spectrum")
+    parser.add_argument("--specdb", type=str, help="Input file is specdb.  Input (ra,dec,group) in this order without spaces")
     #parser.add_argument("-exten", type=int, help="FITS extension")
 
     pargs = parser.parse_args()
 
 
-    from linetools.guis.xspecgui import XSpecGui
+    from linetools.guis import specdbutils
     from linetools.spectra import io as lsio
 
     # Read spectrum
@@ -32,7 +33,21 @@ def main(*args, **kwargs):
         masking = 'none'
     else:
         masking = 'edges'
-    xspec = lsio.readspec(pargs.file, masking=masking)
+
+    # Load from simple file
+    if pargs.specdb is None:
+        xspec = lsio.readspec(pargs.file, masking=masking)
+    else:
+        # Load specdb
+        spdb = specdbutils.load_specb(pargs.file)
+        if spdb is None:
+            print("You have not yet installed specdb!!")
+            print("Exiting..")
+            return
+        # Parse
+        ra,dec,group = pargs.specdb.split(',')
+        # Load
+        xspec = specdbutils.load_xspec(spdb, float(ra), float(dec), group=group, masking=masking)
 
     kwrds = {}
     if pargs.wchunk is not None:
