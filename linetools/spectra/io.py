@@ -561,7 +561,7 @@ def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
               wave_tags)
         return
     if co_tag is None:
-        co_tags = ['CONT', 'CO', 'CONTINUUM', 'co', 'cont']
+        co_tags = ['CONT', 'CO', 'CONTINUUM', 'co', 'cont', 'continuum']
     else:
         co_tags = [co_tag]
     co, co_tag = get_table_column(co_tags, hdulist, idx=exten)
