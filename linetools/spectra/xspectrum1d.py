@@ -1398,6 +1398,8 @@ class XSpectrum1D(object):
         numguesspix : int, optional
           Number of pixels included when guessing knot location using flux
           median ('A' or 'M'); default is 10
+        outfknots : str
+          Output json file where knots will be written.
         **kwargs : dict
           Other keyword arguments are passed to
           ~linetools.analysis.continuum.find_continuum.  For
