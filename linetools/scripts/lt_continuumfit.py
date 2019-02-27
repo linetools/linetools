@@ -20,6 +20,8 @@ def main(*args, **kwargs):
     parser.add_argument("--wchunk", type=float, help="Width of a 'chunk' (Ang)")
     parser.add_argument("--native", default=True, action='store_true', help="Do not mask input spectrum")
     parser.add_argument("--specdb", type=str, help="Input file is specdb.  Input (ra,dec,group) in this order without spaces")
+    parser.add_argument("--outfknots", type=str, help="Output knots .jsn file")
+    parser.add_argument("--infknots", type=str, help="Input knots .jsn file")
     #parser.add_argument("-exten", type=int, help="FITS extension")
 
     pargs = parser.parse_args()
@@ -27,6 +29,8 @@ def main(*args, **kwargs):
 
     from linetools.guis import specdbutils
     from linetools.spectra import io as lsio
+
+    import json
 
     # Read spectrum
     if pargs.native:
@@ -58,9 +62,23 @@ def main(*args, **kwargs):
         kwrds['kind'] = 'QSO'
         kwrds['redshift'] = pargs.redshift
 
+    # Input knots
+    if pargs.infknots is not None:
+        # Read the JSON file
+        with open(pargs.infknots) as data_file:
+            inpknots = json.load(data_file)
+    else:
+        inpknots = None
+
+    # Output file knots name
+    if pargs.outfknots is not None:
+        outfknots = pargs.outfknots
+    else:
+        outfknots = None
+
     # Run
     print("WARNING: QUIT with q keystroke, not by clicking to kill.")
-    xspec.fit_continuum(**kwrds)
+    xspec.fit_continuum(**kwrds,knots=inpknots,outfknots=outfknots)
 
     # Output
     xspec.write_to_fits(pargs.outfil)
