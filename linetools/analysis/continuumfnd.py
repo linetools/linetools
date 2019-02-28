@@ -181,7 +181,6 @@ def contknots(spec, sm=10, npix=40, lchmin=20, ewsnlim=2,
         plt.plot(wav, flx, color='black')
         plt.plot(wav3, flx3, color='red')
         plt.plot(wav3[ipixs], flx3[ipixs], color='blue')
-        plt.plot(wav3[ipixs], flx3[ipixs] - sigf3[ipixs], color='blue')
 
         plt.plot(wav[allind], flx[allind], color='limegreen')
         plt.plot(cwav, cflx, color='orange')
