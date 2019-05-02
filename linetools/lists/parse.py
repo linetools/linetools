@@ -1058,7 +1058,6 @@ def _write_ref_table(outfile=None):
 
     # Check the sets file
     #set_data = read_sets()
-    #pdb.set_trace()
 
     # Meta
     full_table.meta['Creator'] = user
