@@ -34,7 +34,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
 
     Parameters
     ----------
-    specfil : str or Table
+    specfil : str or Table or XSpectrum1D
       Input file. If str:
         * FITS file are detected by searching for '.fit' in their filename.
         * ASCII must either have a proper Table format or be 3 (WAVE,
@@ -99,6 +99,8 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
                 warnings.warn('No header found in ASCII file {}, assuming columns to be: {}'.format(specfil, names[:len(tbl.colnames)]))
             # import pdb; pdb.set_trace()
             hdulist = [fits.PrimaryHDU(), tbl]
+    elif isinstance(specfil, XSpectrum1D):
+        return specfil
     else:
         raise IOError('readspec: Bad spectra input.')
 
