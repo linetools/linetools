@@ -24,16 +24,16 @@ def contknots(spec, sm=10, npix=40, lchmin=20, ewsnlim=2,
     ----------
     spec : XSpectrum1D or str
       input spectrum, or a file that contains input XSpectrum1D spectrum
-    sm : float
+    sm : float, optional
       number of pixels how much to smooth input spectrum when defining continuum
-    npix : int
+    npix : int, optional
       number of pixels, such that every maximum flux value is greater than for npix pixels with lower and at
       higher wavelengths
-    lchmin : int
+    lchmin : int, optional
       minimum number of pixels in the intervals that define continuum
-    ewsnlim : float
+    ewsnlim : float, optional
       minimum value for S/N ratio of a quantity similar to equivalent width
-    showcont : bool
+    showcont : bool, optional
       show continuum? if yes:
       orange line with circles - continuum and knots
       green - pixels used to define continuum knots
@@ -41,17 +41,17 @@ def contknots(spec, sm=10, npix=40, lchmin=20, ewsnlim=2,
       blue line - initially defined continuum (not used),
                   and initially defined continuum shifted by the error in flux in the smoothed spectrum (also not used)
       red line - smoothed spectrum
-    lam0 : float
+    lam0 : float, optional
       lowest wavelength to plot
-    dlam : float
+    dlam : float, optional
       wavelenght interval width to plot; highest wavelength shown will be lam0+dlam
-    yfmax : float
+    yfmax : float, optional
       maximum ylim is yfmax * np.median(flux)
-    ymin : float
+    ymin : float, optional
       minimum ylim is yfmin * np.median(flux)
-    outf : str
+    outf : str, optional
       output file with knots (.jsn or .json type)
-    overwrite : bool
+    overwrite : bool, optional
       overwrite?
 
     Returns:
@@ -92,14 +92,9 @@ def contknots(spec, sm=10, npix=40, lchmin=20, ewsnlim=2,
     for i in range(len(flx3)):
         i1 = np.max([0, i - npix])
         i2 = np.min([i + npix, (len(flx3)) - 1])
-        ii = np.linspace(i1, i2, i2 - i1 + 1)
-        isum = 0
-        for j in ii:
-            if (flx3[int(j)] <= flx3[i]):
-                isum = isum + 1
-            if (flx3[int(j)] >= flx3[i]):
-                isum = isum - 1
-        if (isum) == len(ii) - 1:
+
+        iflx3max = np.max(flx3[i1:i2+1])
+        if iflx3max == flx3[i]:
             ipixs.append(i)
 
     # interpolate continuum to all pixels
