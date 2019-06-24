@@ -109,34 +109,39 @@ def contknots(spec, sm=10, npix=40, lchmin=20, ewsnlim=2,
     #    Define EW = sum of (1 - flux/continuum) of these adjacent pixels
     #    and a condition that EW > ewsnlim * sigma(EW) ; default ewsnlim = 2
 
-    # find pixels that correspond to absorption lines
-    ind0s = [] # pixels corresponding to absorption lines
-    imin = -1
-    iew = 0
-    isigew = 0
+    # find pixels that correspond to the continuum (= all pixels except the ones that correspond to absorption lines)
 
-    for i in range(len(flx)):
-        if flx[i] == 0:
-            ind0s.append(i)
-        else:
-            if flx[i] < cont0[i]:
-                iew = iew + (1 - flx[i] / cont0[i])
-                isigew = (isigew ** 2 + (sigf[i] / cont0[i]) ** 2) ** 0.5
-                if imin == -1:
-                    imin = np.max([i - 1, 0])
-            else:
-                if (iew > ewsnlim * isigew):
-                    for j in range(i - imin + 1):
-                        ind0s.append(j + imin)
-                iew = 0
-                isigew = 0
-                imin = -1
+    # use only pixels where cont > 0
+    nz = np.where(cont0 > 0)[0]
+    flxcp = np.asarray(flx[nz]) # we will modify this
+    flxcp1 = np.asarray(flx[nz])
+    cont0cp = np.asarray(cont0[nz])
+    sigfcp = np.asarray(sigf[nz])
+    wavcp = wav[nz]
 
-    # Find pixels that do not correspond to absorption lines
-    ind0s = list(set(ind0s))
-    allind = list(range(len(flx)))
-    for i in ind0s:
-        allind.remove(i) # allind - new continuum pixels
+    # calculate iews and isigews
+    k = np.where(flxcp > cont0cp)[0] # absorption lines will be between these pixels
+    flxcp[k]=cont0cp[k]
+    iews = 1 - np.asarray(flxcp) / np.asarray(cont0cp)
+    isigew2s = (np.asarray(sigfcp) / np.asarray(cont0cp))**2
+
+    # identify absorption lines, and find index (in flxcp) of the bluest pixel of each line
+    cumiews = np.cumsum(iews)
+    cumisigew2s = np.cumsum(isigew2s)
+    kcumiews = cumiews[k]
+    kcumisigew2s = cumisigew2s[k]
+    dkcumiews = np.diff(kcumiews)
+    dkcumisigew2s = np.diff(kcumisigew2s)
+    jj = np.where(dkcumiews > ewsnlim * (dkcumisigew2s**0.5))[0]
+    knew = k[jj] # index (in flxcp) of the bluest pixel of absorption line
+
+    # identify pixels on continuum
+    arr = np.repeat(0,len(flxcp))
+    arr[knew] = 1
+    arr[k[np.asarray(jj) + 1]] = arr[k[np.asarray(jj) + 1]] -1
+    cumarr = np.cumsum(arr)
+    # ind0s = np.where(cumarr == 1)[0] # absorption lines pixels
+    allind = np.where((cumarr != 1) & (flxcp != 0))[0] # continuum pixels
 
 
     # 3) Group continuum pixels from (2) into intervals of adjacent pixels
@@ -161,9 +166,9 @@ def contknots(spec, sm=10, npix=40, lchmin=20, ewsnlim=2,
     knotpixs = []
     for ichnk in chnks:
         if len(ichnk) >= lchmin:
-            cwav.append(np.mean(wav[ichnk].value))
-            cflx.append(np.mean(flx[ichnk].value))
-            knots.append([np.mean(wav[ichnk].value),np.mean(flx[ichnk].value)])
+            cwav.append(np.mean(wavcp[ichnk].value))
+            cflx.append(np.mean(flxcp1[ichnk])) #.value))
+            knots.append([np.mean(wavcp[ichnk].value),np.mean(flxcp1[ichnk])]) #  .value)])
             for j in ichnk:
                 knotpixs.append(j)
 
@@ -177,7 +182,7 @@ def contknots(spec, sm=10, npix=40, lchmin=20, ewsnlim=2,
         plt.plot(wav3, flx3, color='red')
         plt.plot(wav3[ipixs], flx3[ipixs], color='blue')
 
-        plt.plot(wav[allind], flx[allind], color='limegreen')
+        plt.plot(wavcp[allind], flxcp1[allind], color='limegreen')
         plt.plot(cwav, cflx, color='orange')
 
         plt.ylim(np.median(flx) * ymin, np.median(flx) * yfmax)
