@@ -11,8 +11,8 @@ import linetools.spectra.xspectrum1d as xspec
 import pdb
 
 
-def contknots(spec, sm=10, npix=40, lchmin=20, ewsnlim=2,
-              showcont=True, lam0=1500, dlam=20, yfmax=2, ymin=0,
+def contknots(spec, sm=10, npix=40, lchmin=20, ewsnlim=3, lchmax=None,
+              showcont=True, lam0=None, dlam=None, yfmax=None, ymin=None,
               outf=None, overwrite=False):
     """ Finds continuum knots, and pixels that are located on continuum .
         Identifies pixels that correspond to absorption lines, and do not includes them in continuum.
@@ -33,6 +33,8 @@ def contknots(spec, sm=10, npix=40, lchmin=20, ewsnlim=2,
       minimum number of pixels in the intervals that define continuum
     ewsnlim : float, optional
       minimum value for S/N ratio of a quantity similar to equivalent width
+    lchmax : int, optional
+      ~maximum number of pixels in the intervals that define continuum
     showcont : bool, optional
       show continuum? if yes:
       orange line with circles - continuum and knots
@@ -156,6 +158,10 @@ def contknots(spec, sm=10, npix=40, lchmin=20, ewsnlim=2,
             else:
                 chnks.append(ich)
                 ich = [allind[i]]
+    chnks.append(ich)
+
+    if lchmax is None:
+        lchmax = 5 * lchmin
 
 
     # 4) Define continuum knots
@@ -166,11 +172,41 @@ def contknots(spec, sm=10, npix=40, lchmin=20, ewsnlim=2,
     knotpixs = []
     for ichnk in chnks:
         if len(ichnk) >= lchmin:
-            cwav.append(np.mean(wavcp[ichnk].value))
-            cflx.append(np.mean(flxcp1[ichnk])) #.value))
-            knots.append([np.mean(wavcp[ichnk].value),np.mean(flxcp1[ichnk])]) #  .value)])
             for j in ichnk:
                 knotpixs.append(j)
+            #
+            if len(ichnk) < lchmax:
+                cwav.append(np.mean(wavcp[ichnk].value))
+                cflx.append(np.mean(flxcp1[ichnk])) #.value))
+                knots.append([np.mean(wavcp[ichnk].value),np.mean(flxcp1[ichnk])]) #  .value)])
+                #for j in ichnk:
+                #    knotpixs.append(j)
+            else:
+                # break into smaller intervals first
+                nch = round(len(ichnk)/lchmax) # + 1
+                for j in range(nch):
+                    cwav.append(np.mean(wavcp[ichnk[j*lchmax:(j+1)*lchmax]].value))
+                    cflx.append(np.mean(flxcp1[ichnk[j*lchmax:(j+1)*lchmax]]))  # .value))
+                    knots.append([np.mean(wavcp[ichnk[j*lchmax:(j+1)*lchmax]].value), np.mean(flxcp1[ichnk[j*lchmax:(j+1)*lchmax]])])  # .value)])
+                #
+                cwav.append(np.mean(wavcp[ichnk[nch * lchmax:]].value))
+                cflx.append(np.mean(flxcp1[ichnk[nch * lchmax:]]))  # .value))
+                knots.append([np.mean(wavcp[ichnk[nch * lchmax:]].value),
+                              np.mean(flxcp1[ichnk[nch * lchmax:]])])  # .value)])
+
+
+
+    # input parameters lam0, dlam, yfmax and ymin
+    if lam0 is None:
+        lam0 = np.min(wav.value)
+    if dlam is None:
+        dlam = np.max(wav.value) - lam0
+    #
+    ii = np.where((wav.value > lam0) & (wav.value < lam0 + dlam))[0]
+    if yfmax is None:
+        yfmax = np.max(flx[ii])/np.median(flx)
+    if ymin is None:
+        ymin = np.min(flx[ii])/np.median(flx)
 
 
 
