@@ -5,6 +5,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 from scipy.interpolate import interp1d
+from scipy.stats import norm
 from astropy.io import fits, ascii
 from astropy.units import Quantity
 import astropy.units as u
@@ -396,17 +397,16 @@ class LSF(object):
         Note: The instrument configuration requires 'pixel_scale' and 'FWHM' keys
         in units of Angstrom/px and Angstrom, respectively.
         """
-        from scipy.stats import norm
 
         try:
             pixel_scale = self.instr_config['pixel_scale'] * u.AA
-        except:
-            raise SyntaxError('`pixel_scale` keyword missing in `instr_config` dictionary.')
+        except KeyError:
+            raise KeyError('`pixel_scale` keyword missing in `instr_config` dictionary.')
 
         try:
             fwhm = self.instr_config['FWHM'] * u.AA
-        except:
-            raise SyntaxError('`FWHM` keyword missing in `instr_config` dictionary.')
+        except KeyError:
+            raise KeyError('`FWHM` keyword missing in `instr_config` dictionary.')
 
         ### need to provide fwhm in pixels (and convert to standard deviation)
         fwhm_pix = fwhm / pixel_scale
