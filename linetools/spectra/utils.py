@@ -389,8 +389,13 @@ def rebin_to_rest(spec, zarr, dv, debug=False, **kwargs):
     # Generate final wave array
     dlnlamb = np.log(1+dv/const.c)
     z2d = np.outer(zarr, np.ones(spec.totpix))
-    wvmin, wvmax = (np.min(spec.data['wave']/(1+z2d))*spec.units['wave'],
-                    np.max(spec.data['wave']/(1+z2d))*spec.units['wave'])
+    wvmax = np.max(spec.data['wave']/(1+z2d))*spec.units['wave']
+
+    # Make sure to get nonzero minimum wavelength
+    wvnz = spec.data['wave'] > 0.
+    wvmin = np.min(spec.data['wave'][wvnz] /
+                   (1 + z2d[wvnz])) * spec.units['wave']
+
     npix = int(np.round(np.log(wvmax/wvmin) / dlnlamb)) + 1
     new_wv = wvmin * np.exp(dlnlamb*np.arange(npix))
 
@@ -446,6 +451,8 @@ def smash_spectra(spec, method='average', debug=False):
         tot_flx = np.sum(spec.data['flux']*stack_msk,0)
         navg = np.sum(stack_msk,0)
         fin_flx = tot_flx / np.maximum(navg, 1.)
+    elif method == 'median':
+        fin_flx = np.median(spec.data['flux'],0)
     else:
         raise IOError("Not prepared for this smash method")
     # Finish
