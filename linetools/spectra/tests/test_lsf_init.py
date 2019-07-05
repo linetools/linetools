@@ -104,7 +104,7 @@ def test_lsf_init_errors():
         lsf = LSF(dict(name='STIS', grating='G140L', slit='bad_slit'))
 
     # for Gaussian
-    with pytest.raises(SyntaxError):
+    with pytest.raises(KeyError):
         lsf = LSF(dict(name='Gaussian', not_ps_given=0.225, FWHM=0.4))
-    with pytest.raises(SyntaxError):
+    with pytest.raises(KeyError):
         lsf = LSF(dict(name='Gaussian', pixel_scale=0.225, not_fwhm_given=0.4))
