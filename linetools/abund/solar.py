@@ -39,10 +39,11 @@ class SolarAbund(object):
         self.ref = ref
 
         # Load Data
-        print('Loading abundances from {:s}'.format(self.ref))
+        if verbose:
+            print('Loading abundances from {:s}'.format(self.ref))
+            print('Abundances are relative by number on a logarithmic scale with H=12')
         self.load_data()
-        print('Abundances are relative by number on a '
-              'logarithmic scale with H=12') 
+
 
     def load_data(self):
         """Grab the Solar Abundance data (in linetools/abund)
