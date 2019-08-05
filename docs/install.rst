@@ -7,11 +7,11 @@ Dependencies
 
 Linetools depends on these packages:
 
-* `python <http://www.python.org/>`_ versions 2.7, or 3.3 or later
-* `numpy <http://www.numpy.org/>`_ version 1.11 or later
-* `astropy`_ version 1.3 or later
-* `scipy <http://www.scipy.org/>`_ version 0.16 or later
-* `matplotlib <http://matplotlib.org/>`_  version 1.4 or later
+* `python <http://www.python.org/>`_ version 3.6 or later
+* `numpy <http://www.numpy.org/>`_ version 1.12 or later
+* `astropy`_ version 3.0 or later
+* `scipy <http://www.scipy.org/>`_ version 0.19 or later
+* `matplotlib <http://matplotlib.org/>`_  version 2.0 or later
 * `PyQT5 <https://wiki.python.org/moin/PyQt>`_ version 5 (for GUIs)
 * `h5py <https://www.h5py.org/>`_ version 2.6 (for data I/O)
 
@@ -37,26 +37,28 @@ If their versions are too old, update them with (for example)::
 If you aren't using Anaconda then all of the dependencies can also be
 installed with pip.
 
-
-Installing Linetools
-====================
-
-There is currently a pip wheel on PyPi but it is woefully
-out of date.  We will try to update before long.  But for now
-follow the instructions in the section below,
-:ref:`installsource` to install linetools.
-
 Also note, if you wish to have full functionality of the GUIs and are
 using MacOSX, then you probably need to change
 your *backend* from macosx to TkAgg in the matplotlibrc file.
 
+Installing Linetools
+====================
+
+pip
+---
+
+Do *not* use the version of linetools on PyPi (i.e. pip install).
+For now, see :ref:`installsource` to install linetools from source.
+
 .. _installsource:
 
 Installing Linetools from Source
-================================
+--------------------------------
+
+There are two modes to consider and choose from:
 
 *I just want to play with the code*
------------------------------------
++++++++++++++++++++++++++++++++++++
 
 Install the development version like this::
 
@@ -69,7 +71,7 @@ applied to your installed version (you'll have to reload the relevant
 modules to see those changes in an existing Python session, though).
 
 *I want to make a code contribution to linetools*
--------------------------------------------------
++++++++++++++++++++++++++++++++++++++++++++++++++
 
 Fantastic! In that case, follow the `Astropy developer guidelines
 <http://docs.astropy.org/en/stable/development/workflow/development_workflow.html>`_,

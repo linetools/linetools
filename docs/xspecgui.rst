@@ -31,6 +31,33 @@ The example spectrum file used below is part of the linetools package.
     lt_path = imp.find_module('linetools')[1]
     spec_fil = lt_path+'/spectra/tests/files/PH957_f.fits'
 
+Here is one another example, with guessfile option:
+
+.. code:: python
+
+    from IPython.display import Image
+    Image(filename="images/xspecgui_guesses.png")
+
+.. image:: xspecgui_files/xspecgui_guesses_1_0.png
+
+
+The example spectrum file and the example guesses file used below are part of the linetools package.
+
+.. code:: python
+
+    import imp
+    lt_path = imp.find_module('linetools')[1]
+    spec_fil = lt_path+'/spectra/tests/files/specexample1.fits'
+    guess_fil = lt_path+'/spectra/tests/files/guessexample.json'
+
+The gui could be called as
+
+.. code:: python
+
+    lt_xspec specexample1.fits -guessfile guessexample.json
+
+
+
 Before Launching the GUI
 ------------------------
 
@@ -67,6 +94,9 @@ Here are the current command-line options::
 
     optional arguments:
       -h, --help           show this help message and exit
+      -guessfile GUESSFILE, --guessfile GUESSFILE
+                        Igmguesses file, see https://github.com/pyigm/pyigm/bl
+                        ob/master/docs/igmguesses.rst
       --zsys ZSYS          System Redshift
       --norm               Show spectrum continuum normalized (if continuum is
                            provided)
@@ -170,6 +200,12 @@ Plot GUI.
 
 Simple Analysis
 ---------------
+
+Basic Statistics
+~~~~~~~~~~~~~~~~
+You can obtain the MEAN, MEDIAN and S/N of a spectral region, by clicking
+the "$" keystroke twice encompassing the region of interest.
+
 
 Gaussian Fit
 ~~~~~~~~~~~~

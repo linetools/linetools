@@ -287,7 +287,7 @@ class AbsComponent(object):
                         slf.attrib[ak] = np.array(slf.attrib[ak])
 
         # Deprecated column (again)
-        if Ntup is not None:
+        if (Ntup is not None):
             warnings.warn('Overwriting column density attributes (if they existed).', DeprecationWarning)
             slf.attrib['flag_N'] = Ntup[0]
             slf.attrib['logN'] = Ntup[1]
@@ -295,7 +295,8 @@ class AbsComponent(object):
                 slf.attrib['sig_logN'] = np.array(Ntup[2])
             else:
                 slf.attrib['sig_logN'] = np.array([Ntup[2]]*2)
-            _, _ = ltaa.linear_clm(slf.attrib)  # Set linear quantities
+        # set linear quantities in column density
+        _, _ = ltaa.linear_clm(slf.attrib)
 
         # Add AbsLine objects
         if not skip_abslines:
@@ -909,7 +910,8 @@ class AbsComponent(object):
         s += '\n'
         return s
 
-    def repr_joebvp(self, specfile, flags=(2,2,2), b_default=10*u.km/u.s):
+    def repr_joebvp(self, specfile, flags=(2,2,2), b_default=10*u.km/u.s,
+                    z_sys = None):
         """
         String representation for JOEBVP (line fitting software).
 
@@ -924,6 +926,9 @@ class AbsComponent(object):
             Doppler parameter value adopted in case an absorption
             line within the component has not set this attribute
             Default is 10 km/s.
+        z_sys : float, optional
+            Systemic redshift if different from zcomp; if provided,
+            velocities will be transformed to this frame
 
         Returns
         -------
@@ -941,8 +946,15 @@ class AbsComponent(object):
             if b_val == 0:  # set the default
                 b_val = b_default.to('km/s').value
 
+            if z_sys is None:
+                z_sys = self.zcomp
+                vel = 0.
+            else:
+                vel = ltu.dv_from_z(self.zcomp,z_sys).value
+
+
             # write string
-            s += '{:.8f}|{:.4f}|{:.4f}|0.|'.format(self.zcomp, logN, b_val)  # `vel` is set to 0. because zsys is zcomp
+            s += '{:.8f}|{:.4f}|{:.4f}|{:.4f}|'.format(z_sys, logN, b_val,vel)  # `vel` is set to 0. because zsys is zcomp
             s += '{}|{}|{}|'.format(int(flags[0]), int(flags[1]), int(flags[2]))
             vlim = aline.limits.vlim.to('km/s').value
             wvlim = aline.limits.wvlim.to('AA').value
@@ -998,6 +1010,9 @@ class AbsComponent(object):
         cdict['lines'] = {}
         for iline in self._abslines:
             cdict['lines'][iline.wrest.value] = iline.to_dict()
+        # set linear quantities in column density
+        _, _ = ltaa.linear_clm(cdict['attrib'])
+
         # Polish
         cdict = ltu.jsonify(cdict)
         # Return
