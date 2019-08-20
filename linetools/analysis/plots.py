@@ -49,6 +49,7 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None
     fig : matplotlib Figure, optional
         Figure instance containing stack plot with subplots, axes, etc.
     """
+    from linetools.spectra.io import readspec
     mpl.rcParams['font.family'] = 'stixgeneral'
     mpl.rcParams['font.size'] = 15.
     # Check for spec (required)
@@ -59,6 +60,9 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None
         else:
             if spec is not None:
                 iline.analy['spec'] = spec
+                gdiline.append(iline)
+            else:
+                iline.analy['spec'] = readspec(iline.analy['spec_file'])
                 gdiline.append(iline)
     nplt = len(gdiline)
     if nplt == 0:
