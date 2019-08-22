@@ -223,10 +223,14 @@ class zLimits(object):
         ldict['z'] = self.z
         ldict['zlim'] = self.zlim
         for key in ['wvlim', 'vlim', 'wrest']:
-            obj = getattr(self, key)
-            if obj is not None:
-                ldict[key] = dict(value=obj.value,
-                              unit=obj.unit.to_string())
+            try:
+                obj = getattr(self, key)
+                if obj is not None:
+                    ldict[key] = dict(value=obj.value,
+                                      unit=obj.unit.to_string())
+            except AttributeError:
+                pass
+
         # Return
         return ldict
 
