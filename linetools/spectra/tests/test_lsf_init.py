@@ -63,6 +63,15 @@ def test_lsf_STIS():
             instr_config = dict(name='STIS',grating=grating, slit=slit)
             lsf = LSF(instr_config)
 
+def test_lsf_Gaussian():
+    fwhms = [0.4,1.2,1.6]
+    pix_scales = [0.225,0.01,1.75]
+    for ff in fwhms:
+        # slits
+        for ps in pix_scales:
+            instr_config = dict(name='Gaussian',pixel_scale=ps, FWHM=ff)
+            lsf = LSF(instr_config)
+
 
 def test_lsf_init_errors():
     with pytest.raises(TypeError):
@@ -93,3 +102,9 @@ def test_lsf_init_errors():
         lsf = LSF(dict(name='STIS', grating='G140L', not_slit_given='xx'))
     with pytest.raises(NotImplementedError):
         lsf = LSF(dict(name='STIS', grating='G140L', slit='bad_slit'))
+
+    # for Gaussian
+    with pytest.raises(KeyError):
+        lsf = LSF(dict(name='Gaussian', not_ps_given=0.225, FWHM=0.4))
+    with pytest.raises(KeyError):
+        lsf = LSF(dict(name='Gaussian', pixel_scale=0.225, not_fwhm_given=0.4))
