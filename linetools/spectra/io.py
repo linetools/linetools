@@ -34,7 +34,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
 
     Parameters
     ----------
-    specfil : str or Table
+    specfil : str or Table or XSpectrum1D
       Input file. If str:
         * FITS file are detected by searching for '.fit' in their filename.
         * ASCII must either have a proper Table format or be 3 (WAVE,
@@ -99,6 +99,8 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
                 warnings.warn('No header found in ASCII file {}, assuming columns to be: {}'.format(specfil, names[:len(tbl.colnames)]))
             # import pdb; pdb.set_trace()
             hdulist = [fits.PrimaryHDU(), tbl]
+    elif isinstance(specfil, XSpectrum1D):
+        return specfil
     else:
         raise IOError('readspec: Bad spectra input.')
 
@@ -505,7 +507,7 @@ def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
     if flux_tag is None:
         flux_tags = ['SPEC', 'FLUX', 'FLAM', 'FX', 'FNORM',
                      'FLUXSTIS', 'FLUX_OPT', 'fl', 'flux', 'counts',
-                     'COUNTS']
+                     'COUNTS', 'OPT_FLAM']
     else:
         flux_tags = [flux_tag]
     fx, fx_tag = get_table_column(flux_tags, hdulist, idx=exten)
@@ -518,7 +520,7 @@ def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
         sig_tags = ['ERROR','ERR','SIGMA_FLUX','ERR_FLUX', 'ENORM', 'FLAM_SIG',
                     'SIGMA_UP','ERRSTIS', 'FLUXERR', 'SIGMA', 'sigma',
                     'sigma_flux','er', 'err', 'error', 'sig', 'fluxerror',
-                    'FLUX_ERROR','flux_error']
+                    'FLUX_ERROR','flux_error', 'OPT_FLAM_SIG']
     else:
         sig_tags = [sig_tag]
     sig, sig_tag = get_table_column(sig_tags, hdulist, idx=exten)
@@ -546,7 +548,7 @@ def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
     if wave_tag is None:
         wave_tags = ['WAVE','WAVELENGTH','LAMBDA','LOGLAM',
                      'WAVESTIS', 'WAVE_OPT', 'wa', 'wave', 'loglam','wl',
-                     'wavelength']
+                     'wavelength', 'OPT_WAVE']
     else:
         wave_tags = [wave_tag]
     wave, wave_tag = get_table_column(wave_tags, hdulist, idx=exten)
