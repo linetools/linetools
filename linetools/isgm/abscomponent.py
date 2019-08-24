@@ -769,7 +769,7 @@ class AbsComponent(object):
                     pass
             elif aline.attrib['flag_N'] == 3:  # Upper limit
                 if self.flag_N == 0:
-                    self.attrib['N'] = aline.attrib['N']
+                    self.attrib['N'] = max(aline.attrib['N'], nsig_upper*aline.attrib['sig_N'])
                     self.attrib['sig_N'] = aline.attrib['sig_N']
                     self.attrib['flag_N'] = 3
                 elif self.flag_N in [1, 2]:
@@ -1012,7 +1012,10 @@ class AbsComponent(object):
         # AbsLines
         cdict['lines'] = {}
         for iline in self._abslines:
-            cdict['lines'][iline.wrest.value] = iline.to_dict()
+            try:
+                cdict['lines'][iline.wrest.value] = iline.to_dict()
+            except:
+                pdb.set_trace()
         # set linear quantities in column density
         _, _ = ltaa.linear_clm(cdict['attrib'])
 
