@@ -1062,6 +1062,9 @@ def _write_ref_table(outfile=None):
     # Meta
     full_table.meta['Creator'] = user
     full_table.meta['CreationDate'] = date
+
+    # Formatting (to insure enough precision)
+    full_table['f'].format = '{:9.4e}'
     # Write
     warnings.warn("About to overwrite: {:s}".format(outfile))
     warnings.warn("Proceed only if you know what you are doing!")
