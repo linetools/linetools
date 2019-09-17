@@ -1062,7 +1062,7 @@ def unique_components(comps1, comps2, tol=5*u.arcsec):
 
 def is_not_HILya(wvobs, comps):
     """Given an array of wavelengths, this function returns a boolean array of same shape as
-     `wobs` with True for pixels known to be contaminated by non HI Lya absorption given a list
+     `wvobs` with True for pixels known to be contaminated by non HI Lya absorption given a list
      of AbsComponent objects
 
      Parameters
