@@ -1059,32 +1059,3 @@ def unique_components(comps1, comps2, tol=5*u.arcsec):
     # Return
     return unique
 
-
-def is_not_HILya(wvobs, comps):
-    """Given an array of wavelengths, this function returns a boolean array of same shape as
-     `wobs` with True for pixels known to be contaminated by non HI Lya absorption given a list
-     of AbsComponent objects
-
-     Parameters
-     ----------
-     wobs : Quantity array
-        Observed wavelength
-    comp : list of AbsComponent objects
-        List of abscomponent objects identified
-
-    Returns
-    -------
-    answer : bool
-        True if there is a identified line that is not HI Lya, otherwise False
-
-     """
-
-    # loop over component and abslines
-    cond = False * len(wvobs)
-    for comp in comps:
-        for line in comp._abslines:
-            if line.name != 'HI 1215':
-                wvlims = line.limits.wvlim
-                cond_aux = (wvobs >= wvlims[0]) & (wvobs <= wvlims[1])
-                cond = cond_aux | cond
-    return np.array(cond).astype(bool)
