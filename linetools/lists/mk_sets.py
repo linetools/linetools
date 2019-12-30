@@ -14,90 +14,6 @@ from linetools.lists import parse as llp
 lt_path = imp.find_module('linetools')[1]
 
 
-'''
-def mk_ism(outfil=None, overwrite=False):
-    """ Make the ISM list from grb.lst in xastropy
-
-    SHOULD BE DEPRECATED AFTER v0.0
-
-    Parameters
-    ----------
-    outfil : str, optional
-      Outfil
-    """
-    raise ValueError('BAD IDEA TO RUN THIS AGAIN')
-    raise ValueError('REALLY')
-    # Read
-    fil = xa_path+'/data/spec_lines/grb.lst'
-    data = ascii.read(fil, format='fixed_width_no_header',data_start=1,
-                names=('wrest', 'name', 'fval'),
-                col_starts=(0,9,22), col_ends=(8,20,32))
-    # Write?
-    if outfil is None:
-        outfil = lt_path+'/lists/sets/llist_v0.0.ascii'
-    chkf = glob.glob(outfil)
-    if (len(chkf) > 0) & (not overwrite):
-        print('Not over-writing {:s}'.format(outfil))
-        return
-
-    # Add columns
-    nrow = len(data)
-    cism = Column([1]*nrow, name='fISM')
-    oflgs = ['fSI', 'fHI', 'fH2', 'fCO', 'fEUV',
-        'fgE', 'fgA', 'fAGN']
-    allc = [cism]
-    for oflg in oflgs:
-       allc.append(Column([0]*nrow, name=oflg))
-    data.add_columns(allc)
-
-    # Write
-    data[['wrest','name','fISM']+oflgs].write(outfil, format='ascii.fixed_width')
-    print('mk_ism: Wrote {:s}'.format(outfil))
-'''
-
-'''
-def mk_strong(infil=None, outfil=None):
-    """ Make the Strong ISM list from lls.lst in xastropy
-
-    SHOULD BE DEPRECATED AFTER v0.0
-
-    Parameters
-    ----------
-    infil : str, optional
-      Starting file.  Should use latest llist_vX.X.ascii
-    outfil : str, optional
-      Outfil
-    """
-    if infil is None:
-        fils = glob.glob(lt_path+'/lists/sets/llist_v*')
-        infil = fils[-1] # Should grab the lateset
-
-    # Read
-    data = ascii.read(infil, format='fixed_width')
-
-    # Use lls.lst from xastropy    
-    fil = xa_path+'/data/spec_lines/lls.lst'
-    lls = ascii.read(fil, format='fixed_width_no_header',data_start=1,
-                names=('wrest', 'name', 'fval'),
-                col_starts=(0,9,22), col_ends=(8,20,32))
-
-    # Set flag
-    for row in lls:
-        mt = np.where(np.abs(row['wrest']-data['wrest']) < 1e-3)[0]
-        if len(mt) == 1:
-            data[mt[0]]['fSI'] = 1
-        elif len(mt) == 0:
-            print('No line in Table with wrest={:g}'.format(row['wrest']))
-        else:
-            raise ValueError('Multiple lines in Table {:g}'.format(row['wrest']))
-
-    # Write
-    if outfil is None:
-        outfil = infil
-    data.write(outfil, format='ascii.fixed_width')
-    print('mk_strong: Wrote {:s}'.format(outfil))
-'''
-
 def mk_hi(infil=None, outfil=None, stop=True):
     """ Make the HI list ISM + HI
 
@@ -230,8 +146,14 @@ def add_xray_lines(outfil, infil=None, stop=True):
 # Test
 if __name__ == '__main__':
     flg = 0
-    flg += 2**0   # X-ray lines
+    #flg += 2**0   # X-ray lines
+    flg += 2**1   # v1.3
 
     if flg & (2**0):
         add_galaxy_lines('sets/llist_v1.2.ascii')
         add_xray_lines('sets/llist_v1.2.ascii')
+
+    # JXP -- 2019 May 02  (only added HeII 4687, but whatever)
+    if flg & (2**1):
+        add_galaxy_lines('sets/llist_v1.3.ascii')
+        add_xray_lines('sets/llist_v1.3.ascii')
