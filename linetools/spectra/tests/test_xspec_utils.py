@@ -199,17 +199,17 @@ def test_continuum_utils(spec):
     x, y = xy[0], xy[1]
     # test interpolate
     spec.normalize(spec._interp_continuum(x, y, spec.wavelength.value))
-    np.testing.assert_allclose(spec.co, 1.)
+    np.testing.assert_allclose(spec.co.value, 1.)
     co_old = spec.co
     # test perturb
     spec.perturb_continuum(rel_var=0.05, seed=2)
     assert all(co_old != spec.co)
-    np.testing.assert_allclose(np.max(spec.co), 1.11636, rtol=1e-5)
-    np.testing.assert_allclose(np.min(spec.co), 0.8658872, rtol=1e-5)
+    np.testing.assert_allclose(np.max(spec.co.value), 1.11636, rtol=1e-5)
+    np.testing.assert_allclose(np.min(spec.co.value), 0.8658872, rtol=1e-5)
 
     #test reset
     spec.reset_continuum()
-    np.testing.assert_allclose(spec.co, 1.)
+    np.testing.assert_allclose(spec.co.value, 1.)
 
     # Test generation of normalized spec
     norm_spec = spec.normalized_spec()
