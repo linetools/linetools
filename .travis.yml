@@ -62,8 +62,10 @@ matrix:
         #  env: SETUP_CMD='test'
 
         # Do a coverage test.
-        - os: linux
-          env: SETUP_CMD='test --coverage'
+        # JXP -- Turning off coverage on 01 Jan 2020 until this is fixed in helper.py
+        #  for the v5.0 of coverage.
+        #- os: linux
+        #  env: SETUP_CMD='test --coverage'
 
         # Check for sphinx doc build warnings - we do this first because it
         # may run for a long time
