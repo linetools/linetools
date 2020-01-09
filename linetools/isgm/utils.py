@@ -402,8 +402,7 @@ def table_from_complist(complist, summed_ion=False, NHI_obj=None, vrange=None,
     tab['ion'] = [icomp.Zion[1] for icomp in complist]
 
     # . attributes (required ones)
-    for attrib in ['zcomp', 'Ej', 'flag_N', 'logN', 'sig_logN',
-                   'b','sig_b','vel','sig_vel']:
+    for attrib in ['zcomp', 'Ej']:
         values = [getattr(icomp,attrib) for icomp in complist]
         if isinstance(values[0], u.Quantity):
             values = u.Quantity(values)
@@ -422,8 +421,9 @@ def table_from_complist(complist, summed_ion=False, NHI_obj=None, vrange=None,
             ion_names[-1] += '*'
     tab['ion_name'] = ion_names
 
-    # attrib dict
-    for attrib in ['sig_z', 'b', 'sig_b', 'vel', 'sig_vel', 'specfile']:
+    # attrib dict containing logN, b, etc
+    for attrib in ['flag_N', 'logN', 'sig_logN', 'sig_z',
+                   'b', 'sig_b', 'vel', 'sig_vel', 'specfile']:
         try:
             values = [icomp.attrib[attrib] for icomp in complist]
         except KeyError:
