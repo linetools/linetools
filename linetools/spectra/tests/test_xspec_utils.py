@@ -84,7 +84,7 @@ def test_rebin(specr, specmr):
     new_wv = np.arange(3000., 9000., 5) * u.AA
     newspec = specr.rebin(new_wv)
     # Test
-    np.testing.assert_allclose(newspec.flux[1000], 0.9999280967617779)
+    np.testing.assert_allclose(newspec.flux[1000].value, 0.9999280967617779)
     assert newspec.flux.unit is u.dimensionless_unscaled
     # With sigma
     newspec = specr.rebin(new_wv, do_sig=True)
@@ -93,7 +93,7 @@ def test_rebin(specr, specmr):
     # With NANs
     specr.data['flux'][specr.select][100:110] = np.nan
     newspec = specr.rebin(new_wv)
-    np.testing.assert_allclose(newspec.flux[1000], 0.9999280967617779)
+    np.testing.assert_allclose(newspec.flux[1000].value, 0.9999280967617779)
     # All
     spec2 = specmr.rebin(new_wv, all=True)
     np.testing.assert_allclose(spec2.wvmax.value, 8995.0)
@@ -112,11 +112,11 @@ def test_addnoise(spec):
 def test_box_smooth(spec):
     # Smooth
     newspec3 = spec.box_smooth(3)
-    np.testing.assert_allclose(newspec3.flux[4000], 0.8429098, rtol=1e-5)
+    np.testing.assert_allclose(newspec3.flux[4000].value, 0.8429098, rtol=1e-5)
     assert newspec3.flux.unit == u.dimensionless_unscaled
 
     newspec5 = spec.box_smooth(5)
-    np.testing.assert_allclose(newspec5.flux[3000], 0.7609909,rtol=1e-5)
+    np.testing.assert_allclose(newspec5.flux[3000].value, 0.7609909,rtol=1e-5)
     # Preserve
     newspec5p = spec.box_smooth(5, preserve=True)
 
@@ -199,17 +199,17 @@ def test_continuum_utils(spec):
     x, y = xy[0], xy[1]
     # test interpolate
     spec.normalize(spec._interp_continuum(x, y, spec.wavelength.value))
-    np.testing.assert_allclose(spec.co, 1.)
+    np.testing.assert_allclose(spec.co.value, 1.)
     co_old = spec.co
     # test perturb
     spec.perturb_continuum(rel_var=0.05, seed=2)
     assert all(co_old != spec.co)
-    np.testing.assert_allclose(np.max(spec.co), 1.11636, rtol=1e-5)
-    np.testing.assert_allclose(np.min(spec.co), 0.8658872, rtol=1e-5)
+    np.testing.assert_allclose(np.max(spec.co.value), 1.11636, rtol=1e-5)
+    np.testing.assert_allclose(np.min(spec.co.value), 0.8658872, rtol=1e-5)
 
     #test reset
     spec.reset_continuum()
-    np.testing.assert_allclose(spec.co, 1.)
+    np.testing.assert_allclose(spec.co.value, 1.)
 
     # Test generation of normalized spec
     norm_spec = spec.normalized_spec()
