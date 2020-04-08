@@ -54,7 +54,7 @@ def main(args=None):
     print('   radec = ({:f},{:f}) deg'.format(coord.icrs.ra.deg, coord.icrs.dec.deg))
     print('   Galactic = ({:f},{:f}) deg'.format(coord.galactic.l.deg, coord.galactic.b.deg))
     print('   ')
-    print('SDSS finding chart: https://skyserver.sdss.org/dr12/en/tools/chart/navi.aspx?ra={:f}&dec={:f}&opt='.format(coord.icrs.ra.deg, coord.icrs.dec.deg))
+    print('SDSS finding chart: https://skyserver.sdss.org/dr14/en/tools/chart/navi.aspx?ra={:f}&dec={:f}&opt='.format(coord.icrs.ra.deg, coord.icrs.dec.deg))
 
 if __name__ == '__main__':
     main()
