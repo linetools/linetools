@@ -115,7 +115,7 @@ def test_get_lsf(plot=False, lp='2'):
 
 
 def test_all_lp(plot=False):
-    for lp in ['1', '3']:  # lp='2' will be tested as default
+    for lp in ['1', '3', '4']:  # lp='2' will be tested as default
         test_interpolate_to_wv0(plot=plot, lp=lp)
         test_interpolate_to_wv_array(plot=plot, lp=lp)
         test_get_lsf(plot=plot, lp=lp)
