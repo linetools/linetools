@@ -211,7 +211,8 @@ class LSF(object):
                 elif life_position == '3':
                     file_name = 'fuv_{}_{}_lp3.txt'.format(grating,cen_wave)
                 elif life_position == '4':
-                    assert grating == 'G140L', 'LP4 has been only implemented for the COS G140L grating. If you need another grating please contact linetools developers'
+                    if grating == 'G130M':
+                        raise ValueError('LP4 has been only implemented for the COS G140L and G160M gratings. If you need another grating please contact linetools developers'
                     file_name = 'fuv_{}_{}_lp4.txt'.format(grating,cen_wave)
                 else: # this should never happen
                     raise NotImplementedError('Unexpected error: please contact linetools developers!')
