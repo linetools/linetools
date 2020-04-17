@@ -175,7 +175,8 @@ class LSF(object):
         # COS
         elif channel_dict[grating] == 'FUV':
             # Use the ones corrected by scattering when possible
-            # (currently, these are only available for lifetime-position 1)
+            # (currently, these are available for lifetime-position 1 2 3 and 4)
+            # the format has been changing over time, please add new tables with care
             # check: http://www.stsci.edu/hst/cos/performance/spectral_resolution
             try:
                 life_position = self.instr_config['life_position']
@@ -195,7 +196,7 @@ class LSF(object):
                 elif grating == 'G160M': #use empirical values corrected by scattering
                     file_name = 'fuv_G160M_lp1_empir.txt'
             
-            elif life_position in ['2','3']:
+            elif life_position in ['2','3', '4']:
                 try:
                     cen_wave = self.instr_config['cen_wave']
                 except:
@@ -209,6 +210,8 @@ class LSF(object):
                     file_name = 'fuv_{}_{}_lp2.txt'.format(grating,cen_wave)
                 elif life_position == '3':
                     file_name = 'fuv_{}_{}_lp3.txt'.format(grating,cen_wave)
+                elif life_position == '4':
+                    file_name = 'fuv_{}_{}_lp4.txt'.format(grating,cen_wave)
                 else: # this should never happen
                     raise NotImplementedError('Unexpected error: please contact linetools developers!')
 
