@@ -184,16 +184,16 @@ class LSF(object):
                 raise SyntaxError('`life_position` keyword missing in `instr_config` dictionary.')
 
             if life_position not in ['1','2','3', '4']:
-                raise ValueError('HST/COS `life_position` should be either `1` or `2` or `3` (strings)')
+                raise ValueError('HST/COS `life_position` should be either `1` or `2` or `3` or `4` (strings)')
 
             if life_position == '1':
-                if grating == 'G140L': #use theoretical values 
+                if grating == 'G140L':  # use theoretical values
                     file_name = 'fuv_G140L_lp1.txt'
                     
-                elif grating == 'G130M': #use empirical values corrected by scattering
+                elif grating == 'G130M':  # use empirical values corrected by scattering
                     file_name = 'fuv_G130M_lp1_empir.txt'
 
-                elif grating == 'G160M': #use empirical values corrected by scattering
+                elif grating == 'G160M':  # use empirical values corrected by scattering
                     file_name = 'fuv_G160M_lp1_empir.txt'
             
             elif life_position in ['2','3', '4']:

@@ -27,11 +27,17 @@ def test_lsf_COS():
                 if grating not in ['G130M','G160M', 'G140L']:
                         continue
                 if grating == 'G130M':
+                        if lp == '4':
+                            continue  # LP4 not implemented yet for G130M
                         cen_waves_aux = cen_waves_G130M
                 elif grating == 'G160M':
+                        if lp == '4':
+                            continue  # LP4 not implemented yet for G160M
                         cen_waves_aux = cen_waves_G160M
                 elif grating == 'G140L':
                         cen_waves_aux = cen_waves_G140L
+                        if (lp == '4'):
+                            cen_waves_aux = ['1105', '1280']  # 1230 not available for LP4
 
                 for cen_wave in cen_waves_aux:
                         instr_config['cen_wave'] = cen_wave
