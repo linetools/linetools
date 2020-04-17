@@ -183,7 +183,7 @@ class LSF(object):
             except:
                 raise SyntaxError('`life_position` keyword missing in `instr_config` dictionary.')
 
-            if life_position not in ['1','2','3']:
+            if life_position not in ['1','2','3', '4']:
                 raise ValueError('HST/COS `life_position` should be either `1` or `2` or `3` (strings)')
 
             if life_position == '1':
