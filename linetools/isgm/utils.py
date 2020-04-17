@@ -1059,4 +1059,3 @@ def unique_components(comps1, comps2, tol=5*u.arcsec):
     # Return
     return unique
 
-

@@ -80,6 +80,7 @@ def test_interpolate_to_wv_array(plot=False, lp='2'):
     with pytest.raises(ValueError):
         tbl = lsf.interpolate_to_wv_array(np.array([1, 2]) * u.AA, kind='cubic')  # bad input wv_array
 
+
 def test_get_lsf(plot=False, lp='2'):
     err_msg = 'Something is wrong with LSF.get_lsf()'
     wv_array = np.arange(1250, 1251, 0.0001) * u.AA
@@ -94,12 +95,27 @@ def test_get_lsf(plot=False, lp='2'):
         if plot:
             import matplotlib.pyplot as plt
             plt.plot(wv_array, lsf_kernel, '-', color=colors[i])
+
+    # test for G140L grating
+    wv_array = np.arange(1200, 1400, 0.1) * u.AA
+    cen_waves = ['1105', '1280']
+    colors = ['k', 'b', 'g', 'r', 'orange']
+    lsf_dict = dict()
+    for i, cen_wave in enumerate(cen_waves):
+        cos_dict_aux = dict(name='COS', grating='G140L', life_position=lp, cen_wave=cen_wave)
+        lsf_dict[cen_wave] = LSF(cos_dict_aux)
+        lsf_kernel = lsf_dict[cen_wave].get_lsf(wv_array)
+        assert isinstance(lsf_kernel, np.ndarray), err_msg
+        if plot:
+            import matplotlib.pyplot as plt
+            plt.plot(wv_array, lsf_kernel, '-', color=colors[i])
+
     if plot:
         plt.show()
 
 
 def test_all_lp(plot=False):
-    for lp in ['1', '3']:  # lp='2' will be tested as default
+    for lp in ['1', '3', '4']:  # lp='2' will be tested as default
         test_interpolate_to_wv0(plot=plot, lp=lp)
         test_interpolate_to_wv_array(plot=plot, lp=lp)
         test_get_lsf(plot=plot, lp=lp)
@@ -137,6 +153,7 @@ def test_interpolate_to_wv0_wv0shortlong(plot=False):
     wv0 = 1900.0 * u.AA
     with pytest.raises(ValueError):
         lsf_tab = lsf_cos.interpolate_to_wv0(wv0)
+
 
 def test_shift_to_wv0(plot=False):
     instr_dict1 = {'name': 'Gaussian', 'pixel_scale': 0.225, 'FWHM': 0.7}

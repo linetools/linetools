@@ -175,27 +175,28 @@ class LSF(object):
         # COS
         elif channel_dict[grating] == 'FUV':
             # Use the ones corrected by scattering when possible
-            # (currently, these are only available for lifetime-position 1)
+            # (currently, these are available for lifetime-position 1 2 3 and 4)
+            # the format has been changing over time, please add new tables with care
             # check: http://www.stsci.edu/hst/cos/performance/spectral_resolution
             try:
                 life_position = self.instr_config['life_position']
             except:
                 raise SyntaxError('`life_position` keyword missing in `instr_config` dictionary.')
 
-            if life_position not in ['1','2','3']:
-                raise ValueError('HST/COS `life_position` should be either `1` or `2` or `3` (strings)')
+            if life_position not in ['1','2','3', '4']:
+                raise ValueError('HST/COS `life_position` should be either `1` or `2` or `3` or `4` (strings)')
 
             if life_position == '1':
-                if grating == 'G140L': #use theoretical values 
+                if grating == 'G140L':  # use theoretical values
                     file_name = 'fuv_G140L_lp1.txt'
                     
-                elif grating == 'G130M': #use empirical values corrected by scattering
+                elif grating == 'G130M':  # use empirical values corrected by scattering
                     file_name = 'fuv_G130M_lp1_empir.txt'
 
-                elif grating == 'G160M': #use empirical values corrected by scattering
+                elif grating == 'G160M':  # use empirical values corrected by scattering
                     file_name = 'fuv_G160M_lp1_empir.txt'
             
-            elif life_position in ['2','3']:
+            elif life_position in ['2','3', '4']:
                 try:
                     cen_wave = self.instr_config['cen_wave']
                 except:
@@ -209,6 +210,8 @@ class LSF(object):
                     file_name = 'fuv_{}_{}_lp2.txt'.format(grating,cen_wave)
                 elif life_position == '3':
                     file_name = 'fuv_{}_{}_lp3.txt'.format(grating,cen_wave)
+                elif life_position == '4':
+                    file_name = 'fuv_{}_{}_lp4.txt'.format(grating,cen_wave)
                 else: # this should never happen
                     raise NotImplementedError('Unexpected error: please contact linetools developers!')
 
@@ -216,7 +219,7 @@ class LSF(object):
             raise NotImplementedError('Not ready for the given HST/COS channel; only `NUV` and `FUV` channels allowed.')
         
         # point to the right file
-        file_name = lt_path + '/data/lsf/{}/{}'.format(self.name,file_name)
+        file_name = lt_path + '/data/lsf/{}/{}'.format(self.name, file_name)
         
         # get column names
         f = open(file_name,'r')
