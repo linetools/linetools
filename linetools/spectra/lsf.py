@@ -211,8 +211,6 @@ class LSF(object):
                 elif life_position == '3':
                     file_name = 'fuv_{}_{}_lp3.txt'.format(grating,cen_wave)
                 elif life_position == '4':
-                    if grating == 'G130M':
-                        raise ValueError('LP4 has been only implemented for the COS G140L and G160M gratings. If you need another grating please contact linetools developers'
                     file_name = 'fuv_{}_{}_lp4.txt'.format(grating,cen_wave)
                 else: # this should never happen
                     raise NotImplementedError('Unexpected error: please contact linetools developers!')
@@ -221,7 +219,7 @@ class LSF(object):
             raise NotImplementedError('Not ready for the given HST/COS channel; only `NUV` and `FUV` channels allowed.')
         
         # point to the right file
-        file_name = lt_path + '/data/lsf/{}/{}'.format(self.name,file_name)
+        file_name = lt_path + '/data/lsf/{}/{}'.format(self.name, file_name)
         
         # get column names
         f = open(file_name,'r')
