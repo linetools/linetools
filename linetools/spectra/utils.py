@@ -410,7 +410,7 @@ def rebin_to_rest(spec, zarr, dv, debug=False, **kwargs):
         # Select
         spec.select = ispec
         # Rebin in obs frame
-        tspec = spec.rebin(new_wv*(1+zarr[ispec]), do_sig=True, masking='none', **kwargs)
+        tspec = spec[ispec].rebin(new_wv*(1+zarr[ispec]), do_sig=True, masking='none', **kwargs)
         # Save in rest-frame (worry about flambda)
         f_flux[ispec, :] = tspec.flux.value
         f_sig[ispec, :] = tspec.sig.value
