@@ -320,10 +320,23 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False,
         new_sig[gd] = np.sqrt(new_var[gd].value)
         # Deal with bad pixels (grow_bad_sig should be True)
         bad = np.where(var <= 0.)[0]
-        for ibad in bad:
-            bad_new = np.where(np.abs(new_wv-spec.wavelength[ibad]) <
-                               (new_dwv[1:]+dwv[ibad])/2)[0]
-            new_sig[bad_new] = 0.
+        # Find nearby wavelengths in rebinned wavelength
+        nearidxs = np.searchsorted(new_wv, spec.wavelength[bad])
+        pwv = np.concatenate([spec.wavelength,[spec.wavelength[-1]+dwv[-1]]])
+        # Find distances between original bad wavelengths and nearby new ones
+        ldiff = np.abs(new_wv[nearidxs-1]-pwv[bad]) - \
+                (new_dwv[1:][nearidxs]+dwv[bad])/2
+        rdiff = np.abs(pwv[bad]-new_wv[nearidxs]) - \
+                (new_dwv[1:][nearidxs] + dwv[bad]) / 2
+        # Set errors to 0
+        new_sig[nearidxs[ldiff<0]]=0
+        new_sig[nearidxs[rdiff<0]]= 0
+        ### Old (very slow) way looping through bad pix
+        #for ibad in bad:
+        #    bad_new = np.where(np.abs(new_wv-spec.wavelength[ibad]) <
+        #                       (new_dwv[1:]+dwv[ibad])/2)[0]
+        #    new_sig[bad_new] = 0.
+
         # Zero out edge pixels -- not to be trusted
         igd = np.where(gd)[0]
         if len(igd) == 0:  # Should not get here!
