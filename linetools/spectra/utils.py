@@ -322,15 +322,19 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False,
         bad = np.where(var <= 0.)[0]
         # Find nearby wavelengths in rebinned wavelength
         nearidxs = np.searchsorted(new_wv, spec.wavelength[bad])
+        # Pad arrays to enable vector operations
         pwv = np.concatenate([spec.wavelength,[spec.wavelength[-1]+dwv[-1]]])
+        pndwv = np.concatenate([new_dwv,[new_dwv[-1]]])
+        pnwv = np.concatenate([new_wv,[new_wv[-1]+new_dwv[-1]]])
+
         # Find distances between original bad wavelengths and nearby new ones
         ldiff = np.abs(new_wv[nearidxs-1]-pwv[bad]) - \
-                (new_dwv[1:][nearidxs]+dwv[bad])/2
-        rdiff = np.abs(pwv[bad]-new_wv[nearidxs]) - \
-                (new_dwv[1:][nearidxs] + dwv[bad]) / 2
-        # Set errors to 0
-        new_sig[nearidxs[ldiff<0]]=0
-        new_sig[nearidxs[rdiff<0]]= 0
+                (pndwv[1:][nearidxs]+dwv[bad])/2
+        rdiff = np.abs(pwv[bad]-pnwv[nearidxs]) - \
+                (pndwv[1:][nearidxs] + dwv[bad]) / 2
+        # Set errors to 0; we have to mind the padding above
+        new_sig[nearidxs[(ldiff<0)&(nearidxs<len(new_wv))]] = 0
+        new_sig[nearidxs[(rdiff<0)&(nearidxs<len(new_wv))]] = 0
         ### Old (very slow) way looping through bad pix
         #for ibad in bad:
         #    bad_new = np.where(np.abs(new_wv-spec.wavelength[ibad]) <
