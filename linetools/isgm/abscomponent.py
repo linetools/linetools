@@ -1012,10 +1012,7 @@ class AbsComponent(object):
         # AbsLines
         cdict['lines'] = {}
         for iline in self._abslines:
-            try:
-                cdict['lines'][iline.wrest.value] = iline.to_dict()
-            except:
-                pdb.set_trace()
+            cdict['lines'][iline.wrest.value] = iline.to_dict()
         # set linear quantities in column density
         _, _ = ltaa.linear_clm(cdict['attrib'])
 
