@@ -54,7 +54,7 @@ RELEASE = 'dev' not in VERSION
 
 if not RELEASE:
     git_devstr = get_git_devstr(False)
-    if not git_devstr:
+    if (git_devstr == '0') or (git_devstr == ''):
         import linetools.version
         version_version = linetools.version.version
         VERSION = version_version
