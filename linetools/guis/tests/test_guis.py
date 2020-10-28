@@ -10,7 +10,7 @@ import pytest
 import numpy as np
 from astropy import units as u
 
-from PyQt5.QtWidgets import QApplication
+from PySide2.QtWidgets import QApplication
 
 from linetools.guis import xspecgui, xabssysgui
 from linetools.guis import utils as ltgu

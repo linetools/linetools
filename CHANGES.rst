@@ -8,6 +8,7 @@ Updates
 - Added Cashman+2017 catalog in LineList
 - Significant refactor of AbsComponent
 - LineList "AGN" added
+- Refactor from PyQt5 -> PySide2
 
 Bug fixes
 .........

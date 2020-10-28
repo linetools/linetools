@@ -32,7 +32,7 @@ def main(*args, **kwargs):
     #pargs = parser.parse_args()
     pargs, unknown = parser.parse_known_args()
 
-    from PyQt5.QtWidgets import QApplication
+    from PySide2.QtWidgets import QApplication
     from linetools.guis.xspecgui import XSpecGui
 
     # Normalized?

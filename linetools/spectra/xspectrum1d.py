@@ -671,7 +671,7 @@ class XSpectrum1D(object):
         # Launch XSpectrum1D??
         if 'xspec' in kwargs:
             import sys
-            from PyQt5.QtWidgets import QApplication
+            from PySide2.QtWidgets import QApplication
             from linetools.guis.xspecgui import XSpecGui
             app = QApplication(sys.argv)
             # Scale to pixels on screen
