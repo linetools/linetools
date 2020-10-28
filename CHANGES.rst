@@ -12,6 +12,7 @@ Updates
 
 Bug fixes
 .........
+- change linestyle='steps-mid' to drawstyle='steps-mid' in Axes.plot calls
 
 
 0.2 (2017-10-24)

@@ -669,7 +669,7 @@ class AbsComponent(object):
                 ymax = max(np.max(Na[pixmnx].value), ymax)
                 fw_sv = iline.data['f']*iline.wrest
             # Plot
-            ax.plot(velo, Na, '-', linestyle='steps-mid', label=iline.data['name'])
+            ax.plot(velo, Na, '-', drawstyle='steps-mid', label=iline.data['name'])
             # ax.plot(velo, iline.analy['spec'].sig, 'r:')
         # Axes
         ax.set_xlim(self.vlim.value)
