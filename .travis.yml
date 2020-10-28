@@ -89,8 +89,10 @@ matrix:
         - os: linux
           env: ASTROPY_VERSION=development
                EVENT_TYPE='pull_request push cron'
+               MAIN_CMD='pytest -sv linetools'
         - os: linux
           env: ASTROPY_VERSION=lts
+               MAIN_CMD='pytest -sv linetools'
 
         # Try all python versions and Numpy versions. Since we can assume that
         # the Numpy developers have taken care of testing Numpy with different
@@ -99,14 +101,17 @@ matrix:
 
         - os: linux
           env: NUMPY_VERSION=1.16
+               MAIN_CMD='pytest -sv linetools'
 
         - os: linux
           env: NUMPY_VERSION=1.17
+               MAIN_CMD='pytest -sv linetools'
 
         # Try numpy pre-release
         - os: linux
           env: NUMPY_VERSION=prerelease
                EVENT_TYPE='pull_request push cron'
+               MAIN_CMD='pytest -sv linetools'
 
         # Do a PEP8 test with pycodestyle
         - os: linux
