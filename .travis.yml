@@ -47,6 +47,7 @@ env:
         # If there are matplotlib or other GUI tests, uncomment the following
         # line to use the X virtual framebuffer.
         - SETUP_XVFB=True
+        - QT_DEBUG_PLUGINS=1
 
     matrix:
       # Extra context is a way to override options that the user normally
