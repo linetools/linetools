@@ -835,11 +835,18 @@ def group_coincident_components(comp_list, output_type='list'):
     for i in range(len(sortidxs)-1):
         if i == 0:
             thisblend = [i]
-        if sort_lst[i].coincident_line(sort_lst[i+1]):
-            thisblend.append(i+1)
+            # new right limit of the current blend
+            thisright = sort_lst[i].limits.wvlim[1]
+        # newright limit less than the next components left limit
+        if thisright > sort_lst[i+1].limits.wvlim[0]:
+            thisblend.append(i + 1)
+            # if necessary extend the current blend to the right limit of the newly added line.
+            if thisright < sort_lst[i+1].limits.wvlim[1]:
+                thisright = sort_lst[i+1].limits.wvlim[1]
         else:
             blends.append(thisblend)
             thisblend = [i+1]
+            thisright = sort_lst[i+1].limits.wvlim[1]
         if i == (len(sortidxs) - 2):
             blends.append(thisblend)
 
