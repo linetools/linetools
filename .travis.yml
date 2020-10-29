@@ -47,7 +47,9 @@ env:
         # If there are matplotlib or other GUI tests, uncomment the following
         # line to use the X virtual framebuffer.
         - SETUP_XVFB=True
-        - QT_DEBUG_PLUGINS=1
+        # If there are problems with Qt on TRAVIS, uncomment the following line
+        # to see a LOT of debugging info
+        # - QT_DEBUG_PLUGINS=1
 
     matrix:
       # Extra context is a way to override options that the user normally
@@ -89,12 +91,8 @@ matrix:
         - os: linux
           env: ASTROPY_VERSION=development
                EVENT_TYPE='pull_request push cron'
-               MAIN_CMD='pytest -sv linetools'
-               SETUP_CMD=''
         - os: linux
           env: ASTROPY_VERSION=lts
-               MAIN_CMD='pytest -sv linetools'
-               SETUP_CMD=''
 
         # Try all python versions and Numpy versions. Since we can assume that
         # the Numpy developers have taken care of testing Numpy with different
@@ -103,20 +101,14 @@ matrix:
 
         - os: linux
           env: NUMPY_VERSION=1.16
-               MAIN_CMD='pytest -sv linetools'
-               SETUP_CMD=''
 
         - os: linux
           env: NUMPY_VERSION=1.17
-               MAIN_CMD='pytest -sv linetools'
-               SETUP_CMD=''
 
         # Try numpy pre-release
         - os: linux
           env: NUMPY_VERSION=prerelease
                EVENT_TYPE='pull_request push cron'
-               MAIN_CMD='pytest -sv linetools'
-               SETUP_CMD=''
 
         # Do a PEP8 test with pycodestyle
         - os: linux
@@ -132,7 +124,6 @@ install:
 
     - git clone git://github.com/astropy/ci-helpers.git
     - source ci-helpers/travis/setup_conda_$TRAVIS_OS_NAME.sh
-    # - pip uninstall pyside2 pyqt5
 
 script:
     - $MAIN_CMD $SETUP_CMD
