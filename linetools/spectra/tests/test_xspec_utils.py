@@ -114,6 +114,7 @@ def test_rebin_fix_bad(spec):
     # Verify that bad pixels now have zero error values
     clpixes = np.searchsorted(newwave,badwvs)
     np.testing.assert_allclose(newspec.sig.value[clpixes], 0)
+    
 
 def test_addnoise(spec):
     #
