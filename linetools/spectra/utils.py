@@ -320,10 +320,27 @@ def rebin(spec, new_wv, do_sig=False, do_co=False, all=False,
         new_sig[gd] = np.sqrt(new_var[gd].value)
         # Deal with bad pixels (grow_bad_sig should be True)
         bad = np.where(var <= 0.)[0]
-        for ibad in bad:
-            bad_new = np.where(np.abs(new_wv-spec.wavelength[ibad]) <
-                               (new_dwv[1:]+dwv[ibad])/2)[0]
-            new_sig[bad_new] = 0.
+        # Find nearby wavelengths in rebinned wavelength
+        nearidxs = np.searchsorted(new_wv, spec.wavelength[bad])
+        # Pad arrays to enable vector operations
+        pwv = np.concatenate([spec.wavelength,[spec.wavelength[-1]+dwv[-1]]])
+        pndwv = np.concatenate([new_dwv,[new_dwv[-1]]])
+        pnwv = np.concatenate([new_wv,[new_wv[-1]+new_dwv[-1]]])
+
+        # Find distances between original bad wavelengths and nearby new ones
+        ldiff = np.abs(new_wv[nearidxs-1]-pwv[bad]) - \
+                (pndwv[1:][nearidxs]+dwv[bad])/2
+        rdiff = np.abs(pwv[bad]-pnwv[nearidxs]) - \
+                (pndwv[1:][nearidxs] + dwv[bad]) / 2
+        # Set errors to 0; we have to mind the padding above
+        new_sig[nearidxs[(ldiff<0)&(nearidxs<len(new_wv))]] = 0
+        new_sig[nearidxs[(rdiff<0)&(nearidxs<len(new_wv))]] = 0
+        ### Old (very slow) way looping through bad pix
+        #for ibad in bad:
+        #    bad_new = np.where(np.abs(new_wv-spec.wavelength[ibad]) <
+        #                       (new_dwv[1:]+dwv[ibad])/2)[0]
+        #    new_sig[bad_new] = 0.
+
         # Zero out edge pixels -- not to be trusted
         igd = np.where(gd)[0]
         if len(igd) == 0:  # Should not get here!
@@ -410,7 +427,7 @@ def rebin_to_rest(spec, zarr, dv, debug=False, **kwargs):
         # Select
         spec.select = ispec
         # Rebin in obs frame
-        tspec = spec.rebin(new_wv*(1+zarr[ispec]), do_sig=True, masking='none', **kwargs)
+        tspec = spec[ispec].rebin(new_wv*(1+zarr[ispec]), do_sig=True, masking='none', **kwargs)
         # Save in rest-frame (worry about flambda)
         f_flux[ispec, :] = tspec.flux.value
         f_sig[ispec, :] = tspec.sig.value

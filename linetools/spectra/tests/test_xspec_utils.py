@@ -98,6 +98,23 @@ def test_rebin(specr, specmr):
     spec2 = specmr.rebin(new_wv, all=True)
     np.testing.assert_allclose(spec2.wvmax.value, 8995.0)
 
+def test_rebin_fix_bad(spec):
+    # Make certain pixels 'bad'
+    badwvs = [3600.13, 5432.30, 8975.12]
+    vals = spec.sig.value
+    wave = spec.wavelength.value
+    for bw in badwvs:
+        clpix = np.argmin(np.abs(wave - bw))
+        vals[clpix] *= -1.
+    spec.sig=vals
+    # Rebin
+    new_wv = np.arange(3000., 9000., 5) * u.AA
+    newspec = spec.rebin(new_wv, do_sig=True,  grow_bad_sig=True)
+    newwave = newspec.wavelength.value
+    # Verify that bad pixels now have zero error values
+    clpixes = np.searchsorted(newwave,badwvs)
+    np.testing.assert_allclose(newspec.sig.value[clpixes], 0)
+    
 
 def test_addnoise(spec):
     #
