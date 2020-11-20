@@ -6,11 +6,11 @@ import io
 import json
 import pdb
 
-from PyQt5 import QtGui
-from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget, QDialog, QLabel, QPushButton, QLineEdit
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QApplication
-from PyQt5.QtCore import pyqtSlot
+from PySide2 import QtGui
+from PySide2 import QtCore
+from PySide2.QtWidgets import QWidget, QDialog, QLabel, QPushButton, QLineEdit
+from PySide2.QtWidgets import QVBoxLayout, QHBoxLayout, QApplication
+from PySide2.QtCore import Slot
 
 import warnings
 
@@ -197,7 +197,7 @@ class XAbsSysGui(QDialog):
         return
 
     # Write
-    @pyqtSlot()
+    @Slot()
     def write_out(self):
         # Update components and spectrum filename
         self.set_new_comps()
@@ -213,14 +213,14 @@ class XAbsSysGui(QDialog):
                                        separators=(',', ': ')))
 
     # Write + Quit
-    @pyqtSlot()
+    @Slot()
     def write_quit(self):
         self.write_out()
         self.flg_quit = 1
         self.done(1)
 
     # Write + Quit
-    @pyqtSlot()
+    @Slot()
     def quit(self):
         self.flg_quit = 0
         self.done(1)

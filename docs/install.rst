@@ -12,23 +12,18 @@ Linetools depends on these packages:
 * `astropy`_ version 4.0 or later
 * `scipy <http://www.scipy.org/>`_ version 0.19 or later
 * `matplotlib <http://matplotlib.org/>`_  version 3.0 or later
-* `PyQT5 <https://wiki.python.org/moin/PyQt>`_ version 5 (for GUIs)
+* `PySide2 <https://wiki.qt.io/Qt_for_Python>`_ version 5 (for GUIs)
 * `h5py <https://www.h5py.org/>`_ version 2.6 (for data I/O)
 
 We strongly recommend that you use `Anaconda
 <https://www.continuum.io/downloads>`_ to install them. With Anaconda
 you can check for the presence and versions of the dependencies with::
 
-  conda list "^python|numpy|astropy|scipy|matplotlib|PyQT|h5py"
+  conda list "^python|numpy|astropy|scipy|matplotlib|PySide2|h5py"
 
 If you're missing any, install them with (for example)::
 
   conda install astropy scipy matplotlib h5py
-
-For PyQT, the current conda version is PyQT5.  If you are still using
-PyQT4, then you will need to update to use linetools GUIs:
-
-    conda install pyqt=5
 
 If their versions are too old, update them with (for example)::
 
