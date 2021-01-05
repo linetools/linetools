@@ -9,6 +9,7 @@ Updates
 - Significant refactor of AbsComponent
 - LineList "AGN" added
 - Refactor from PyQt5 -> PySide2
+- Refactor from PySide2 -> QtPy
 
 Bug fixes
 .........

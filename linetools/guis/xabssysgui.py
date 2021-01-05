@@ -6,11 +6,11 @@ import io
 import json
 import pdb
 
-from PySide2 import QtGui
-from PySide2 import QtCore
-from PySide2.QtWidgets import QWidget, QDialog, QLabel, QPushButton, QLineEdit
-from PySide2.QtWidgets import QVBoxLayout, QHBoxLayout, QApplication
-from PySide2.QtCore import Slot
+from qtpy import QtGui
+from qtpy import QtCore
+from qtpy.QtWidgets import QWidget, QDialog, QLabel, QPushButton, QLineEdit
+from qtpy.QtWidgets import QVBoxLayout, QHBoxLayout, QApplication
+from qtpy.QtCore import Slot
 
 import warnings
 

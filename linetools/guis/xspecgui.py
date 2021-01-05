@@ -6,10 +6,10 @@ import sys
 import numpy as np
 import pdb
 
-from PySide2 import QtGui
-from PySide2.QtWidgets import QWidget, QLabel, QPushButton, QMainWindow
-from PySide2.QtWidgets import QVBoxLayout, QHBoxLayout
-from PySide2 import QtCore
+from qtpy import QtGui
+from qtpy.QtWidgets import QWidget, QLabel, QPushButton, QMainWindow
+from qtpy.QtWidgets import QVBoxLayout, QHBoxLayout
+from qtpy import QtCore
 
 from matplotlib import rcParams
 
@@ -211,7 +211,7 @@ class XSpecGui(QMainWindow):
 
 
 def main(args, **kwargs):
-    from PySide2.QtWidgets import QApplication
+    from qtpy.QtWidgets import QApplication
     from linetools.spectra.xspectrum1d import XSpectrum1D
 
     if not isinstance(args,(XSpectrum1D,tuple,basestring)):
