@@ -4,7 +4,7 @@ from ...spectra.io import readspec
 from ..continuumfnd import contknots
 import imp
 import numpy as np
-import pytest
+import pytest 
 
 def test_find_continuum_knots():
     d = imp.find_module('linetools')[1]
