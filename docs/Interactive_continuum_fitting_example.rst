@@ -34,6 +34,8 @@ Interactive continuum fitting
     # so it can make intelligent guesses about where to put the spline
     # points that define the continuum.
     spec.fit_continuum(kind='QSO', redshift=2.76)
+
+    # optional: first use continuumfnd.contknots to find continuum knots automatically, then fit the continuum interactively.
     
     # now you can interactively tweak these spline points, adding or
     # removing them as necessary. Once you're finished, press 'q' to

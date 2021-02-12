@@ -234,7 +234,7 @@ c        : toggle initial continuum display
 q        : quit
 """
     def __init__(self, wa, fl, er, contpoints, co=None,
-                 fig=None, anchor=None, numguesspix=None):
+                 fig=None, anchor=None, numguesspix=None, outfknots=None):
         """ Initialise figure, plots and variables.
         """
 
@@ -249,6 +249,7 @@ q        : quit
         self.fl = fl
         self.er = er
         self.anchor = anchor
+        self.outfknots = outfknots
 
         if os.path.lexists('./_knots.jsn'):
             c = input('knots file exists, use this? (y) ')
@@ -438,6 +439,8 @@ q        : quit
         self.artists['resid'].set_data(wa[i:j], resid)
         self.continuum = co
         savejson('_knots.jsn', self.contpoints, overwrite=True)
+        if self.outfknots is not None:
+            savejson(self.outfknots, self.contpoints, overwrite=True)
         self.fig.canvas.draw()
 
     def on_keypress(self, event):
