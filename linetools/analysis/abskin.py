@@ -55,11 +55,17 @@ def generate_stau(velo, flux, sig, kbin=22.*u.km/u.s, debug=False):
     tau[sat] = np.log(2./sig[sat])
 
     # Smooth
+
+    ##SMS
+    if kbin < dv:
+        kbin = dv + 1 * u.km / u.s
+
     nbin = (np.round(kbin/dv)).value
     try:
         kernel = Box1DKernel(nbin, mode='center')
     except:
         pdb.set_trace()
+        print('error_check')
     stau = convolve(tau, kernel, boundary='fill', fill_value=0.)
     if debug is True:
         try:
@@ -89,12 +95,20 @@ def pw97_kin(velo, stau, per=0.05, debug=False):
         """
         kin_data = {}
         # Dv (usually dv90)
+
+
+
+        ##SMS - Change the negative stau values to 0.
+        stau = [0 if i < 0 else i for i in stau]
+
         tottau = np.sum(stau)
         cumtau = np.cumsum(stau) / tottau
         lft = (np.where(cumtau > per)[0])[0]
-        rgt = (np.where(cumtau > (1.-per))[0])[0] - 1
-        kin_data['Dv'] = np.round(np.abs(velo[rgt]-velo[lft]))  # Nearest km/s
 
+        rgt = (np.where(cumtau > (1.-per))[0])[0] - 1
+
+        kin_data['Dv'] = np.round(np.abs(velo[rgt]-velo[lft]))  # Nearest km/s
+        #pdb.set_trace()
         if debug:
             pdb.set_trace()
 
@@ -107,6 +121,20 @@ def pw97_kin(velo, stau, per=0.05, debug=False):
         # fedg
         imx = np.argmax(stau)
         kin_data['fedg'] = (np.abs( (velo[imx]-vcen) / mean )).value
+
+        ## SMS - return additonal parameters
+        kin_data['vcen'] = vcen
+        kin_data['vrgt'] = velo[rgt]
+        kin_data['vlft'] = velo[lft]
+
+        ## SMS - find the velocity for the peak tau
+        ind = (np.where(stau == max(stau))[0])[0]
+        kin_data['v_ptau'] = velo[ind]
+
+        ## SMS - return additional arrays
+        kin_data['velo_arr'] = velo
+        kin_data['stau_arr'] = stau
+
 
         # Return
         return kin_data

@@ -149,7 +149,7 @@ def read_joebvp_to_components(filename, coord, llist=None, specfile=None, chk_ve
     return comps
 
 
-def write_joebvp_from_components(comp_list, specfile, outfile,**kwargs):
+def write_joebvp_from_components(comp_list, specfile, outfile):
     """ From a given component list, it produces an
     input file for JOEBVP (Voigt profile fitter).
 
@@ -178,6 +178,6 @@ def write_joebvp_from_components(comp_list, specfile, outfile,**kwargs):
             b_val = comp.attrib['b']
         except KeyError:
             b_val = 10*u.km/u.s
-        s = comp.repr_joebvp(specfile, flags=flags, b_default=b_val,**kwargs)  # still, b values from abslines take precedence if they exist
+        s = comp.repr_joebvp(specfile, flags=flags, b_default=b_val)  # still, b values from abslines take precedence if they exist
         f.write(s)
     f.close()

@@ -263,7 +263,7 @@ class AbsSystem(object):
     def add_component(self, abscomp, tol=0.2*u.arcsec,
                       chk_sep=True, chk_z=True, overlap_only=False,
                       update_vlim=False,
-                      vtoler=1., debug=False, **kwargs):
+                      vtoler=1., debug=False, **kwargs): ##SMS vtoler = 1.
         """Add an AbsComponent object if it satisfies all of the rules.
 
         For velocities, we demand that the new component has a velocity
@@ -318,9 +318,13 @@ class AbsSystem(object):
                     if np.all(zlim_comp > np.max(zlim_sys + dz_toler)) or np.all(
                                     zlim_comp < np.min(zlim_sys-dz_toler)):
                         testz = False
+                    # SMS
+                        testz = True
                 else:
                     testz = (zlim_comp[0] >= (zlim_sys[0]-dz_toler)) & (
                         zlim_comp[1] <= (zlim_sys[1]+dz_toler))
+                    # SMS
+                    testz = True
 
         # Additional checks (specific to AbsSystem type)
         testcomp = self.chk_component(abscomp)
@@ -330,6 +334,14 @@ class AbsSystem(object):
         if test:
             self._components.append(abscomp)
         else:
+            #pdb.set_trace()
+            ##SMS Check what you need
+            need = c_mks * (zlim_sys[0]-zlim_comp[0]) / (1+self.zabs)
+            print('\n')
+            print(self)
+            print(abscomp)
+            print(need)
+            print('\n')
             warnings.warn('Input AbsComponent with Zion={} does not match AbsSystem rules. Not appending'.format(abscomp.Zion))
             if not testcoord:
                 warnings.warn('Failed coordinate match')

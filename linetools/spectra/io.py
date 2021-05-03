@@ -27,14 +27,14 @@ from .xspectrum1d import XSpectrum1D
 
 
 def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
-             format='ascii', exten=None, head_exten=0, debug=False, select=0,
+             format='ascii', exten=2, head_exten=0, debug=False, select=0,
              **kwargs):
     """ Read a FITS file (or astropy Table or ASCII file) into a
     XSpectrum1D class
 
     Parameters
     ----------
-    specfil : str or Table or XSpectrum1D
+    specfil : str or Table
       Input file. If str:
         * FITS file are detected by searching for '.fit' in their filename.
         * ASCII must either have a proper Table format or be 3 (WAVE,
@@ -99,8 +99,6 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
                 warnings.warn('No header found in ASCII file {}, assuming columns to be: {}'.format(specfil, names[:len(tbl.colnames)]))
             # import pdb; pdb.set_trace()
             hdulist = [fits.PrimaryHDU(), tbl]
-    elif isinstance(specfil, XSpectrum1D):
-        return specfil
     else:
         raise IOError('readspec: Bad spectra input.')
 
@@ -302,7 +300,7 @@ def get_wave_unit(tag, hdulist, idx=None):
         except KeyError:
            return None
         else:
-            if tunit in ['Angstroem', 'Angstroms', 'ANGSTROMS']:
+            if tunit in ['Angstroem', 'Angstroms']:
                 tunit = 'Angstrom'
             unit = Unit(tunit)
             return unit
@@ -507,7 +505,7 @@ def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
     if flux_tag is None:
         flux_tags = ['SPEC', 'FLUX', 'FLAM', 'FX', 'FNORM',
                      'FLUXSTIS', 'FLUX_OPT', 'fl', 'flux', 'counts',
-                     'COUNTS', 'OPT_FLAM']
+                     'COUNTS']
     else:
         flux_tags = [flux_tag]
     fx, fx_tag = get_table_column(flux_tags, hdulist, idx=exten)
@@ -517,10 +515,9 @@ def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
         return
     # Error
     if sig_tag is None:
-        sig_tags = ['ERROR','ERR','SIGMA_FLUX','ERR_FLUX', 'ENORM', 'FLAM_SIG',
-                    'SIGMA_UP','ERRSTIS', 'FLUXERR', 'SIGMA', 'sigma',
-                    'sigma_flux','er', 'err', 'error', 'sig', 'fluxerror',
-                    'FLUX_ERROR','flux_error', 'OPT_FLAM_SIG']
+        sig_tags = ['ERROR','ERR','SIGMA_FLUX','ERR_FLUX', 'ENORM', 'FLAM_SIG', 'SIGMA_UP',
+                    'ERRSTIS', 'FLUXERR', 'SIGMA', 'sigma', 'sigma_flux',
+                    'er', 'err', 'error', 'sig', 'fluxerror', 'FLUX_ERROR']
     else:
         sig_tags = [sig_tag]
     sig, sig_tag = get_table_column(sig_tags, hdulist, idx=exten)
@@ -547,8 +544,7 @@ def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
     # Wavelength
     if wave_tag is None:
         wave_tags = ['WAVE','WAVELENGTH','LAMBDA','LOGLAM',
-                     'WAVESTIS', 'WAVE_OPT', 'wa', 'wave', 'loglam','wl',
-                     'wavelength', 'OPT_WAVE']
+                     'WAVESTIS', 'WAVE_OPT', 'wa', 'wave', 'loglam','wl']
     else:
         wave_tags = [wave_tag]
     wave, wave_tag = get_table_column(wave_tags, hdulist, idx=exten)
@@ -563,7 +559,7 @@ def parse_FITS_binary_table(hdulist, exten=None, wave_tag=None, flux_tag=None,
               wave_tags)
         return
     if co_tag is None:
-        co_tags = ['CONT', 'CO', 'CONTINUUM', 'co', 'cont', 'continuum']
+        co_tags = ['CONT', 'CO', 'CONTINUUM', 'co', 'cont']
     else:
         co_tags = [co_tag]
     co, co_tag = get_table_column(co_tags, hdulist, idx=exten)
@@ -638,10 +634,10 @@ def parse_hdf5(inp, close=True, **kwargs):
     else:
         hdf5 = inp
     # Data
-    data = hdf5[path+'data'][()]
+    data = hdf5[path+'data'].value
     # Meta
     if 'meta' in hdf5[path].keys():
-        meta = json.loads(hdf5[path+'meta'][()])
+        meta = json.loads(hdf5[path+'meta'].value)
         # Headers
         for jj,heads in enumerate(meta['headers']):
             try:
@@ -652,7 +648,7 @@ def parse_hdf5(inp, close=True, **kwargs):
     else:
         meta = None
     # Units
-    units = json.loads(hdf5[path+'units'][()])
+    units = json.loads(hdf5[path+'units'].value)
     for key,item in units.items():
         if item == 'dimensionless_unit':
             units[key] = u.dimensionless_unscaled

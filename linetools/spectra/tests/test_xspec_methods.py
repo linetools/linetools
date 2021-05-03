@@ -42,7 +42,7 @@ def test_slice():
 def test_const_sig():
     spec = io.readspec(data_path('UM184_nF.fits'))
     spec.constant_sig(sigv=0.1)
-    np.testing.assert_allclose(spec.sig[0].value, 0.1)
+    np.testing.assert_allclose(spec.sig[0], 0.1)
 
 
 def test_unmask():

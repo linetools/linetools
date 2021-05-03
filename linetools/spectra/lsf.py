@@ -5,7 +5,6 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 import numpy as np
 from scipy.interpolate import interp1d
-from scipy.stats import norm
 from astropy.io import fits, ascii
 from astropy.units import Quantity
 import astropy.units as u
@@ -45,7 +44,7 @@ class LSF(object):
         # Initialize basics
         self.instr_config = instr_config
         self.name = instr_config['name']
-        if self.name not in ['COS', 'STIS', 'Gaussian', 'gaussian']:
+        if self.name not in ['COS', 'STIS']:
             raise NotImplementedError('Not ready for this instrument: {}'.format(self.name))
         
         # initialize specific to given instrument name
@@ -54,8 +53,6 @@ class LSF(object):
             self.pixel_scale, self._data = self.load_COS_data()
         elif self.name == 'STIS':
             self.pixel_scale, self._data = self.load_STIS_data()
-        elif self.name in ['Gaussian', 'gaussian']:
-            self.pixel_scale, self._data = self.load_gauss_data()
         # IMPORTANT: make sure that LSFs are given in linear wavelength scales !!!
 
         #reformat self._data
@@ -175,28 +172,27 @@ class LSF(object):
         # COS
         elif channel_dict[grating] == 'FUV':
             # Use the ones corrected by scattering when possible
-            # (currently, these are available for lifetime-position 1 2 3 and 4)
-            # the format has been changing over time, please add new tables with care
+            # (currently, these are only available for lifetime-position 1)
             # check: http://www.stsci.edu/hst/cos/performance/spectral_resolution
             try:
                 life_position = self.instr_config['life_position']
             except:
                 raise SyntaxError('`life_position` keyword missing in `instr_config` dictionary.')
 
-            if life_position not in ['1','2','3', '4']:
-                raise ValueError('HST/COS `life_position` should be either `1` or `2` or `3` or `4` (strings)')
+            if life_position not in ['1','2','3']:
+                raise ValueError('HST/COS `life_position` should be either `1` or `2` or `3` (strings)')
 
             if life_position == '1':
-                if grating == 'G140L':  # use theoretical values
+                if grating == 'G140L': #use theoretical values 
                     file_name = 'fuv_G140L_lp1.txt'
                     
-                elif grating == 'G130M':  # use empirical values corrected by scattering
+                elif grating == 'G130M': #use empirical values corrected by scattering
                     file_name = 'fuv_G130M_lp1_empir.txt'
 
-                elif grating == 'G160M':  # use empirical values corrected by scattering
+                elif grating == 'G160M': #use empirical values corrected by scattering
                     file_name = 'fuv_G160M_lp1_empir.txt'
             
-            elif life_position in ['2','3', '4']:
+            elif life_position in ['2','3']:
                 try:
                     cen_wave = self.instr_config['cen_wave']
                 except:
@@ -210,8 +206,6 @@ class LSF(object):
                     file_name = 'fuv_{}_{}_lp2.txt'.format(grating,cen_wave)
                 elif life_position == '3':
                     file_name = 'fuv_{}_{}_lp3.txt'.format(grating,cen_wave)
-                elif life_position == '4':
-                    file_name = 'fuv_{}_{}_lp4.txt'.format(grating,cen_wave)
                 else: # this should never happen
                     raise NotImplementedError('Unexpected error: please contact linetools developers!')
 
@@ -219,7 +213,7 @@ class LSF(object):
             raise NotImplementedError('Not ready for the given HST/COS channel; only `NUV` and `FUV` channels allowed.')
         
         # point to the right file
-        file_name = lt_path + '/data/lsf/{}/{}'.format(self.name, file_name)
+        file_name = lt_path + '/data/lsf/{}/{}'.format(self.name,file_name)
         
         # get column names
         f = open(file_name,'r')
@@ -318,7 +312,11 @@ class LSF(object):
             lsf_files = glob.glob(lt_path + '/data/lsf/STIS/stis_LSF_{}_????.txt'.format(grating))
             # figure relevant wavelengths from file names
             wa_names = [fname.split('/')[-1].split('_')[-1].split('.')[0] for fname in lsf_files]
-
+        #TODO: Remove following lines upon testing
+        '''
+        # figure relevant wavelengths from file names
+        #wa_names = [fname.split('/')[-1].split('_')[-1].split('.')[0] for fname in lsf_files]
+        '''
         # sort them
         sorted_inds = np.argsort(wa_names)
         lsf_files = np.array(lsf_files)[sorted_inds]
@@ -394,79 +392,6 @@ class LSF(object):
         # todo: work out a cleverer approach to this whole issue of having different rel_pix, pixel_scales, etc
         return pixel_scale, data_table
 
-    def load_gauss_data(self):
-        """Instantiate Gaussian LSF object with given configuration
-
-        Note: The instrument configuration requires 'pixel_scale' and 'FWHM' keys
-        in units of Angstrom/px and Angstrom, respectively.
-        """
-
-        try:
-            pixel_scale = self.instr_config['pixel_scale'] * u.AA
-        except KeyError:
-            raise KeyError('`pixel_scale` keyword missing in `instr_config` dictionary.')
-
-        try:
-            fwhm = self.instr_config['FWHM'] * u.AA
-        except KeyError:
-            raise KeyError('`FWHM` keyword missing in `instr_config` dictionary.')
-
-        ### need to provide fwhm in pixels (and convert to standard deviation)
-        fwhm_pix = fwhm / pixel_scale
-        stddev_pix = fwhm_pix / (2.0 * (2.0*np.log(2.0))**0.5)
-        xarr = np.arange(-50,51,0.2)
-        kern = norm.pdf(xarr,scale = stddev_pix)
-
-        data_table = Table()
-        data_table.add_column(Column(name='rel_pix', data=xarr))
-        data_table.add_column(Column(name='lsf_vals', data=kern))
-        return pixel_scale, data_table
-
-
-    def shift_to_wv0(self, wv0):
-        """Retrieves an LSF valid at wavelength wv0
-
-        Unlike interpolate_to_wv0(), which interpolates from
-        tabulated values at characteristic wavelengths, this method
-        assumes that the kernel data generated during instantiation
-        is valid at any arbitrary wavelength.  Therefore, it is
-        important, for example, that one verifies the FWHM provided
-        in instr_config is appropriate for the region about wv0.
-
-
-        Parameters
-        ----------
-        wv0 : Quantity
-            Wavelength at which an LSF solution is required
-
-        Returns
-        -------
-        lsf_table : Table
-            The lsf centered at wv0. This table has two
-            columns: 'wv' and 'kernel'
-        """
-
-        if len(self._data.colnames) > 2:
-            raise ValueError('LSF has multiple kernels. '
-                             'Perhaps `interpolate_to_wv0` is the better choice?')
-
-        # create Columns to store the LSF and wavelength
-        lsf_vals = Column(name='kernel', data=self._data['lsf_vals'])
-        wv_array = [(self.pixel_scale * self._data['rel_pix'][i] + wv0).value
-                    for i in range(len(self._data))]
-        wv = Column(name='wv', data=wv_array, unit=u.AA)
-        # create lsf Table
-        lsf = Table()
-        lsf.add_column(wv)
-        lsf.add_column(lsf_vals)
-
-        # return lsf Table()
-        return lsf
-
-
-
-
-
     def interpolate_to_wv0(self, wv0):
         """Retrieves a unique LSF valid at wavelength wv0
 
@@ -488,11 +413,6 @@ class LSF(object):
             The interpolated lsf at wv0. This table has two 
             columns: 'wv' and 'kernel'
         """
-
-        if len(self._data.colnames) == 2:
-            raise ValueError('LSF has only one kernel. '
-                             'Perhaps `shift_to_wv0` is the better choice?')
-
         # get wa0 to Angstroms
         wv0 = wv0.to('AA').value
 
@@ -502,7 +422,6 @@ class LSF(object):
 
         # find out the closest 2 columns in self._data to wv0 (on each side); these kernels will be used for interpolation
         seps =  np.fabs(col_waves - wv0)
-
         closest_ind = np.argsort(seps)[0]  # the 1 closest
         if closest_ind == 0:  # lower edge
             ind_blue = closest_ind
@@ -619,11 +538,7 @@ class LSF(object):
         wv_max = np.max(wv_array)
         wv0 = 0.5 * (wv_max + wv_min)
 
-        # interpolate over tabulated LSF values if provided
-        if len(self._data.colnames) > 2.:
-            lsf_tab = self.interpolate_to_wv0(wv0)
-        else:
-            lsf_tab = self.shift_to_wv0(wv0)
+        lsf_tab = self.interpolate_to_wv0(wv0)
 
         # make sure the wv_array is dense enough to sample the LSF kernel
         kernel_wvmin = np.min(lsf_tab['wv']) * u.AA

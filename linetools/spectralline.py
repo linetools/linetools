@@ -28,7 +28,6 @@ from linetools.spectra.xspectrum1d import XSpectrum1D
 zero_coord = SkyCoord(ra=0.*u.deg, dec=0.*u.deg)  # Coords
 init_analy = {
             'spec': None,              # Analysis inputs (e.g. spectrum; from .clm file or AbsID)
-            'spec_file': '',           # Spectrum file
             'flag_kin': 0,             # Use for kinematic analysis?
             'do_analysis': 1           # Analyze?
             }
@@ -373,7 +372,7 @@ class SpectralLine(object):
         # Return
         return answer
 
-    def cut_spec(self, normalize=False):
+    def cut_spec(self, normalize=True):
         """ Cut out a chunk of the spectrum around this line.
 
         Parameters

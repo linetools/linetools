@@ -2,10 +2,10 @@
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
-from qtpy import QtGui
-from qtpy import QtCore
-from qtpy.QtWidgets import QWidget, QDialog, QLabel, QLineEdit, QListWidget
-from qtpy.QtWidgets import QVBoxLayout, QPushButton, QAbstractItemView
+from PyQt5 import QtGui
+from PyQt5 import QtCore
+from PyQt5.QtWidgets import QWidget, QDialog, QLabel, QLineEdit, QListWidget
+from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QAbstractItemView
 
 import numpy as np
 import pdb
@@ -135,10 +135,7 @@ class PlotLinesWidget(QWidget):
                 QtCore.pyqtRestoreInputHook()
 
     def setz(self, text):
-        # make sure z isnt too long for box
-        self.zbox.setText(str(text)[:9])
-
-        # ensure the input z is a float
+        self.zbox.setText(text)
         sstr = ustr(self.zbox.text())
         try:
             self.llist['z'] = float(sstr)

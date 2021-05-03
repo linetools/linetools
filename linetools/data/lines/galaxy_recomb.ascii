@@ -6,8 +6,6 @@
 ## Assumes a 0.0897 He/H abundance ratio (see Kotulla+09).
 ## 
 ## The wavelengths are laboratory wavelengths in vacuum (Angstrom).
-##  JXP added:
-##   HeII 4687 from NIST
 ##
 # 1 name
 # 2 wave
@@ -55,4 +53,3 @@ Paepsilon      9548.591    0.03656680   1   1
  HeI_6678      6679.994    0.03360660   2   1
  HeI_7065      7067.198    0.02173860   2   1
 HeI_10830      10833.22     0.2404832   2   1
-HeII_4687      4687.115     1.0000000   2   2

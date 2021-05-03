@@ -17,7 +17,6 @@ from astropy.units.quantity import Quantity
 from astropy.table import Table, hstack
 import warnings
 import pdb
-import fnmatch
 
 import imp
 
@@ -610,11 +609,7 @@ class LineList(object):
         if line == 'unknown':
             return self.unknown_line()
         if self.list in ['H2']:
-            if '*' in line or '?' in line:
-                cond = [fnmatch.fnmatch(name,line) for name in self._data['name']]
-            else:
-                cond = self._extra_table['ion_name'] == line.split('(')[0]
-            
+            cond = self._extra_table['ion_name'] == line.split('(')[0]
             tbl = self._data[cond]  # cond is a masked boolean array
             if len(tbl) > 1:
                 return tbl

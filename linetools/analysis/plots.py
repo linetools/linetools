@@ -13,9 +13,10 @@ import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import matplotlib as mpl
 
-def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None,
+def stack_plot(abslines,vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None,
                ymnx=(-0.1,1.1), figsz=(18,11), return_fig=False,
                tight_layout=False, add_ew=False, zref=None):
+    #SMSvcen,rgt,lft, lim1, lim2,
     """Show a stack plot of the input lines
     Assumes the data are normalized.
     Comments about EW:
@@ -49,7 +50,6 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None
     fig : matplotlib Figure, optional
         Figure instance containing stack plot with subplots, axes, etc.
     """
-    from linetools.spectra.io import readspec
     mpl.rcParams['font.family'] = 'stixgeneral'
     mpl.rcParams['font.size'] = 15.
     # Check for spec (required)
@@ -61,10 +61,6 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None
             if spec is not None:
                 iline.analy['spec'] = spec
                 gdiline.append(iline)
-            else:  # Try to read from spec_file
-                if len(iline.analy['spec_file']) > 0:
-                    iline.analy['spec'] = readspec(iline.analy['spec_file'])
-                    gdiline.append(iline)
     nplt = len(gdiline)
     if nplt == 0:
         print("Load spectra into the absline.analy['spec']")
@@ -93,10 +89,17 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None
         if zref is None:
             zref = iline.z
         velo = iline.analy['spec'].relative_vel((1+zref)*iline.wrest)
-        ax.plot(velo, norm_flux,  'k-', drawstyle='steps-mid')
+        ax.plot(velo, norm_flux,  'k-', linestyle='steps-mid')
         ax.plot(velo, norm_sig,  'r:')
         # Lines
         ax.plot([0]*2, ymnx, 'g--')
+
+        #ax.plot([vcen]*2, ymnx, 'r--')
+        #ax.plot([rgt]*2, ymnx, 'k--')
+        #ax.plot([lft]*2, ymnx, 'k--')
+        #ax.plot([lim1]*2, ymnx,color= 'grey', linestyle = '--')
+        #ax.plot([lim2]*2, ymnx, color= 'grey',linestyle = '--')
+
         # Axes
         ax.set_xlim(vlim.value)
         ax.set_ylim(ymnx)
@@ -120,10 +123,14 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None
                     ewval = '{:05.2f}'.format(iline.attrib['sig_EW'].value *2)
                     ewtext = 'EW' + compsign + str(ewval) +r'$\AA$'
                 ax.text(0.95, 0.1, ewtext, transform=ax.transAxes, ha='right', va='center')
+
     # Handle boolean switches
     if tight_layout:
         plt.tight_layout(pad=0.2, h_pad=0., w_pad=0.1)
     if show:
+        #plt.axvline(vlim.value)
+        plt.savefig('/home/stephanie/Research/DLA_CGM2/qsoclustering_fkd/trunk/tex/DLA_CGM2/Analysis/plots/fig.png')
+        plt.legend(loc='lower right')
         plt.show()
     if return_fig:
         return fig

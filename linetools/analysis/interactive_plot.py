@@ -234,7 +234,7 @@ c        : toggle initial continuum display
 q        : quit
 """
     def __init__(self, wa, fl, er, contpoints, co=None,
-                 fig=None, anchor=None, numguesspix=None, outfknots=None):
+                 fig=None, anchor=None, numguesspix=None):
         """ Initialise figure, plots and variables.
         """
 
@@ -249,7 +249,6 @@ q        : quit
         self.fl = fl
         self.er = er
         self.anchor = anchor
-        self.outfknots = outfknots
 
         if os.path.lexists('./_knots.jsn'):
             c = input('knots file exists, use this? (y) ')
@@ -363,7 +362,7 @@ q        : quit
         self.artists['indices'] = art
         self.artists['initcont'], = a0.plot(wa, self.continuum, color='k', lw=2, ls='dashed', zorder=3)
         self.artists['fl'], = a0.plot(wa, fl, lw=1, color='0.7',
-                                      drawstyle='steps-mid')
+                                      linestyle='steps-mid')
         a0.plot(wa, er, lw=0.5, color='orange')
         m1, = a0.plot([0], [0], 'r', zorder=4, lw=2)
         m2, = a0.plot([0], [0], 'o', mfc='None', mew=2, ms=12, mec='r',
@@ -439,8 +438,6 @@ q        : quit
         self.artists['resid'].set_data(wa[i:j], resid)
         self.continuum = co
         savejson('_knots.jsn', self.contpoints, overwrite=True)
-        if self.outfknots is not None:
-            savejson(self.outfknots, self.contpoints, overwrite=True)
         self.fig.canvas.draw()
 
     def on_keypress(self, event):

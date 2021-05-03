@@ -19,7 +19,8 @@ def data_path(filename):
     return os.path.join(data_dir, filename)
 
 
-def dummy_spec(wave=None, s2n=10., npix=2000, seed=None):
+@pytest.fixture
+def dummy_spec(wave=None, npix=2000, s2n=10., seed=None):
     """
     Parameters
     ----------

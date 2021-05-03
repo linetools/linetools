@@ -91,8 +91,7 @@ def name_ion(ion):
 
     """
     warnings.warn("This method will be DEPRECATED.  Use name_to_ion")
-    return name_to_ion(ion)
-
+    return name_ion(ion)
 
 def name_to_ion(ion):
     """ Convert string into ion tuple

@@ -5,7 +5,6 @@ from linetools.spectralline import AbsLine
 from linetools.spectra import io as ltsio
 
 import os
-import pytest
 
 def data_path(filename):
     data_dir = os.path.join(os.path.dirname(__file__), '../../spectra/tests/files')

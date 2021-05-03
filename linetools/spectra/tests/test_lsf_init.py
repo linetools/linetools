@@ -14,32 +14,21 @@ from linetools.spectra.lsf import LSF
 def test_lsf_COS():
     
     gratings = ['G130M','G160M', 'G140L','G230L', 'G185M', 'G225M', 'G285M']
-    life_positions = ['1','2','3', '4']
+    life_positions = ['1','2','3']
     cen_waves_G160M = ['1577','1589','1600','1611','1623']
     cen_waves_G130M = ['1291','1300','1309','1318','1327']
-    cen_waves_G140L = ['1105', '1230', '1280']
 
     for grating in gratings:
         for lp in life_positions:
             
             instr_config = dict(name='COS',grating=grating,life_position=lp)
-            if lp in ['2','3', '4']:
-                if grating not in ['G130M','G160M', 'G140L']:
+            if lp in ['2','3']:
+                if grating not in ['G130M','G160M']:
                         continue
                 if grating == 'G130M':
                         cen_waves_aux = cen_waves_G130M
-                        if lp in ['3','4']:
-                            # add the extra Cen Wave
-                            cen_waves_aux += ['1222']
                 elif grating == 'G160M':
                         cen_waves_aux = cen_waves_G160M
-                        if lp == '4':
-                            # add the extra Cen Wave
-                            cen_waves_aux += ['1533']
-                elif grating == 'G140L':
-                        cen_waves_aux = cen_waves_G140L
-                        if (lp == '4'):
-                            cen_waves_aux = ['1105', '1280']  # 1230 not available for LP4
 
                 for cen_wave in cen_waves_aux:
                         instr_config['cen_wave'] = cen_wave
@@ -74,15 +63,6 @@ def test_lsf_STIS():
             instr_config = dict(name='STIS',grating=grating, slit=slit)
             lsf = LSF(instr_config)
 
-def test_lsf_Gaussian():
-    fwhms = [0.4,1.2,1.6]
-    pix_scales = [0.225,0.01,1.75]
-    for ff in fwhms:
-        # slits
-        for ps in pix_scales:
-            instr_config = dict(name='Gaussian',pixel_scale=ps, FWHM=ff)
-            lsf = LSF(instr_config)
-
 
 def test_lsf_init_errors():
     with pytest.raises(TypeError):
@@ -113,9 +93,3 @@ def test_lsf_init_errors():
         lsf = LSF(dict(name='STIS', grating='G140L', not_slit_given='xx'))
     with pytest.raises(NotImplementedError):
         lsf = LSF(dict(name='STIS', grating='G140L', slit='bad_slit'))
-
-    # for Gaussian
-    with pytest.raises(KeyError):
-        lsf = LSF(dict(name='Gaussian', not_ps_given=0.225, FWHM=0.4))
-    with pytest.raises(KeyError):
-        lsf = LSF(dict(name='Gaussian', pixel_scale=0.225, not_fwhm_given=0.4))

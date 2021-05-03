@@ -28,7 +28,7 @@ def main(*args, **kwargs):
 
     pargs = parser.parse_args()
 
-    from qtpy.QtWidgets import QApplication
+    from PyQt5.QtWidgets import QApplication
     from linetools.guis.xabssysgui import XAbsSysGui
     from linetools.isgm.io import abssys_from_json
     from IPython import embed
