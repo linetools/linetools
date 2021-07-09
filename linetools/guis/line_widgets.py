@@ -2,10 +2,10 @@
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
-from PyQt5 import QtGui
-from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget, QDialog, QLabel, QLineEdit, QListWidget
-from PyQt5.QtWidgets import QVBoxLayout, QPushButton, QAbstractItemView
+from qtpy import QtGui
+from qtpy import QtCore
+from qtpy.QtWidgets import QWidget, QDialog, QLabel, QLineEdit, QListWidget
+from qtpy.QtWidgets import QVBoxLayout, QPushButton, QAbstractItemView
 
 import numpy as np
 import pdb

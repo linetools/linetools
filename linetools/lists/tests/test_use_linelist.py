@@ -88,10 +88,13 @@ def test_all_transitions():
     assert len(out) == 6,"wrong line counts" # 6 MgII transitions
     #print('test_all_transitions() passed')
     h2 = LineList('H2')
-    line = 'B19-0P(1)'
+    line = 'B19-0P(*)'
     out = h2.all_transitions(line)
     assert len(out) == 7
-
+    h2 = LineList('H2')
+    line = 'B19-0P(0)'
+    out = h2.all_transitions(line)
+    assert len(out) == 7
 
 def test_strongest_transitions():
     error_msg = 'Something is wrong in strongest_transitions()'

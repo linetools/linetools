@@ -6,10 +6,10 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import numpy as np
 import pdb
 
-from PyQt5 import QtGui
-from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget, QDialog, QPushButton, QLabel
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QListWidget
+from qtpy import QtGui
+from qtpy import QtCore
+from qtpy.QtWidgets import QWidget, QDialog, QPushButton, QLabel
+from qtpy.QtWidgets import QVBoxLayout, QHBoxLayout, QListWidget
 
 from astropy.units import Quantity
 from astropy import constants as const

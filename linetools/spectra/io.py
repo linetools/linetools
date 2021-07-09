@@ -302,7 +302,7 @@ def get_wave_unit(tag, hdulist, idx=None):
         except KeyError:
            return None
         else:
-            if tunit in ['Angstroem', 'Angstroms']:
+            if tunit in ['Angstroem', 'Angstroms', 'ANGSTROMS']:
                 tunit = 'Angstrom'
             unit = Unit(tunit)
             return unit
@@ -638,10 +638,10 @@ def parse_hdf5(inp, close=True, **kwargs):
     else:
         hdf5 = inp
     # Data
-    data = hdf5[path+'data'].value
+    data = hdf5[path+'data'][()]
     # Meta
     if 'meta' in hdf5[path].keys():
-        meta = json.loads(hdf5[path+'meta'].value)
+        meta = json.loads(hdf5[path+'meta'][()])
         # Headers
         for jj,heads in enumerate(meta['headers']):
             try:
@@ -652,7 +652,7 @@ def parse_hdf5(inp, close=True, **kwargs):
     else:
         meta = None
     # Units
-    units = json.loads(hdf5[path+'units'].value)
+    units = json.loads(hdf5[path+'units'][()])
     for key,item in units.items():
         if item == 'dimensionless_unit':
             units[key] = u.dimensionless_unscaled

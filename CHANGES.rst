@@ -8,9 +8,12 @@ Updates
 - Added Cashman+2017 catalog in LineList
 - Significant refactor of AbsComponent
 - LineList "AGN" added
+- Refactor from PyQt5 -> PySide2
+- Refactor from PySide2 -> QtPy
 
 Bug fixes
 .........
+- change linestyle='steps-mid' to drawstyle='steps-mid' in Axes.plot calls
 
 
 0.2 (2017-10-24)

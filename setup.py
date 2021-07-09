@@ -53,7 +53,13 @@ VERSION = '0.3.dev'
 RELEASE = 'dev' not in VERSION
 
 if not RELEASE:
-    VERSION += get_git_devstr(False)
+    git_devstr = get_git_devstr(False)
+    if (git_devstr == '0') or (git_devstr == ''):
+        import linetools.version
+        version_version = linetools.version.version
+        VERSION = version_version
+    else:
+        VERSION = VERSION + git_devstr
 
 # Populate the dict of setup command overrides; this should be done before
 # invoking any other functionality from distutils since it can potentially

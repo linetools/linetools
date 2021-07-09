@@ -2,11 +2,11 @@
 """
 from __future__ import print_function, absolute_import, division, unicode_literals
 
-from PyQt5 import QtGui
-from PyQt5 import QtCore
-from PyQt5.QtWidgets import QWidget, QDialog, QLabel
-from PyQt5.QtWidgets import QPushButton, QLineEdit
-from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout
+from qtpy import QtGui
+from qtpy import QtCore
+from qtpy.QtWidgets import QWidget, QDialog, QLabel
+from qtpy.QtWidgets import QPushButton, QLineEdit
+from qtpy.QtWidgets import QVBoxLayout, QHBoxLayout
 
 try:
     ustr = unicode

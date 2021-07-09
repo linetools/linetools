@@ -669,7 +669,7 @@ class AbsComponent(object):
                 ymax = max(np.max(Na[pixmnx].value), ymax)
                 fw_sv = iline.data['f']*iline.wrest
             # Plot
-            ax.plot(velo, Na, '-', linestyle='steps-mid', label=iline.data['name'])
+            ax.plot(velo, Na, '-', drawstyle='steps-mid', label=iline.data['name'])
             # ax.plot(velo, iline.analy['spec'].sig, 'r:')
         # Axes
         ax.set_xlim(self.vlim.value)
@@ -702,7 +702,7 @@ class AbsComponent(object):
         # Set
         self.limits.set((zmin,zmax))
 
-    def synthesize_colm(self, overwrite=False, redo_aodm=False, debug=False, **kwargs):
+    def synthesize_colm(self, overwrite=False, redo_aodm=False, nsig_upper=2., debug=False, **kwargs):
         """Synthesize column density measurements of the component.
         Default is to use the current AbsLine values, but the user can
         request that those be re-calculated with AODM.
@@ -716,6 +716,9 @@ class AbsComponent(object):
           Clobber any previous measurement
         redo_aodm : bool, optional
           Redo the individual column density measurements (likely AODM)
+        nsig_upper : float, optional
+          When assessing the upper limit for a line marked as an upper limit,
+          take the maximum of the N value and nsig_upper*sig_N
 
         Returns
         -------
@@ -744,7 +747,7 @@ class AbsComponent(object):
                 if self.flag_N == 1:  # Weighted mean
                     # Original
                     weight = 1. / np.mean(self.sig_N)**2
-                    mu = self.N * weight
+                    mu = self.attrib['N'] * weight
                     # Update
                     weight += 1./np.mean(aline.attrib['sig_N'])**2
                     self.attrib['N'] = (mu + aline.attrib['N']/np.mean(aline.attrib['sig_N'])**2) / weight
@@ -759,21 +762,21 @@ class AbsComponent(object):
                     self.attrib['sig_N'] = aline.attrib['sig_N']
                     self.attrib['flag_N'] = 2
                 elif self.flag_N == 2:
-                    if aline.attrib['N'] > self.N:
+                    if aline.attrib['N'] > self.attrib['N']:
                         self.attrib['N'] = aline.attrib['N']
                         self.attrib['sig_N'] = aline.attrib['sig_N']
                 elif self.flag_N == 1:
                     pass
             elif aline.attrib['flag_N'] == 3:  # Upper limit
                 if self.flag_N == 0:
-                    self.attrib['N'] = aline.attrib['N']
+                    self.attrib['N'] = max(aline.attrib['N'], nsig_upper*aline.attrib['sig_N'])
                     self.attrib['sig_N'] = aline.attrib['sig_N']
                     self.attrib['flag_N'] = 3
                 elif self.flag_N in [1, 2]:
                     pass
                 elif self.flag_N == 3:
-                    if aline.attrib['N'] < self.N:
-                        self.attrib['N'] = aline.attrib['N']
+                    if max(aline.attrib['N'], nsig_upper*aline.attrib['sig_N']) < self.attrib['N']:
+                        self.attrib['N'] = max(aline.attrib['N'], nsig_upper*aline.attrib['sig_N'])
                         self.attrib['sig_N'] = aline.attrib['sig_N']
             elif aline.attrib['flag_N'] == 0:  # No value
                 warnings.warn("Absline {} has flag=0.  Hopefully you expected that")
