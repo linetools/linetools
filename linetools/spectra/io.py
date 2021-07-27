@@ -173,7 +173,17 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
             if debug:
                 print('linetools.spectra.io.readspec(): Assuming DESI brick')
             xspec1d = parse_DESI_brick(hdulist, select=select)
-
+        elif 'AAOMEGA' in head0['INSTRUME']:  # AAT AAOMEGA
+            fx = hdulist[0].data
+            # Deal with bad pixels
+            var = hdulist[1].data
+            badvar = np.isnan(var) | (var < 0.)
+            var[badvar] = 0.
+            sig = np.sqrt(var)
+            # 
+            wave = setwave(head0).reshape((1, fx.shape[1]))
+            wave2D = np.repeat(wave, 400, axis=0)
+            xspec1d = XSpectrum1D(wave2D, fx, sig=sig)
         else:  # SDSS
             if debug:
                 print('linetools.spectra.io.readspec(): Assuming SDSS format')
