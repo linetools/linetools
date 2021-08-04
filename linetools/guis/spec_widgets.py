@@ -246,7 +246,12 @@ class ExamineSpecWidget(QWidget):
             xmin, xmax = xlim
         if ylim is None:
             from linetools.spectra.plotting import get_flux_plotrange
-            ymin, ymax = get_flux_plotrange(self.spec.flux.value)
+            if np.any(np.isfinite(self.spec.flux.value)):
+                ymin, ymax = get_flux_plotrange(self.spec.flux.value)
+            else:
+                ymin = 0.
+                ymax = 1.
+                print("Your entire spectrum is NAN!!!")
         else:
             ymin, ymax = ylim
         #QtCore.pyqtRemoveInputHook()
@@ -1427,6 +1432,8 @@ class MultiSpecWidget(QWidget):
     def on_list_change(self,curr,prev):
         cspec = str(curr.text())
         chosen = self.spec_labels.index(cspec)
+
+        print('cspec', cspec)
 
         # Reset items
         self.parent.spec = self.parent.orig_spec
