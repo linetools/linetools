@@ -611,7 +611,10 @@ def parse_linetools_spectrum_format(hdulist, **kwargs):
         # Prepare for JSON (bug fix of sorts)
         metas = hdulist[0].header['METADATA']
         ipos = metas.rfind('}')
-        xspec1d.meta.update(json.loads(metas[:ipos+1]))
+        try:
+            xspec1d.meta.update(json.loads(metas[:ipos+1]))
+        except:
+            print("Bad METADATA;  proceeding without")
 
     return xspec1d
 
