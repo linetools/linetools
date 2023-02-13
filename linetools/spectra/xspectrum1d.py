@@ -1219,6 +1219,9 @@ class XSpectrum1D(object):
         if self.meta is not None and len(self.meta) > 0:
             prihdu.header['METADATA'] = meta_to_disk(self.meta)
 
+        from IPython import embed
+        embed(header='1223 of write_to_fits')
+
         # Units, etc.
         prihdu.header['NSPEC'] = self.nspec
         prihdu.header['NPIX'] = self.npix
