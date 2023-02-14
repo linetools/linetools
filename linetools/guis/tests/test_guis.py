@@ -14,6 +14,7 @@ from linetools.guis import utils as ltgu
 from linetools.spectra import io as lsio
 from linetools.isgm.abssystem import GenericAbsSystem
 
+gui_test = pytest.mark.skipif(True, reason='test requires dev suite')
 
 # Set of Input lines
 def data_path(filename):
@@ -97,18 +98,20 @@ def test_rdspec():
     assert spec.normed
 
 
-'''
+# Local running only
+
+if False:
+    app = QApplication(sys.argv)
+
+@gui_test
 def test_xspecgui():
     # Init
     spec_fil = data_path('UM184_nF.fits')
-    app = QApplication(sys.argv)
     xsgui = xspecgui.XSpecGui(spec_fil, unit_test=True)
 
-
+@gui_test
 def test_xabsgui():
     # Init
     spec_fil = data_path('UM184_nF.fits')
     abs_sys = GenericAbsSystem((0.,0.), 3., [-500,500]*u.km/u.s)
-    app = QApplication(sys.argv)
     xabsgui = xabssysgui.XAbsSysGui(spec_fil, abs_sys)
-'''
