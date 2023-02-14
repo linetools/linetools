@@ -12,13 +12,9 @@ import pytest
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 
-from linetools.isgm.abscomponent import AbsComponent
 from linetools.isgm.abssystem import GenericAbsSystem, LymanAbsSystem
 from linetools.isgm import utils as ltiu
-from linetools.spectralline import AbsLine
 from linetools.isgm.tests.utils import lyman_comp, si2_comp, oi_comp
-
-import pdb
 
 radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
 
