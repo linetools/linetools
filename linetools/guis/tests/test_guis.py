@@ -7,9 +7,7 @@ import pytest
 import numpy as np
 from astropy import units as u
 
-from qtpy.QtWidgets import QApplication
 
-from linetools.guis import xspecgui, xabssysgui
 from linetools.guis import utils as ltgu
 from linetools.spectra import io as lsio
 from linetools.isgm.abssystem import GenericAbsSystem
@@ -101,6 +99,8 @@ def test_rdspec():
 # Local running only
 
 if False:
+    from linetools.guis import xspecgui, xabssysgui
+    from qtpy.QtWidgets import QApplication
     app = QApplication(sys.argv)
 
 @gui_test
