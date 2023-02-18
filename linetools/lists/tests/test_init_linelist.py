@@ -1,11 +1,9 @@
 # Module to run tests on Generating a LineList
 #   Also tests some simple functionality
-
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 # TEST_UNICODE_LITERALS
 
 import pytest
+import os
 from astropy import units as u
 import numpy as np
 
@@ -93,10 +91,14 @@ def test_unknown():
     assert unknown['wrest'] == 0.*u.AA, 'There is a problem in the LineList.unknown_line()'
 
 def test_mk_sets():
+    outfile = 'tmp.lst'
+    if os.path.isfile(outfile):
+        os.remove(outfile)
     import imp
-    llmk.mk_hi(outfil='tmp.lst', stop=False)
+    llmk.mk_hi(outfil=outfile, stop=False)
     lt_path = imp.find_module('linetools')[1]
-    llmk.add_galaxy_lines('tmp.lst', infil=lt_path+'/lists/sets/llist_v0.1.ascii', stop=False)
+    llmk.add_galaxy_lines(outfile, infil=lt_path+'/lists/sets/llist_v0.1.ascii', stop=False)
+    os.remove(outfile)
 
 
 def test_set_extra_columns_to_datatable():

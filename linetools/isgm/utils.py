@@ -174,7 +174,7 @@ def build_components_from_dict(idict, coord=None, **kwargs):
     # Sort by z -- Deals with dict keys being random
     z = [comp.zcomp for comp in components]
     isrt = np.argsort(np.array(z))
-    srt_comps = list(np.array(components)[isrt])
+    srt_comps = [components[kk] for kk in isrt]
     # Return
     return srt_comps
 

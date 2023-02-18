@@ -1129,7 +1129,7 @@ class XSpectrum1D(object):
             table.add_column(coclm)
 
         # Write
-        table.write(outfil, format=format)
+        table.write(outfil, format=format, overwrite=True)
 
     def write_to_fits(self, outfil, select=False, clobber=True, fill_val=0.):
         """ Write to a multi-extension FITS file.

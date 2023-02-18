@@ -58,7 +58,6 @@ def add_galaxy_lines(outfil, infil=None, stop=True):
     infil : str, optional
       Starting file.  Should use latest llist_vX.X.ascii
     """
-    import pdb
     if infil is None:
         fils = glob.glob(lt_path+'/lists/sets/llist_v*')
         fils.sort()
@@ -95,7 +94,7 @@ def add_galaxy_lines(outfil, infil=None, stop=True):
     if stop:
         import pdb
         pdb.set_trace()
-    data.write(outfil, format='ascii.fixed_width')
+    data.write(outfil, format='ascii.fixed_width', overwrite=True)
 
 
 def add_xray_lines(outfil, infil=None, stop=True):
