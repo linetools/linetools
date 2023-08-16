@@ -81,7 +81,8 @@ def main(*args, **kwargs):
     # Scale
     if pargs.scale is None:
         # Screen dimensions
-        width = app.desktop().screenGeometry().width()
+        #width = app.desktop().screenGeometry().width()
+        width = app.primaryScreen().availableGeometry().width()
         scale = 2. * (width/3200.)
     else:
         scale = pargs.scale
