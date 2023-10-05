@@ -21,7 +21,7 @@ import fnmatch
 
 import imp
 
-lt_path = imp.find_module('linetools')[1]
+#lt_path = imp.find_module('linetools')[1]
 
 # from xastropy.xutils import xdebug as xdb
 

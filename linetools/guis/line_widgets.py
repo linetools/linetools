@@ -170,7 +170,7 @@ class SelectLineWidget(QDialog):
         else:
             raise ValueError('SelectLineWidget: Wrong type of input')
 
-        self.resize(250*scale, 800*scale)
+        self.resize(int(250*scale), int(800*scale))
 
         # Create the line list
         line_label = QLabel('Lines:')

@@ -18,7 +18,7 @@ from astropy.table import Column, Table, vstack
 from linetools.abund import roman, ions
 from linetools.abund.elements import ELEMENTS
 
-lt_path = imp.find_module('linetools')[1]
+#lt_path = imp.find_module('linetools')[1]
 
 
 # TODO
@@ -103,7 +103,7 @@ def read_sets(infil=None):
       Set file
     """
     if infil is None:
-        fils = glob.glob(lt_path+'/lists/sets/llist_v*')
+        fils = glob.glob(os.path.join(resource_filename('linetools', 'lists'), 'sets', 'llist_v*'))
         fils.sort()
         infil = fils[-1] # Should grab the lateset
     # Read
