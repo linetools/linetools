@@ -84,6 +84,7 @@ def test_cog():
     # COG
     COG_dict = abscomp.cog(redo_EW=True)
     # Test
+    import pdb; pdb.set_trace()
     np.testing.assert_allclose(COG_dict['logN'],13.693355878125537)
     np.testing.assert_allclose(COG_dict['sig_logN'],0.054323725737309987)
 
