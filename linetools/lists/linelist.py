@@ -1,12 +1,7 @@
 """ Contains the LineList class
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
 
-# Python 2 & 3 compatibility
-try:
-    basestring
-except NameError:
-    basestring = str
+basestring = str
 
 import numpy as np
 
@@ -18,10 +13,6 @@ from astropy.table import Table, hstack
 import warnings
 import pdb
 import fnmatch
-
-import imp
-
-#lt_path = imp.find_module('linetools')[1]
 
 # from xastropy.xutils import xdebug as xdb
 
