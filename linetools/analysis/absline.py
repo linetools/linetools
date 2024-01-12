@@ -12,6 +12,9 @@ from astropy.io import ascii
 from astropy.utils import isiterable
 from linetools.lists.linelist import LineList
 
+import importlib
+lt_path = importlib.util.find_spec('linetools').submodule_search_locations[0]
+
 # Atomic constant
 atom_cst = (const.m_e.cgs*const.c.cgs / (np.pi * 
     (const.e.esu**2).cgs)).to(u.AA*u.s/(u.km*u.cm**2))
@@ -221,8 +224,7 @@ def photo_cross(Z, ion, E, datfil=None, silent=False):
     sigma : Quantity
       Cross-section (cm^2)
     """
-    import imp
-    lt_path = imp.find_module('linetools')[1]
+
     # Read data
     if datfil is None:
         datfil = lt_path+'/data/atomic/verner96_photoion_table1.dat'

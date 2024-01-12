@@ -20,8 +20,9 @@ from linetools.isgm import utils as ltiu
 
 from linetools.isgm.tests.utils import mk_comp, mk_comptable, ism
 
-import imp, os
-lt_path = imp.find_module('linetools')[1]
+import os
+import importlib
+lt_path = importlib.util.find_spec('linetools').submodule_search_locations[0]
 
 #import pdb
 #pdb.set_trace()
