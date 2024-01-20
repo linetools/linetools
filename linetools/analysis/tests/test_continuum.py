@@ -3,12 +3,12 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 from astropy.table import Table
 from ...spectra.io import readspec
 from ..continuum import find_continuum
-import imp
+import importlib
 import numpy as np
 import pytest
 
 def test_find_continuum():
-    d = imp.find_module('linetools')[1]
+    d = importlib.util.find_spec('linetools').submodule_search_locations[0]
     spec = readspec(d + '/spectra/tests/files/q0002m422.txt.gz', masking='none')
     co, pts = find_continuum(spec, redshift=2.76, divmult=3.5,
                        forest_divmult=3, kind='QSO')

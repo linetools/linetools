@@ -3,10 +3,11 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import os, imp, glob, pdb, gzip, sys
+import os, glob, pdb, gzip, sys
 if not sys.version_info[0] > 2:
     import codecs
     open = codecs.open
+import importlib
 
 from pkg_resources import resource_filename
 
@@ -18,7 +19,7 @@ from astropy.table import Column, Table, vstack
 from linetools.abund import roman, ions
 from linetools.abund.elements import ELEMENTS
 
-#lt_path = imp.find_module('linetools')[1]
+lt_path = importlib.util.find_spec('linetools').submodule_search_locations[0]
 
 
 # TODO

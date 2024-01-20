@@ -9,11 +9,12 @@ from astropy.io import fits, ascii
 from astropy.units import Quantity
 import astropy.units as u
 from astropy.table import Table, QTable, Column
-import glob, imp
+import glob
+import importlib
 from linetools.analysis.interp import interp_Akima
 import warnings
 
-lt_path = imp.find_module('linetools')[1]
+lt_path = importlib.util.find_spec('linetools').submodule_search_locations[0]
 
 class LSF(object):
     """Class to deal with line-spread-functions (LSFs) from

@@ -94,9 +94,9 @@ def test_mk_sets():
     outfile = 'tmp.lst'
     if os.path.isfile(outfile):
         os.remove(outfile)
-    import imp
+    import importlib
     llmk.mk_hi(outfil=outfile, stop=False)
-    lt_path = imp.find_module('linetools')[1]
+    lt_path = importlib.util.find_spec('linetools').submodule_search_locations[0]
     llmk.add_galaxy_lines(outfile, infil=lt_path+'/lists/sets/llist_v0.1.ascii', stop=False)
     os.remove(outfile)
 
