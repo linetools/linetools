@@ -1,7 +1,5 @@
 """ Curve of Growth calculations
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 import numpy as np
 import sys
 import os
@@ -14,8 +12,6 @@ from scipy.interpolate import interp1d
 from astropy import units as u
 from astropy.modeling import FittableModel, Parameter
 from astropy.modeling import fitting
-
-#from xastropy.xutils import xdebug as xdb
 
 # Begin
 def _ftau_intgrnd(x,tau0=0.1):
@@ -114,9 +110,10 @@ def single_cog_analysis(wrest, f, EW, sig_EW=None, guesses=None):
     # COG model
     cog_model = single_cog_model(logN=logN, b=b)
     # Fitter
-    fitter = fitting.LevMarLSQFitter()
+    fitter = fitting.LevMarLSQFitter(calc_uncertainties=True)
     # Fit
-    parm = fitter(cog_model, wrest.to('AA').value*f, redEW, weights=weights)
+    parm = fitter(cog_model, wrest.to('AA').value*f, redEW, 
+                  weights=weights)
     # Error
     covar = fitter.fit_info['param_cov']
     sigma = np.zeros(covar.shape[0])
