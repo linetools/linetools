@@ -307,7 +307,7 @@ def jsonify(obj, debug=False):
         obj = int(obj)
     elif isinstance(obj, np.bool_):
         obj = bool(obj)
-    elif isinstance(obj, np.string_):
+    elif isinstance(obj, np.bytes_):
         obj = str(obj)
     elif isinstance(obj, Quantity):
         if obj.size == 1:
