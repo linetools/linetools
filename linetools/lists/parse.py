@@ -95,7 +95,7 @@ def line_data(nrows=1):
     return ldict, tbl
 
 
-def read_sets(infil=None):
+def read_sets(infil=None, verbose=False):
     """ Read sets file
 
     Parameters
@@ -108,7 +108,8 @@ def read_sets(infil=None):
         fils.sort()
         infil = fils[-1] # Should grab the lateset
     # Read
-    print('read_sets: Using set file -- \n  {:s}'.format(infil))
+    if verbose: 
+        print('read_sets: Using set file -- \n  {:s}'.format(infil))
     set_data = ascii.read(infil, format='fixed_width')
 
     # Return
