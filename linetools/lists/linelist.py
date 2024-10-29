@@ -5,7 +5,7 @@ basestring = str
 
 import numpy as np
 
-from pkg_resources import resource_filename
+import importlib_resources
 
 from astropy import units as u
 from astropy.units.quantity import Quantity
@@ -130,7 +130,7 @@ class LineList(object):
         return self._data['ion']
 
     def load_data(self):
-        data_file = resource_filename('linetools', 'data/lines/linelist.ascii')
+        data_file = importlib_resources.files('linetools.data.lines')/'linelist.ascii'
         # Read
         self._fulltable = Table.read(data_file, format='ascii.ecsv')
 

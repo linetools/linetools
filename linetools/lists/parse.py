@@ -9,7 +9,7 @@ if not sys.version_info[0] > 2:
     open = codecs.open
 import importlib
 
-from pkg_resources import resource_filename
+import importlib_resources
 
 from astropy import units as u
 from astropy.units.quantity import Quantity
@@ -104,7 +104,7 @@ def read_sets(infil=None, verbose=False):
       Set file
     """
     if infil is None:
-        fils = glob.glob(os.path.join(resource_filename('linetools', 'lists'), 'sets', 'llist_v*'))
+        fils = glob.glob(str(importlib_resources.files('linetools.lists.sets')/'llist_v*'))
         fils.sort()
         infil = fils[-1] # Should grab the lateset
     # Read
@@ -1047,7 +1047,7 @@ def _write_ref_table(outfile=None):
     date = str(datetime.date.today().strftime('%Y-%b-%d'))
     user = getpass.getuser()
     if outfile is None:
-        outfile = resource_filename('linetools', 'data/lines/linelist.ascii')
+        outfile = importlib_resources.file('linetools.data.lines')/'linelist.ascii'
 
     # Define datasets: In order of Priority
     datasets = [parse_morton03, parse_morton00, parse_verner96,
