@@ -9,7 +9,6 @@ if not sys.version_info[0] > 2:
     open = codecs.open
 import importlib
 
-#from pkg_resources import resource_filename
 import importlib_resources
 
 from astropy import units as u

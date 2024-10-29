@@ -5,7 +5,6 @@ basestring = str
 
 import numpy as np
 
-#from pkg_resources import resource_filename
 import importlib_resources
 
 from astropy import units as u
