@@ -30,7 +30,7 @@ jobs:
         python -m pip install --upgrade pip tox
     - name: Install linetools requirements 
       run: |
-        python -m pip install wheel scipy IPython astropy h5py qtpy pyaml
+        python -m pip install wheel scipy IPython astropy h5py qtpy pyaml importlib-resources
     - name: Test with tox
       run: |
         tox -e ${{ matrix.toxenv }}
