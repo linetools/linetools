@@ -12,11 +12,6 @@ from astropy import constants as const
 from astropy import units as u
 from astropy.units import Quantity, Unit
 
-try:
-    basestring
-except NameError:  # For Python 3
-    basestring = str
-
 
 def between(a, vmin, vmax):
     """ Return a boolean array True where vmin <= a < vmax.
@@ -209,7 +204,7 @@ def radec_to_coord(radec, gal=False):
 
     # RA/DEC
     if isinstance(radec, (tuple)):
-        if isinstance(radec[0], basestring):
+        if isinstance(radec[0], str):
             if radec[1][0] not in ['+', '-']:  #
                 DEC = '+'+radec[1]
                 warnings.warn("Assuming your DEC is +")
@@ -225,7 +220,7 @@ def radec_to_coord(radec, gal=False):
                 coord = SkyCoord(ra=radec[0], dec=radec[1], frame=frame, unit='deg')
     elif isinstance(radec,SkyCoord):
         coord = radec
-    elif isinstance(radec,basestring):
+    elif isinstance(radec,str):
         # Find first instance of a number (i.e. strip J, SDSS, etc.)
         for ii in range(len(radec)):
             if radec[ii].isdigit():
@@ -307,7 +302,7 @@ def jsonify(obj, debug=False):
         obj = int(obj)
     elif isinstance(obj, np.bool_):
         obj = bool(obj)
-    elif isinstance(obj, np.string_):
+    elif isinstance(obj, np.bytes_):
         obj = str(obj)
     elif isinstance(obj, Quantity):
         if obj.size == 1:
