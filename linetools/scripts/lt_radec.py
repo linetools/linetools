@@ -57,7 +57,7 @@ def main(args=None):
     print('   radec = ({:f},{:f}) deg'.format(coord.icrs.ra.deg, coord.icrs.dec.deg))
     print('   Galactic = ({:f},{:f}) deg'.format(coord.galactic.l.deg, coord.galactic.b.deg))
     print('   ')
-    print('SDSS chart: https://skyserver.sdss.org/dr14/en/tools/chart/navi.aspx?ra={:f}&dec={:f}&opt='.format(coord.icrs.ra.deg, coord.icrs.dec.deg))
+    print('SDSS chart: https://skyserver.sdss.org/dr16/en/tools/chart/navi.aspx?ra={:f}&dec={:f}&opt='.format(coord.icrs.ra.deg, coord.icrs.dec.deg))
     print('LEGACY chart: https://www.legacysurvey.org/viewer?ra={:f}&dec={:f}&layer=ls-dr9&zoom=15'.format(coord.icrs.ra.deg, coord.icrs.dec.deg))
     print('LEGACY chart (mark): https://www.legacysurvey.org/viewer?ra={:f}&dec={:f}&layer=ls-dr9&zoom=15&mark={:f},{:f}'.format(coord.icrs.ra.deg, coord.icrs.dec.deg, coord.icrs.ra.deg, coord.icrs.dec.deg))
     print('Visibility (airmass.org): https://airmass.org/chart/obsid:lco/date:{:s}/object:J{:s}{:s}/ra:{:f}/dec:{:f}\n   (do not forget to update the date and observatory location in the website itself!)'.format(today, coord.icrs.ra.to_string(unit=u.hour,sep='',pad=True),
