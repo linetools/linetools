@@ -111,7 +111,8 @@ def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,
             add_trans=False, zcomp=2.92939, b=20*u.km/u.s, **kwargs):
     # Read a spectrum Spec
     if add_spec:
-        spec_file = str(importlib_resources.files('linetools.spectra.tests')/'.files/UM184_nF.fits')
+        data_dir = os.path.join(os.path.dirname(__file__), '../../spectra/tests/files/')
+        spec_file = data_dir + 'UM184_nF.fits'
         xspec = lsio.readspec(spec_file)
     else:
         xspec = None

@@ -10,7 +10,7 @@ from astropy.coordinates import SkyCoord
 import linetools.utils as ltu
 
 def data_path(filename):
-    data_dir = str(importlib_resources.files('linetools.data.tests'))
+    data_dir = str(importlib_resources.files('linetools.data.tests')._paths[0])
     return os.path.join(data_dir, filename)
 
 def test_compare_stuff():
