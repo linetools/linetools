@@ -51,7 +51,7 @@ class SolarAbund(object):
         """
         # Data file
         if self.ref == 'Asplund2009':
-            dat_file = l_path + 'linetools/data/abund/solar_Asplund2009.dat'
+            dat_file = l_path + '/linetools/data/abund/solar_Asplund2009.dat'
             # Read table
             names = ('Elm', 'Abund', 'Z')
             table = ascii.read(dat_file, format='no_header', names=names) 
