@@ -15,7 +15,7 @@ import matplotlib as mpl
 
 def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None,
                ymnx=(-0.1,1.1), figsz=(18,11), return_fig=False,
-               tight_layout=False, add_ew=False, zref=None):
+               tight_layout=False, add_ew=False, zref=None, label_loc=[0.1,0.1]):
     """Show a stack plot of the input lines
     Assumes the data are normalized.
     Comments about EW:
@@ -43,6 +43,8 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None
       If True, add EW values on the figure
     zref : float, optional
       Reference redshift for velocity scale; if None, each AbsLine.z is used
+    label_loc : tuple, optional
+      Coordinates of species + wavelength text
 
     Returns
     -------
@@ -106,7 +108,7 @@ def stack_plot(abslines, vlim=[-300,300.]*u.km/u.s, nrow=6, show=True, spec=None
         else:
             ax.get_xaxis().set_ticks([])
         # Label
-        ax.text(0.1, 0.1, iline.data['name'], transform=ax.transAxes, ha='left', va='center')#, fontsize='large')  # , bbox={'facecolor':'white'})
+        ax.text(label_loc[0], label_loc[1], iline.data['name'], transform=ax.transAxes, ha='left', va='center')#, fontsize='large')  # , bbox={'facecolor':'white'})
         if add_ew:
             if iline.attrib['flag_EW'] > 0:
                 ewval = '{:05.2f}'.format(iline.attrib['EW'].value)
