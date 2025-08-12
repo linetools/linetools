@@ -20,10 +20,10 @@ from astropy.utils.misc import isiterable
 l_path = importlib.util.find_spec('linetools').submodule_search_locations[0]
 
 ### Windows machines seem to have trouble finding different submodule directories
-if os.path.exists(lt_path+'/data'):
+if os.path.exists(l_path+'/data'):
     pass
 else: 
-    lt_path = lt_path+'/linetools/'
+    l_path = l_path+'/linetools/'
 
 #
 class SolarAbund(object):
