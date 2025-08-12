@@ -21,7 +21,7 @@ from linetools.abund.elements import ELEMENTS
 
 lt_path = importlib.util.find_spec('linetools').submodule_search_locations[0]
 
-### Windows machines seem to finding different submodule directories 
+### Windows machines seem to have trouble finding different submodule directories 
 if os.path.exists(lt_path+'/data'):
     pass
 else: 

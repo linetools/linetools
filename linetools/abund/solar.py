@@ -19,6 +19,12 @@ from astropy.utils.misc import isiterable
 #from xastropy.xutils import xdebug as xdb
 l_path = importlib.util.find_spec('linetools').submodule_search_locations[0]
 
+### Windows machines seem to have trouble finding different submodule directories
+if os.path.exists(lt_path+'/data'):
+    pass
+else: 
+    lt_path = lt_path+'/linetools/'
+
 #
 class SolarAbund(object):
     """Class to handle simple Solar Abundance calculations
