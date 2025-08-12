@@ -11,7 +11,7 @@ except NameError:
 
 import numpy as np
 import numbers
-import importlib
+import importlib, os
 
 from astropy.io import ascii
 from astropy.utils.misc import isiterable
