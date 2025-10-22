@@ -28,11 +28,6 @@ from linetools.lists.linelist import LineList
 
 
 
-try:
-    basestring
-except NameError:  # For Python 3
-    basestring = str
-
 class XSpecGui(QMainWindow):
     """ GUI to replace XIDL x_specplot (which simulated a GUI by T. Barlow)
     """
@@ -79,7 +74,7 @@ class XSpecGui(QMainWindow):
         # Grab the pieces and tie together
         self.pltline_widg = ltgl.PlotLinesWidget(status=self.statusBar,
             init_z=zsys, screen_scale=self.scale)
-        self.pltline_widg.setMaximumWidth(300*self.scale)
+        self.pltline_widg.setMaximumWidth(int(300*self.scale))
 
 
         ## Abs sys
@@ -144,8 +139,8 @@ class XSpecGui(QMainWindow):
 
         # Extras
         extras = QWidget()
-        extras.setMinimumWidth(180*self.scale)
-        extras.setMaximumWidth(280*self.scale)
+        extras.setMinimumWidth(int(180*self.scale))
+        extras.setMaximumWidth(int(280*self.scale))
         vbox = QVBoxLayout()
         qbtn = QPushButton(self)
         qbtn.setText('Quit')
@@ -214,7 +209,7 @@ def main(args, **kwargs):
     from qtpy.QtWidgets import QApplication
     from linetools.spectra.xspectrum1d import XSpectrum1D
 
-    if not isinstance(args,(XSpectrum1D,tuple,basestring)):
+    if not isinstance(args,(XSpectrum1D,tuple,str)):
         raise IOError("Bad input")
     # Run
     app = QApplication(sys.argv)

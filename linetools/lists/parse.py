@@ -3,12 +3,13 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import os, imp, glob, pdb, gzip, sys
+import os, glob, pdb, gzip, sys
 if not sys.version_info[0] > 2:
     import codecs
     open = codecs.open
+import importlib
 
-from pkg_resources import resource_filename
+import importlib_resources
 
 from astropy import units as u
 from astropy.units.quantity import Quantity
@@ -18,7 +19,7 @@ from astropy.table import Column, Table, vstack
 from linetools.abund import roman, ions
 from linetools.abund.elements import ELEMENTS
 
-lt_path = imp.find_module('linetools')[1]
+lt_path = importlib.util.find_spec('linetools').submodule_search_locations[0]
 
 
 # TODO
@@ -94,7 +95,7 @@ def line_data(nrows=1):
     return ldict, tbl
 
 
-def read_sets(infil=None):
+def read_sets(infil=None, verbose=False):
     """ Read sets file
 
     Parameters
@@ -103,11 +104,12 @@ def read_sets(infil=None):
       Set file
     """
     if infil is None:
-        fils = glob.glob(lt_path+'/lists/sets/llist_v*')
+        fils = glob.glob(str(importlib_resources.files('linetools.lists.sets')/'llist_v*'))
         fils.sort()
         infil = fils[-1] # Should grab the lateset
     # Read
-    print('read_sets: Using set file -- \n  {:s}'.format(infil))
+    if verbose: 
+        print('read_sets: Using set file -- \n  {:s}'.format(infil))
     set_data = ascii.read(infil, format='fixed_width')
 
     # Return
@@ -1045,7 +1047,7 @@ def _write_ref_table(outfile=None):
     date = str(datetime.date.today().strftime('%Y-%b-%d'))
     user = getpass.getuser()
     if outfile is None:
-        outfile = resource_filename('linetools', 'data/lines/linelist.ascii')
+        outfile = importlib_resources.file('linetools.data.lines')/'linelist.ascii'
 
     # Define datasets: In order of Priority
     datasets = [parse_morton03, parse_morton00, parse_verner96,

@@ -1,16 +1,11 @@
 """ Contains the LineList class
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
 
-# Python 2 & 3 compatibility
-try:
-    basestring
-except NameError:
-    basestring = str
+basestring = str
 
 import numpy as np
 
-from pkg_resources import resource_filename
+import importlib_resources
 
 from astropy import units as u
 from astropy.units.quantity import Quantity
@@ -18,10 +13,6 @@ from astropy.table import Table, hstack
 import warnings
 import pdb
 import fnmatch
-
-import imp
-
-lt_path = imp.find_module('linetools')[1]
 
 # from xastropy.xutils import xdebug as xdb
 
@@ -139,7 +130,7 @@ class LineList(object):
         return self._data['ion']
 
     def load_data(self):
-        data_file = resource_filename('linetools', 'data/lines/linelist.ascii')
+        data_file = importlib_resources.files('linetools.data.lines')/'linelist.ascii'
         # Read
         self._fulltable = Table.read(data_file, format='ascii.ecsv')
 

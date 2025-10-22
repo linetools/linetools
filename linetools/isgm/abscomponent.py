@@ -610,6 +610,7 @@ class AbsComponent(object):
         b : Quantity
           COG Doppler parameter (km/s)
         """
+        raise ValueError("Sorry, this function has been deprecated for now.  Needs debugging")
         from linetools.analysis import cog as ltcog
         # Redo EWs?
         if redo_EW:

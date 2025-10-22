@@ -4,10 +4,9 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 
 # TEST_UNICODE_LITERALS
 
-import pytest
 import os
 
-from pkg_resources import resource_filename
+import importlib_resources
 
 from astropy.coordinates import SkyCoord
 from astropy import units as u
@@ -41,9 +40,9 @@ def test_complist_to_joebvp():
     ltiio.write_joebvp_from_components(comp_list, 'test.fits', data_path('test_joebvp_repr.joebvp'))
     # now read the output and compare to reference
     ltu.compare_two_files(data_path('test_joebvp_repr.joebvp'),
-                      resource_filename('linetools', '/data/tests/test_joebvp_repr_reference.joebvp'))
+                      str(importlib_resources.files('linetools.data.tests')/'test_joebvp_repr_reference.joebvp'))
     # now add attribute to comp and compare again
     abscomp.attrib['b'] = 15*u.km/u.s
     ltiio.write_joebvp_from_components(comp_list, 'test.fits', data_path('test_joebvp_repr.joebvp'))
     ltu.compare_two_files(data_path('test_joebvp_repr.joebvp'),
-                      resource_filename('linetools', '/data/tests/test_joebvp_repr_reference.joebvp'))
+                      str(importlib_resources.files('linetools.data.tests')/'test_joebvp_repr_reference.joebvp'))

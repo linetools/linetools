@@ -31,3 +31,19 @@ def coord_arg_to_coord(carg):
         icoord = carg
     # Return
     return icoord
+
+
+def get_today_str():
+    """Returns a string representation of current day
+    format YYYY-MM-DD"""
+    import time
+    t = time.gmtime()
+    year = str(t.tm_year)
+    month = str(t.tm_mon)
+    day = str(t.tm_mday)
+    if len(month) == 1:
+        month = '0' + month
+    if len(day) == 1:
+        day = '0' + day
+    s = '{}-{}-{}'.format(year, month, day)
+    return s

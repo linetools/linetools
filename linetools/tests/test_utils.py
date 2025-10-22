@@ -1,20 +1,16 @@
-# Tests of linetools.utils
-
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 # TEST_UNICODE_LITERALS
 
 import pytest
 import numpy as np
 import os
-from pkg_resources import resource_filename
+import importlib_resources
 
 from astropy import units as u
 from astropy.coordinates import SkyCoord
 import linetools.utils as ltu
 
 def data_path(filename):
-    data_dir = resource_filename('linetools', 'data/tests/')
+    data_dir = str(importlib_resources.files('linetools.data.tests')._paths[0])
     return os.path.join(data_dir, filename)
 
 def test_compare_stuff():

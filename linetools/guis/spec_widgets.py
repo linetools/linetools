@@ -1414,7 +1414,7 @@ class MultiSpecWidget(QWidget):
             self.mspec_widget.addItem(ilbl)
         self.mspec_widget.setCurrentRow(0)
         self.mspec_widget.currentItemChanged.connect(self.on_list_change)
-        self.mspec_widget.setMaximumHeight(100*self.scale)
+        self.mspec_widget.setMaximumHeight(int(100*self.scale))
 
         # Layout
         vbox = QVBoxLayout()
@@ -1422,7 +1422,7 @@ class MultiSpecWidget(QWidget):
         vbox.addWidget(self.mspec_widget)
 
         self.setLayout(vbox)
-        self.setMaximumHeight(200*self.scale)
+        self.setMaximumHeight(int(200*self.scale))
 
     def on_list_change(self,curr,prev):
         cspec = str(curr.text())

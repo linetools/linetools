@@ -1,7 +1,6 @@
 """
 Module for dealing with LSFs of various astronomical instruments.
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -10,11 +9,12 @@ from astropy.io import fits, ascii
 from astropy.units import Quantity
 import astropy.units as u
 from astropy.table import Table, QTable, Column
-import glob, imp
+import glob
+import importlib
 from linetools.analysis.interp import interp_Akima
 import warnings
 
-lt_path = imp.find_module('linetools')[1]
+lt_path = importlib.util.find_spec('linetools').submodule_search_locations[0]
 
 class LSF(object):
     """Class to deal with line-spread-functions (LSFs) from
@@ -358,7 +358,7 @@ class LSF(object):
             '''
 
             # create column with absolute wavelength based on pixel scales
-            if isinstance(pixel_scale_dict[grating],np.unicode):
+            if isinstance(pixel_scale_dict[grating],str):
                 # deal with wavelength-dependent pixel scale (i.e., STIS echelle)
                 scalefac = 1./float(pixel_scale_dict[grating].split('/')[-1])
                 wave_aux = float(wa_names[ii])*u.AA * (1. + data_aux['rel_pix']*scalefac)
@@ -561,7 +561,7 @@ class LSF(object):
         lsf_vals = Column(name='kernel', data=lsf_vals)
 
         # create column of relative pixel in absolute wavelength
-        if isinstance(self.pixel_scale,np.unicode):
+        if isinstance(self.pixel_scale,str):
             # deal with wavelength-dependent pixel scale (i.e., STIS echelle)
             scalefac = 1./float(self.pixel_scale.split('/')[-1])
             wv_array = [(wv0*u.AA * (1. + scalefac * self._data['rel_pix'][i])).value

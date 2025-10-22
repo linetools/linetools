@@ -3,7 +3,8 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import imp, glob
+import importlib
+import glob
 import copy
 
 from astropy.io import ascii
@@ -11,7 +12,7 @@ from astropy.io import ascii
 from linetools.lists import parse as llp
 
 
-lt_path = imp.find_module('linetools')[1]
+lt_path = importlib.util.find_spec('linetools').submodule_search_locations[0]
 
 
 def mk_hi(infil=None, outfil=None, stop=True):
@@ -58,7 +59,6 @@ def add_galaxy_lines(outfil, infil=None, stop=True):
     infil : str, optional
       Starting file.  Should use latest llist_vX.X.ascii
     """
-    import pdb
     if infil is None:
         fils = glob.glob(lt_path+'/lists/sets/llist_v*')
         fils.sort()
@@ -95,7 +95,7 @@ def add_galaxy_lines(outfil, infil=None, stop=True):
     if stop:
         import pdb
         pdb.set_trace()
-    data.write(outfil, format='ascii.fixed_width')
+    data.write(outfil, format='ascii.fixed_width', overwrite=True)
 
 
 def add_xray_lines(outfil, infil=None, stop=True):

@@ -1,8 +1,5 @@
 # Module to run tests on Generating a LineList
 #   Also tests some simple functionality
-
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 # TEST_UNICODE_LITERALS
 
 import os, sys
@@ -10,14 +7,12 @@ import pytest
 import numpy as np
 from astropy import units as u
 
-from qtpy.QtWidgets import QApplication
 
-from linetools.guis import xspecgui, xabssysgui
 from linetools.guis import utils as ltgu
 from linetools.spectra import io as lsio
 from linetools.isgm.abssystem import GenericAbsSystem
 
-app = QApplication(sys.argv)
+gui_test = pytest.mark.skipif(True, reason='test requires dev suite')
 
 # Set of Input lines
 def data_path(filename):
@@ -101,12 +96,20 @@ def test_rdspec():
     assert spec.normed
 
 
+# Local running only
+
+if False:
+    from linetools.guis import xspecgui, xabssysgui
+    from qtpy.QtWidgets import QApplication
+    app = QApplication(sys.argv)
+
+@gui_test
 def test_xspecgui():
     # Init
     spec_fil = data_path('UM184_nF.fits')
     xsgui = xspecgui.XSpecGui(spec_fil, unit_test=True)
 
-
+@gui_test
 def test_xabsgui():
     # Init
     spec_fil = data_path('UM184_nF.fits')

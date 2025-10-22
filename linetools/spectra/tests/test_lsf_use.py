@@ -1,6 +1,4 @@
 # Module to run tests on spectra.lsf
-from __future__ import print_function, absolute_import, \
-    division, unicode_literals
 
 import os
 import pytest

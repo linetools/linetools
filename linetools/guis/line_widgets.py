@@ -1,7 +1,5 @@
 """ Module for line widets
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 from qtpy import QtGui
 from qtpy import QtCore
 from qtpy.QtWidgets import QWidget, QDialog, QLabel, QLineEdit, QListWidget
@@ -14,12 +12,6 @@ from astropy.table import Table
 
 from linetools.guis import utils as ltgu
 from linetools.lists.linelist import LineList
-
-try:
-    ustr = unicode
-except NameError:
-    ustr = str
-
 
 # #####
 class PlotLinesWidget(QWidget):
@@ -59,7 +51,7 @@ class PlotLinesWidget(QWidget):
             self.zbox = QLineEdit()
             self.zbox.z_frmt = '{:.7f}'
             self.zbox.setText(self.zbox.z_frmt.format(init_z))
-            self.zbox.setMinimumWidth(50*self.scale)
+            self.zbox.setMinimumWidth(int(50*self.scale))
             self.zbox.textChanged[str].connect(self.setz)
             #self.connect(self.zbox, QtCore.SIGNAL('editingFinished ()'), self.setz)
         else:
@@ -76,7 +68,7 @@ class PlotLinesWidget(QWidget):
             self.llist_widget.addItem(ilist)
         self.llist_widget.setCurrentRow(0)
         self.llist_widget.currentItemChanged.connect(self.on_list_change)
-        self.llist_widget.setMaximumHeight(100*self.scale)
+        self.llist_widget.setMaximumHeight(int(100*self.scale))
 
         # Input line list?
         if init_llist is None:
@@ -108,7 +100,7 @@ class PlotLinesWidget(QWidget):
         vbox.addWidget(self.llist_widget)
 
         self.setLayout(vbox)
-        self.setMaximumHeight(200*self.scale)
+        self.setMaximumHeight(int(200*self.scale))
 
     def on_list_change(self,curr,prev):
         llist = str(curr.text())
@@ -139,7 +131,7 @@ class PlotLinesWidget(QWidget):
         self.zbox.setText(str(text)[:9])
 
         # ensure the input z is a float
-        sstr = ustr(self.zbox.text())
+        sstr = str(self.zbox.text())
         try:
             self.llist['z'] = float(sstr)
         except ValueError:
@@ -178,7 +170,7 @@ class SelectLineWidget(QDialog):
         else:
             raise ValueError('SelectLineWidget: Wrong type of input')
 
-        self.resize(250*scale, 800*scale)
+        self.resize(int(250*scale), int(800*scale))
 
         # Create the line list
         line_label = QLabel('Lines:')

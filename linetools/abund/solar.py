@@ -11,13 +11,13 @@ except NameError:
 
 import numpy as np
 import numbers
-import imp
+import importlib
 
 from astropy.io import ascii
 from astropy.utils.misc import isiterable
 
 #from xastropy.xutils import xdebug as xdb
-l_path = imp.find_module('linetools')[1]
+l_path = importlib.util.find_spec('linetools').submodule_search_locations[0]
 
 #
 class SolarAbund(object):
@@ -39,10 +39,12 @@ class SolarAbund(object):
         self.ref = ref
 
         # Load Data
-        print('Loading abundances from {:s}'.format(self.ref))
+        if verbose:
+            print('Loading abundances from {:s}'.format(self.ref))
+            print('Abundances are relative by number on a '
+                  'logarithmic scale with H=12') 
         self.load_data()
-        print('Abundances are relative by number on a '
-              'logarithmic scale with H=12') 
+ 
 
     def load_data(self):
         """Grab the Solar Abundance data (in linetools/abund)
