@@ -1435,7 +1435,7 @@ class XSpectrum1D(object):
         else:
             if edges is None:
                 nchunks = max(3, (wmax - wmin) / float(dw))
-                edges = np.linspace(wmin, wmax, np.int(nchunks) + 1)
+                edges = np.linspace(wmin, wmax, int(nchunks) + 1)
 
         if knots is None:
             knots, indices, masked = prepare_knots(
