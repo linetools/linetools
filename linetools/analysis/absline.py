@@ -5,6 +5,7 @@ from __future__ import print_function, absolute_import, division, unicode_litera
 import numpy as np
 import pdb
 import warnings
+import os
 
 from astropy import units as u
 from astropy import constants as const
@@ -12,8 +13,8 @@ from astropy.io import ascii
 from astropy.utils import isiterable
 from linetools.lists.linelist import LineList
 
-import importlib
-lt_path = importlib.util.find_spec('linetools').submodule_search_locations[0]
+# Get the linetools package directory from this module's location
+lt_path = os.path.dirname(os.path.dirname(__file__))
 
 # Atomic constant
 atom_cst = (const.m_e.cgs*const.c.cgs / (np.pi * 

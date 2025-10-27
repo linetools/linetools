@@ -3,7 +3,7 @@
 from __future__ import print_function, absolute_import, division, unicode_literals
 
 import numpy as np
-import importlib
+import os
 import glob
 import copy
 
@@ -12,7 +12,8 @@ from astropy.io import ascii
 from linetools.lists import parse as llp
 
 
-lt_path = importlib.util.find_spec('linetools').submodule_search_locations[0]
+# Get the linetools package directory from this module's location
+lt_path = os.path.dirname(os.path.dirname(__file__))
 
 
 def mk_hi(infil=None, outfil=None, stop=True):

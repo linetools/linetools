@@ -7,7 +7,6 @@ import os, glob, pdb, gzip, sys
 if not sys.version_info[0] > 2:
     import codecs
     open = codecs.open
-import importlib
 
 import importlib_resources
 
@@ -19,7 +18,8 @@ from astropy.table import Column, Table, vstack
 from linetools.abund import roman, ions
 from linetools.abund.elements import ELEMENTS
 
-lt_path = importlib.util.find_spec('linetools').submodule_search_locations[0]
+# Get the linetools package directory from this module's location
+lt_path = os.path.dirname(os.path.dirname(__file__))
 
 
 # TODO
