@@ -21,8 +21,9 @@ from linetools.isgm import utils as ltiu
 from linetools.isgm.tests.utils import mk_comp, mk_comptable, ism
 
 import os
-import importlib
-lt_path = importlib.util.find_spec('linetools').submodule_search_locations[0]
+
+# Get the linetools package directory from this module's location
+lt_path = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
 #import pdb
 #pdb.set_trace()

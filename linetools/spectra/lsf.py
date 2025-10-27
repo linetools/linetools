@@ -10,11 +10,12 @@ from astropy.units import Quantity
 import astropy.units as u
 from astropy.table import Table, QTable, Column
 import glob
-import importlib
+import os
 from linetools.analysis.interp import interp_Akima
 import warnings
 
-lt_path = importlib.util.find_spec('linetools').submodule_search_locations[0]
+# Get the linetools package directory from this module's location
+lt_path = os.path.dirname(os.path.dirname(__file__))
 
 class LSF(object):
     """Class to deal with line-spread-functions (LSFs) from

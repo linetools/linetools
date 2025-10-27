@@ -11,13 +11,14 @@ except NameError:
 
 import numpy as np
 import numbers
-import importlib
+import os
 
 from astropy.io import ascii
 from astropy.utils.misc import isiterable
 
 #from xastropy.xutils import xdebug as xdb
-l_path = importlib.util.find_spec('linetools').submodule_search_locations[0]
+# Get the linetools package directory reliably from this module's location
+l_path = os.path.dirname(os.path.dirname(__file__))
 
 #
 class SolarAbund(object):
