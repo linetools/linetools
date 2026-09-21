@@ -21,8 +21,12 @@ You may run read-only git: `git status`, `git diff`, `git log`, `git show`,
 `git branch`.
 
 You must **never** run anything that mutates repository state: `git commit`,
-`git push`, `git reset`, `git rebase`, `git checkout`, `git merge`, `git add`,
-`git stash`, `git clean`, or similar.  Edit files; I will stage and commit.
+`git push`, `git reset`, `git rebase`, `git checkout`, `git switch`,
+`git merge`, `git add`, `git restore`, `git stash`, `git clean`,
+`git cherry-pick`, `git revert`, `git tag`, `git remote`, or similar.  Edit
+files; I will stage and commit.
+
+This is enforced in `.claude/settings.json`'s deny list, not just stated here.
 
 - The default branch for pull requests is `master`.
 - Development currently happens on the `2026` branch.
@@ -38,6 +42,13 @@ conda run -n astro pytest linetools -q
 
 This is an **astronomy** repository, *not* one of my Oceanography
 repositories -- do **not** use `ocean14` here.
+
+**Always go through `conda run -n astro`.**  Do not invoke a bare `python`,
+`python3`, `pytest`, `tox` or `pip install`: those resolve to whatever is on
+`PATH` and silently bypass the environment rule.  They are set to *ask* in
+`.claude/settings.json`, so reaching for one will interrupt me for approval --
+which is the point.  If you genuinely need a bare interpreter (e.g. a throwaway
+script that has nothing to do with linetools), say why when you ask.
 
 `linetools` is installed into `astro` in development mode, so `import
 linetools` picks up this working tree directly.  There is no need to

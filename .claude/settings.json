@@ -28,13 +28,8 @@
       "Bash(conda run -n astro:*)",
       "Bash(conda env list)",
       "Bash(conda list:*)",
-      "Bash(python:*)",
-      "Bash(python3:*)",
-      "Bash(pip install:*)",
       "Bash(pip list:*)",
       "Bash(pip show:*)",
-      "Bash(pytest:*)",
-      "Bash(tox:*)",
       "Bash(jupyter:*)",
       "WebFetch(domain:adsabs.harvard.edu)",
       "WebFetch(domain:ui.adsabs.harvard.edu)",
@@ -58,10 +53,24 @@
       "Bash(git reset:*)",
       "Bash(git rebase:*)",
       "Bash(git checkout:*)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(git add:*)",
+      "Bash(git stash:*)",
+      "Bash(git clean:*)",
+      "Bash(git restore:*)",
+      "Bash(git switch:*)",
+      "Bash(git cherry-pick:*)",
+      "Bash(git revert:*)",
+      "Bash(git tag:*)",
+      "Bash(git remote:*)"
     ],
     "ask": [
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(pytest:*)",
+      "Bash(tox:*)",
+      "Bash(pip install:*)"
     ]
   }
 }
