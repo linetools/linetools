@@ -59,7 +59,7 @@ Install the development version like this::
 
     git clone https://github.com/linetools/linetools.git
     cd linetools
-    python setup.py develop
+    pip install -e .
 
 Now you can easily make tweaks to the code, which are immediately
 applied to your installed version (you'll have to reload the relevant

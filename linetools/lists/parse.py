@@ -490,7 +490,7 @@ def parse_verner96(orig=False, write=False):
             print('parse_verner96: Wrote {:s}'.format(outfil))
             # Compress and delete
             print('Now compressing...')
-            with open(outfil) as src:
+            with open(outfil, 'rb') as src:
                 with gzip.open(outfil+'.gz', 'wb') as dst:
                     dst.writelines(src)
             os.unlink(outfil)
@@ -763,7 +763,7 @@ def mktab_morton03(do_this=False, outfil=None, fits=True):
     print('mktab_morton03: Wrote {:s}'.format(outfil))
     # Compress and delete
     print('mktab_morton03: Now compressing...')
-    with open(outfil) as src:
+    with open(outfil, 'rb') as src:
         with gzip.open(outfil+'.gz', 'wb') as dst:
             dst.writelines(src)
     os.unlink(outfil)
@@ -813,8 +813,8 @@ def grab_galaxy_linelists(do_this=False):
 
     """
     if not do_this:
-        print('mktab_morton00: It is very unlikely you want to do this')
-        print('mktab_morton00: Returning...')
+        print('grab_galaxy_linelists: It is very unlikely you want to do this')
+        print('grab_galaxy_linelists: Returning...')
         return
 
     try:

@@ -17,7 +17,6 @@ from astropy import units as u
 from astropy.units import Quantity
 from astropy.coordinates import SkyCoord
 from astropy.table import Table, Column
-from astropy.utils import isiterable
 
 from linetools.spectra.xspectrum1d import XSpectrum1D
 from linetools.analysis import absline as ltaa
@@ -291,7 +290,7 @@ class AbsComponent(object):
             warnings.warn('Overwriting column density attributes (if they existed).', DeprecationWarning)
             slf.attrib['flag_N'] = Ntup[0]
             slf.attrib['logN'] = Ntup[1]
-            if isiterable(Ntup[2]):
+            if np.iterable(Ntup[2]):
                 slf.attrib['sig_logN'] = np.array(Ntup[2])
             else:
                 slf.attrib['sig_logN'] = np.array([Ntup[2]]*2)
@@ -383,7 +382,7 @@ class AbsComponent(object):
         if Ntup is not None:
             self.attrib['flag_N'] = Ntup[0]
             self.attrib['logN'] = Ntup[1]
-            if isiterable(Ntup[2]):
+            if np.iterable(Ntup[2]):
                 self.attrib['sig_logN'] = np.array(Ntup[2])
             else:
                 self.attrib['sig_logN'] = np.array([Ntup[2]]*2)

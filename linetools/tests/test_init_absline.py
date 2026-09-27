@@ -51,7 +51,7 @@ def test_failed_init():
         sline = SpectralLine('Abs', dict(bad_trans='because I am dict, right?'))
 
 
-def test_dicts():
+def test_dicts(tmp_path):
     # Init HI Lya
     abslin = AbsLine(1215.6700*u.AA)
     abslin.analy['spec'] = 'tmp.fits'
@@ -59,9 +59,10 @@ def test_dicts():
     assert isinstance(adict, dict)
     # Write
     #pdb.set_trace()
-    ltu.savejson('tmp.json', adict, overwrite=True)
+    jfile = str(tmp_path / 'tmp.json')
+    ltu.savejson(jfile, adict, overwrite=True)
     # Read
-    newdict = ltu.loadjson('tmp.json')
+    newdict = ltu.loadjson(jfile)
     newlin = SpectralLine.from_dict(newdict)
     assert newlin.name == 'HI 1215'
     # Old dict for compatability

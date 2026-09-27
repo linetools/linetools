@@ -9,7 +9,6 @@ import warnings
 from astropy import units as u
 from astropy import constants as const
 from astropy.io import ascii
-from astropy.utils import isiterable
 from linetools.lists.linelist import LineList
 
 # Atomic constant

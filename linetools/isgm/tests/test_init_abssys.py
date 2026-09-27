@@ -33,9 +33,9 @@ def test_from_json():
     np.testing.assert_allclose(gensys._components[0].zcomp, 2.92939)
 
 
-def test_write_json():
+def test_write_json(tmp_path):
     HIsys = LymanAbsSystem.from_json(data_path('HILya_abssys.json'))
-    HIsys.write_json()
+    HIsys.write_json(outfil=str(tmp_path / 'HILya_abssys_out.json'))
 
 
 def test_init():

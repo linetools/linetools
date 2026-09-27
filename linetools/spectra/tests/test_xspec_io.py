@@ -46,31 +46,32 @@ def test_readwrite_meta_as_dicts(spec):
     assert 'METADATA' in newspec2.meta['headers'][0].keys()
 '''
 
-def test_write(spec,specm):
+def test_write(spec, specm, tmp_path):
     # FITS
-    spec.write(data_path('tmp.fits'))
-    spec.write(data_path('tmp.fits'), FITS_TABLE=True)
+    spec.write(str(tmp_path / 'tmp.fits'))
+    spec.write(str(tmp_path / 'tmp.fits'), FITS_TABLE=True)
     # ASCII
-    spec.write(data_path('tmp.ascii'))
+    spec.write(str(tmp_path / 'tmp.ascii'))
     # HDF5
-    specm.write(data_path('tmp.hdf5'))
+    specm.write(str(tmp_path / 'tmp.hdf5'))
 
 
-def test_hdf5(specm):
+def test_hdf5(specm, tmp_path):
     import h5py
-    # Write. Should be replaced with tempfile.TemporaryFile
-    specm.write_to_hdf5(data_path('tmp.hdf5'))
+    hfile = str(tmp_path / 'tmp.hdf5')
+    specm.write_to_hdf5(hfile)
     #
-    specread = io.readspec(data_path('tmp.hdf5'))
+    specread = io.readspec(hfile)
     # check a round trip works
     np.testing.assert_allclose(specm.wavelength, specread.wavelength)
     # Add to existing file
-    tmp2 = h5py.File(data_path('tmp2.hdf5'), 'w')
+    hfile2 = str(tmp_path / 'tmp2.hdf5')
+    tmp2 = h5py.File(hfile2, 'w')
     foo = tmp2.create_group('boxcar')
     specm.add_to_hdf5(tmp2, path='/boxcar/')
     tmp2.close()
     # check a round trip works
-    spec3 = io.readspec(data_path('tmp2.hdf5'), path='/boxcar/')
+    spec3 = io.readspec(hfile2, path='/boxcar/')
     np.testing.assert_allclose(specm.wavelength, spec3.wavelength)
 
 
@@ -79,32 +80,34 @@ def test_print_repr(spec):
     print(spec)
 
 
-def test_write_ascii(spec):
-    # Write. Should be replaced with tempfile.TemporaryFile
-    spec.write_to_ascii(data_path('tmp.ascii'))
+def test_write_ascii(spec, tmp_path):
+    afile = str(tmp_path / 'tmp.ascii')
+    spec.write_to_ascii(afile)
     #
-    specb = io.readspec(data_path('tmp.ascii'))
+    specb = io.readspec(afile)
     # check a round trip works
     np.testing.assert_allclose(spec.wavelength, specb.wavelength)
 
 
-def test_write_fits(spec, spec2):
-    # Write. Should be replaced with tempfile.TemporaryFile
-    spec.write_to_fits(data_path('tmp.fits'))
-    specin = io.readspec(data_path('tmp.fits'))
+def test_write_fits(spec, spec2, tmp_path):
+    ffile = str(tmp_path / 'tmp.fits')
+    spec.write_to_fits(ffile)
+    specin = io.readspec(ffile)
     # check a round trip works
     np.testing.assert_allclose(spec.wavelength, specin.wavelength)
     # ESI
-    spec2.write_to_fits(data_path('tmp2.fits'))
-    specin2 = io.readspec(data_path('tmp2.fits'))
+    ffile2 = str(tmp_path / 'tmp2.fits')
+    spec2.write_to_fits(ffile2)
+    specin2 = io.readspec(ffile2)
     # check a round trip works
     np.testing.assert_allclose(spec2.wavelength, specin2.wavelength)
 
 
-def test_readwrite_without_sig():
+def test_readwrite_without_sig(tmp_path):
     sp = XSpectrum1D.from_tuple((np.array([5,6,7]), np.ones(3)))
-    sp.write_to_fits(data_path('tmp.fits'))
-    sp1 = io.readspec(data_path('tmp.fits'))
+    ffile = str(tmp_path / 'tmp.fits')
+    sp.write_to_fits(ffile)
+    sp1 = io.readspec(ffile)
     np.testing.assert_allclose(sp1.wavelength.value, sp.wavelength.value)
     np.testing.assert_allclose(sp1.flux.value, sp.flux.value)
 

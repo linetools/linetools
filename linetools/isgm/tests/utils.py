@@ -95,7 +95,7 @@ def make_gensl():
     return gensl
 
 
-def write_comps_to_sys():
+def write_comps_to_sys(outfil=None):
     from linetools.isgm.abssystem import GenericAbsSystem
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
     # HI
@@ -104,7 +104,7 @@ def write_comps_to_sys():
     SiII_comp = si2_comp(radec)
     gensl = GenericAbsSystem.from_components([abscomp, SiII_comp])
     # Write
-    gensl.write_json()
+    gensl.write_json(outfil=outfil)
 
 
 def mk_comp(ctype,vlim=[-300.,300]*u.km/u.s,add_spec=False, use_rand=True,

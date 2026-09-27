@@ -145,7 +145,7 @@ def test_todict():
     assert isinstance(newsys, AbsSystem)
 
 
-def test_todict_withjson():
+def test_todict_withjson(tmp_path):
     radec = SkyCoord(ra=123.1143*u.deg, dec=-12.4321*u.deg)
     # HI Lya, Lyb
     lya = AbsLine(1215.670*u.AA)
@@ -164,6 +164,6 @@ def test_todict_withjson():
     assert isinstance(adict, dict)
     # Verify it is JSON compatible (failing in Python 3)
     import io,json
-    with io.open('tmp.json', 'w', encoding='utf-8') as f:
+    with io.open(str(tmp_path / 'tmp.json'), 'w', encoding='utf-8') as f:
         f.write(unicode(json.dumps(adict, sort_keys=True, indent=4,
                                    separators=(',', ': '))))

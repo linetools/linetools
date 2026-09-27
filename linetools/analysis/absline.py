@@ -9,7 +9,6 @@ import warnings
 from astropy import units as u
 from astropy import constants as const
 from astropy.io import ascii
-from astropy.utils import isiterable
 from linetools.lists.linelist import LineList
 
 import importlib
@@ -252,7 +251,7 @@ def photo_cross(Z, ion, E, datfil=None, silent=False):
     sigma = dat['s0'][idx] * F * 1e-18 * u.cm**2
 
     # Energy threshold
-    if not isiterable(E):
+    if not np.iterable(E):
         if E < dat['Eth'][idx]*u.eV:
             sigma = 0. * u.cm**2
     else:
@@ -334,7 +333,7 @@ def get_tau0(wrest, fosc, N, b):
         arrays they must be of same shape.
     """
     # check format for N and b
-    if isiterable(N):
+    if np.iterable(N):
         if np.shape(N) != np.shape(b):
             raise IOError('If N is array, b must be array of same shape.')
 

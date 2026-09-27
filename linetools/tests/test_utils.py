@@ -101,21 +101,24 @@ def test_dv_from_z():
         ltu.dv_from_z(np.array([2.1, 2.1, 2.1]), np.array([2., 2.]))  # wrong shape for zref
 
 
-def test_save_load_json():
+def test_save_load_json(tmp_path):
     tmp_dict = dict(a=1, b=2, c='adsf')
     # Write
-    ltu.savejson('tmp.json', tmp_dict, overwrite=True)
+    jfile = str(tmp_path / 'tmp.json')
+    ltu.savejson(jfile, tmp_dict, overwrite=True)
     # Load
-    new_dict = ltu.loadjson('tmp.json')
+    new_dict = ltu.loadjson(jfile)
     assert new_dict['a'] == 1
     # Write with gzip
-    ltu.savejson('tmp.json.gz', tmp_dict, overwrite=True)
+    gzfile = str(tmp_path / 'tmp.json.gz')
+    ltu.savejson(gzfile, tmp_dict, overwrite=True)
     # Load
-    new_dict = ltu.loadjson('tmp.json.gz')
+    new_dict = ltu.loadjson(gzfile)
     assert new_dict['a'] == 1
     # Write with easy to read
-    ltu.savejson('tmp2.json', tmp_dict, overwrite=True, easy_to_read=True)
-    new_dict2 = ltu.loadjson('tmp2.json')
+    jfile2 = str(tmp_path / 'tmp2.json')
+    ltu.savejson(jfile2, tmp_dict, overwrite=True, easy_to_read=True)
+    new_dict2 = ltu.loadjson(jfile2)
     assert new_dict2['a'] == 1
 
 
@@ -146,9 +149,9 @@ def test_overlapping_chunks():
 
     chunk2 = np.array([5, 7])
     f = ltu.overlapping_chunks(chunk2, chunk1)
-    assert ~f
+    assert not f
     f = ltu.overlapping_chunks(chunk2 * u.AA, chunk1 * u.AA)
-    assert ~f
+    assert not f
 
     # Wrong format
     try:

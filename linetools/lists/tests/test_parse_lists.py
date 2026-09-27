@@ -12,8 +12,7 @@ from linetools.lists import parse
 
 # Morton 2003 ASCII file
 
-@pytest.mark.skipif("sys.version_info >= (3,0)")
-def test_morton03():
+def test_morton03(tmp_path):
     m03 = parse.parse_morton03(orig=True)
     #
     np.testing.assert_allclose(m03['wrest'][5], 930.7482, rtol=1e-7)
@@ -22,7 +21,8 @@ def test_morton03():
     #
     m03 = parse.mktab_morton03()
     #m03 = parse.mktab_morton03(do_this=True, outfil='tmp.fits')
-    m03 = parse.mktab_morton03(do_this=True, fits=False, outfil='tmp.vo')
+    m03 = parse.mktab_morton03(do_this=True, fits=False,
+                               outfil=str(tmp_path / 'tmp.vo'))
 
 # Morton 2000 ASCII file
 def test_morton00():

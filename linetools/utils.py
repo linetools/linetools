@@ -65,7 +65,7 @@ def compare_two_files(file1, file2, except_l2_has=None, verbose=False):
                 continue
         sub_test = l1 == l2
         test &= sub_test
-        if verbose & (~sub_test):
+        if verbose and not sub_test:
             print("Line {} in file1 different than corresponding line {} in file2, details as follows:\n{}different than:\n{}\n".format(q,q,l1,l2))
         q += 1
     f1.close()

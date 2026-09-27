@@ -203,7 +203,6 @@ def read_spec(ispec, exten=None, norm=True, **kwargs):
     """
     from linetools.spectra import xspectrum1d as lsx
     from linetools.spectra import utils as ltsu
-    from astropy.utils.misc import isiterable
     #
     if isinstance(ispec,basestring):
         spec_fil = ispec
@@ -220,7 +219,7 @@ def read_spec(ispec, exten=None, norm=True, **kwargs):
     elif isinstance(ispec,list): # Multiple file names
         # Loop on the files
         for kk,ispecf in enumerate(ispec):
-            if isiterable(exten):
+            if np.iterable(exten):
                 iexten = exten[kk]
             else:
                 iexten = exten

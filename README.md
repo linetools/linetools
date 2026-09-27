@@ -1,5 +1,4 @@
-linetools
-=========
+# linetools
 
 [![astropy](http://img.shields.io/badge/powered%20by-AstroPy-orange.svg?style=flat)](http://www.astropy.org/)
 
@@ -8,11 +7,10 @@ especially quasar and galaxy spectra.
 
 Check out the documentation at https://linetools.readthedocs.org/en/latest
 
-Development status
-------------------
-[![Build Status](https://travis-ci.org/linetools/linetools.svg?branch=master)](https://travis-ci.org/linetools/linetools)
-[![Coverage Status](https://coveralls.io/repos/github/linetools/linetools/badge.svg?branch=master)](https://coveralls.io/github/linetools/linetools?branch=master)
+## Development status
 
-DOI
----
+[![CI Tests](https://github.com/linetools/linetools/actions/workflows/ci_tests.yml/badge.svg)](https://github.com/linetools/linetools/actions/workflows/ci_tests.yml)
+
+## DOI
+
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.168270.svg)](https://doi.org/10.5281/zenodo.168270)

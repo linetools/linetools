@@ -26,16 +26,17 @@ def test_mk_emissline():
     np.testing.assert_allclose(emisslin2.data['wrest'], 6564.613*u.AA)
 
 
-def test_dicts():
+def test_dicts(tmp_path):
     # Init Halpha
     emisslin = EmLine(6564.613*u.AA)
     emisslin.analy['spec'] = 'tmp.fits'
     edict = emisslin.to_dict()
     assert isinstance(edict, dict)
     # Write
-    ltu.savejson('tmp.json', edict, overwrite=True)
+    jfile = str(tmp_path / 'tmp.json')
+    ltu.savejson(jfile, edict, overwrite=True)
     # Read
-    newdict = ltu.loadjson('tmp.json')
+    newdict = ltu.loadjson(jfile)
     newlin = SpectralLine.from_dict(newdict)
     assert newlin.name == 'Halpha'
     assert newlin.ltype == 'Em'

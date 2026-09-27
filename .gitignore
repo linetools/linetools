@@ -28,6 +28,10 @@ docs/_build
 # Pycharm editor project files
 .idea
 
+# Tool caches
+.tox
+.pytest_cache
+
 # Packages/installer info
 .eggs
 *.egg-info

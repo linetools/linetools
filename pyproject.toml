@@ -1,8 +1,139 @@
 [build-system]
-
 requires = [
-    "setuptools",
-    "setuptools_scm",
+    "setuptools>=77",
+    "setuptools_scm>=8",
+]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "linetools"
+description = "A package for analysing absorption and emission lines in 1d spectra, especially galaxy and quasar spectra."
+readme = "README.md"
+license = "BSD-3-Clause"
+license-files = ["LICENSE", "licenses/LICENSE.rst"]
+# Preserved verbatim from setup.cfg, which carried one author name and two
+# addresses.  PEP 621 has no single-entry form for that, and guessing which
+# address belongs to which person is not ours to do.
+authors = [
+    {name = "The linetools developers"},
+    {email = "xavier@ucolick.org"},
+    {email = "neilcrighton@gmail.com"},
+]
+requires-python = ">=3.11"
+keywords = ["linetools"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Documentation :: Sphinx",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: User Interfaces",
+]
+# Floors raised 2026-09-21 to the oldest releases that ship CPython 3.11
+# wheels.  The previous floors (numpy>=1.20, scipy>=1.6, ...) were not
+# installable on 3.11 at all and were never exercised by CI.  The
+# `test-oldestdeps` tox environment pins to exactly these versions so they
+# stop being a promise nobody checks.
+dependencies = [
+    "numpy>=1.24",
+    "astropy>=5.3",
+    "scipy>=1.10",
+    "h5py>=3.8",
+    "matplotlib>=3.6",
+    "PyYAML>=6.0",
+    "IPython>=8.0",
+    "qtpy>=2.0",
+    "importlib_resources>=5.7",
+]
+dynamic = ["version"]
+
+[project.urls]
+Homepage = "http://linetools.readthedocs.org/"
+Documentation = "https://linetools.readthedocs.io/en/latest/"
+Source = "https://github.com/linetools/linetools"
+
+[project.optional-dependencies]
+pyside2 = ["pyside2>=5.0"]
+pyqt5 = ["pyqt5"]
+test = [
+    "pytest>=6.0.0",
+    "pytest-astropy",
+    "tox",
+    "pytest-cov",
+    "coverage",
+]
+docs = [
+    "sphinx",
+    "sphinx-automodapi",
+    "sphinx_rtd_theme",
+]
+dev = [
+    "pytest>=6.0.0",
+    "pytest-astropy",
+    "tox",
+    "pytest-cov",
+    "coverage",
+    "sphinx",
+    "sphinx-automodapi",
+    "sphinx_rtd_theme",
 ]
 
-build-backend = 'setuptools.build_meta'
+[project.scripts]
+lt_absline = "linetools.scripts.lt_absline:main"
+lt_line = "linetools.scripts.lt_line:main"
+lt_xabssys = "linetools.scripts.lt_xabssys:main"
+lt_xspec = "linetools.scripts.lt_xspec:main"
+lt_continuumfit = "linetools.scripts.lt_continuumfit:main"
+lt_plot = "linetools.scripts.lt_plot:main"
+lt_radec = "linetools.scripts.lt_radec:main"
+lt_solabnd = "linetools.scripts.lt_solabnd:main"
+lt_get_COS_LP = "linetools.scripts.lt_get_COS_LP:main"
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["linetools*"]
+
+[tool.setuptools.package-data]
+"*" = [
+    "*.rst",
+    "*.txt",
+    "data/*",
+    "data/*/*",
+    "data/*/*/*",
+    "data/*/*/*/*",
+    "data/*/*/*/*/*",
+    "data/*/*/*/*/*/*",
+]
+
+[tool.setuptools_scm]
+version_file = "linetools/version.py"
+
+[tool.pytest.ini_options]
+testpaths = ["linetools"]
+
+[tool.coverage.report]
+exclude_lines = [
+    # Have to re-enable the standard pragma
+    "pragma: no cover",
+    # Don't complain about packages we have installed
+    "except ImportError",
+    # Don't complain if tests don't hit assertions
+    "raise AssertionError",
+    "raise NotImplementedError",
+    # Don't complain about script hooks
+    "def main\\(.*\\):",
+    # Ignore branches that don't pertain to this version of Python
+    "pragma: py{ignore_python_version}",
+    # Don't complain about IPython completion helper
+    "def _ipython_key_completions_",
+]

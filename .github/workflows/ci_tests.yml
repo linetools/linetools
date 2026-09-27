@@ -3,34 +3,53 @@ name: CI Tests
 on:
   push:
     branches:
-    - main
+    - master
+    - '2026'
   pull_request:
 
-env:
-  SETUP_XVFB: True  # avoid issues if mpl tries to open a GUI window
-
 jobs:
-  ci-tests:
-    name: Tox env ${{ matrix.python }}-${{ matrix.toxenv }}
+  tests:
+    name: ${{ matrix.os }} py${{ matrix.python }} ${{ matrix.toxenv }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest]
-        python: ['3.11', '3.12', '3.13']
-        toxenv: [test, test-alldeps, test-astropydev]
+        include:
+        - {os: ubuntu-latest, python: '3.11', toxenv: test}
+        - {os: ubuntu-latest, python: '3.12', toxenv: test}
+        - {os: ubuntu-latest, python: '3.13', toxenv: test}
+        - {os: ubuntu-latest, python: '3.14', toxenv: test}
+        - {os: macos-latest,  python: '3.13', toxenv: test}
+        - {os: ubuntu-latest, python: '3.11', toxenv: test-oldestdeps}
+        - {os: ubuntu-latest, python: '3.13', toxenv: test-devdeps}
     steps:
     - name: Check out repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
+      with:
+        # setuptools_scm derives the version from git tags
+        fetch-depth: 0
     - name: Set up Python ${{ matrix.python }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python }}
-    - name: Install base dependencies
-      run: |
-        python -m pip install --upgrade pip tox
-    - name: Install linetools requirements 
-      run: |
-        python -m pip install wheel scipy IPython astropy h5py qtpy pyaml importlib-resources
+    - name: Install tox
+      run: python -m pip install --upgrade pip tox
     - name: Test with tox
-      run: |
-        tox -e ${{ matrix.toxenv }}
+      run: tox -e ${{ matrix.toxenv }}
+
+  docs:
+    name: Build documentation
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+    - name: Install tox
+      run: python -m pip install --upgrade pip tox
+    - name: Build docs
+      run: tox -e docs

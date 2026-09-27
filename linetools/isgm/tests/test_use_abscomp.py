@@ -54,13 +54,14 @@ def test_rest_limits():
     comp.reset_limits_from_abslines()
     assert np.isclose(comp.vlim[1].value, 180.)
 
-def test_write():
+def test_write(tmp_path):
     # Component
     abscomp,_ = mk_comp('SiII', vlim=[-250,80.]*u.km/u.s)
     # Write
-    abscomp.write(data_path('tmp.json'))
+    jfile = str(tmp_path / 'tmp.json')
+    abscomp.write(jfile)
     # Read
-    tmpcomp = abscomp.from_json(data_path('tmp.json'))
+    tmpcomp = abscomp.from_json(jfile)
     assert tmpcomp.flag_N == abscomp.flag_N
     assert np.isclose(tmpcomp.limits.vmin.value, abscomp.limits.vmin.value)
 

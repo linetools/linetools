@@ -14,7 +14,6 @@ import numbers
 import importlib
 
 from astropy.io import ascii
-from astropy.utils.misc import isiterable
 
 #from xastropy.xutils import xdebug as xdb
 l_path = importlib.util.find_spec('linetools').submodule_search_locations[0]
@@ -92,7 +91,7 @@ class SolarAbund(object):
         Abund : float
         """
         # Iterate?
-        if isiterable(k) and not isinstance(k, basestring): 
+        if np.iterable(k) and not isinstance(k, basestring): 
             out_abnd = []
             for ik in k:
                 out_abnd.append(self[ik])
