@@ -2,8 +2,6 @@
 """ 
 
 # py2.6+ compatibility
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 import numpy as np
 from astropy.convolution import convolve, Gaussian1DKernel, CustomKernel
 

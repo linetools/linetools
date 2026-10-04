@@ -1,13 +1,5 @@
 """ Class for  emission line systems
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
-
-# Python 2 & 3 compatibility
-try:
-    basestring
-except NameError:
-    basestring = str
-
 import numpy as np
 import pdb
 import warnings
@@ -325,7 +317,7 @@ class EmSystem(object):
           be a list instead of a single object
         """
         # Generate the lines
-        if isinstance(inp,basestring):
+        if isinstance(inp,str):
             names = np.array([emline.name for emline in self._emlines])
             mt = np.where(names == inp)[0]
         elif isinstance(inp,Quantity):

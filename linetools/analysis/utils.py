@@ -3,8 +3,6 @@
 These are intended to be methods generic to emission and absorption
 (e.g. Equivalent width)
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 import numpy as np
 import os
 

@@ -1,8 +1,5 @@
 # Module to run tests on spectra.utils
 
-from __future__ import print_function, absolute_import, \
-     division, unicode_literals
-
 import pytest
 from astropy.time import Time
 

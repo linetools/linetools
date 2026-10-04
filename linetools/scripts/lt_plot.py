@@ -1,9 +1,6 @@
 #!/usr/bin/env python
 """ Plot a spectrum
 """
-from __future__ import (print_function, absolute_import, division,
-                        unicode_literals)
-
 def plotspec(args):
     """Plot spectrum files
     """

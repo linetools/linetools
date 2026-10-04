@@ -1,7 +1,5 @@
 """ I/O routines useful to linetools
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 import pdb
 
 import numpy as np

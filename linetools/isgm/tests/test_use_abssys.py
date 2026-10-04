@@ -1,9 +1,5 @@
 # Module to run tests on generating AbsSystem
 
-from __future__ import print_function, absolute_import, division, unicode_literals
-
-# TEST_UNICODE_LITERALS
-
 import numpy as np
 import os
 import pytest
@@ -16,11 +12,6 @@ from linetools.spectralline import AbsLine
 from linetools.spectra import io
 
 import pdb
-
-try:
-    unicode
-except NameError:
-    unicode = str
 
 
 def data_path(filename):
@@ -165,5 +156,5 @@ def test_todict_withjson(tmp_path):
     # Verify it is JSON compatible (failing in Python 3)
     import io,json
     with io.open(str(tmp_path / 'tmp.json'), 'w', encoding='utf-8') as f:
-        f.write(unicode(json.dumps(adict, sort_keys=True, indent=4,
-                                   separators=(',', ': '))))
+        f.write(json.dumps(adict, sort_keys=True, indent=4,
+                           separators=(',', ': ')))

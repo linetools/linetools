@@ -1,7 +1,5 @@
 """ Used to make set lists. Only intended for developer use.
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 import numpy as np
 import importlib
 import glob

@@ -1,9 +1,5 @@
 # Module to run tests on generating AbsSightline
 
-from __future__ import print_function, absolute_import, division, unicode_literals
-
-# TEST_UNICODE_LITERALS
-
 import os
 
 import pytest

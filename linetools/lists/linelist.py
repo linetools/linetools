@@ -1,8 +1,6 @@
 """ Contains the LineList class
 """
 
-basestring = str
-
 import numpy as np
 
 import importlib_resources
@@ -67,7 +65,7 @@ class LineList(object):
                  use_cache=True, sort_by='wrest', redo_extra=False):
 
         # Error catching
-        if not isinstance(llst_key, basestring):
+        if not isinstance(llst_key, str):
             raise TypeError('LineList__init__: Wrong type for LineList input')
 
         # Save
@@ -286,27 +284,36 @@ class LineList(object):
             set_data = lilp.read_sets()
             # Speed up
             wrest = self._fulltable['wrest']  # Assuming Angstroms
+            unmatched = []
             for sflag in set_flags:
                 gdset = np.where(set_data[sflag] == 1)[0]
-                # Match to wavelengths
+                # Match to wavelengths.  The tolerance follows the number of
+                # decimals the sets file actually records for this entry, so
+                # that a rounded entry still reaches its (longer) master value.
                 for igd in gdset:
-                    mt = np.where(np.abs(set_data['wrest'][igd] - wrest) < 9e-5)[0]
-                    if len(mt) == 1:
-                        self._fulltable['name'][mt[0]] = set_data['name'][igd]
-                        indices.append(mt[0])
-                    elif len(mt) > 1:
-                        #
-                        #wmsg = 'WARNING: Multiple lines with wrest={:g}'.format(
-                        #    set_data['wrest'][igd])
-                        #warnings.warn(wmsg)
-                        #warnings.warn(
-                        #    'Taking the first entry. Maybe use higher precision.')
-                        self._fulltable['name'][mt[0]] = set_data['name'][igd]
-                        indices.append(mt[0])
+                    dwv = np.abs(set_data['wrest'][igd] - wrest)
+                    mt = np.where(dwv < lilp.set_wrest_tol(set_data['wrest'][igd]))[0]
+                    if len(mt) > 0:
+                        # Several rows can sit inside the window: duplicates of
+                        # the same transition from different reference catalogs
+                        # (e.g. Morton2003 and Verner1994) and, for the coarser
+                        # entries, genuinely different nearby transitions.
+                        # Take the closest one; ties keep table order, as before.
+                        imt = mt[np.argmin(dwv[mt])]
+                        self._fulltable['name'][imt] = set_data['name'][igd]
+                        indices.append(imt)
                     else:
+                        unmatched.append(str(set_data['name'][igd]))
                         if verbose:
                             print('set_lines: Did not find {:s} in data Tables'.format(
                                 set_data[igd]['name']))
+            if len(unmatched) > 0:
+                # Warn by default -- dropping these silently has cost users
+                # whole sets of lines (e.g. the FeII* fine-structure series).
+                warnings.warn(
+                    'set_lines: {:d} entries of the {:s} set have no counterpart in the '
+                    'line data Tables and were dropped: {:s}'.format(
+                        len(unmatched), self.list, ', '.join(unmatched)))
 
         # Collate (should grab unique ones!)
         all_idx = np.unique(np.array(indices))
@@ -445,7 +452,7 @@ class LineList(object):
         Note: this is a wrapper to astropy.table.table.sort()
         """
         # define the sorting key(s) as list
-        if isinstance(keys, (str, basestring)):
+        if isinstance(keys, str):
             keys = [keys]
 
         # if key is 'as_given', leave it as is
@@ -518,7 +525,7 @@ class LineList(object):
             wrest2d = np.outer(np.ones(len(subset)), wrest)
             diff = np.abs(subset2d-wrest2d)
             indices = np.where(diff < 1e-4)[1].tolist()
-        elif isinstance(subset[0], (basestring)):  # Names
+        elif isinstance(subset[0], str):  # Names
             # Using sets
             names = set(self._data['name'])
             inter = set(subset).intersection(names)  # But these aren't ordered the same
@@ -537,7 +544,7 @@ class LineList(object):
         if sort_by == ['as_given'] or sort_by == 'as_given':
             if isinstance(subset, Quantity):  # wrest
                 pass
-            elif isinstance(subset[0], (basestring)):  # Names
+            elif isinstance(subset[0], str):  # Names
                 isort = []
                 names = list(new._data['name'])
                 for name in subset:
@@ -588,7 +595,7 @@ class LineList(object):
             warnings.warn('Not implemented for LineList: {}.'.format(self.list))
             return
 
-        if isinstance(line, (str, basestring)):  # Name
+        if isinstance(line, str):  # Name
             line = line.split(' ')[0]  # keep only the first part of input name
         elif isinstance(line, (Quantity, tuple)):  # Rest wavelength (with units)
             data = self.__getitem__(line)
@@ -869,7 +876,7 @@ class LineList(object):
                 else:
                     inwv = k
                 mt = np.where(np.abs(inwv - self.wrest) < tol)[0]
-            elif isinstance(k, basestring):  # Name
+            elif isinstance(k, str):  # Name
                 if k == 'unknown':
                     return self.unknown_line()
                 else:
@@ -882,7 +889,7 @@ class LineList(object):
             # No Match?
             if len(mt) == 0:
                 # Take closest??
-                if self.closest and (not isinstance(k, basestring)):
+                if self.closest and (not isinstance(k, str)):
                     mt = [np.argmin(np.abs(inwv - self.wrest))]
                     if self.verbose:
                         print('WARNING: Using {:.4f} for your input {:.4f}'.format(self.wrest[mt[0]],

@@ -6,8 +6,6 @@ Print the solar abundance data for an element or all elements
   lt_solabnd Fe
   lt_solabnd -a
 """
-from __future__ import (print_function, absolute_import, division, unicode_literals)
-
 import pdb
 
 try:

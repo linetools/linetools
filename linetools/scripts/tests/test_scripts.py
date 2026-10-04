@@ -1,8 +1,4 @@
 # Module to test scripts from linetools
-from __future__ import print_function, absolute_import, division, unicode_literals
-
-# TEST_UNICODE_LITERALS
-
 import pytest
 from linetools.scripts.lt_absline import plot_absline
 from linetools.scripts import lt_line

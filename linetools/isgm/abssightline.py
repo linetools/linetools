@@ -1,13 +1,5 @@
 """ Class for an absorption sightline
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
-
-# Python 2 & 3 compatibility
-try:
-    basestring
-except NameError:
-    basestring = str
-
 import pdb
 import numpy as np
 import warnings

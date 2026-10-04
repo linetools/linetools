@@ -1,7 +1,5 @@
 """ Methods related to spectra
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 # Import libraries
 import numpy as np
 import json
@@ -12,11 +10,6 @@ from astropy import units as u
 from astropy import constants as const
 
 from linetools import utils as liu
-
-try: # Python 2 & 3 compatibility
-    basestring
-except NameError:
-    basestring = str
 
 def meta_to_disk(in_meta):
     """ Polish up the meta dict for I/O
@@ -44,7 +37,7 @@ def meta_to_disk(in_meta):
                 try:
                     meta['headers'][kk] = header.tostring()
                 except AttributeError:
-                    if not isinstance(header, basestring):
+                    if not isinstance(header, str):
                         raise ValueError("Bad format in header")
                     meta['headers'][kk] = header
     # Clean up the dict
@@ -496,7 +489,7 @@ def get_COS_LP_from_date(date):
 
     """
     from astropy.time import Time
-    if isinstance(date, (basestring, str)):
+    if isinstance(date, str):
         time = Time(date)
     elif isinstance(date, Time):
         time = date

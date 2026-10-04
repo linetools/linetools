@@ -1,13 +1,5 @@
 """ Class for absorption line component
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
-
-# Python 2 & 3 compatibility
-try:
-    basestring
-except NameError:
-    basestring = str
-
 import pdb
 import numpy as np
 import warnings
@@ -823,7 +815,7 @@ class AbsComponent(object):
         # Deal with fix and tie parameters
         # Check format first
         for i, x_strs in enumerate([tie_strs, fix_strs]):
-            if (not isinstance(x_strs, tuple)) or (not all(isinstance(s, (str, basestring)) for s in x_strs)):
+            if (not isinstance(x_strs, tuple)) or (not all(isinstance(s, str) for s in x_strs)):
                 if i == 0:
                     raise TypeError('`tie_strs` must be a tuple of strings.')
                 elif i == 1:
@@ -890,7 +882,7 @@ class AbsComponent(object):
         # Deal with fix and tie parameters
         # Check format first
         for i, x_strs in enumerate([tie_strs, fix_strs]):
-            if (not isinstance(x_strs, tuple)) or (not all(isinstance(s, (str, basestring)) for s in x_strs)):
+            if (not isinstance(x_strs, tuple)) or (not all(isinstance(s, str) for s in x_strs)):
                 if i == 0:
                     raise TypeError('`tie_strs` must be a tuple of strings.')
                 elif i == 1:

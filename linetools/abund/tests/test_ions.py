@@ -1,9 +1,5 @@
 # Module to run tests on ion code
 
-from __future__ import print_function, absolute_import, division, unicode_literals
-
-# TEST_UNICODE_LITERALS
-
 import pytest
 from linetools.abund import ions, roman
 from linetools.abund.roman import OutOfRangeError, NotIntegerError,InvalidRomanNumeralError

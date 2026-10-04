@@ -4,8 +4,6 @@ This code was originally written by Mark Pilgrim
 (f8dy@diveintopython.org), and released under a Python 2.1.1 license,
 available at https://www.python.org/download/releases/2.1.1/license
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 # __author__ = "Mark Pilgrim (f8dy@diveintopython.org)"
 # __version__ = "1.4"
 # __date__ = "8 August 2001"

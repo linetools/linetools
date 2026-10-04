@@ -5,8 +5,6 @@ Ingest input coordinates and print them to the screen
   Examples:
   lt_radec 152.25900,7.22885
 """
-from __future__ import (print_function, absolute_import, division, unicode_literals)
-
 import pdb
 
 try:

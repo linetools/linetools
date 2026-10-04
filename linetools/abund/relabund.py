@@ -1,13 +1,5 @@
 """ Class for handling relative abundances
 """
-from __future__ import (print_function, absolute_import, division,
-                        unicode_literals)
-
-# Python 2 & 3 compatibility
-try:
-    basestring
-except NameError:
-    basestring = str
 import numbers
 
 import numpy as np
@@ -187,7 +179,7 @@ class RelAbund(object):
 
         """
         # Init
-        if isinstance(Y,basestring):
+        if isinstance(Y,str):
             Yint = self.elements[Y].number
         elif isinstance(Y,numbers.Integral):
             Yint = Y
@@ -244,7 +236,7 @@ class RelAbund(object):
            * 'sig' -- sigma([X/Y])  rough estimate
         """
         flag_XH = True
-        if isinstance(k, (numbers.Integral, basestring)): # XH
+        if isinstance(k, (numbers.Integral, str)): # XH
             Xint = self.elements[k].number
             XHdict = self._data[Xint]
         elif isinstance(k, (tuple,list)):  # XY

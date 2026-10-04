@@ -1,9 +1,5 @@
 # Module to run tests on generating AbsSystem
 
-from __future__ import print_function, absolute_import, division, unicode_literals
-
-# TEST_UNICODE_LITERALS
-
 import numpy as np
 import os
 

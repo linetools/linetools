@@ -1,5 +1,3 @@
-# TEST_UNICODE_LITERALS
-
 import pytest
 import numpy as np
 import os

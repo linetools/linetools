@@ -1,12 +1,7 @@
 """ Tools for parsing Line List data
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 import numpy as np
-import os, glob, pdb, gzip, sys
-if not sys.version_info[0] > 2:
-    import codecs
-    open = codecs.open
+import os, glob, pdb, gzip
 import importlib
 
 import importlib_resources
@@ -114,6 +109,42 @@ def read_sets(infil=None, verbose=False):
 
     # Return
     return set_data
+
+
+def set_wrest_tol(wrest, floor=9e-5, cap=5e-3):
+    """ Wavelength matching tolerance for one entry of a sets file
+
+    The sets files record ``wrest`` rounded to a variable number of decimal
+    places (1 to 4 in llist_v1.3.ascii), while the master line list carries
+    more digits.  A fixed tolerance therefore drops entries whose stored value
+    was rounded -- e.g. the set entry FeII* 2365.552 never matched the master
+    value 2365.5518.  The tolerance returned here inverts that rounding: it is
+    half the unit of the last decimal place actually written for this entry.
+
+    Parameters
+    ----------
+    wrest : float
+      Rest wavelength as recorded in the sets file (Angstrom).
+    floor : float, optional
+      Smallest tolerance returned.  Defaults to the historical 9e-5 so that
+      matching is never made stricter than it used to be.
+    cap : float, optional
+      Largest tolerance returned.  Entries written with only 1-2 decimals would
+      otherwise open a window wide enough to reach a neighbouring transition;
+      5e-3 A stays far below the closest real pairs in the master table
+      (e.g. FeII 2631.8321 / 2632.1081) and far below the g-weighted multiplet
+      mean rows, which sit 0.5-1.2 A from the genuine lines.
+
+    Returns
+    -------
+    tol : float
+      Half-width of the matching window, in Angstrom.
+    """
+    wrest = float(wrest)
+    for ndecimal in range(7):
+        if abs(round(wrest, ndecimal) - wrest) < 1e-9:
+            break
+    return min(max(0.5 * 10**(-ndecimal) + 1e-6, floor), cap)
 
 
 def read_euv():
@@ -817,12 +848,7 @@ def grab_galaxy_linelists(do_this=False):
         print('grab_galaxy_linelists: Returning...')
         return
 
-    try:
-        # For Python 3.0 and later
-        from urllib.request import urlopen
-    except ImportError:
-        # Fall back to Python 2's urllib2
-        from urllib2 import urlopen
+    from urllib.request import urlopen
 
     # Forbidden
     url = 'https://raw.githubusercontent.com/desihub/desisim/master/data/forbidden_lines.dat'

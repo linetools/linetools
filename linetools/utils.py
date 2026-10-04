@@ -1,7 +1,5 @@
 """ Module for general utilities which don't belong in another sub-package.
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 import json
 import gzip, os
 import warnings

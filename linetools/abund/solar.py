@@ -1,14 +1,5 @@
 """ Simple Solar abundance calculations.
 """
-from __future__ import (print_function, absolute_import, division,
-                        unicode_literals)
-
-# Python 2 & 3 compatibility
-try:
-    basestring
-except NameError:
-    basestring = str
-
 import numpy as np
 import numbers
 import importlib
@@ -32,7 +23,7 @@ class SolarAbund(object):
     def __init__(self, ref='Asplund2009', verbose=False):
 
         # Error catching
-        if not isinstance(ref, basestring):
+        if not isinstance(ref, str):
             raise TypeError('SolarAbund__init__: Wrong ref type for '
                             'SolarAbund input')
         self.ref = ref
@@ -91,7 +82,7 @@ class SolarAbund(object):
         Abund : float
         """
         # Iterate?
-        if np.iterable(k) and not isinstance(k, basestring): 
+        if np.iterable(k) and not isinstance(k, str): 
             out_abnd = []
             for ik in k:
                 out_abnd.append(self[ik])
@@ -102,7 +93,7 @@ class SolarAbund(object):
             mt = np.where(self._data['Z'] == k)[0]
             if len(mt) != 1:
                 raise ValueError('Atomic Number not in Table: {:d}'.format(k))
-        elif isinstance(k, basestring): # Name
+        elif isinstance(k, str): # Name
             mt = np.where(self._data['Elm'] == k)[0]
             if len(mt) != 1:
                 raise ValueError('Element not in Table: {:s}'.format(k))

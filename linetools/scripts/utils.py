@@ -1,7 +1,5 @@
 """ Utils for scripts
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 import pdb
 
 def coord_arg_to_coord(carg):

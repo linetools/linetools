@@ -1,7 +1,5 @@
 """ Module for spec widgets
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 
 import numpy as np
 import pdb
@@ -32,11 +30,6 @@ from linetools.spectra.xspectrum1d import XSpectrum1D
 from ..spectralline import AbsLine
 from ..analysis import voigt as ltv
 from .xabssysgui import XAbsSysGui
-
-try:
-    basestring
-except NameError:  # For Python 3
-    basestring = str
 
 class ExSpecDialog(QDialog):
     """
@@ -163,7 +156,7 @@ class ExamineSpecWidget(QWidget):
         self.voigtsfit = voigtsfit
 
         # determine the filename (if any)
-        if isinstance(ispec, (str, basestring)):
+        if isinstance(ispec, str):
             filename = ispec
         else:
             filename = None

@@ -1,6 +1,4 @@
 """ Plotting utilities."""
-from __future__ import division, print_function, unicode_literals, absolute_import
-
 import numpy as np
 from astropy.units.quantity import Quantity
 

@@ -8,8 +8,6 @@ Also print the line data
   lt_line HI 1215
   lt_line 1215
 """
-from __future__ import (print_function, absolute_import, division, unicode_literals)
-
 import pdb
 
 try:

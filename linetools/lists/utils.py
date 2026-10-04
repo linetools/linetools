@@ -1,7 +1,5 @@
 """ Utilities related to line lists
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 import pdb
 
 from astropy.table import QTable, Table

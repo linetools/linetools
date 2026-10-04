@@ -1,7 +1,5 @@
 """ Module for simple widgets
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 from qtpy import QtGui
 from qtpy import QtCore
 from qtpy.QtWidgets import QWidget, QDialog, QLabel

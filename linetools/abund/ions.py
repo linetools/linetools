@@ -10,15 +10,7 @@
 #;   03-Nov-2014 by JXP
 #;-
 #;------------------------------------------------------------------------------
-from __future__ import (print_function, absolute_import, division,
-                        unicode_literals)
 import warnings
-# Python 2 & 3 compatibility
-try:
-    basestring
-except NameError:
-    basestring = str
-
 from linetools.abund.elements import ELEMENTS
 from linetools.abund import roman
 
@@ -107,7 +99,7 @@ def name_to_ion(ion):
     ion_tup : tuple
       Z, ion -- e.g. (14,2)
     """
-    if isinstance(ion,basestring):
+    if isinstance(ion,str):
         pass
     else:
         raise ValueError('ionization.name_ion: Not ready for this input yet.')

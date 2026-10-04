@@ -66,9 +66,6 @@ Examples
 
 """
 
-from __future__ import (division, print_function, unicode_literals,
-                        absolute_import)
-
 __version__ = '2015.01.29'
 __docformat__ = 'restructuredtext en'
 __all__ = 'ELEMENTS',

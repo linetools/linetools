@@ -1,5 +1,3 @@
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 import numpy as np
 import copy
 import pdb
@@ -8,11 +6,6 @@ from astropy import units as u
 
 from linetools.spectra import plotting as ltsp
 from linetools.utils import between
-
-try:
-    basestring
-except NameError:  # For Python 3
-    basestring = str
 
 def navigate(psdict, event, init=False, wave=None, flux=None):
     """ Method to Navigate spectrum
@@ -147,7 +140,7 @@ def set_llist(llist, in_dict=None, sort_by='wrest'):
     if in_dict is None:
         in_dict = dict(Lists=[])
 
-    if isinstance(llist,basestring): # Set line list from a file
+    if isinstance(llist,str): # Set line list from a file
         in_dict['List'] = llist
         in_dict['Lists'].append(llist)
         if llist == 'None':
@@ -204,7 +197,7 @@ def read_spec(ispec, exten=None, norm=True, **kwargs):
     from linetools.spectra import xspectrum1d as lsx
     from linetools.spectra import utils as ltsu
     #
-    if isinstance(ispec,basestring):
+    if isinstance(ispec,str):
         spec_fil = ispec
         if 'rsp_kwargs' in kwargs.keys():
             spec = lsx.XSpectrum1D.from_file(spec_fil, exten=exten, **kwargs['rsp_kwargs'])

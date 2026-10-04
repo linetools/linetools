@@ -1,11 +1,6 @@
 # Module to run tests on Generating a LineList
 #   Also tests some simple functionality
 
-from __future__ import (print_function, absolute_import, division,
-unicode_literals)
-
-# TEST_UNICODE_LITERALS
-
 import os, pdb
 import pytest
 import astropy.io.ascii as ascii
@@ -78,7 +73,9 @@ def test_all_transitions():
     #check case of transitions from excited levels
     line='FeII* 1618'  # Cannot just use FeII*
     out = ism.all_transitions(line)
-    assert len(out) == 8, "wrong line counts"
+    # 10, not 8: FeII* 2333.5156 and 2365.5518 used to be dropped by the
+    # wavelength matching in set_lines() (see test_ism_fe_ii_fine_structure)
+    assert len(out) == 10, "wrong line counts"
     # wrest
     out = ism.all_transitions(1215.6700*u.AA)
     assert len(out) == 30,"wrong line counts" # 30 Lyman series transitions

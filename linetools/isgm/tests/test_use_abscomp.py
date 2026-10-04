@@ -1,9 +1,5 @@
 # Module to run tests on using AbsComponent
 
-from __future__ import print_function, absolute_import, division, unicode_literals
-
-# TEST_UNICODE_LITERALS
-
 import pytest
 from astropy import units as u
 from astropy.table import Table

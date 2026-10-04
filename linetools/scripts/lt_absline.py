@@ -13,11 +13,6 @@ try:
     ustr = unicode
 except NameError:
     ustr = str
-try:
-    basestring
-except NameError:
-    basestring = str
-
 def plot_absline(iinp,logN,b, show=True):
     """Plot an absorption line with N,b properties
 
@@ -38,7 +33,7 @@ def plot_absline(iinp,logN,b, show=True):
     from astropy import units as u
 
     # Search for the closest absline
-    if isinstance(iinp,basestring):
+    if isinstance(iinp,str):
         aline = AbsLine(iinp, closest=True)
     else:
         aline = AbsLine(iinp*u.AA, closest=True)

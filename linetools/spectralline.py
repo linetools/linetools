@@ -1,13 +1,5 @@
 """ Classes for an emission or absorption spectral line
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
-
-# Python 2 & 3 compatibility
-try:
-    basestring
-except NameError:
-    basestring = str
-
 import numpy as np
 import copy
 import pdb
@@ -204,7 +196,7 @@ class SpectralLine(object):
             raise ValueError('spec/lines: Not ready for type {:s}'.format(ltype))
 
         # Init
-        if not isinstance(trans,(Quantity,basestring)):
+        if not isinstance(trans,(Quantity,str)):
             raise ValueError('Rest wavelength must be a Quantity or str')
 
         # Other
@@ -262,7 +254,7 @@ class SpectralLine(object):
                     llist = LineList('Galaxy')
                 else:
                     raise ValueError("Not ready for ltype = {:s}".format(self.ltype))
-        elif isinstance(linelist,basestring):
+        elif isinstance(linelist,str):
             llist = LineList(linelist)
         elif isinstance(linelist,LineList):
             llist = linelist
@@ -537,7 +529,7 @@ class SpectralLine(object):
         # Analysis
         for key in self.analy:
             if key == 'spec':
-                if isinstance(self.analy['spec'], basestring):
+                if isinstance(self.analy['spec'], str):
                     adict['analy']['spec_file'] = self.analy['spec']
                 elif isinstance(self.analy['spec'], XSpectrum1D):
                     adict['analy']['spec_file'] = self.analy['spec'].filename

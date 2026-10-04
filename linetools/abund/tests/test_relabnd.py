@@ -1,9 +1,5 @@
 # Module to run tests on RelAbund class
 
-from __future__ import print_function, absolute_import, division, unicode_literals
-
-# TEST_UNICODE_LITERALS
-
 import pdb
 import pytest
 from astropy.table import Table

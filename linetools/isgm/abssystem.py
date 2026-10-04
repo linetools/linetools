@@ -1,13 +1,5 @@
 """ Class for  absorption systems
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
-
-# Python 2 & 3 compatibility
-try:
-    basestring
-except NameError:
-    basestring = str
-
 import numpy as np
 import pdb
 import warnings
@@ -419,7 +411,7 @@ class AbsSystem(object):
         """
         # Generate the lines
         abslines = self.list_of_abslines()
-        if isinstance(inp,basestring):
+        if isinstance(inp,str):
             names = np.array([absline.name for absline in abslines])
             mt = np.where(names == inp)[0]
         elif isinstance(inp,Quantity):

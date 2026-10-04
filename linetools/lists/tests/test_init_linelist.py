@@ -1,7 +1,5 @@
 # Module to run tests on Generating a LineList
 #   Also tests some simple functionality
-# TEST_UNICODE_LITERALS
-
 import pytest
 import os
 from astropy import units as u
@@ -19,6 +17,44 @@ def test_ism_read_source_catalogues():
 def test_ism():
     ism = LineList('ISM')
     np.testing.assert_allclose(ism['HI 1215']['wrest'], 1215.6700*u.AA, rtol=1e-7)
+
+# Regression: the sets file records wrest rounded to 3-4 decimals while the
+# master table carries more digits.  A fixed 9e-5 A matching tolerance silently
+# dropped every entry whose stored value had been rounded, which cost the ISM
+# list its whole FeII* fine-structure series (and 135 other lines).
+FEII_FINE_STRUCTURE = [2328.111, 2333.516, 2338.725, 2345.001, 2349.022,
+                       2359.828, 2365.552, 2381.489, 2405.164, 2411.802]
+
+
+def test_ism_fe_ii_fine_structure():
+    ism = LineList('ISM')
+    wrest = np.array(ism._data['wrest'])
+    names = np.array([str(nm) for nm in ism._data['name']])
+    for wv in FEII_FINE_STRUCTURE:
+        imt = np.argmin(np.abs(wrest - wv))
+        assert np.abs(wrest[imt] - wv) < 0.05, \
+            'FeII* {:.3f} missing from LineList("ISM")'.format(wv)
+        # and it must be the real transition, not the g-weighted multiplet
+        # mean rows at Ej = 416.299, which sit 0.5-1.2 A from genuine lines
+        assert names[imt].startswith('FeII'), \
+            'FeII* {:.3f} matched the wrong species: {:s}'.format(wv, names[imt])
+        assert ism._data['Ej'][imt] > 0., \
+            'FeII* {:.3f} matched a ground-state row'.format(wv)
+
+
+def test_set_wrest_tol_does_not_reach_neighbouring_lines():
+    """ The tolerance must stay well inside the closest real FeII pair
+    (2631.8321 / 2632.1081, 0.28 A apart) and well inside the offset of the
+    multiplet-mean rows (2344.7030 vs 2344.2139, 0.49 A).
+    """
+    from linetools.lists.parse import set_wrest_tol
+    for wv in [2365.552, 2740.36, 1566.8217, 1206.5]:
+        assert set_wrest_tol(wv) <= 5e-3
+    # never stricter than the historical tolerance
+    assert set_wrest_tol(1566.8217) >= 9e-5
+    # a 3-decimal entry must reach its 4-decimal master counterpart
+    assert set_wrest_tol(2365.552) > abs(2365.552 - 2365.5518)
+
 
 # Test update_fval
 def test_updfval():

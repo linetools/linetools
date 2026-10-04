@@ -1,13 +1,7 @@
 """ Reading and writing of spectra
 """
 
-from __future__ import print_function, absolute_import, division, unicode_literals
 from six import itervalues
-
-try: # Python 2 & 3 compatibility
-    basestring
-except NameError:
-    basestring = str
 
 
 # Import libraries
@@ -72,7 +66,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
         datfil = 'None'
         # Dummy hdulist
         hdulist = [fits.PrimaryHDU(), specfil]
-    elif isinstance(specfil, basestring):
+    elif isinstance(specfil, str):
         datfil = specfil.strip()
         flg_fits = False
         for ext in ['.fit']:
@@ -195,7 +189,7 @@ def readspec(specfil, inflg=None, efil=None, verbose=False, multi_ivar=False,
 
     if not xspec1d.co_is_set:
         # Final check for continuum in a separate file
-        if isinstance(specfil, basestring) and (specfil.endswith('.fits') or specfil.endswith('.fits.gz')):
+        if isinstance(specfil, str) and (specfil.endswith('.fits') or specfil.endswith('.fits.gz')):
             co_filename = specfil.replace('.fits', '_c.fits')
             if os.path.exists(co_filename):
                 tmpco = fits.getdata(co_filename)
@@ -637,7 +631,7 @@ def parse_hdf5(inp, close=True, **kwargs):
     # Path
     path = kwargs.pop('path', '/')
     # Open
-    if isinstance(inp, basestring):
+    if isinstance(inp, str):
         hdf5 = h5py.File(inp, 'r')
     else:
         hdf5 = inp

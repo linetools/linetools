@@ -1,8 +1,5 @@
 # Module to run tests on elements.py code
 
-from __future__ import print_function, absolute_import, division, unicode_literals
-# TEST_UNICODE_LITERALS
-
 import pytest
 from linetools.abund.elements import ELEMENTS, sqlite_script
 

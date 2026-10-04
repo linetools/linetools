@@ -1,8 +1,5 @@
 """ Module for fitting a QSO continuum
 """
-from __future__ import print_function, absolute_import, division, \
-     unicode_literals
-
 import warnings
 import sys, os
 import numpy as np

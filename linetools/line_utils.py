@@ -1,7 +1,5 @@
 """ Module for utilities related to spectral line or lines(s)
 """
-from __future__ import print_function, absolute_import, division, unicode_literals
-
 import pdb
 import numpy as np
 
